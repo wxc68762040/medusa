@@ -66,7 +66,7 @@ lazy val backend = (project in file("backend")).enablePlugins(PackPlugin)
   .settings(commonSettings: _*)
   .settings(
     mainClass in reStart := Some(projectMainClass),
-    javaOptions in reStart += "-Xmx2g"
+    javaOptions in reStart += "-Xmx1g"
   )
   .settings(name := "backend")
   .settings(
@@ -75,7 +75,7 @@ lazy val backend = (project in file("backend")).enablePlugins(PackPlugin)
     //packSettings,
     // [Optional] Creating `hello` command that calls org.mydomain.Hello#main(Array[String])
     packMain := Map("medusa" -> projectMainClass),
-    packJvmOpts := Map("medusa" -> Seq("-Xmx64m", "-Xms32m")),
+    packJvmOpts := Map("medusa" -> Seq("-Xmx128m", "-Xms32m")),
     packExtraClasspath := Map("medusa" -> Seq("."))
   )
   .settings(
