@@ -26,6 +26,13 @@ package object snake {
     def *(n: Int) = Point(x * n, y * n)
 
     def %(other: Point) = Point(x % other.x, y % other.y)
+    
+    def zone(range: Int) = (for {
+      xs <- x - range to x + range
+      ys <- y - range to y + range
+    } yield {
+      Point(xs, ys)
+    }).toList
   }
 
 
@@ -40,14 +47,15 @@ package object snake {
     name: String,
     header: Point = Point(20, 20),
     direction: Point = Point(1, 0),
-    length: Int = 4,
+    speed: Int = 5,
+    length: Int = 20,
     kill: Int = 0
   )
 
 
   object Boundary{
-    val w = 120
-    val h = 60
+    val w = 800
+    val h = 600
   }
 
 

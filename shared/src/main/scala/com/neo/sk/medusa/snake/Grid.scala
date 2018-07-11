@@ -23,7 +23,7 @@ trait Grid {
 
   val defaultLength = 5
   val appleNum = 6
-  val appleLife = 50
+  val appleLife = 200
   val historyRankLength = 5
 
   var frameCount = 0l
@@ -113,7 +113,7 @@ trait Grid {
         }
       }
 
-      val newHeader = ((snake.header + newDirection) + boundary) % boundary
+      val newHeader = ((snake.header + newDirection * snake.speed) + boundary) % boundary
 
       grid.get(newHeader) match {
         case Some(x: Body) =>
@@ -126,6 +126,29 @@ trait Grid {
         case _ =>
           Right(snake.copy(header = newHeader, direction = newDirection))
       }
+      val sum = newHeader.zone(10).foldLeft(0) { (sum: Int, e: Point) =>
+        grid.get(e) match {
+          case Some(Apple(score, _)) =>
+            grid -= e
+            sum + score
+          case _ =>
+            sum
+        }
+      }
+      val len = snake.length + sum
+//      val dead = newHeader.zone(5).filter { e =>
+//        grid.get(e) match {
+//          case Some(x: Body) => true
+//          case _ => false
+//        }
+//      }
+//      if(dead.nonEmpty) {
+//        grid.get(dead.head) match {
+//          case Some(x: Body) => Left(x.id)
+//        }
+//      } else {
+        Right(snake.copy(header = newHeader, direction = newDirection, length = len))
+//      }
     }
 
 
