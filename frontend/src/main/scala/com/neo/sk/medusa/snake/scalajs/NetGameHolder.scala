@@ -1,6 +1,6 @@
 package com.neo.sk.medusa.snake.scalajs
 
-import com.neo.sk.medusa.snake.Protocol.GridDataSync
+import com.neo.sk.medusa.snake.Protocol.{GridDataSync,square}
 import com.neo.sk.medusa.snake._
 import org.scalajs.dom
 import org.scalajs.dom.ext.{Color, KeyCode}
@@ -8,6 +8,7 @@ import org.scalajs.dom.html.{Document => _, _}
 import org.scalajs.dom.raw._
 
 import scala.scalajs.js
+import scala.scalajs.js.Math
 
 /**
   * User: Taoz
@@ -18,8 +19,9 @@ object NetGameHolder extends js.JSApp {
 
 
   val bounds = Point(Boundary.w, Boundary.h)
-  val canvasUnit = 10
-  val canvasBoundary = bounds * canvasUnit
+ // val canvasUnit = 10
+ // val oneLength = 1
+  val canvasBoundary = bounds
   val textLineHeight = 14
 
   var currentRank = List.empty[Score]
@@ -81,7 +83,7 @@ object NetGameHolder extends js.JSApp {
 
   def drawGameOff(): Unit = {
     ctx.fillStyle = Color.Black.toString()
-    ctx.fillRect(0, 0, bounds.x * canvasUnit, bounds.y * canvasUnit)
+    ctx.fillRect(0, 0, bounds.x, bounds.y )
     ctx.fillStyle = "rgb(250, 250, 250)"
     if (firstCome) {
       ctx.font = "36px Helvetica"
@@ -121,7 +123,7 @@ object NetGameHolder extends js.JSApp {
   def drawGrid(uid: Long, data: GridDataSync): Unit = {
 
     ctx.fillStyle = Color.Black.toString()
-    ctx.fillRect(0, 0, bounds.x * canvasUnit, bounds.y * canvasUnit)
+    ctx.fillRect(0, 0, bounds.x , bounds.y )
 
     val snakes = data.snakes
     val bodies = data.bodyDetails
@@ -133,10 +135,20 @@ object NetGameHolder extends js.JSApp {
       if (id == uid) {
         ctx.save()
         ctx.fillStyle = MyColors.myBody
-        ctx.fillRect(x * canvasUnit + 1, y * canvasUnit + 1, canvasUnit - 1, canvasUnit - 1)
+        ctx.fillRect(x - square, y - square , square , square)
+        ctx.fillRect(x, y - square , square , square)
+        ctx.fillRect(x - square, y , square , square)
+        ctx.fillRect(x, y , square , square)
+//        ctx.beginPath()
+//        ctx.arc(x, y, square,0,2*Math.PI )
+//        ctx.fill()
+//        ctx.closePath()
         ctx.restore()
       } else {
-        ctx.fillRect(x * canvasUnit + 1, y * canvasUnit + 1, canvasUnit - 1, canvasUnit - 1)
+        ctx.fillRect(x - square, y - square , square , square)
+        ctx.fillRect(x, y - square , square , square)
+        ctx.fillRect(x - square, y , square , square)
+        ctx.fillRect(x, y , square , square)
       }
     }
 
@@ -146,7 +158,11 @@ object NetGameHolder extends js.JSApp {
         case 5 => Color.Blue.toString()
         case _ => Color.Red.toString()
       }
-      ctx.fillRect(x * canvasUnit + 1, y * canvasUnit + 1, canvasUnit - 1, canvasUnit - 1)
+      ctx.fillRect(x - square, y - square , square , square)
+      ctx.fillRect(x, y - square , square , square)
+      ctx.fillRect(x - square, y , square , square)
+      ctx.fillRect(x, y , square , square)
+
     }
 
     ctx.fillStyle = MyColors.otherHeader
@@ -154,13 +170,22 @@ object NetGameHolder extends js.JSApp {
       val id = snake.id
       val x = snake.header.x
       val y = snake.header.y
+      print(s"snake head ${snakes.head}")
       if (id == uid) {
         ctx.save()
         ctx.fillStyle = MyColors.myHeader
-        ctx.fillRect(x * canvasUnit + 2, y * canvasUnit + 2, canvasUnit - 4, canvasUnit - 4)
+        ctx.fillRect(x - square, y - square , square , square)
+        ctx.fillRect(x, y - square , square , square)
+        ctx.fillRect(x - square, y , square , square)
+        ctx.fillRect(x, y , square , square)
+
         ctx.restore()
       } else {
-        ctx.fillRect(x * canvasUnit + 2, y * canvasUnit + 2, canvasUnit - 4, canvasUnit - 4)
+        ctx.fillRect(x - square, y - square , square , square)
+        ctx.fillRect(x, y - square , square , square)
+        ctx.fillRect(x - square, y , square , square)
+        ctx.fillRect(x, y , square , square)
+
       }
     }
 

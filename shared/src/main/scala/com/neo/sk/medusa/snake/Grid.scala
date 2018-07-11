@@ -2,6 +2,9 @@ package com.neo.sk.medusa.snake
 
 import java.awt.event.KeyEvent
 
+import com.neo.sk.medusa.snake.Protocol.square
+
+import scala.collection.mutable.ListBuffer
 import scala.util.Random
 
 
@@ -25,6 +28,7 @@ trait Grid {
   val appleNum = 6
   val appleLife = 50
   val historyRankLength = 5
+  val stepLength = 5
 
   var frameCount = 0l
   var grid = Map[Point, Spot]()
@@ -113,19 +117,53 @@ trait Grid {
         }
       }
 
-      val newHeader = ((snake.header + newDirection) + boundary) % boundary
 
-      grid.get(newHeader) match {
-        case Some(x: Body) =>
-          debug(s"snake[${snake.id}] hit wall.")
-          Left(x.id)
-        case Some(Apple(score, _)) =>
-          val len = snake.length + score
-          grid -= newHeader
-          Right(snake.copy(header = newHeader, direction = newDirection, length = len))
-        case _ =>
-          Right(snake.copy(header = newHeader, direction = newDirection))
+      val newHeader = ((snake.header + newDirection * stepLength) + boundary) % boundary
+
+      val newCheck = newHeader + newDirection * square * 2
+      val newCheckList = ListBuffer[Point]()
+      if(newDirection.x == 0){
+        for(u<- 0 until square * 2){
+           newCheckList.append(Point(newCheck.x - u,newCheck.y))
+          newCheckList.append(Point(newCheck.x + u,newCheck.y))
+        }
+      }else{
+        for(u<- 0 until square * 2){
+          newCheckList.append(Point(newCheck.x ,newCheck.y - u))
+          newCheckList.append(Point(newCheck.x ,newCheck.y + u))
+        }
       }
+
+      var a : Either[Long, SkDt] = Right(snake.copy(header = newHeader, direction = newDirection))
+      newCheckList.foreach{
+        check=>
+          grid.get(check) match {
+            case Some(x: Body) =>
+              debug(s"snake[${snake.id}] hit wall.")
+              a=Left(x.id)
+            case Some(Apple(score, _)) =>
+              println("eat apple")
+              val len = snake.length + score
+              grid -= newHeader
+              a=Right(snake.copy(header = newHeader, direction = newDirection, length = len))
+            case _=>
+              //println("*************")
+          }
+      }
+      a
+
+//      grid.get(newHeader) match {
+//                    case Some(x: Body) =>
+//                      debug(s"snake[${snake.id}] hit wall.")
+//                      Left(x.id)
+//                    case Some(Apple(score, _)) =>
+//                      val len = snake.length + score
+//                      grid -= newHeader
+//                      Right(snake.copy(header = newHeader, direction = newDirection, length = len))
+//                    case _=>
+//                      Right(snake.copy(header = newHeader, direction = newDirection))
+//                  }
+
     }
 
 

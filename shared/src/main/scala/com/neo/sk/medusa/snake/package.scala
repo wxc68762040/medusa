@@ -40,14 +40,14 @@ package object snake {
     name: String,
     header: Point = Point(20, 20),
     direction: Point = Point(1, 0),
-    length: Int = 4,
+    length: Int = 20,
     kill: Int = 0
   )
 
 
   object Boundary{
-    val w = 120
-    val h = 60
+    val w = 1200
+    val h = 600
   }
 
 
