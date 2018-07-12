@@ -18,7 +18,7 @@ object NetGameHolder extends js.JSApp {
 
 
   val bounds = Point(Boundary.w, Boundary.h)
-  val canvasUnit = 10
+  val canvasUnit = 7
   val canvasBoundary = bounds
   val textLineHeight = 14
 
@@ -133,10 +133,10 @@ object NetGameHolder extends js.JSApp {
       if (id == uid) {
         ctx.save()
         ctx.fillStyle = MyColors.myBody
-        ctx.fillRect(x, y, canvasUnit, canvasUnit)
+        ctx.fillRect(x-3, y-3, canvasUnit, canvasUnit)
         ctx.restore()
       } else {
-        ctx.fillRect(x * canvasUnit + 1, y * canvasUnit + 1, canvasUnit - 1, canvasUnit - 1)
+        ctx.fillRect(x-3, y-3, canvasUnit, canvasUnit)
       }
     }
 
@@ -146,7 +146,7 @@ object NetGameHolder extends js.JSApp {
         case 5 => Color.Blue.toString()
         case _ => Color.Red.toString()
       }
-      ctx.fillRect(x, y, canvasUnit, canvasUnit)
+      ctx.fillRect(x-3, y-3, canvasUnit, canvasUnit)
     }
 
     ctx.fillStyle = MyColors.otherHeader
@@ -157,10 +157,10 @@ object NetGameHolder extends js.JSApp {
       if (id == uid) {
         ctx.save()
         ctx.fillStyle = MyColors.myHeader
-        ctx.fillRect(x + 2, y + 2, canvasUnit - 4, canvasUnit - 4)
+        ctx.fillRect(x-1, y-1, canvasUnit - 4, canvasUnit - 4)
         ctx.restore()
       } else {
-        ctx.fillRect(x * canvasUnit + 2, y * canvasUnit + 2, canvasUnit - 4, canvasUnit - 4)
+        ctx.fillRect(x-1, y-1, canvasUnit - 4, canvasUnit - 4)
       }
     }
 

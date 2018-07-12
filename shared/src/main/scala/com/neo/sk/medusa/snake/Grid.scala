@@ -53,7 +53,7 @@ trait Grid {
 
 
   def update() = {
-    //println(s"-------- grid update frameCount= $frameCount ---------")
+    info(s"-------- grid update frameCount= $frameCount ---------")
     updateSnakes()
     updateSpots()
     actionMap -= frameCount
@@ -63,7 +63,7 @@ trait Grid {
   def feedApple(appleCount: Int): Unit
 
   private[this] def updateSpots() = {
-    debug(s"grid: ${grid.mkString(";")}")
+//    debug(s"grid: ${grid.mkString(";")}")
     var appleCount = 0
     grid = grid.filter { case (p, spot) =>
       spot match {
@@ -97,7 +97,7 @@ trait Grid {
   private[this] def updateSnakes() = {
     def updateASnake(snake: SkDt, actMap: Map[Long, Int]): Either[Long, SkDt] = {
       val keyCode = actMap.get(snake.id)
-      debug(s" +++ snake[${snake.id}] feel key: $keyCode at frame=$frameCount")
+//      debug(s" +++ snake[${snake.id}] feel key: $keyCode at frame=$frameCount")
       val newDirection = {
         val keyDirection = keyCode match {
           case Some(KeyEvent.VK_LEFT) => Point(-1, 0)
@@ -112,7 +112,7 @@ trait Grid {
           snake.direction
         }
       }
-
+      val oldHeader = snake.header
       val newHeader = ((snake.header + newDirection * snake.speed) + boundary) % boundary
 
       grid.get(newHeader) match {
@@ -122,9 +122,7 @@ trait Grid {
         case Some(Apple(score, _)) =>
           val len = snake.length + score
           grid -= newHeader
-          Right(snake.copy(header = newHeader, direction = newDirection, length = len))
         case _ =>
-          Right(snake.copy(header = newHeader, direction = newDirection))
       }
       val sum = newHeader.zone(10).foldLeft(0) { (sum: Int, e: Point) =>
         grid.get(e) match {
@@ -136,19 +134,19 @@ trait Grid {
         }
       }
       val len = snake.length + sum
-//      val dead = newHeader.zone(5).filter { e =>
-//        grid.get(e) match {
-//          case Some(x: Body) => true
-//          case _ => false
-//        }
-//      }
-//      if(dead.nonEmpty) {
-//        grid.get(dead.head) match {
-//          case Some(x: Body) => Left(x.id)
-//        }
-//      } else {
-        Right(snake.copy(header = newHeader, direction = newDirection, length = len))
-//      }
+      val dead = newHeader.frontZone(snake.direction, 7, 7).filter { e =>
+        grid.get(e) match {
+          case Some(x: Body) => true
+          case _ => false
+        }
+      }
+      if(dead.nonEmpty) {
+        grid.get(dead.head) match {
+          case Some(x: Body) => Left(x.id)
+        }
+      } else {
+        Right(snake.copy(header = newHeader, lastHeader = oldHeader, direction = newDirection, length = len))
+      }
     }
 
 
@@ -184,7 +182,11 @@ trait Grid {
       }
     }
 
-    grid ++= newSnakes.map(s => s.header -> Body(s.id, s.length))
+    newSnakes.foreach { s =>
+      (s.lastHeader to s.header).foreach { p =>
+        grid ++= Map(p -> Body(s.id, s.length / s.speed))
+      }
+    }
     snakes = newSnakes.map(s => (s.id, s)).toMap
 
   }

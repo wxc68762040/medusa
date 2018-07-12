@@ -27,12 +27,43 @@ package object snake {
 
     def %(other: Point) = Point(x % other.x, y % other.y)
     
+    def to(other: Point) = {
+      val (x0, x1) = if(x > other.x) (other.x, x) else (x, other.x)
+      val (y0, y1) = if(y > other.y) (other.y, y) else (y, other.y)
+      (for {
+        xs <- x0 to x1
+        ys <- y0 to y1
+      } yield {
+        Point(xs, ys)
+      }).toList
+    }
+    
     def zone(range: Int) = (for {
       xs <- x - range to x + range
       ys <- y - range to y + range
     } yield {
       Point(xs, ys)
     }).toList
+    
+    def frontZone(direction: Point, wide: Int, length: Int) = {
+      if (direction.x == 0) {
+        val (yStart, yEnd) = if(direction.y < 0) (y + length * direction.y, y + direction.y) else (y + direction.y, y + length * direction.y)
+        (for {
+          xs <- x - wide + 1 to x + wide - 1
+          ys <- yStart to yEnd
+        } yield {
+          Point(xs, ys)
+        }).toList
+      } else {
+        val (xStart, xEnd) = if(direction.x < 0) (x + length * direction.x, x + direction.x) else (x + direction.x, x + length * direction.x)
+        (for {
+          xs <- xStart to xEnd
+          ys <- y - wide + 1 to y + wide - 1
+        } yield {
+          Point(xs, ys)
+        }).toList
+      }
+    }
   }
 
 
@@ -46,8 +77,9 @@ package object snake {
     id: Long,
     name: String,
     header: Point = Point(20, 20),
+    lastHeader: Point = Point(20, 20),
     direction: Point = Point(1, 0),
-    speed: Int = 5,
+    speed: Int = 10,
     length: Int = 20,
     kill: Int = 0
   )
