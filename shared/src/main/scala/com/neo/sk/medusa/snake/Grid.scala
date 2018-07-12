@@ -26,9 +26,9 @@ trait Grid {
 
   val defaultLength = 5
   val appleNum = 6
-  val appleLife = 50
+  val appleLife = 500
   val historyRankLength = 5
-  val stepLength = 5
+  val stepLength = 4
 
   var frameCount = 0l
   var grid = Map[Point, Spot]()
@@ -120,49 +120,71 @@ trait Grid {
 
       val newHeader = ((snake.header + newDirection * stepLength) + boundary) % boundary
 
-      val newCheck = newHeader + newDirection * square * 2
-      val newCheckList = ListBuffer[Point]()
-      if(newDirection.x == 0){
-        for(u<- 0 until square * 2){
-           newCheckList.append(Point(newCheck.x - u,newCheck.y))
-          newCheckList.append(Point(newCheck.x + u,newCheck.y))
-        }
-      }else{
-        for(u<- 0 until square * 2){
-          newCheckList.append(Point(newCheck.x ,newCheck.y - u))
-          newCheckList.append(Point(newCheck.x ,newCheck.y + u))
+      var result: Either[Long, SkDt] =  Right(snake.copy(header = newHeader, direction = newDirection))
+      //检测吃小球
+      val sum = newHeader.zone(10).foldLeft(0) { (sum: Int, e: Point) =>
+        grid.get(e) match {
+          case Some(Apple(score, _)) =>
+            grid -= e
+            sum + score
+          case _ =>
+            sum
         }
       }
+      val len = snake.length + sum
+      result = Right(snake.copy(header = newHeader, direction = newDirection, length = len))
 
-      var a : Either[Long, SkDt] = Right(snake.copy(header = newHeader, direction = newDirection))
+      //检测碰撞
+      //println(newHeader,newDirection)
+      /*
+      val newStep =  newDirection * stepLength * 2
+      val newCheckList = ListBuffer[Point]()
+      if(newDirection.x == 0){
+        //纵向
+        val y1 = if(newDirection.y == 1) newHeader.y + 1 else newStep.y - 1
+        val y2 = if(newDirection.y == 1) newStep.y + 1 else newHeader.y - 1
+        val newList = newHeader.zonePortrait(square,y1,y2).filterNot(_.y==newHeader.y)
+        newList.foreach{a=>newCheckList.append(a)}
+      }else{
+        //横向
+        val x1 = if(newDirection.x == 1) newHeader.x + 1 else newStep.x -1
+        val x2 = if(newDirection.x == 1) newStep.x + 1 else newHeader.x -1
+        val newList = newHeader.zoneOrientation(x1,x2,square).filterNot(_.x==newHeader.x)
+        newList.foreach{a=>newCheckList.append(a)}
+      }
+
+      //println(newCheckList)
       newCheckList.foreach{
         check=>
           grid.get(check) match {
             case Some(x: Body) =>
               debug(s"snake[${snake.id}] hit wall.")
-              a=Left(x.id)
-            case Some(Apple(score, _)) =>
-              println("eat apple")
-              val len = snake.length + score
-              grid -= newHeader
-              a=Right(snake.copy(header = newHeader, direction = newDirection, length = len))
+              result=Left(x.id)
             case _=>
-              //println("*************")
+             // println("*************")
           }
       }
-      a
+      */
 
-//      grid.get(newHeader) match {
-//                    case Some(x: Body) =>
-//                      debug(s"snake[${snake.id}] hit wall.")
-//                      Left(x.id)
-//                    case Some(Apple(score, _)) =>
-//                      val len = snake.length + score
-//                      grid -= newHeader
-//                      Right(snake.copy(header = newHeader, direction = newDirection, length = len))
-//                    case _=>
-//                      Right(snake.copy(header = newHeader, direction = newDirection))
-//                  }
+      //println(result)
+
+      //检测撞墙
+      val boundCheck = (newHeader + newDirection * stepLength).zone(stepLength)
+      //println(boundCheck)
+      //println(boundaryList)
+      boundCheck.foreach{
+        oneCheck=>
+          if(boundaryList.contains(oneCheck)){
+            //println(s"snake[${snake.id}] hit wall.")
+            result=Left(0)
+          }else{
+
+          }
+      }
+
+
+      //println(result)
+      result
 
     }
 
@@ -175,7 +197,11 @@ trait Grid {
     snakes.values.map(updateASnake(_, acts)).foreach {
       case Right(s) => updatedSnakes ::= s
       case Left(killerId) =>
-        mapKillCounter += killerId -> (mapKillCounter.getOrElse(killerId, 0) + 1)
+        if(killerId != 0){
+          mapKillCounter += killerId -> (mapKillCounter.getOrElse(killerId, 0) + 1)
+        }else{
+
+        }
     }
 
 

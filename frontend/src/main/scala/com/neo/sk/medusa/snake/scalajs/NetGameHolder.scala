@@ -21,7 +21,7 @@ object NetGameHolder extends js.JSApp {
   val bounds = Point(Boundary.w, Boundary.h)
  // val canvasUnit = 10
  // val oneLength = 1
-  val canvasBoundary = bounds
+  val canvasBoundary = Point(500,500)
   val textLineHeight = 14
 
   var currentRank = List.empty[Score]
@@ -46,6 +46,7 @@ object NetGameHolder extends js.JSApp {
   object MyColors {
     val myHeader = "#FF0000"
     val myBody = "#FFFFFF"
+    val boundaryColor = "#FFFFFF"
     val otherHeader = Color.Blue.toString()
     val otherBody = "#696969"
   }
@@ -129,26 +130,20 @@ object NetGameHolder extends js.JSApp {
     val bodies = data.bodyDetails
     val apples = data.appleDetails
 
+    val myHead = snakes.filter(_.id == uid).head.header
+    val centerX = MyBoundary.w/2
+    val centerY = MyBoundary.h/2
+
     ctx.fillStyle = MyColors.otherBody
     bodies.foreach { case Bd(id, life, x, y) =>
       //println(s"draw body at $p body[$life]")
       if (id == uid) {
         ctx.save()
         ctx.fillStyle = MyColors.myBody
-        ctx.fillRect(x - square, y - square , square , square)
-        ctx.fillRect(x, y - square , square , square)
-        ctx.fillRect(x - square, y , square , square)
-        ctx.fillRect(x, y , square , square)
-//        ctx.beginPath()
-//        ctx.arc(x, y, square,0,2*Math.PI )
-//        ctx.fill()
-//        ctx.closePath()
+        ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
         ctx.restore()
       } else {
-        ctx.fillRect(x - square, y - square , square , square)
-        ctx.fillRect(x, y - square , square , square)
-        ctx.fillRect(x - square, y , square , square)
-        ctx.fillRect(x, y , square , square)
+        ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
       }
     }
 
@@ -158,10 +153,7 @@ object NetGameHolder extends js.JSApp {
         case 5 => Color.Blue.toString()
         case _ => Color.Red.toString()
       }
-      ctx.fillRect(x - square, y - square , square , square)
-      ctx.fillRect(x, y - square , square , square)
-      ctx.fillRect(x - square, y , square , square)
-      ctx.fillRect(x, y , square , square)
+      ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
 
     }
 
@@ -174,19 +166,21 @@ object NetGameHolder extends js.JSApp {
       if (id == uid) {
         ctx.save()
         ctx.fillStyle = MyColors.myHeader
-        ctx.fillRect(x - square, y - square , square , square)
-        ctx.fillRect(x, y - square , square , square)
-        ctx.fillRect(x - square, y , square , square)
-        ctx.fillRect(x, y , square , square)
+        ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
 
         ctx.restore()
       } else {
-        ctx.fillRect(x - square, y - square , square , square)
-        ctx.fillRect(x, y - square , square , square)
-        ctx.fillRect(x - square, y , square , square)
-        ctx.fillRect(x, y , square , square)
+        ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
 
       }
+    }
+
+
+    boundaryList.foreach{ boundary=>
+      ctx.save()
+      ctx.fillStyle ==MyColors.boundaryColor
+      ctx.fillRect(boundary.x - myHead.x + centerX, boundary.y - myHead.y + centerY, 10 , 10)
+      ctx.restore()
     }
 
 
