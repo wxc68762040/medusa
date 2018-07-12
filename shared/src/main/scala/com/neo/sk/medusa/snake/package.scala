@@ -35,6 +35,26 @@ package object snake {
       Point(xs, ys)
     }).toList
 
+    def frontZone(direction: Point, wide: Int, length: Int) = {
+      if (direction.x == 0) {
+        val (yStart, yEnd) = if(direction.y < 0) (y + length * direction.y, y + direction.y) else (y + direction.y, y + length * direction.y)
+        (for {
+          xs <- x - wide + 1 to x + wide - 1
+          ys <- yStart to yEnd
+        } yield {
+          Point(xs, ys)
+        }).toList
+      } else {
+        val (xStart, xEnd) = if(direction.x < 0) (x + length * direction.x, x + direction.x) else (x + direction.x, x + length * direction.x)
+        (for {
+          xs <- xStart to xEnd
+          ys <- y - wide + 1 to y + wide - 1
+        } yield {
+          Point(xs, ys)
+        }).toList
+      }
+    }
+
     def zone1(rangeX: Int,rangeY :Int) = (for {
       xs <- x  to x + rangeX
       ys <- y  to y + rangeY
@@ -82,7 +102,7 @@ package object snake {
     val h = 600
   }
 
-  val boundaryList = Point(0,0).zone1(Boundary.w,10) ::: Point(0,0).zone1(10,Boundary.h) ::: Point(0,Boundary.h).zone1(Boundary.w,10) ::: Point(Boundary.w,0).zone1(10,Boundary.h)
+  val boundaryList = Point(0,0).zone1(Boundary.w,1) ::: Point(0,0).zone1(1,Boundary.h) ::: Point(0,Boundary.h).zone1(Boundary.w,1) ::: Point(Boundary.w,0).zone1(1,Boundary.h)
 
   object MyBoundary{
     val w = 500

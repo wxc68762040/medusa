@@ -170,21 +170,7 @@ trait Grid {
       //println(result)
 
       //检测撞墙
-      val boundCheck = (newHeader + newDirection * stepLength).zone(stepLength)
-      //println(boundCheck)
-      //println(boundaryList)
-//      boundCheck.foreach{
-//        oneCheck=>
-//          if(boundaryList.contains(oneCheck)){
-//            //println(s"snake[${snake.id}] hit wall.")
-//            result=Left(0)
-//          }else{
-//
-//          }
-//      }
-
-      println(newHeader)
-      if(newHeader.x < 0 || newHeader.y <0 || newHeader.x > Boundary.w || newHeader.y > Boundary.h){
+      if(newHeader.x < 0+5 || newHeader.y <0+5 || newHeader.x -5 > Boundary.w || newHeader.y - 5> Boundary.h){
         println(s"snake[${snake.id}] hit wall.")
         result=Left(0)
       }
