@@ -10,7 +10,7 @@ package object snake {
   sealed trait Spot
   case class Body(id: Long, life: Int) extends Spot
   case class Header(id: Long, life: Int) extends Spot
-  case class Apple(score: Int, life: Int) extends Spot
+  case class Apple(score: Int, life: Int, appleType: Int) extends Spot //食物类型，0：普通食物，1：死蛇身体
 
   case class Score(id: Long, n: String, k: Int, l: Int, t: Option[Long] = None)
   case class Bd(id: Long, life: Int, x: Int, y: Int)

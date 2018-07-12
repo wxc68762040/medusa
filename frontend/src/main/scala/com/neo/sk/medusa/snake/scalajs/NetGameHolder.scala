@@ -275,14 +275,14 @@ object NetGameHolder extends js.JSApp {
           historyRank = history
         case Protocol.FeedApples(apples) =>
           writeToArea(s"apple feeded = $apples") //for debug.
-          grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.life))
+          grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, 0))
         case data: Protocol.GridDataSync =>
           //writeToArea(s"grid data got: $msgData")
           //TODO here should be better code.
           grid.actionMap = grid.actionMap.filterKeys(_ > data.frameCount)
           grid.frameCount = data.frameCount
           grid.snakes = data.snakes.map(s => s.id -> s).toMap
-          val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.life)).toMap
+          val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, 0)).toMap
           val bodyMap = data.bodyDetails.map(b => Point(b.x, b.y) -> Body(b.id, b.life)).toMap
           val gridMap = appleMap ++ bodyMap
           grid.grid = gridMap
