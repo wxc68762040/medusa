@@ -118,7 +118,8 @@ trait Grid {
       }
 
 
-      val newHeader = ((snake.header + newDirection * stepLength) + boundary) % boundary
+      //val newHeader = ((snake.header + newDirection * stepLength) + boundary) % boundary
+      val newHeader = ((snake.header + newDirection * stepLength) )
 
       var result: Either[Long, SkDt] =  Right(snake.copy(header = newHeader, direction = newDirection))
       //检测吃小球
@@ -172,14 +173,20 @@ trait Grid {
       val boundCheck = (newHeader + newDirection * stepLength).zone(stepLength)
       //println(boundCheck)
       //println(boundaryList)
-      boundCheck.foreach{
-        oneCheck=>
-          if(boundaryList.contains(oneCheck)){
-            //println(s"snake[${snake.id}] hit wall.")
-            result=Left(0)
-          }else{
+//      boundCheck.foreach{
+//        oneCheck=>
+//          if(boundaryList.contains(oneCheck)){
+//            //println(s"snake[${snake.id}] hit wall.")
+//            result=Left(0)
+//          }else{
+//
+//          }
+//      }
 
-          }
+      println(newHeader)
+      if(newHeader.x < 0 || newHeader.y <0 || newHeader.x > Boundary.w || newHeader.y > Boundary.h){
+        println(s"snake[${snake.id}] hit wall.")
+        result=Left(0)
       }
 
 
