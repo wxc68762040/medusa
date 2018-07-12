@@ -22,7 +22,7 @@ trait Grid {
 
 
   val defaultLength = 5
-  val appleNum = 6
+  val appleNum = 25
   val appleLife = 50
   val historyRankLength = 5
 
@@ -77,7 +77,7 @@ trait Grid {
       case (p, b@Body(_, life)) => (p, b.copy(life = life - 1))
       case (p, a@Apple(_, life)) =>
         appleCount += 1
-        (p, a.copy(life = life - 1))
+        (p, a)
       case x => x
     }
 
