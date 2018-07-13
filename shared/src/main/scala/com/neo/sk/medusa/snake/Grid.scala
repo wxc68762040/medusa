@@ -60,7 +60,7 @@ trait Grid {
     frameCount += 1
   }
 
-  def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[Point] = None): Unit
+  def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[Long] = None): Unit
 
   private[this] def updateSpots() = {
     debug(s"grid: ${grid.mkString(";")}")
@@ -119,7 +119,7 @@ trait Grid {
         case Some(x: Body) =>
           info(s"snake[${snake.id}] hit wall.")
           val appleCount = math.round(snake.length * 0.5).toInt
-          feedApple(appleCount, 1, Some(snake.header))
+          feedApple(appleCount, 1, Some(snake.id))
           Left(x.id)
         case Some(Apple(score, _, _)) =>
           info(s"snake[${snake.id}] get apple.")
