@@ -115,15 +115,6 @@ trait Grid {
       val oldHeader = snake.header
       val newHeader = ((snake.header + newDirection * snake.speed) + boundary) % boundary
 
-      grid.get(newHeader) match {
-        case Some(x: Body) =>
-          debug(s"snake[${snake.id}] hit wall.")
-          Left(x.id)
-        case Some(Apple(score, _)) =>
-          val len = snake.length + score
-          grid -= newHeader
-        case _ =>
-      }
       val sum = newHeader.zone(10).foldLeft(0) { (sum: Int, e: Point) =>
         grid.get(e) match {
           case Some(Apple(score, _)) =>
