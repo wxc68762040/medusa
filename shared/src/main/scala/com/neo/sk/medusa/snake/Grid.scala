@@ -135,22 +135,21 @@ trait Grid {
           case _ => false
         }
       }
-      if(dead.nonEmpty) {
+      var result = if(dead.nonEmpty) {
         grid.get(dead.head) match {
           case Some(x: Body) => Left(x.id)
+					case _ => Left(0L)
         }
       } else {
 				Right(snake.copy(header = newHeader, lastHeader = oldHeader, direction = newDirection, length = len))
 			}
 
       //检测撞墙
-      if(newHeader.x < 0+5 || newHeader.y <0+5 || newHeader.x -5 > Boundary.w || newHeader.y - 5> Boundary.h){
-        println(s"snake[${snake.id}] hit wall.")
-        result = Left(0)
-      }
-
+      if(newHeader.x < 0+5 || newHeader.y <0+5 || newHeader.x -5 > Boundary.w || newHeader.y - 5> Boundary.h) {
+				println(s"snake[${snake.id}] hit wall.")
+				result = Left(0)
+			}
       result
-
     }
 
 
