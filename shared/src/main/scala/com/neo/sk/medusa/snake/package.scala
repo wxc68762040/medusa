@@ -81,7 +81,7 @@ package object snake {
           if(direction.x < 0)
             (x + length * direction.x, x - (length / 2) * direction.x)
           else
-            (x + direction.x, x + length * direction.x)
+            (x  - (length / 2) * direction.x, x + length * direction.x)
         
         (for {
           xs <- xStart to xEnd
@@ -113,14 +113,14 @@ package object snake {
 
 
   object Boundary{
-    val w = 1200
-    val h = 600
+    val w = 2000
+    val h = 1000
   }
 
   val boundaryList = Point(0,0).zone(Boundary.w,1) ::: Point(0,0).zone(1,Boundary.h) ::: Point(0,Boundary.h).zone(Boundary.w,1) ::: Point(Boundary.w,0).zone(1,Boundary.h)
 
   object MyBoundary{
-    val w = 500
+    val w = 1000
     val h = 500
   }
 
