@@ -117,8 +117,6 @@ trait Grid {
         }
       }
 
-
-      //val newHeader = ((snake.header + newDirection * stepLength) + boundary) % boundary
       val newHeader = ((snake.header + newDirection * stepLength) )
 
       var result: Either[Long, SkDt] =  Right(snake.copy(header = newHeader, direction = newDirection))
@@ -175,8 +173,6 @@ trait Grid {
         result=Left(0)
       }
 
-
-      //println(result)
       result
 
     }
