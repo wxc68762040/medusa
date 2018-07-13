@@ -92,14 +92,16 @@ package object snake {
     name: String,
     header: Point = Point(20, 20),
     direction: Point = Point(1, 0),
+    speed :Int = 5,
+    speedUp : Double = 0.0,
     length: Int = 50,
     kill: Int = 0
   )
 
 
   object Boundary{
-    val w = 1200
-    val h = 600
+    val w = 15000
+    val h = 15000
   }
 
   val boundaryList = Point(0,0).zone1(Boundary.w,1) ::: Point(0,0).zone1(1,Boundary.h) ::: Point(0,Boundary.h).zone1(Boundary.w,1) ::: Point(Boundary.w,0).zone1(1,Boundary.h)

@@ -29,6 +29,8 @@ trait Grid {
   val appleLife = 500
   val historyRankLength = 5
   val stepLength = 4
+  val speedUpRange = 10
+  val speedUpLength = 0.4
 
   var frameCount = 0l
   var grid = Map[Point, Spot]()
@@ -117,7 +119,33 @@ trait Grid {
         }
       }
 
-      val newHeader = ((snake.header + newDirection * stepLength) )
+
+      //检测加速
+      /*
+      var speedOrNot :Boolean = false
+      val speedUpCheckList = snake.header.zone(speedUpRange)
+      speedUpCheckList.foreach{
+        s=>
+          grid.get(s) match {
+            case Some(x:Body) =>
+              if(x.id != snake.id){
+                speedOrNot = true
+              }else{
+                speedOrNot = speedOrNot
+              }
+            case _ =>
+              speedOrNot = speedOrNot
+          }
+      }
+      val newSpeedUp = if(speedOrNot) snake.speedUp + speedUpLength else snake.speedUp
+*/
+//      if(newSpeedUp != 0.0 ){
+//        println("速度**********"+newSpeedUp)
+//      }
+
+
+      val newHeader = snake.header + newDirection * (snake.speed + newSpeedUp.toInt)
+      //val newHeader = (newHeader1 + boundary) % boundary
 
       var result: Either[Long, SkDt] =  Right(snake.copy(header = newHeader, direction = newDirection))
       //检测吃小球
