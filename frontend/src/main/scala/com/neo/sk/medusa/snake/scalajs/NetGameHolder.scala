@@ -1,6 +1,6 @@
 package com.neo.sk.medusa.snake.scalajs
 
-import com.neo.sk.medusa.snake.Protocol.GridDataSync
+import com.neo.sk.medusa.snake.Protocol.{GridDataSync,square}
 import com.neo.sk.medusa.snake._
 import org.scalajs.dom
 import org.scalajs.dom.ext.{Color, KeyCode}
@@ -8,6 +8,7 @@ import org.scalajs.dom.html.{Document => _, _}
 import org.scalajs.dom.raw._
 
 import scala.scalajs.js
+import scala.scalajs.js.Math
 
 /**
   * User: Taoz
@@ -19,7 +20,8 @@ object NetGameHolder extends js.JSApp {
 
   val bounds = Point(Boundary.w, Boundary.h)
   val canvasUnit = 7
-  val canvasBoundary = bounds
+  val canvasBoundary = Point(MyBoundary.w,MyBoundary.h)
+  val mapBoundary = Point(LittleMap.w ,LittleMap.h)
   val textLineHeight = 14
 
   var currentRank = List.empty[Score]
@@ -44,6 +46,7 @@ object NetGameHolder extends js.JSApp {
   object MyColors {
     val myHeader = "#FF0000"
     val myBody = "#FFFFFF"
+    val boundaryColor = "#FFFFFF"
     val otherHeader = Color.Blue.toString()
     val otherBody = "#696969"
   }
@@ -51,13 +54,18 @@ object NetGameHolder extends js.JSApp {
   private[this] val nameField = dom.document.getElementById("name").asInstanceOf[HTMLInputElement]
   private[this] val joinButton = dom.document.getElementById("join").asInstanceOf[HTMLButtonElement]
   private[this] val canvas = dom.document.getElementById("GameView").asInstanceOf[Canvas]
+  private[this] val mapCanvas = dom.document.getElementById("GameMap").asInstanceOf[Canvas]
   private[this] val ctx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
+  private[this] val mapCtx = mapCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
   @scala.scalajs.js.annotation.JSExport
   override def main(): Unit = {
     drawGameOff()
     canvas.width = canvasBoundary.x
     canvas.height = canvasBoundary.y
+
+    mapCanvas.width = mapBoundary.x
+    mapCanvas.height = mapBoundary.y
 
     joinButton.onclick = { (event: MouseEvent) =>
       joinGame(nameField.value)
@@ -77,11 +85,13 @@ object NetGameHolder extends js.JSApp {
   def drawGameOn(): Unit = {
     ctx.fillStyle = Color.Black.toString()
     ctx.fillRect(0, 0, canvas.width, canvas.height)
+    mapCtx.fillStyle = Color.Black.toString()
+    mapCtx.fillRect(0, 0,mapCanvas.width, mapCanvas.height)
   }
 
   def drawGameOff(): Unit = {
     ctx.fillStyle = Color.Black.toString()
-    ctx.fillRect(0, 0, bounds.x * canvasUnit, bounds.y * canvasUnit)
+    ctx.fillRect(0, 0, bounds.x, bounds.y )
     ctx.fillStyle = "rgb(250, 250, 250)"
     if (firstCome) {
       ctx.font = "36px Helvetica"
@@ -90,6 +100,10 @@ object NetGameHolder extends js.JSApp {
       ctx.font = "36px Helvetica"
       ctx.fillText("Ops, connection lost.", 150, 180)
     }
+
+    mapCtx.fillStyle = Color.Black.toString()
+    mapCtx.fillRect(0, 0, mapBoundary.x, mapBoundary.y )
+    mapCtx.fillStyle = "rgb(250, 250, 250)"
   }
 
 
@@ -121,11 +135,18 @@ object NetGameHolder extends js.JSApp {
   def drawGrid(uid: Long, data: GridDataSync): Unit = {
 
     ctx.fillStyle = Color.Black.toString()
-    ctx.fillRect(0, 0, bounds.x * canvasUnit, bounds.y * canvasUnit)
+    ctx.fillRect(0, 0, bounds.x , bounds.y )
+
+    mapCtx.fillStyle = Color.Black.toString()
+    mapCtx.fillRect(0, 0, mapBoundary.x , mapBoundary.y )
 
     val snakes = data.snakes
     val bodies = data.bodyDetails
     val apples = data.appleDetails
+
+    val myHead = snakes.filter(_.id == uid).head.header
+    val centerX = MyBoundary.w/2
+    val centerY = MyBoundary.h/2
 
     ctx.fillStyle = MyColors.otherBody
     bodies.foreach { case Bd(id, life, x, y) =>
@@ -133,10 +154,10 @@ object NetGameHolder extends js.JSApp {
       if (id == uid) {
         ctx.save()
         ctx.fillStyle = MyColors.myBody
-        ctx.fillRect(x-3, y-3, canvasUnit, canvasUnit)
+        ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
         ctx.restore()
       } else {
-        ctx.fillRect(x-3, y-3, canvasUnit, canvasUnit)
+        ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
       }
     }
 
@@ -146,10 +167,20 @@ object NetGameHolder extends js.JSApp {
         case 5 => Color.Blue.toString()
         case _ => Color.Red.toString()
       }
-      ctx.fillRect(x-3, y-3, canvasUnit, canvasUnit)
+      ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
+
     }
 
     ctx.fillStyle = MyColors.otherHeader
+
+    //小地图
+    val maxLength = snakes.sortBy(_.length).reverse.head.header
+    mapCtx.save()
+    mapCtx.fillStyle = MyColors.otherHeader
+    mapCtx.fillRect((maxLength.x * LittleMap.w) / Boundary.w,(maxLength.y * LittleMap.h) / Boundary.h,2,2)
+    mapCtx.restore()
+
+    val playground = dom.document.getElementById("playground")
     snakes.foreach { snake =>
       val id = snake.id
       val x = snake.header.x
@@ -157,11 +188,22 @@ object NetGameHolder extends js.JSApp {
       if (id == uid) {
         ctx.save()
         ctx.fillStyle = MyColors.myHeader
-        ctx.fillRect(x-1, y-1, canvasUnit - 4, canvasUnit - 4)
+        ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
+        mapCtx.fillStyle = MyColors.myHeader
+        mapCtx.fillRect((x  * LittleMap.w) / Boundary.w,(y * LittleMap.h) / Boundary.h,2,2)
         ctx.restore()
       } else {
-        ctx.fillRect(x-1, y-1, canvasUnit - 4, canvasUnit - 4)
+        ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
+
       }
+    }
+
+
+    boundaryList.foreach{ boundary=>
+      ctx.save()
+      ctx.fillStyle =MyColors.boundaryColor
+      ctx.fillRect(boundary.x - myHead.x + centerX, boundary.y - myHead.y + centerY, 5 , 5)
+      ctx.restore()
     }
 
 

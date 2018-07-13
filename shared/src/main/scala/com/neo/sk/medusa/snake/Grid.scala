@@ -2,6 +2,9 @@ package com.neo.sk.medusa.snake
 
 import java.awt.event.KeyEvent
 
+import com.neo.sk.medusa.snake.Protocol.square
+
+import scala.collection.mutable.ListBuffer
 import scala.util.Random
 
 
@@ -23,8 +26,9 @@ trait Grid {
 
   val defaultLength = 5
   val appleNum = 6
-  val appleLife = 200
+  val appleLife = 500
   val historyRankLength = 5
+  val stepLength = 4
 
   var frameCount = 0l
   var grid = Map[Point, Spot]()
@@ -136,8 +140,17 @@ trait Grid {
           case Some(x: Body) => Left(x.id)
         }
       } else {
-        Right(snake.copy(header = newHeader, lastHeader = oldHeader, direction = newDirection, length = len))
+				Right(snake.copy(header = newHeader, lastHeader = oldHeader, direction = newDirection, length = len))
+			}
+
+      //检测撞墙
+      if(newHeader.x < 0+5 || newHeader.y <0+5 || newHeader.x -5 > Boundary.w || newHeader.y - 5> Boundary.h){
+        println(s"snake[${snake.id}] hit wall.")
+        result = Left(0)
       }
+
+      result
+
     }
 
 
@@ -149,7 +162,11 @@ trait Grid {
     snakes.values.map(updateASnake(_, acts)).foreach {
       case Right(s) => updatedSnakes ::= s
       case Left(killerId) =>
-        mapKillCounter += killerId -> (mapKillCounter.getOrElse(killerId, 0) + 1)
+        if(killerId != 0){
+          mapKillCounter += killerId -> (mapKillCounter.getOrElse(killerId, 0) + 1)
+        }else{
+
+        }
     }
 
 
