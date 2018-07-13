@@ -25,7 +25,7 @@ trait Grid {
 
 
   val defaultLength = 5
-  val appleNum = 6
+  val appleNum = 25
   val appleLife = 500
   val historyRankLength = 5
   val stepLength = 4
@@ -64,7 +64,7 @@ trait Grid {
     frameCount += 1
   }
 
-  def feedApple(appleCount: Int): Unit
+  def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[Point] = None): Unit
 
   private[this] def updateSpots() = {
 //    debug(s"grid: ${grid.mkString(";")}")
@@ -72,20 +72,20 @@ trait Grid {
     grid = grid.filter { case (p, spot) =>
       spot match {
         case Body(id, life) if life >= 0 && snakes.contains(id) => true
-        case Apple(_, life) if life >= 0 => true
+        case Apple(_, life, _) if life >= 0 => true
         //case Header(id, _) if snakes.contains(id) => true
         case _ => false
       }
     }.map {
       //case (p, Header(id, life)) => (p, Body(id, life - 1))
       case (p, b@Body(_, life)) => (p, b.copy(life = life - 1))
-      case (p, a@Apple(_, life)) =>
-        appleCount += 1
-        (p, a.copy(life = life - 1))
+      case (p, a@Apple(_, _, appleType)) =>
+        if (appleType == 0) appleCount += 1
+        (p, a)
       case x => x
     }
 
-    feedApple(appleCount)
+    feedApple(appleCount, 0)
   }
 
 
@@ -119,9 +119,27 @@ trait Grid {
       val oldHeader = snake.header
       val newHeader = ((snake.header + newDirection * snake.speed) + boundary) % boundary
 
+      val newHeader = ((snake.header + newDirection) + boundary) % boundary
+
+      grid.get(newHeader) match {
+				case Some(x: Body) =>
+					info(s"snake[${snake.id}] hit wall.")
+					//TODO 在死蛇周围产生食物
+					val appleCount = math.round(snake.length * 0.5).toInt
+					feedApple(appleCount, 1, Some(snake.header))
+					Left(x.id)
+				case Some(Apple(score, _, _)) =>
+					info(s"snake[${snake.id}] get apple.")
+					val len = snake.length + score
+					grid -= newHeader
+					Right(snake.copy(header = newHeader, direction = newDirection, length = len))
+				case _ =>
+					Right(snake.copy(header = newHeader, direction = newDirection))
+			}
+			
       val sum = newHeader.zone(10).foldLeft(0) { (sum: Int, e: Point) =>
         grid.get(e) match {
-          case Some(Apple(score, _)) =>
+          case Some(Apple(score, _, _)) =>
             grid -= e
             sum + score
           case _ =>
@@ -209,7 +227,7 @@ trait Grid {
     var appleDetails: List[Ap] = Nil
     grid.foreach {
       case (p, Body(id, life)) => bodyDetails ::= Bd(id, life, p.x, p.y)
-      case (p, Apple(score, life)) => appleDetails ::= Ap(score, life, p.x, p.y)
+      case (p, Apple(score, life, _)) => appleDetails ::= Ap(score, life, p.x, p.y)
       case (p, Header(id, life)) => bodyDetails ::= Bd(id, life, p.x, p.y)
     }
     Protocol.GridDataSync(
