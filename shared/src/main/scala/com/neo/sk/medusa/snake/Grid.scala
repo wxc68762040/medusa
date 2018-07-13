@@ -118,7 +118,6 @@ trait Grid {
       grid.get(newHeader) match {
         case Some(x: Body) =>
           info(s"snake[${snake.id}] hit wall.")
-          //TODO 在死蛇周围产生食物
           val appleCount = math.round(snake.length * 0.5).toInt
           feedApple(appleCount, 1, Some(snake.header))
           Left(x.id)

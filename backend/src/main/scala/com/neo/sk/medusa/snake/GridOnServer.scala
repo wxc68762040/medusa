@@ -119,8 +119,8 @@ class GridOnServer(override val boundary: Point) extends Grid {
         }
       }
     } else {
+      val newBound = deadSnake.get
       def pointAroundSnack(): Point = {
-        val newBound = deadSnake.get
         var p = Point(newBound.x - 5 + random.nextInt(10), newBound.y - 5 + random.nextInt(10))
         while (grid.contains(p)) {
           p = Point(newBound.x - 5 + random.nextInt(10), newBound.y - 5 + random.nextInt(10))
