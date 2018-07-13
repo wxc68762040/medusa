@@ -75,7 +75,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
   }
 
-  override def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[Point] = None) = {
+  override def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[Long] = None) = {
     if (appleType == 0) {
       def appleDecrease = {
         val step = 5
@@ -119,27 +119,33 @@ class GridOnServer(override val boundary: Point) extends Grid {
         }
       }
     } else {
-      def pointAroundSnack(): Point = {
-        val newBound = deadSnake.get
-        var p = Point(newBound.x - 5 + random.nextInt(10), newBound.y - 5 + random.nextInt(10))
+      def pointAroundSnack(newBound: Point): Point = {
+        var p = Point(newBound.x - 2 + random.nextInt(4), newBound.y - 2 + random.nextInt(4))
         while (grid.contains(p)) {
-          p = Point(newBound.x - 5 + random.nextInt(10), newBound.y - 5 + random.nextInt(10))
+          p = Point(newBound.x - 2 + random.nextInt(4), newBound.y - 2 + random.nextInt(4))
         }
         p
       }
+
       var appleNeeded = appleCount
-      while (appleNeeded > 0) {
-        val p = pointAroundSnack()
-        info(s"appleNeeded: $appleNeeded, dead: [Point(${deadSnake.get.x}, ${deadSnake.get.y}] , point: [Point(${p.x}, ${p.y}]")
-        val score = random.nextDouble() match {
-          case x if x > 0.95 => 10
-          case x if x > 0.8 => 5
-          case x => 1
+      grid.filter { _._2 match {
+        case x: Header if x.id == deadSnake.get => true
+        case x: Body if x.id == deadSnake.get => true
+        case _ => false
+      }}.foreach {
+        dead => if (appleNeeded != 0) {
+          val p = pointAroundSnack(dead._1)
+          info(s"appleNeeded: $appleNeeded, point: [Point(${p.x}, ${p.y}]")
+          val score = random.nextDouble() match {
+            case x if x > 0.95 => 10
+            case x if x > 0.8 => 5
+            case x => 1
+          }
+          val apple = Apple(score, appleLife, appleType)
+          feededApples ::= Ap(score, appleLife, p.x, p.y)
+          grid += (p -> apple)
+          appleNeeded -= 1
         }
-        val apple = Apple(score, appleLife, appleType)
-        feededApples ::= Ap(score, appleLife, p.x, p.y)
-        grid += (p -> apple)
-        appleNeeded -= 1
       }
 
     }
