@@ -55,6 +55,7 @@ object NetGameHolder extends js.JSApp {
   private[this] val joinButton = dom.document.getElementById("join").asInstanceOf[HTMLButtonElement]
   private[this] val canvas = dom.document.getElementById("GameView").asInstanceOf[Canvas]
   private[this] val mapCanvas = dom.document.getElementById("GameMap").asInstanceOf[Canvas]
+  private[this] val canvasPic = dom.document.getElementById("canvasPic").asInstanceOf[HTMLElement]
   private[this] val ctx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
   private[this] val mapCtx = mapCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
@@ -87,11 +88,14 @@ object NetGameHolder extends js.JSApp {
     ctx.fillRect(0, 0, canvas.width, canvas.height)
     mapCtx.fillStyle = Color.Black.toString()
     mapCtx.fillRect(0, 0,mapCanvas.width, mapCanvas.height)
+//    ctx.drawImage(canvasPic,canvas.width,canvas.height)
+//    ctx.drawImage(canvasPic,mapCanvas.width,mapCanvas.height)
   }
 
   def drawGameOff(): Unit = {
     ctx.fillStyle = Color.Black.toString()
     ctx.fillRect(0, 0, bounds.x, bounds.y )
+    ctx.drawImage(canvasPic,canvas.width,canvas.height)
     ctx.fillStyle = "rgb(250, 250, 250)"
     if (firstCome) {
       ctx.font = "36px Helvetica"
@@ -104,6 +108,7 @@ object NetGameHolder extends js.JSApp {
     mapCtx.fillStyle = Color.Black.toString()
     mapCtx.fillRect(0, 0, mapBoundary.x, mapBoundary.y )
     mapCtx.fillStyle = "rgb(250, 250, 250)"
+   // ctx.drawImage(canvasPic,mapCanvas.width,mapCanvas.height)
   }
 
 
@@ -139,6 +144,8 @@ object NetGameHolder extends js.JSApp {
 
     mapCtx.fillStyle = Color.Black.toString()
     mapCtx.fillRect(0, 0, mapBoundary.x , mapBoundary.y )
+//    ctx.drawImage(canvasPic,canvas.width,canvas.height)
+//    ctx.drawImage(canvasPic,mapCanvas.width,mapCanvas.height)
 
     val snakes = data.snakes
     val bodies = data.bodyDetails
