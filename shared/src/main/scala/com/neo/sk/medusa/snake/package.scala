@@ -81,7 +81,7 @@ package object snake {
           if(direction.x < 0)
             (x + length * direction.x, x - (length / 2) * direction.x)
           else
-            (x + direction.x, x + length * direction.x)
+            (x  - (length / 2) * direction.x, x + length * direction.x)
         
         (for {
           xs <- xStart to xEnd
