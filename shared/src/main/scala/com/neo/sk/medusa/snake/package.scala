@@ -47,7 +47,21 @@ package object snake {
     } yield {
       Point(xs, ys)
     }).toList
-    
+	
+		def zone(rangeX: Int, rangeY: Int) = (for {
+			xs <- x to x + rangeX
+			ys <- y to y + rangeY
+		} yield {
+			Point(xs, ys)
+		}).toList
+	
+		/**
+			* 获取点对应的前方矩形范围的一个区域，用于碰撞检测。
+			* @param direction 前方所指定的方向
+			* @param wide 左右的宽度，指单边
+			* @param length 向前伸出的长度
+			* @return List[Point]
+			*/
     def frontZone(direction: Point, wide: Int, length: Int) = {
       if (direction.x == 0) { //竖直方向
         val (yStart, yEnd) =
@@ -77,31 +91,6 @@ package object snake {
         }).toList
       }
     }
-		
-
-    def zone1(rangeX: Int,rangeY :Int) = (for {
-      xs <- x  to x + rangeX
-      ys <- y  to y + rangeY
-    } yield {
-      Point(xs, ys)
-    }).toList
-
-
-    def zoneOrientation(rangeX1: Int,rangeX2: Int,rangeY :Int) = (for {
-      xs <- rangeX1  to rangeX2
-      ys <- y - rangeY to y + rangeY
-    } yield {
-      Point(xs, ys)
-    }).toList
-
-    def zonePortrait(rangeX: Int,rangeY1 :Int,rangeY2 :Int) = (for {
-      xs <- x - rangeX to x + rangeX
-      ys <- rangeY1  to rangeY2
-    } yield {
-      Point(xs, ys)
-    }).toList
-
-
   }
 
 
@@ -128,7 +117,7 @@ package object snake {
     val h = 600
   }
 
-  val boundaryList = Point(0,0).zone1(Boundary.w,1) ::: Point(0,0).zone1(1,Boundary.h) ::: Point(0,Boundary.h).zone1(Boundary.w,1) ::: Point(Boundary.w,0).zone1(1,Boundary.h)
+  val boundaryList = Point(0,0).zone(Boundary.w,1) ::: Point(0,0).zone(1,Boundary.h) ::: Point(0,Boundary.h).zone(Boundary.w,1) ::: Point(Boundary.w,0).zone(1,Boundary.h)
 
   object MyBoundary{
     val w = 500

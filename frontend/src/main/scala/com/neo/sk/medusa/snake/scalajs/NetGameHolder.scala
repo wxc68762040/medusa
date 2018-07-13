@@ -199,10 +199,10 @@ object NetGameHolder extends js.JSApp {
     }
 
 
-    boundaryList.foreach{ boundary=>
+    boundaryList.foreach { boundary=>
       ctx.save()
-      ctx.fillStyle =MyColors.boundaryColor
-      ctx.fillRect(boundary.x - myHead.x + centerX, boundary.y - myHead.y + centerY, 5 , 5)
+      ctx.fillStyle = MyColors.boundaryColor
+      ctx.fillRect(boundary.x - myHead.x + centerX, boundary.y - myHead.y + centerY, 5, 5)
       ctx.restore()
     }
 

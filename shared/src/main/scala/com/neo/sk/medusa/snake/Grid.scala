@@ -119,8 +119,6 @@ trait Grid {
       val oldHeader = snake.header
       val newHeader = ((snake.header + newDirection * snake.speed) + boundary) % boundary
 
-      val newHeader = ((snake.header + newDirection) + boundary) % boundary
-
       grid.get(newHeader) match {
 				case Some(x: Body) =>
 					info(s"snake[${snake.id}] hit wall.")
