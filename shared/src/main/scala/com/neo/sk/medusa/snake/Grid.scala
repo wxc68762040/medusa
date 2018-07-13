@@ -117,23 +117,7 @@ trait Grid {
         }
       }
       val oldHeader = snake.header
-      val newHeader = ((snake.header + newDirection * snake.speed) + boundary) % boundary
-
-      grid.get(newHeader) match {
-				case Some(x: Body) =>
-					info(s"snake[${snake.id}] hit wall.")
-					//TODO 在死蛇周围产生食物
-					val appleCount = math.round(snake.length * 0.5).toInt
-					feedApple(appleCount, 1, Some(snake.header))
-					Left(x.id)
-				case Some(Apple(score, _, _)) =>
-					info(s"snake[${snake.id}] get apple.")
-					val len = snake.length + score
-					grid -= newHeader
-					Right(snake.copy(header = newHeader, direction = newDirection, length = len))
-				case _ =>
-					Right(snake.copy(header = newHeader, direction = newDirection))
-			}
+      val newHeader = snake.header + newDirection * snake.speed
 			
       val sum = newHeader.zone(10).foldLeft(0) { (sum: Int, e: Point) =>
         grid.get(e) match {
@@ -145,27 +129,27 @@ trait Grid {
         }
       }
       val len = snake.length + sum
-      val dead = newHeader.frontZone(snake.direction, 7, 7).filter { e =>
+      var dead = newHeader.frontZone(snake.direction, 7, 7).filter { e =>
         grid.get(e) match {
           case Some(x: Body) => true
           case _ => false
         }
       }
-      var result = if(dead.nonEmpty) {
+      if(newHeader.x < 0+5 || newHeader.y <0+5 || newHeader.x -5 > Boundary.w || newHeader.y - 5> Boundary.h) {
+        println(s"snake[${snake.id}] hit wall.")
+        dead = Point(0, 0) :: dead
+      }
+      
+      if(dead.nonEmpty) {
+        val appleCount = math.round(snake.length * 0.5).toInt
+        feedApple(appleCount, 1, Some(snake.header))
         grid.get(dead.head) match {
           case Some(x: Body) => Left(x.id)
-					case _ => Left(0L)
+					case _ => Left(0L) //撞墙的情况
         }
       } else {
 				Right(snake.copy(header = newHeader, lastHeader = oldHeader, direction = newDirection, length = len))
 			}
-
-      //检测撞墙
-      if(newHeader.x < 0+5 || newHeader.y <0+5 || newHeader.x -5 > Boundary.w || newHeader.y - 5> Boundary.h) {
-				println(s"snake[${snake.id}] hit wall.")
-				result = Left(0)
-			}
-      result
     }
 
 
