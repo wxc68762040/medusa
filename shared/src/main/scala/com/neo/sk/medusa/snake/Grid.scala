@@ -90,7 +90,7 @@ trait Grid {
 
 
   def randomEmptyPoint(): Point = {
-    var p = Point(random.nextInt(boundary.x), random.nextInt(boundary.y))
+    var p = Point(random.nextInt(boundary.x - 2 * boundaryWidth) + boundaryWidth, random.nextInt(boundary.y - 2 * boundaryWidth) + boundaryWidth)
     while (grid.contains(p)) {
       p = Point(random.nextInt(boundary.x), random.nextInt(boundary.y))
     }

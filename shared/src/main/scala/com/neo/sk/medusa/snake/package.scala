@@ -117,7 +117,7 @@ package object snake {
     val h = 1000
   }
 
-  val boundaryList = Point(0,0).zone(Boundary.w,1) ::: Point(0,0).zone(1,Boundary.h) ::: Point(0,Boundary.h).zone(Boundary.w,1) ::: Point(Boundary.w,0).zone(1,Boundary.h)
+  val boundaryWidth = 5
 
   object MyBoundary{
     val w = 1000

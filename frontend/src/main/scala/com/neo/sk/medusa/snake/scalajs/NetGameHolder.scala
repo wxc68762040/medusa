@@ -84,18 +84,18 @@ object NetGameHolder extends js.JSApp {
   }
 
   def drawGameOn(): Unit = {
-    ctx.fillStyle = Color.Black.toString()
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-    mapCtx.fillStyle = Color.Black.toString()
-    mapCtx.fillRect(0, 0,mapCanvas.width, mapCanvas.height)
-//    ctx.drawImage(canvasPic,canvas.width,canvas.height)
-//    ctx.drawImage(canvasPic,mapCanvas.width,mapCanvas.height)
+//    ctx.fillStyle = Color.Black.toString()
+//    ctx.fillRect(0, 0, canvas.width, canvas.height)
+//    mapCtx.fillStyle = Color.Black.toString()
+//    mapCtx.fillRect(0, 0,mapCanvas.width, mapCanvas.height)
+    ctx.drawImage(canvasPic,0,0,canvas.width,canvas.height)
+    mapCtx.drawImage(canvasPic,0,0,mapCanvas.width,mapCanvas.height)
   }
 
   def drawGameOff(): Unit = {
-    ctx.fillStyle = Color.Black.toString()
-    ctx.fillRect(0, 0, bounds.x, bounds.y )
-    ctx.drawImage(canvasPic,canvas.width,canvas.height)
+//    ctx.fillStyle = Color.Black.toString()
+//    ctx.fillRect(0, 0, bounds.x, bounds.y )
+    ctx.drawImage(canvasPic,0,0,canvas.width,canvas.height)
     ctx.fillStyle = "rgb(250, 250, 250)"
     if (firstCome) {
       ctx.font = "36px Helvetica"
@@ -105,10 +105,10 @@ object NetGameHolder extends js.JSApp {
       ctx.fillText("Ops, connection lost.", 150, 180)
     }
 
-    mapCtx.fillStyle = Color.Black.toString()
-    mapCtx.fillRect(0, 0, mapBoundary.x, mapBoundary.y )
+//    mapCtx.fillStyle = Color.Black.toString()
+//    mapCtx.fillRect(0, 0, mapBoundary.x, mapBoundary.y )
+    mapCtx.drawImage(canvasPic,0,0,mapCanvas.width,mapCanvas.height)
     mapCtx.fillStyle = "rgb(250, 250, 250)"
-   // ctx.drawImage(canvasPic,mapCanvas.width,mapCanvas.height)
   }
 
 
@@ -139,13 +139,13 @@ object NetGameHolder extends js.JSApp {
 
   def drawGrid(uid: Long, data: GridDataSync): Unit = {
 
-    ctx.fillStyle = Color.Black.toString()
-    ctx.fillRect(0, 0, bounds.x , bounds.y )
-
-    mapCtx.fillStyle = Color.Black.toString()
-    mapCtx.fillRect(0, 0, mapBoundary.x , mapBoundary.y )
-//    ctx.drawImage(canvasPic,canvas.width,canvas.height)
-//    ctx.drawImage(canvasPic,mapCanvas.width,mapCanvas.height)
+//    ctx.fillStyle = Color.Black.toString()
+//    ctx.fillRect(0, 0, bounds.x , bounds.y )
+//
+//    mapCtx.fillStyle = Color.Black.toString()
+//    mapCtx.fillRect(0, 0, mapBoundary.x , mapBoundary.y )
+    ctx.drawImage(canvasPic,0,0,canvas.width,canvas.height)
+    mapCtx.drawImage(canvasPic,0,0,mapCanvas.width,mapCanvas.height)
 
     val snakes = data.snakes
     val bodies = data.bodyDetails
@@ -187,7 +187,6 @@ object NetGameHolder extends js.JSApp {
     mapCtx.fillRect((maxLength.x * LittleMap.w) / Boundary.w,(maxLength.y * LittleMap.h) / Boundary.h,2,2)
     mapCtx.restore()
 
-    val playground = dom.document.getElementById("playground")
     snakes.foreach { snake =>
       val id = snake.id
       val x = snake.header.x
@@ -205,14 +204,14 @@ object NetGameHolder extends js.JSApp {
       }
     }
 
-
-    boundaryList.foreach { boundary=>
-      ctx.save()
-      ctx.fillStyle = MyColors.boundaryColor
-      ctx.fillRect(boundary.x - myHead.x + centerX, boundary.y - myHead.y + centerY, 5, 5)
-      ctx.restore()
-    }
-
+    //画边界
+    ctx.save()
+    ctx.fillStyle = MyColors.boundaryColor
+    ctx.fillRect(0 - myHead.x + centerX, 0 - myHead.y + centerY, Boundary.w, boundaryWidth)
+    ctx.fillRect(0 - myHead.x + centerX, 0 - myHead.y + centerY, boundaryWidth, Boundary.h)
+    ctx.fillRect(0 - myHead.x + centerX, Boundary.h - myHead.y + centerY, Boundary.w, boundaryWidth)
+    ctx.fillRect(Boundary.w - myHead.x + centerX, 0 - myHead.y + centerY, boundaryWidth, Boundary.h)
+    ctx.restore()
 
     ctx.fillStyle = "rgb(250, 250, 250)"
     ctx.textAlign = "left"
