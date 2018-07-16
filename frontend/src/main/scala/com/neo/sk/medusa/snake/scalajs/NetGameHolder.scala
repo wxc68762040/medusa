@@ -49,6 +49,7 @@ object NetGameHolder extends js.JSApp {
     val boundaryColor = "#FFFFFF"
     val otherHeader = Color.Blue.toString()
     val otherBody = "#696969"
+    val speedUpHeader = "#FFFF37"
   }
 
   private[this] val nameField = dom.document.getElementById("name").asInstanceOf[HTMLInputElement]
@@ -194,6 +195,12 @@ object NetGameHolder extends js.JSApp {
       val id = snake.id
       val x = snake.header.x
       val y = snake.header.y
+      if(snake.speedUp > 0){
+        ctx.save()
+        ctx.fillStyle = MyColors.speedUpHeader
+        ctx.fillRect(x - 1.5 * square - myHead.x + centerX, y - 1.5 * square - myHead.y + centerY, square * 3 , square * 3)
+        ctx.restore()
+      }
       if (id == uid) {
         ctx.save()
         ctx.fillStyle = MyColors.myHeader

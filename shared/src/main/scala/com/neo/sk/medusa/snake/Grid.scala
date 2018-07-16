@@ -29,8 +29,10 @@ trait Grid {
   val appleLife = 500
   val historyRankLength = 5
   val stepLength = 4
-  val speedUpRange = 10
+  val speedUpRange = 50
   val speedUpLength = 0.4
+
+  val freeFrameTime = 10
 
   var frameCount = 0l
   var grid = Map[Point, Spot]()
@@ -118,8 +120,40 @@ trait Grid {
           snake.direction
         }
       }
+      //检测加速
+      var speedOrNot :Boolean = false
+      val speedUpCheckList = snake.header.zone(speedUpRange)
+      speedUpCheckList.foreach{
+        s=>
+          grid.get(s) match {
+            case Some(x:Body) =>
+              if(x.id != snake.id){
+                speedOrNot = true
+              }else{
+                speedOrNot = speedOrNot
+              }
+            case _ =>
+              speedOrNot = speedOrNot
+          }
+      }
+
+      //加速上限
+      val newSpeedUpLength = if(snake.speedUp + speedUpLength > 2 * snake.speed) 2 * snake.speed else snake.speedUp
+      val newSpeedUp = if(speedOrNot){
+        newSpeedUpLength + speedUpLength
+      }else if(!speedOrNot && snake.freeFrame < freeFrameTime){
+        newSpeedUpLength
+      }else{
+        0.0
+      }
+      val newFreeFrame = if(!speedOrNot && snake.freeFrame < freeFrameTime)  snake.freeFrame + 1 else 0
+
+      println(snake.id +"*********"+ newSpeedUp)
+
+
       val oldHeader = snake.header
-      val newHeader = snake.header + newDirection * snake.speed
+      //val newHeader = snake.header + newDirection * snake.speed
+      val newHeader = snake.header + newDirection * (snake.speed + newSpeedUp.toInt)
 
       val sum = newHeader.zone(10).foldLeft(0) { (sum: Int, e: Point) =>
         grid.get(e) match {
@@ -150,7 +184,7 @@ trait Grid {
 					case _ => Left(0L) //撞墙的情况
         }
       } else {
-				Right(snake.copy(header = newHeader, lastHeader = oldHeader, direction = newDirection, length = len))
+				Right(snake.copy(header = newHeader, lastHeader = oldHeader, direction = newDirection,speedUp = newSpeedUp,freeFrame=newFreeFrame, length = len))
 			}
     }
 
