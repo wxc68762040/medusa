@@ -146,7 +146,7 @@ object NetGameHolder extends js.JSApp {
 
     val centerX = MyBoundary.w/2
     val centerY = MyBoundary.h/2
-    val myHead = if(snakes.filter(_.id == uid).nonEmpty) snakes.filter(_.id == uid).head.header else Point(centerX,centerY)
+    val myHead = if(snakes.exists(_.id == uid)) snakes.filter(_.id == uid).head.header else Point(centerX,centerY)
 
     ctx.fillStyle = "#009393"
     ctx.fillRect(0, 0 ,canvas.width,canvas.height)
