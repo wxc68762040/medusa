@@ -32,7 +32,7 @@ trait Grid {
   val speedUpRange = 50
   val speedUpLength = 0.4
 
-  val freeFrameTime = 10
+  val freeFrameTime = 30
 
   var frameCount = 0l
   var grid = Map[Point, Spot]()
