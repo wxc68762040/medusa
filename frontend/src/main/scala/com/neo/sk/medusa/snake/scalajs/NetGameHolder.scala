@@ -144,8 +144,6 @@ object NetGameHolder extends js.JSApp {
 //
 //    mapCtx.fillStyle = Color.Black.toString()
 //    mapCtx.fillRect(0, 0, mapBoundary.x , mapBoundary.y )
-    ctx.drawImage(canvasPic,0,0,canvas.width,canvas.height)
-    mapCtx.drawImage(canvasPic,0,0,mapCanvas.width,mapCanvas.height)
 
     val snakes = data.snakes
     val bodies = data.bodyDetails
@@ -154,6 +152,11 @@ object NetGameHolder extends js.JSApp {
     val myHead = snakes.filter(_.id == uid).head.header
     val centerX = MyBoundary.w/2
     val centerY = MyBoundary.h/2
+
+    ctx.fillStyle = "#009393"
+    ctx.fillRect(0, 0 ,canvas.width,canvas.height)
+    ctx.drawImage(canvasPic,0 - myHead.x + centerX, 0 - myHead.y + centerY,Boundary.w,Boundary.h)
+    mapCtx.drawImage(canvasPic,0,0,mapCanvas.width,mapCanvas.height)
 
     ctx.fillStyle = MyColors.otherBody
     bodies.foreach { case Bd(id, life, x, y) =>
