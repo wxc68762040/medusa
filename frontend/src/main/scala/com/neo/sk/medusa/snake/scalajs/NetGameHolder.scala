@@ -1,7 +1,8 @@
 package com.neo.sk.medusa.snake.scalajs
 
-import com.neo.sk.medusa.snake.Protocol.{GridDataSync,square}
+import com.neo.sk.medusa.snake.Protocol.{GridDataSync, square}
 import com.neo.sk.medusa.snake._
+import com.neo.sk.medusa.snake.scalajs.NetGameHolder.subFrame
 import org.scalajs.dom
 import org.scalajs.dom.ext.{Color, KeyCode}
 import org.scalajs.dom.html.{Document => _, _}
@@ -27,6 +28,7 @@ object NetGameHolder extends js.JSApp {
   var currentRank = List.empty[Score]
   var historyRank = List.empty[Score]
   var myId = -1l
+  var subFrame = -1
 
   val grid = new GridOnClient(bounds)
 
@@ -80,7 +82,7 @@ object NetGameHolder extends js.JSApp {
       }
     }
 
-    dom.window.setInterval(() => gameLoop(), Protocol.frameRate)
+    dom.window.setInterval(() => gameLoop(), Protocol.frameRate / 4)
   }
 
   def drawGameOn(): Unit = {
@@ -114,33 +116,37 @@ object NetGameHolder extends js.JSApp {
 
 
   def gameLoop(): Unit = {
-    if (wsSetup) {
-      if (!justSynced) {
-        update()
-      } else {
-        justSynced = false
+		subFrame += 1
+    if(subFrame == 4) {
+      subFrame = 0
+      if (wsSetup) {
+        if (!justSynced) {
+          update()
+        } else {
+          justSynced = false
+        }
       }
     }
-    draw()
+    draw(subFrame)
   }
 
   def update(): Unit = {
     grid.update()
   }
 
-  def draw(): Unit = {
+  def draw(subFrame: Int): Unit = {
     if (wsSetup) {
       val data = grid.getGridData
-      drawGrid(myId, data)
+      drawGrid(myId, data, subFrame)
     } else {
       drawGameOff()
     }
   }
 
-  def drawGrid(uid: Long, data: GridDataSync): Unit = {
+  def drawGrid(uid: Long, data: GridDataSync, subFrame: Int): Unit = {
 
 //    ctx.fillStyle = Color.Black.toString()
-//    ctx.fillRect(0, 0, bounds.x , bounds.y )
+//    ctx.fillRect(0, 0, bounds.x , bounds.y)
 //
 //    mapCtx.fillStyle = Color.Black.toString()
 //    mapCtx.fillRect(0, 0, mapBoundary.x , mapBoundary.y )
@@ -149,7 +155,8 @@ object NetGameHolder extends js.JSApp {
     val bodies = data.bodyDetails
     val apples = data.appleDetails
 
-    val myHead = snakes.filter(_.id == uid).head.header
+    val mySubFrameRevise = snakes.filter(_.id == uid).head.direction * snakes.filter(_.id == uid).head.speed * subFrame / 4
+    val myHead = snakes.filter(_.id == uid).head.header + mySubFrameRevise
     val centerX = MyBoundary.w/2
     val centerY = MyBoundary.h/2
 
@@ -159,15 +166,20 @@ object NetGameHolder extends js.JSApp {
     mapCtx.drawImage(canvasPic,0,0,mapCanvas.width,mapCanvas.height)
 
     ctx.fillStyle = MyColors.otherBody
-    bodies.foreach { case Bd(id, life, x, y) =>
+    bodies.foreach { case Bd(id, life, frameIndex, x, y) =>
       //println(s"draw body at $p body[$life]")
+      val totalIndex = snakes.filter(_.id == id).head.speed - 1
       if (id == uid) {
         ctx.save()
         ctx.fillStyle = MyColors.myBody
-        ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
-        ctx.restore()
+        if(life != -1 || frameIndex > totalIndex * (subFrame+1) / 4) {
+          ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2, square * 2)
+        }
+				ctx.restore()
       } else {
-        ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
+				if(life != -1 || frameIndex > totalIndex * (subFrame+1) / 4) {
+					ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2, square * 2)
+				}
       }
     }
 
@@ -192,14 +204,14 @@ object NetGameHolder extends js.JSApp {
 
     snakes.foreach { snake =>
       val id = snake.id
-      val x = snake.header.x
-      val y = snake.header.y
+      val x = snake.header.x + snake.direction.x * snake.speed * subFrame / 4
+      val y = snake.header.y + snake.direction.y * snake.speed * subFrame / 4
       if (id == uid) {
         ctx.save()
         ctx.fillStyle = MyColors.myHeader
         ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
         mapCtx.fillStyle = MyColors.myHeader
-        mapCtx.fillRect((x  * LittleMap.w) / Boundary.w,(y * LittleMap.h) / Boundary.h,2,2)
+        mapCtx.fillRect((x * LittleMap.w) / Boundary.w, (y * LittleMap.h) / Boundary.h, 2, 2)
         ctx.restore()
       } else {
         ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
@@ -334,7 +346,7 @@ object NetGameHolder extends js.JSApp {
           grid.frameCount = data.frameCount
           grid.snakes = data.snakes.map(s => s.id -> s).toMap
           val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, 0)).toMap
-          val bodyMap = data.bodyDetails.map(b => Point(b.x, b.y) -> Body(b.id, b.life)).toMap
+          val bodyMap = data.bodyDetails.map(b => Point(b.x, b.y) -> Body(b.id, b.life, b.frameIndex)).toMap
           val gridMap = appleMap ++ bodyMap
           grid.grid = gridMap
           justSynced = true

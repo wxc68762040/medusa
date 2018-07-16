@@ -73,14 +73,14 @@ trait Grid {
     var appleCount = 0
     grid = grid.filter { case (p, spot) =>
       spot match {
-        case Body(id, life) if life >= 0 && snakes.contains(id) => true
+        case Body(id, life, _) if life >= 0 && snakes.contains(id) => true
         case Apple(_, life, _) if life >= 0 => true
         //case Header(id, _) if snakes.contains(id) => true
         case _ => false
       }
     }.map {
       //case (p, Header(id, life)) => (p, Body(id, life - 1))
-      case (p, b@Body(_, life)) => (p, b.copy(life = life - 1))
+      case (p, b@Body(_, life, _)) => (p, b.copy(life = life - 1))
       case (p, a@Apple(_, _, appleType)) =>
         if (appleType == 0) appleCount += 1
         (p, a)
@@ -192,9 +192,10 @@ trait Grid {
     }
 
     newSnakes.foreach { s =>
-      (s.lastHeader to s.header).foreach { p =>
-        grid ++= Map(p -> Body(s.id, s.length / s.speed))
-      }
+      val bodies = s.lastHeader to s.header
+        bodies.tail.indices.foreach { p =>
+          grid ++= Map(bodies(p) -> Body(s.id, s.length / s.speed, p))
+        }
     }
     snakes = newSnakes.map(s => (s.id, s)).toMap
 
@@ -210,9 +211,9 @@ trait Grid {
     var bodyDetails: List[Bd] = Nil
     var appleDetails: List[Ap] = Nil
     grid.foreach {
-      case (p, Body(id, life)) => bodyDetails ::= Bd(id, life, p.x, p.y)
+      case (p, Body(id, life, frameIndex)) => bodyDetails ::= Bd(id, life, frameIndex, p.x, p.y)
       case (p, Apple(score, life, _)) => appleDetails ::= Ap(score, life, p.x, p.y)
-      case (p, Header(id, life)) => bodyDetails ::= Bd(id, life, p.x, p.y)
+      case (p, Header(id, life)) => bodyDetails ::= Bd(id, life, 0, p.x, p.y)
     }
     Protocol.GridDataSync(
       frameCount,

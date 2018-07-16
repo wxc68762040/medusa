@@ -8,13 +8,13 @@ package com.neo.sk.medusa
 package object snake {
 
   sealed trait Spot
-  case class Body(id: Long, life: Int) extends Spot
+  case class Body(id: Long, life: Int, frameIndex: Int) extends Spot
   case class Header(id: Long, life: Int) extends Spot
 	case class Apple(score: Int, life: Int, appleType: Int) extends Spot //食物类型，0：普通食物，1：死蛇身体
 	case class Bound() extends Spot
 
   case class Score(id: Long, n: String, k: Int, l: Int, t: Option[Long] = None)
-  case class Bd(id: Long, life: Int, x: Int, y: Int)
+  case class Bd(id: Long, life: Int, frameIndex: Int, x: Int, y: Int)
   case class Ap(score: Int, life: Int, x: Int, y: Int)
 
 
@@ -33,12 +33,19 @@ package object snake {
     def to(other: Point) = {
       val (x0, x1) = if(x > other.x) (other.x, x) else (x, other.x)
       val (y0, y1) = if(y > other.y) (other.y, y) else (y, other.y)
-      (for {
+      val list = (for {
         xs <- x0 to x1
         ys <- y0 to y1
       } yield {
         Point(xs, ys)
       }).toList
+			if(other.y == y) {
+				if(other.x > x) list.sortBy(_.x)
+				else list.sortBy(_.x).reverse
+			} else {
+				if(other.y > y) list.sortBy(_.y)
+				else list.sortBy(_.y).reverse
+			}
     }
 
     def zone(range: Int) = (for {

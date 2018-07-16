@@ -33,7 +33,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
   private[this] def genWaitingSnake() = {
     waitingJoin.filterNot(kv => snakes.contains(kv._1)).foreach { case (id, name) =>
       val header = randomEmptyPoint()
-      grid += header -> Body(id, defaultLength - 1)
+      grid += header -> Body(id, defaultLength - 1, 0)
       snakes += id -> SkDt(id, name, header, header)
     }
     waitingJoin = Map.empty[Long, String]

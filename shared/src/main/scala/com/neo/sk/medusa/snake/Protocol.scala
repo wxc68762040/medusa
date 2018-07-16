@@ -41,6 +41,6 @@ object Protocol {
 
   val frameRate = 100
 
-  val square = 3
+  val square = 4
 
 }
