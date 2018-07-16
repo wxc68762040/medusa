@@ -25,7 +25,7 @@ trait Grid {
 
 
   val defaultLength = 5
-  val appleNum = 6
+  val appleNum = 25
   val appleLife = 500
   val historyRankLength = 5
   val stepLength = 4
@@ -59,40 +59,40 @@ trait Grid {
 
 
   def update() = {
-    //println(s"-------- grid update frameCount= $frameCount ---------")
+    //info(s"-------- grid update frameCount= $frameCount ---------")
     updateSnakes()
     updateSpots()
     actionMap -= frameCount
     frameCount += 1
   }
 
-  def feedApple(appleCount: Int): Unit
+  def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[Long] = None): Unit
 
   private[this] def updateSpots() = {
-    debug(s"grid: ${grid.mkString(";")}")
+//    debug(s"grid: ${grid.mkString(";")}")
     var appleCount = 0
     grid = grid.filter { case (p, spot) =>
       spot match {
         case Body(id, life) if life >= 0 && snakes.contains(id) => true
-        case Apple(_, life) if life >= 0 => true
+        case Apple(_, life, _) if life >= 0 => true
         //case Header(id, _) if snakes.contains(id) => true
         case _ => false
       }
     }.map {
       //case (p, Header(id, life)) => (p, Body(id, life - 1))
       case (p, b@Body(_, life)) => (p, b.copy(life = life - 1))
-      case (p, a@Apple(_, life)) =>
-        appleCount += 1
-        (p, a.copy(life = life - 1))
+      case (p, a@Apple(_, _, appleType)) =>
+        if (appleType == 0) appleCount += 1
+        (p, a)
       case x => x
     }
 
-    feedApple(appleCount)
+    feedApple(appleCount, 0)
   }
 
 
   def randomEmptyPoint(): Point = {
-    var p = Point(random.nextInt(boundary.x), random.nextInt(boundary.y))
+    var p = Point(random.nextInt(boundary.x - 2 * boundaryWidth) + boundaryWidth, random.nextInt(boundary.y - 2 * boundaryWidth) + boundaryWidth)
     while (grid.contains(p)) {
       p = Point(random.nextInt(boundary.x), random.nextInt(boundary.y))
     }
@@ -103,7 +103,7 @@ trait Grid {
   private[this] def updateSnakes() = {
     def updateASnake(snake: SkDt, actMap: Map[Long, Int]): Either[Long, SkDt] = {
       val keyCode = actMap.get(snake.id)
-      debug(s" +++ snake[${snake.id}] feel key: $keyCode at frame=$frameCount")
+//      debug(s" +++ snake[${snake.id}] feel key: $keyCode at frame=$frameCount")
       val newDirection = {
         val keyDirection = keyCode match {
           case Some(KeyEvent.VK_LEFT) => Point(-1, 0)
@@ -118,40 +118,12 @@ trait Grid {
           snake.direction
         }
       }
+      val oldHeader = snake.header
+      val newHeader = snake.header + newDirection * snake.speed
 
-
-      //检测加速
-      /*
-      var speedOrNot :Boolean = false
-      val speedUpCheckList = snake.header.zone(speedUpRange)
-      speedUpCheckList.foreach{
-        s=>
-          grid.get(s) match {
-            case Some(x:Body) =>
-              if(x.id != snake.id){
-                speedOrNot = true
-              }else{
-                speedOrNot = speedOrNot
-              }
-            case _ =>
-              speedOrNot = speedOrNot
-          }
-      }
-      val newSpeedUp = if(speedOrNot) snake.speedUp + speedUpLength else snake.speedUp
-*/
-//      if(newSpeedUp != 0.0 ){
-//        println("速度**********"+newSpeedUp)
-//      }
-
-
-      val newHeader = snake.header + newDirection * (snake.speed + newSpeedUp.toInt)
-      //val newHeader = (newHeader1 + boundary) % boundary
-
-      var result: Either[Long, SkDt] =  Right(snake.copy(header = newHeader, direction = newDirection))
-      //检测吃小球
       val sum = newHeader.zone(10).foldLeft(0) { (sum: Int, e: Point) =>
         grid.get(e) match {
-          case Some(Apple(score, _)) =>
+          case Some(Apple(score, _, _)) =>
             grid -= e
             sum + score
           case _ =>
@@ -159,50 +131,27 @@ trait Grid {
         }
       }
       val len = snake.length + sum
-      result = Right(snake.copy(header = newHeader, direction = newDirection, length = len))
-
-      //检测碰撞
-      //println(newHeader,newDirection)
-      /*
-      val newStep =  newDirection * stepLength * 2
-      val newCheckList = ListBuffer[Point]()
-      if(newDirection.x == 0){
-        //纵向
-        val y1 = if(newDirection.y == 1) newHeader.y + 1 else newStep.y - 1
-        val y2 = if(newDirection.y == 1) newStep.y + 1 else newHeader.y - 1
-        val newList = newHeader.zonePortrait(square,y1,y2).filterNot(_.y==newHeader.y)
-        newList.foreach{a=>newCheckList.append(a)}
-      }else{
-        //横向
-        val x1 = if(newDirection.x == 1) newHeader.x + 1 else newStep.x -1
-        val x2 = if(newDirection.x == 1) newStep.x + 1 else newHeader.x -1
-        val newList = newHeader.zoneOrientation(x1,x2,square).filterNot(_.x==newHeader.x)
-        newList.foreach{a=>newCheckList.append(a)}
+      var dead = newHeader.frontZone(snake.direction, 7, 7).filter { e =>
+        grid.get(e) match {
+          case Some(x: Body) => true
+          case _ => false
+        }
       }
-
-      //println(newCheckList)
-      newCheckList.foreach{
-        check=>
-          grid.get(check) match {
-            case Some(x: Body) =>
-              debug(s"snake[${snake.id}] hit wall.")
-              result=Left(x.id)
-            case _=>
-             // println("*************")
-          }
-      }
-      */
-
-      //println(result)
-
-      //检测撞墙
-      if(newHeader.x < 0+5 || newHeader.y <0+5 || newHeader.x -5 > Boundary.w || newHeader.y - 5> Boundary.h){
+      if(newHeader.x < 0+5 || newHeader.y <0+5 || newHeader.x -5 > Boundary.w || newHeader.y - 5> Boundary.h) {
         println(s"snake[${snake.id}] hit wall.")
-        result=Left(0)
+        dead = Point(0, 0) :: dead
       }
 
-      result
-
+      if(dead.nonEmpty) {
+        val appleCount = math.round(snake.length * 0.5).toInt
+        feedApple(appleCount, 1, Some(snake.id))
+        grid.get(dead.head) match {
+          case Some(x: Body) => Left(x.id)
+					case _ => Left(0L) //撞墙的情况
+        }
+      } else {
+				Right(snake.copy(header = newHeader, lastHeader = oldHeader, direction = newDirection, length = len))
+			}
     }
 
 
@@ -242,7 +191,11 @@ trait Grid {
       }
     }
 
-    grid ++= newSnakes.map(s => s.header -> Body(s.id, s.length))
+    newSnakes.foreach { s =>
+      (s.lastHeader to s.header).foreach { p =>
+        grid ++= Map(p -> Body(s.id, s.length / s.speed))
+      }
+    }
     snakes = newSnakes.map(s => (s.id, s)).toMap
 
   }
@@ -258,7 +211,7 @@ trait Grid {
     var appleDetails: List[Ap] = Nil
     grid.foreach {
       case (p, Body(id, life)) => bodyDetails ::= Bd(id, life, p.x, p.y)
-      case (p, Apple(score, life)) => appleDetails ::= Ap(score, life, p.x, p.y)
+      case (p, Apple(score, life, _)) => appleDetails ::= Ap(score, life, p.x, p.y)
       case (p, Header(id, life)) => bodyDetails ::= Bd(id, life, p.x, p.y)
     }
     Protocol.GridDataSync(

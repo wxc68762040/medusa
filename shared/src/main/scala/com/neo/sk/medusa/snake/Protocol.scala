@@ -39,7 +39,7 @@ object Protocol {
 
   case class NetDelayTest(createTime: Long) extends GameMessage
 
-  val frameRate = 50
+  val frameRate = 100
 
   val square = 3
 
