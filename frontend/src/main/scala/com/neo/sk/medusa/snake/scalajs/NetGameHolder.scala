@@ -234,11 +234,7 @@ object NetGameHolder extends js.JSApp {
         drawTextLine(s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 0, baseLine)
         drawTextLine(s"your kill = ${mySnake.kill}", leftBegin, 1, baseLine)
         drawTextLine(s"your length = ${mySnake.length} ", leftBegin, 2, baseLine)
-        val playground = dom.document.getElementById("playground")
-        playground.innerHTML = s"hit not wall'..."
       case None =>
-        val playground = dom.document.getElementById("playground")
-        playground.innerHTML = s"hit wall'..."
         if(firstCome) {
           ctx.font = "36px Helvetica"
           ctx.fillText("Please wait.", 150, 180)
