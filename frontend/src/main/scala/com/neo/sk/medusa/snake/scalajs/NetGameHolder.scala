@@ -140,19 +140,13 @@ object NetGameHolder extends js.JSApp {
 
   def drawGrid(uid: Long, data: GridDataSync): Unit = {
 
-//    ctx.fillStyle = Color.Black.toString()
-//    ctx.fillRect(0, 0, bounds.x , bounds.y )
-//
-//    mapCtx.fillStyle = Color.Black.toString()
-//    mapCtx.fillRect(0, 0, mapBoundary.x , mapBoundary.y )
-
     val snakes = data.snakes
     val bodies = data.bodyDetails
     val apples = data.appleDetails
 
-    val myHead = snakes.filter(_.id == uid).head.header
     val centerX = MyBoundary.w/2
     val centerY = MyBoundary.h/2
+    val myHead = if(snakes.filter(_.id == uid).nonEmpty) snakes.filter(_.id == uid).head.header else Point(centerX,centerY)
 
     ctx.fillStyle = "#009393"
     ctx.fillRect(0, 0 ,canvas.width,canvas.height)
@@ -166,6 +160,8 @@ object NetGameHolder extends js.JSApp {
         ctx.save()
         ctx.fillStyle = MyColors.myBody
         ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
+        mapCtx.fillStyle = MyColors.myBody
+        mapCtx.fillRect((x  * LittleMap.w) / Boundary.w,(y * LittleMap.h) / Boundary.h,2,2)
         ctx.restore()
       } else {
         ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
@@ -185,7 +181,7 @@ object NetGameHolder extends js.JSApp {
     ctx.fillStyle = MyColors.otherHeader
 
     //小地图
-    val maxLength = snakes.sortBy(_.length).reverse.head.header
+    val maxLength = if(snakes.nonEmpty) snakes.sortBy(_.length).reverse.head.header else Point(0,0)
     mapCtx.save()
     mapCtx.fillStyle = MyColors.otherHeader
     mapCtx.fillRect((maxLength.x * LittleMap.w) / Boundary.w,(maxLength.y * LittleMap.h) / Boundary.h,2,2)
@@ -238,13 +234,17 @@ object NetGameHolder extends js.JSApp {
         drawTextLine(s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 0, baseLine)
         drawTextLine(s"your kill = ${mySnake.kill}", leftBegin, 1, baseLine)
         drawTextLine(s"your length = ${mySnake.length} ", leftBegin, 2, baseLine)
+        val playground = dom.document.getElementById("playground")
+        playground.innerHTML = s"hit not wall'..."
       case None =>
+        val playground = dom.document.getElementById("playground")
+        playground.innerHTML = s"hit wall'..."
         if(firstCome) {
           ctx.font = "36px Helvetica"
           ctx.fillText("Please wait.", 150, 180)
         } else {
           ctx.font = "36px Helvetica"
-          ctx.fillText("Ops, Press Space Key To Restart!", 150, 180)
+          ctx.fillText("Ops, Press Space Key To Restart!", 150- myHead.x + centerX, 180- myHead.x + centerX)
         }
     }
 

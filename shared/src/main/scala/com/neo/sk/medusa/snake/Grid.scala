@@ -199,8 +199,6 @@ trait Grid {
       case Left(killerId) =>
         if(killerId != 0){
           mapKillCounter += killerId -> (mapKillCounter.getOrElse(killerId, 0) + 1)
-        }else{
-
         }
     }
 
@@ -231,7 +229,6 @@ trait Grid {
       }
     }
     snakes = newSnakes.map(s => (s.id, s)).toMap
-
   }
 
 
