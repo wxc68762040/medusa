@@ -135,7 +135,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
       }}.foreach {
         dead => if (appleNeeded != 0) {
           val p = pointAroundSnack(dead._1)
-          info(s"appleNeeded: $appleNeeded, point: [Point(${p.x}, ${p.y}]")
+          //info(s"appleNeeded: $appleNeeded, point: [Point(${p.x}, ${p.y}]")
           val score = random.nextDouble() match {
             case x if x > 0.95 => 10
             case x if x > 0.8 => 5

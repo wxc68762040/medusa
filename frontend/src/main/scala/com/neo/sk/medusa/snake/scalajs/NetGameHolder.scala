@@ -51,6 +51,7 @@ object NetGameHolder extends js.JSApp {
     val boundaryColor = "#FFFFFF"
     val otherHeader = Color.Blue.toString()
     val otherBody = "#696969"
+    val speedUpHeader = "#FFFF37"
   }
 
   private[this] val nameField = dom.document.getElementById("name").asInstanceOf[HTMLInputElement]
@@ -159,6 +160,7 @@ object NetGameHolder extends js.JSApp {
     val myHead = snakes.filter(_.id == uid).head.header + mySubFrameRevise
     val centerX = MyBoundary.w/2
     val centerY = MyBoundary.h/2
+    val myHead = if(snakes.exists(_.id == uid)) snakes.filter(_.id == uid).head.header else Point(centerX,centerY)
 
     ctx.fillStyle = "#009393"
     ctx.fillRect(0, 0 ,canvas.width,canvas.height)
@@ -172,10 +174,9 @@ object NetGameHolder extends js.JSApp {
       if (id == uid) {
         ctx.save()
         ctx.fillStyle = MyColors.myBody
-        if(life != -1 || frameIndex > totalIndex * (subFrame+1) / 4) {
-          ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2, square * 2)
-        }
-				ctx.restore()
+        if(life != -1 || frameIndex > totalIndex * (subFrame+1) / 4) {ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)}
+        mapCtx.fillStyle = MyColors.myBody
+        mapCtx.fillRect((x  * LittleMap.w) / Boundary.w,(y * LittleMap.h) / Boundary.h,2,2)ctx.restore()
       } else {
 				if(life != -1 || frameIndex > totalIndex * (subFrame+1) / 4) {
 					ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2, square * 2)
@@ -196,7 +197,7 @@ object NetGameHolder extends js.JSApp {
     ctx.fillStyle = MyColors.otherHeader
 
     //小地图
-    val maxLength = snakes.sortBy(_.length).reverse.head.header
+    val maxLength = if(snakes.nonEmpty) snakes.sortBy(_.length).reverse.head.header else Point(0,0)
     mapCtx.save()
     mapCtx.fillStyle = MyColors.otherHeader
     mapCtx.fillRect((maxLength.x * LittleMap.w) / Boundary.w,(maxLength.y * LittleMap.h) / Boundary.h,2,2)
@@ -206,6 +207,14 @@ object NetGameHolder extends js.JSApp {
       val id = snake.id
       val x = snake.header.x + snake.direction.x * snake.speed * subFrame / 4
       val y = snake.header.y + snake.direction.y * snake.speed * subFrame / 4
+      val x = snake.header.x
+      val y = snake.header.y
+      if(snake.speedUp > 0){
+        ctx.save()
+        ctx.fillStyle = MyColors.speedUpHeader
+        ctx.fillRect(x - 1.5 * square - myHead.x + centerX, y - 1.5 * square - myHead.y + centerY, square * 3 , square * 3)
+        ctx.restore()
+      }
       if (id == uid) {
         ctx.save()
         ctx.fillStyle = MyColors.myHeader
@@ -249,7 +258,7 @@ object NetGameHolder extends js.JSApp {
           ctx.fillText("Please wait.", 150, 180)
         } else {
           ctx.font = "36px Helvetica"
-          ctx.fillText("Ops, Press Space Key To Restart!", 150, 180)
+          ctx.fillText("Ops, Press Space Key To Restart!", 150- myHead.x + centerX, 180- myHead.x + centerX)
         }
     }
 

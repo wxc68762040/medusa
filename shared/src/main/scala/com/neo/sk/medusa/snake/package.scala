@@ -115,6 +115,7 @@ package object snake {
     direction: Point = Point(1, 0),
     speed: Int = 10,
     speedUp : Double = 0.0,
+    freeFrame : Int = 0,
     length: Int = 50,
     kill: Int = 0
   )
