@@ -120,9 +120,18 @@ class GridOnServer(override val boundary: Point) extends Grid {
       }
     } else {
       def pointAroundSnack(newBound: Point): Point = {
-        var p = Point(newBound.x - 2 + random.nextInt(4), newBound.y - 2 + random.nextInt(4))
+        var x = newBound.x - 20 + random.nextInt(40)
+        var y = newBound.y - 20 + random.nextInt(40)
+        var p = Point(x, y)
         while (grid.contains(p)) {
-          p = Point(newBound.x - 2 + random.nextInt(4), newBound.y - 2 + random.nextInt(4))
+          x = newBound.x - 20 + random.nextInt(40)
+          y = newBound.y - 20 + random.nextInt(40)
+          p = Point(x, y)
+        }
+        while (x <= 0 || x >= Boundary.w || y <= 0 || y >= Boundary.h) {
+          x = newBound.x - 30 + random.nextInt(60)
+          y = newBound.y - 30 + random.nextInt(60)
+          p = Point(x, y)
         }
         p
       }
@@ -135,7 +144,6 @@ class GridOnServer(override val boundary: Point) extends Grid {
       }}.foreach {
         dead => if (appleNeeded != 0) {
           val p = pointAroundSnack(dead._1)
-          //info(s"appleNeeded: $appleNeeded, point: [Point(${p.x}, ${p.y}]")
           val score = random.nextDouble() match {
             case x if x > 0.95 => 10
             case x if x > 0.8 => 5
