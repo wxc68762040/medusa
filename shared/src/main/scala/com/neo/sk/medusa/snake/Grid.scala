@@ -29,10 +29,10 @@ trait Grid {
   val appleLife = 500
   val historyRankLength = 5
   val stepLength = 4
-  val speedUpRange = 50
+  val speedUpRange = 30
   val speedUpLength = 3
 
-  val freeFrameTime = 10
+  val freeFrameTime = 30
 
   var frameCount = 0l
   var grid = Map[Point, Spot]()
@@ -122,11 +122,10 @@ trait Grid {
       }
       //检测加速
       var speedOrNot :Boolean = false
-      val headerLeftRight = newDirection match {
-        case Point(-1,0) => Point(snake.header.x - square,snake.header.y - square - speedUpRange).zone(square * 2,(speedUpRange+square) * 2) ::: snake.header.frontZone(newDirection,square,speedUpRange+square)
-        case Point(1,0)  => Point(snake.header.x + square,snake.header.y + square + speedUpRange).zone(square * 2,(speedUpRange+square) * 2) ::: snake.header.frontZone(newDirection,square,speedUpRange+square)
-        case Point(0,-1) => Point(snake.header.x - square- speedUpRange,snake.header.y - square ).zone((speedUpRange+square) * 2,square*2) ::: snake.header.frontZone(newDirection,square,speedUpRange+square)
-        case Point(0,1) =>Point(snake.header.x + square + speedUpRange,snake.header.y + square ).zone((speedUpRange+square) * 2,square*2) ::: snake.header.frontZone(newDirection,square,speedUpRange+square)
+      val headerLeftRight=if(newDirection.y == 0){
+        Point(snake.header.x - square,snake.header.y - square - speedUpRange).zone(square * 2,(speedUpRange+square) * 2)
+      }else{
+        Point(snake.header.x - square- speedUpRange,snake.header.y - square ).zone((speedUpRange+square) * 2,square*2)
       }
       //val speedUpCheckList = snake.header.zone(speedUpRange)
       headerLeftRight.foreach{
