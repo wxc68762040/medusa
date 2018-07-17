@@ -8,13 +8,13 @@ package com.neo.sk.medusa
 package object snake {
 
   sealed trait Spot
-  case class Body(id: Long, life: Int, frameIndex: Int) extends Spot
+  case class Body(id: Long, life: Double, frameIndex: Int) extends Spot
   case class Header(id: Long, life: Int) extends Spot
 	case class Apple(score: Int, life: Int, appleType: Int) extends Spot //食物类型，0：普通食物，1：死蛇身体
 	case class Bound() extends Spot
 
   case class Score(id: Long, n: String, k: Int, l: Int, t: Option[Long] = None)
-  case class Bd(id: Long, life: Int, frameIndex: Int, x: Int, y: Int)
+  case class Bd(id: Long, life: Double, frameIndex: Int, x: Int, y: Int)
   case class Ap(score: Int, life: Int, x: Int, y: Int)
 
 
@@ -65,20 +65,20 @@ package object snake {
 		/**
 			* 获取点对应的前方矩形范围的一个区域，用于碰撞检测。
 			* @param direction 前方所指定的方向
-			* @param wide 左右的宽度，指单边
+			* @param squareWide 左右的宽度，指单边
 			* @param length 向前伸出的长度
 			* @return List[Point]
 			*/
-    def frontZone(direction: Point, wide: Int, length: Int) = {
+    def frontZone(direction: Point, squareWide: Int, length: Int) = {
       if (direction.x == 0) { //竖直方向
         val (yStart, yEnd) =
           if(direction.y < 0)
-            (y + length * direction.y, y - (length / 2) * direction.y)
+            (y + length * direction.y, y)
           else
-            (y - (length / 2) * direction.y, y + length * direction.y)
+            (y, y + length * direction.y)
 
         (for {
-          xs <- x - wide + 1 to x + wide - 1
+          xs <- x - squareWide to x + squareWide
           ys <- yStart to yEnd
         } yield {
           Point(xs, ys)
@@ -86,13 +86,13 @@ package object snake {
       } else { //横的方向
         val (xStart, xEnd) =
           if(direction.x < 0)
-            (x + length * direction.x, x - (length / 2) * direction.x)
+            (x + length * direction.x, x)
           else
-            (x  - (length / 2) * direction.x, x + length * direction.x)
+            (x, x + length * direction.x)
 
         (for {
           xs <- xStart to xEnd
-          ys <- y - wide + 1 to y + wide - 1
+          ys <- y - squareWide to y + squareWide
         } yield {
           Point(xs, ys)
         }).toList

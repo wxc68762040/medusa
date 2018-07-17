@@ -118,7 +118,7 @@ object NetGameHolder extends js.JSApp {
 
   def gameLoop(): Unit = {
 		subFrame += 1
-    if(subFrame == 4) {
+    if(subFrame >= 4) {
       subFrame = 0
       if (wsSetup) {
         if (!justSynced) {
@@ -159,7 +159,7 @@ object NetGameHolder extends js.JSApp {
     val mySubFrameRevise = snakes.filter(_.id == uid).head.direction * snakes.filter(_.id == uid).head.speed * subFrame / 4
     val centerX = MyBoundary.w/2
     val centerY = MyBoundary.h/2
-    val myHead = if(snakes.exists(_.id == uid)) snakes.filter(_.id == uid).head.header + mySubFrameRevise else Point(centerX,centerY)
+    val myHead = if(snakes.exists(_.id == uid)) snakes.filter(_.id == uid).head.header + mySubFrameRevise else Point(centerX, centerY)
 
     ctx.fillStyle = "#009393"
     ctx.fillRect(0, 0 ,canvas.width,canvas.height)
@@ -173,7 +173,9 @@ object NetGameHolder extends js.JSApp {
       if (id == uid) {
         ctx.save()
         ctx.fillStyle = MyColors.myBody
-        if(life != -1 || frameIndex > totalIndex * (subFrame+1) / 4) {ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)}
+        if(life != -1 || frameIndex > totalIndex * (subFrame + 1) / 4) {
+          ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
+        }
         mapCtx.fillStyle = MyColors.myBody
         mapCtx.fillRect((x  * LittleMap.w) / Boundary.w,(y * LittleMap.h) / Boundary.h,2,2)
 				ctx.restore()

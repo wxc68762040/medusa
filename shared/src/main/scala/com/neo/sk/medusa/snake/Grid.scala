@@ -82,7 +82,10 @@ trait Grid {
       }
     }.map {
       //case (p, Header(id, life)) => (p, Body(id, life - 1))
-      case (p, b@Body(_, life, _)) => (p, b.copy(life = life - 1))
+      case (p, b@Body(id, life, _)) =>
+        val lifeMinus = snakes.filter(_._2.id == id).head._2.speedUp / 10 + 1
+        (p, b.copy(life = life - lifeMinus))
+      
       case (p, a@Apple(_, _, appleType)) =>
         if (appleType == 0) appleCount += 1
         (p, a)
@@ -148,7 +151,7 @@ trait Grid {
       }
       val newFreeFrame = if(!speedOrNot && snake.freeFrame < freeFrameTime)  snake.freeFrame + 1 else 0
 
-      println(snake.id +"*********"+ newSpeedUp)
+//      println(snake.id +"*********"+ newSpeedUp)
 
 
       val oldHeader = snake.header
@@ -165,7 +168,7 @@ trait Grid {
         }
       }
       val len = snake.length + sum
-      var dead = newHeader.frontZone(snake.direction, 7, 7).filter { e =>
+      var dead = newHeader.frontZone(snake.direction, square * 2, snake.speed + snake.speedUp.toInt).filter { e =>
         grid.get(e) match {
           case Some(x: Body) => true
           case _ => false
@@ -180,8 +183,12 @@ trait Grid {
         val appleCount = math.round(snake.length * 0.5).toInt
         feedApple(appleCount, 1, Some(snake.id))
         grid.get(dead.head) match {
-          case Some(x: Body) => Left(x.id)
-					case _ => Left(0L) //撞墙的情况
+          case Some(x: Body) =>
+            info(x.id.toString)
+            Left(x.id)
+					case _ =>
+            info("0")
+            Left(0L) //撞墙的情况
         }
       } else {
 				Right(snake.copy(header = newHeader, lastHeader = oldHeader, direction = newDirection,speedUp = newSpeedUp,freeFrame=newFreeFrame, length = len))
