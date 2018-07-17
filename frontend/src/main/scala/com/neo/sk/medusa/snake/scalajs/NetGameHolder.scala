@@ -161,6 +161,19 @@ object NetGameHolder extends js.JSApp {
     val centerY = MyBoundary.h/2
     val myHead = if(snakes.exists(_.id == uid)) snakes.filter(_.id == uid).head.header + mySubFrameRevise else Point(centerX, centerY)
 
+    val proportion = if(snakes.exists(_.id == uid)){
+     val length = snakes.filter(_.id == uid).head.length
+      if(length < 100){
+        1
+      }else if (length > 100 && length <500){
+        2
+      }else{
+        3
+      }
+    }else{
+       1
+    }
+
     ctx.fillStyle = "#009393"
     ctx.fillRect(0, 0 ,canvas.width,canvas.height)
     ctx.drawImage(canvasPic,0 - myHead.x + centerX, 0 - myHead.y + centerY,Boundary.w,Boundary.h)
