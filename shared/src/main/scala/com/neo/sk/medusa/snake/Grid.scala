@@ -30,9 +30,9 @@ trait Grid {
   val historyRankLength = 5
   val stepLength = 4
   val speedUpRange = 50
-  val speedUpLength = 0.4
+  val speedUpLength = 3
 
-  val freeFrameTime = 30
+  val freeFrameTime = 10
 
   var frameCount = 0l
   var grid = Map[Point, Spot]()
@@ -138,22 +138,27 @@ trait Grid {
       }
 
       //加速上限
-      val newSpeedUpLength = if(snake.speedUp + speedUpLength > 2 * snake.speed) 2 * snake.speed else snake.speedUp
+      val newSpeedUpLength = if(((snake.speedUp + 1) / speedUpLength).toInt * speedUpLength > 2 * snake.speed)  2 * snake.speed  else snake.speedUp
+      // 判断加速减速
       val newSpeedUp = if(speedOrNot){
-        newSpeedUpLength + speedUpLength
-      }else if(!speedOrNot && snake.freeFrame < freeFrameTime){
-        newSpeedUpLength
+        newSpeedUpLength.toInt + 1
+      }else if(!speedOrNot && snake.freeFrame <= freeFrameTime){
+        newSpeedUpLength.toInt
+      }else if(!speedOrNot && snake.freeFrame > freeFrameTime && newSpeedUpLength.toInt != 0){
+        newSpeedUpLength.toInt - 1
       }else{
-        0.0
+        0
       }
-      val newFreeFrame = if(!speedOrNot && snake.freeFrame < freeFrameTime)  snake.freeFrame + 1 else 0
+      //val newFreeFrame = if(!speedOrNot && snake.freeFrame < freeFrameTime)  snake.freeFrame + 1 else 0
+      val newFreeFrame = if(newSpeedUp != 0)  snake.freeFrame + 1 else 0
 
-      println(snake.id +"*********"+ newSpeedUp)
+
+      println(snake.id +"*********"+ snake.freeFrame +"**************"+( (newSpeedUp / speedUpLength) * speedUpLength))
 
 
       val oldHeader = snake.header
       //val newHeader = snake.header + newDirection * snake.speed
-      val newHeader = snake.header + newDirection * (snake.speed + newSpeedUp.toInt)
+      val newHeader = snake.header + newDirection * (snake.speed + (newSpeedUp / speedUpLength) * speedUpLength)
 
       val sum = newHeader.zone(10).foldLeft(0) { (sum: Int, e: Point) =>
         grid.get(e) match {
