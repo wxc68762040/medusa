@@ -122,8 +122,14 @@ trait Grid {
       }
       //检测加速
       var speedOrNot :Boolean = false
-      val speedUpCheckList = snake.header.zone(speedUpRange)
-      speedUpCheckList.foreach{
+      val headerLeftRight = newDirection match {
+        case Point(-1,0) => Point(snake.header.x - square,snake.header.y - square - speedUpRange).zone(square * 2,(speedUpRange+square) * 2) ::: snake.header.frontZone(newDirection,square,speedUpRange+square)
+        case Point(1,0)  => Point(snake.header.x + square,snake.header.y + square + speedUpRange).zone(square * 2,(speedUpRange+square) * 2) ::: snake.header.frontZone(newDirection,square,speedUpRange+square)
+        case Point(0,-1) => Point(snake.header.x - square- speedUpRange,snake.header.y - square ).zone((speedUpRange+square) * 2,square*2) ::: snake.header.frontZone(newDirection,square,speedUpRange+square)
+        case Point(0,1) =>Point(snake.header.x + square + speedUpRange,snake.header.y + square ).zone((speedUpRange+square) * 2,square*2) ::: snake.header.frontZone(newDirection,square,speedUpRange+square)
+      }
+      //val speedUpCheckList = snake.header.zone(speedUpRange)
+      headerLeftRight.foreach{
         s=>
           grid.get(s) match {
             case Some(x:Body) =>
@@ -138,7 +144,7 @@ trait Grid {
       }
 
       //加速上限
-      val newSpeedUpLength = if(snake.speedUp + speedUpLength > 2 * snake.speed) 2 * snake.speed else snake.speedUp
+      val newSpeedUpLength = if(snake.speedUp + speedUpLength > 1 * snake.speed) 1 * snake.speed else snake.speedUp
       val newSpeedUp = if(speedOrNot){
         newSpeedUpLength + speedUpLength
       }else if(!speedOrNot && snake.freeFrame < freeFrameTime){
