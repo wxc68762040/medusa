@@ -24,7 +24,8 @@ object NetGameHolder extends js.JSApp {
   val canvasBoundary = Point(MyBoundary.w,MyBoundary.h)
   val mapBoundary = Point(LittleMap.w ,LittleMap.h)
   val textLineHeight = 14
-
+  val totalSubFrame = 2
+  
   var syncData: scala.Option[Protocol.GridDataSync] = None
   var currentRank = List.empty[Score]
   var historyRank = List.empty[Score]
@@ -84,7 +85,7 @@ object NetGameHolder extends js.JSApp {
       }
     }
 
-    dom.window.setInterval(() => gameLoop(), Protocol.frameRate / 4)
+    dom.window.setInterval(() => gameLoop(), Protocol.frameRate / totalSubFrame)
   }
 
   def drawGameOn(): Unit = {
@@ -123,7 +124,7 @@ object NetGameHolder extends js.JSApp {
 
   def gameLoop(): Unit = {
 		subFrame += 1
-    if(subFrame >= 4) {
+    if(subFrame >= totalSubFrame) {
       subFrame = 0
       if (wsSetup) {
         if (!justSynced) {
@@ -163,7 +164,7 @@ object NetGameHolder extends js.JSApp {
     val bodies = data.bodyDetails
     val apples = data.appleDetails
 
-    val mySubFrameRevise = snakes.filter(_.id == uid).head.direction * snakes.filter(_.id == uid).head.speed * subFrame / 4
+    val mySubFrameRevise = snakes.filter(_.id == uid).head.direction * snakes.filter(_.id == uid).head.speed * subFrame / totalSubFrame
     val centerX = MyBoundary.w/2
     val centerY = MyBoundary.h/2
     val myHead = if(snakes.exists(_.id == uid)) snakes.filter(_.id == uid).head.header + mySubFrameRevise else Point(centerX, centerY)
@@ -206,7 +207,7 @@ object NetGameHolder extends js.JSApp {
       if (id == uid) {
         ctx.save()
         ctx.fillStyle = MyColors.myBody
-        if(life >= 0 || frameIndex > totalIndex * (subFrame + 1) / 4) {
+        if(life >= 0 || frameIndex > totalIndex * (subFrame + 1) / totalSubFrame) {
           ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
         }
         if(maxId != uid){
@@ -216,7 +217,7 @@ object NetGameHolder extends js.JSApp {
         }
 				ctx.restore()
       } else {
-				if(life >= 0 || frameIndex > totalIndex * (subFrame+1) / 4) {
+				if(life >= 0 || frameIndex > totalIndex * (subFrame+1) / totalSubFrame) {
 					ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2, square * 2)
 				}
       }
@@ -237,8 +238,8 @@ object NetGameHolder extends js.JSApp {
     snakes.foreach { snake =>
       val id = snake.id
       println(s"${snake.header.x}, ${snake.header.y}")
-      val x = snake.header.x + snake.direction.x * snake.speed * subFrame / 4
-      val y = snake.header.y + snake.direction.y * snake.speed * subFrame / 4
+      val x = snake.header.x + snake.direction.x * snake.speed * subFrame / totalSubFrame
+      val y = snake.header.y + snake.direction.y * snake.speed * subFrame / totalSubFrame
       if(snake.speedUp > 0){
         ctx.save()
         ctx.fillStyle = MyColors.speedUpHeader
