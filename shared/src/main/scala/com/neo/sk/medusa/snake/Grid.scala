@@ -83,7 +83,7 @@ trait Grid {
     }.map {
       //case (p, Header(id, life)) => (p, Body(id, life - 1))
       case (p, b@Body(id, life, _)) =>
-        val lifeMinus = snakes.filter(_._2.id == id).head._2.speedUp / 10 + 1
+        val lifeMinus = snakes.filter(_._2.id == id).map(e => e._2.speed + e._2.speedUp).head
         (p, b.copy(life = life - lifeMinus))
       
       case (p, a@Apple(_, _, appleType)) =>
@@ -161,7 +161,7 @@ trait Grid {
       val newFreeFrame = if(newSpeedUp != 0)  snake.freeFrame + 1 else 0
 
 
-      println(snake.id +"*********"+ snake.freeFrame +"**************"+( (newSpeedUp / speedUpLength) * speedUpLength))
+//      println(snake.id +"*********"+ snake.freeFrame +"**************"+( (newSpeedUp / speedUpLength) * speedUpLength))
 
 
       val oldHeader = snake.header
@@ -243,7 +243,7 @@ trait Grid {
     newSnakes.foreach { s =>
       val bodies = s.lastHeader to s.header
         bodies.tail.indices.foreach { p =>
-          grid ++= Map(bodies(p) -> Body(s.id, s.length / s.speed, p))
+          grid ++= Map(bodies(p) -> Body(s.id, s.length, p))
         }
     }
     snakes = newSnakes.map(s => (s.id, s)).toMap

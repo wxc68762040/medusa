@@ -25,6 +25,7 @@ object NetGameHolder extends js.JSApp {
   val mapBoundary = Point(LittleMap.w ,LittleMap.h)
   val textLineHeight = 14
 
+  var syncData: scala.Option[Protocol.GridDataSync] = None
   var currentRank = List.empty[Score]
   var historyRank = List.empty[Score]
   var myId = -1l
@@ -124,6 +125,8 @@ object NetGameHolder extends js.JSApp {
         if (!justSynced) {
           update()
         } else {
+          sync(syncData)
+          syncData = None
           justSynced = false
         }
       }
@@ -186,14 +189,14 @@ object NetGameHolder extends js.JSApp {
       if (id == uid) {
         ctx.save()
         ctx.fillStyle = MyColors.myBody
-        if(life != -1 || frameIndex > totalIndex * (subFrame + 1) / 4) {
+        if(life >= 0 || frameIndex > totalIndex * (subFrame + 1) / 4) {
           ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
         }
         mapCtx.fillStyle = MyColors.myBody
         mapCtx.fillRect((x  * LittleMap.w) / Boundary.w,(y * LittleMap.h) / Boundary.h,2,2)
 				ctx.restore()
       } else {
-				if(life != -1 || frameIndex > totalIndex * (subFrame+1) / 4) {
+				if(life >= 0 || frameIndex > totalIndex * (subFrame+1) / 4) {
 					ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2, square * 2)
 				}
       }
@@ -220,6 +223,7 @@ object NetGameHolder extends js.JSApp {
 
     snakes.foreach { snake =>
       val id = snake.id
+      println(s"${snake.header.x}, ${snake.header.y}")
       val x = snake.header.x + snake.direction.x * snake.speed * subFrame / 4
       val y = snake.header.y + snake.direction.y * snake.speed * subFrame / 4
       if(snake.speedUp > 0){
@@ -364,13 +368,7 @@ object NetGameHolder extends js.JSApp {
         case data: Protocol.GridDataSync =>
           //writeToArea(s"grid data got: $msgData")
           //TODO here should be better code.
-          grid.actionMap = grid.actionMap.filterKeys(_ > data.frameCount)
-          grid.frameCount = data.frameCount
-          grid.snakes = data.snakes.map(s => s.id -> s).toMap
-          val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, 0)).toMap
-          val bodyMap = data.bodyDetails.map(b => Point(b.x, b.y) -> Body(b.id, b.life, b.frameIndex)).toMap
-          val gridMap = appleMap ++ bodyMap
-          grid.grid = gridMap
+          syncData = Some(data)
           justSynced = true
         //drawGrid(msgData.uid, data)
         case Protocol.NetDelayTest(createTime) =>
@@ -404,5 +402,17 @@ object NetGameHolder extends js.JSApp {
     paragraph
   }
 
+  def sync(dataOpt: scala.Option[Protocol.GridDataSync]) = {
+    if(dataOpt.nonEmpty) {
+      val data = dataOpt.get
+      grid.actionMap = grid.actionMap.filterKeys(_ > data.frameCount)
+      grid.frameCount = data.frameCount
+      grid.snakes = data.snakes.map(s => s.id -> s).toMap
+      val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, 0)).toMap
+      val bodyMap = data.bodyDetails.map(b => Point(b.x, b.y) -> Body(b.id, b.life, b.frameIndex)).toMap
+      val gridMap = appleMap ++ bodyMap
+      grid.grid = gridMap
+    }
+  }
 
 }
