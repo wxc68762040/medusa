@@ -2,9 +2,11 @@ package com.neo.sk.medusa.snake
 
 import java.awt.event.KeyEvent
 
+import akka.NotUsed
 import akka.actor.{Actor, ActorRef, ActorSystem, Props, Terminated}
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{Flow, Sink, Source}
+import com.neo.sk.medusa.snake.Protocol._
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext
@@ -20,7 +22,7 @@ import scala.language.postfixOps
 trait PlayGround {
 
 
-  def joinGame(id: Long, name: String): Flow[String, Protocol.GameMessage, Any]
+  def joinGame(id: Long, name: String): Flow[Protocol.UserAction, Protocol.GameMessage, Any]
 
   def syncData()
 
@@ -55,28 +57,30 @@ object PlayGround {
           dispatchTo(id, Protocol.Id(id))
           dispatch(Protocol.NewSnakeJoined(id, name))
           dispatch(grid.getGridData)
+          
         case r@Left(id, name) =>
           log.info(s"got $r")
           subscribers.get(id).foreach(context.unwatch)
           subscribers -= id
           grid.removeSnake(id)
           dispatch(Protocol.SnakeLeft(id, name))
-        case r@Key(id, keyCode) =>
-          log.debug(s"got $r")
-          dispatch(Protocol.TextMsg(s"Aha! $id click [$keyCode]")) //just for test
-          if (keyCode == KeyEvent.VK_SPACE) {
-            grid.addSnake(id, userMap.getOrElse(id, "Unknown"))
-          } else {
-            grid.addAction(id, keyCode)
-            dispatch(Protocol.SnakeAction(id, keyCode, grid.frameCount))
-          }
-        case r@Terminated(actor) =>
-          log.warn(s"got $r")
-          subscribers.find(_._2.equals(actor)).foreach { case (id, _) =>
-            log.debug(s"got Terminated id = $id")
-            subscribers -= id
-            grid.removeSnake(id).foreach(s => dispatch(Protocol.SnakeLeft(id, s.name)))
-          }
+
+        case userAction: UserAction => userAction match {
+          case r@Key(id, keyCode) =>
+            log.debug(s"got $r")
+            dispatch(Protocol.TextMsg(s"Aha! $id click [$keyCode]")) //just for test
+            if (keyCode == KeyEvent.VK_SPACE) {
+              grid.addSnake(id, userMap.getOrElse(id, "Unknown"))
+            } else {
+              grid.addAction(id, keyCode)
+              dispatch(Protocol.SnakeAction(id, keyCode, grid.frameCount))
+            }
+            
+          case NetTest(id, createTime) =>
+            log.info(s"Net Test: createTime=$createTime")
+            dispatchTo(id, Protocol.NetDelayTest(createTime))
+        }
+        
         case Sync =>
           tickCount += 1
           grid.update()
@@ -92,9 +96,15 @@ object PlayGround {
           if (tickCount % 20 == 1) {
             dispatch(Protocol.Ranks(grid.currentRank, grid.historyRankList))
           }
-        case NetTest(id, createTime) =>
-          log.info(s"Net Test: createTime=$createTime")
-          dispatchTo(id, Protocol.NetDelayTest(createTime))
+
+        case r@Terminated(actor) =>
+          log.warn(s"got $r")
+          subscribers.find(_._2.equals(actor)).foreach { case (id, _) =>
+            log.debug(s"got Terminated id = $id")
+            subscribers -= id
+            grid.removeSnake(id).foreach(s => dispatch(Protocol.SnakeLeft(id, s.name)))
+          }
+          
         case x =>
           log.warn(s"got unknown msg: $x")
       }
@@ -115,20 +125,21 @@ object PlayGround {
     system.scheduler.schedule(3 seconds, Protocol.frameRate millis, ground, Sync) // sync tick
 
 
-    def playInSink(id: Long, name: String) = Sink.actorRef[UserAction](ground, Left(id, name))
+    def playInSink(id: Long, name: String): Sink[UserAction, NotUsed] = Sink.actorRef[UserAction](ground, Left(id, name))
 
 
     new PlayGround {
-      override def joinGame(id: Long, name: String): Flow[String, Protocol.GameMessage, Any] = {
+      override def joinGame(id: Long, name: String): Flow[UserAction, Protocol.GameMessage, Any] = {
         val in =
-          Flow[String]
+          Flow[UserAction]
             .map { s =>
-              if (s.startsWith("T")) {
-                val timestamp = s.substring(1).toLong
-                NetTest(id, timestamp)
-              } else {
-                Key(id, s.toInt)
-              }
+//              if (s.startsWith("T")) {
+//                val timestamp = s.substring(1).toLong
+//                NetTest(id, timestamp)
+//              } else {
+//                Key(id, s.toInt)
+//              }
+              s
             }
             .to(playInSink(id, name))
 
@@ -143,19 +154,10 @@ object PlayGround {
     }
 
   }
-
-
-  private sealed trait UserAction
-
-  private case class Join(id: Long, name: String, subscriber: ActorRef) extends UserAction
-
-  private case class Left(id: Long, name: String) extends UserAction
-
-  private case class Key(id: Long, keyCode: Int) extends UserAction
-
-  private case class NetTest(id: Long, createTime: Long) extends UserAction
-
-  private case object Sync extends UserAction
+  
+  private case class Join(id: Long, name: String, subscriber: ActorRef)
+  private case class Left(id: Long, name: String)
+  private case object Sync
 
 
 }

@@ -263,6 +263,7 @@ trait Grid {
       case (p, Body(id, life, frameIndex)) => bodyDetails ::= Bd(id, life, frameIndex, p.x, p.y)
       case (p, Apple(score, life, _)) => appleDetails ::= Ap(score, life, p.x, p.y)
       case (p, Header(id, life)) => bodyDetails ::= Bd(id, life, 0, p.x, p.y)
+      case _ =>
     }
     Protocol.GridDataSync(
       frameCount,
