@@ -148,7 +148,7 @@ trait Grid {
       //加速上限
       val newSpeedUpLength = if(((snake.speedUp + 1) / speedUpLength).toInt * speedUpLength > 1 * snake.speed)  1 * snake.speed  else snake.speedUp
       // 判断加速减速
-      val newSpeedUp = if(speedOrNot){
+      var newSpeedUp = if(speedOrNot){
         newSpeedUpLength.toInt + 1
       }else if(!speedOrNot && snake.freeFrame <= freeFrameTime){
         newSpeedUpLength.toInt
@@ -158,7 +158,6 @@ trait Grid {
         0
       }
       //val newFreeFrame = if(!speedOrNot && snake.freeFrame < freeFrameTime)  snake.freeFrame + 1 else 0
-      val newFreeFrame = if(newSpeedUp != 0)  snake.freeFrame + 1 else 0
 
 
 //      println(snake.id +"*********"+ snake.freeFrame +"**************"+( (newSpeedUp / speedUpLength) * speedUpLength))
@@ -166,12 +165,13 @@ trait Grid {
 
       val oldHeader = snake.header
       //val newHeader = snake.header + newDirection * snake.speed
-      val newHeader = snake.header + newDirection * (snake.speed + (newSpeedUp / speedUpLength) * speedUpLength)
+      val newHeader = snake.header + newDirection * (snake.speed + (newSpeedUp / speedUpLength) * speedUpLength).toInt
 
       val sum = newHeader.zone(10).foldLeft(0) { (sum: Int, e: Point) =>
         grid.get(e) match {
           case Some(Apple(score, _, _)) =>
             grid -= e
+            newSpeedUp += 1
             sum + score
           case _ =>
             sum
@@ -189,6 +189,7 @@ trait Grid {
         dead = Point(0, 0) :: dead
       }
 
+      val newFreeFrame = if(newSpeedUp != 0)  snake.freeFrame + 1 else 0
       if(dead.nonEmpty) {
         val appleCount = math.round(snake.length * 0.5).toInt
         feedApple(appleCount, 1, Some(snake.id))
