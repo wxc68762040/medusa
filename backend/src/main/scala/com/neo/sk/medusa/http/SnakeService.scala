@@ -53,8 +53,6 @@ trait SnakeService {
     }
   }
   
-  val sendBuffer = new MiddleBufferInJvm(4096000)
-
   def webSocketChatFlow(sender: String): Flow[Message, Message, Any] =
     Flow[Message]
       .collect {
@@ -82,11 +80,13 @@ trait SnakeService {
 //      .map { msg => TextMessage.Strict(msg.asJson.noSpaces) // ... pack outgoing messages into WS JSON messages ...
       //.map { msg => TextMessage.Strict(write(msg)) // ... pack outgoing messages into WS JSON messages ...
       .map { message =>
-        BinaryMessage.Strict(ByteString(
+      val sendBuffer = new MiddleBufferInJvm(409600)
+      BinaryMessage.Strict(ByteString(
           //encoded process
           message.fillMiddleBuffer(sendBuffer).result()
 //          BytesEncoder[GameMessage].encode(message, sendBuffer).result().asInstanceOf[Array[Byte]]
         ))
+        
       }.withAttributes(ActorAttributes.supervisionStrategy(decider))    // ... then log any processing errors on stdin
 
 

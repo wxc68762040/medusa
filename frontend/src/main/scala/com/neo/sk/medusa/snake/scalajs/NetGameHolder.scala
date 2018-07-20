@@ -331,7 +331,7 @@ object NetGameHolder extends js.JSApp {
     ctx.fillText(str, x, (lineNum + lineBegin - 1) * textLineHeight)
   }
   
-  val sendBuffer = new MiddleBufferInJs(4096000) //sender buffer
+  val sendBuffer = new MiddleBufferInJs(409600) //sender buffer
   
   def joinGame(name: String): Unit = {
     joinButton.disabled = true
