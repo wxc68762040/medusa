@@ -41,4 +41,6 @@ object Protocol {
 
   val square = 4
 
+  val fSpeed = 10
+
 }
