@@ -2,7 +2,6 @@ package com.neo.sk.medusa.snake.scalajs
 
 import com.neo.sk.medusa.snake.Protocol._
 import com.neo.sk.medusa.snake._
-import com.neo.sk.medusa.snake.scalajs.NetGameHolder.subFrame
 import com.neo.sk.medusa.utils.MiddleBufferInJs
 import com.neo.sk.medusa.utils.byteObject.decoder
 import com.neo.sk.medusa.utils.byteObject.ByteObject._
@@ -11,10 +10,7 @@ import org.scalajs.dom.ext.{Color, KeyCode}
 import org.scalajs.dom.html.{Document => _, _}
 import org.scalajs.dom.raw._
 
-import io.circe.generic.auto._
-import io.circe.parser._
 import scala.scalajs.js
-import scala.scalajs.js.Math
 import scala.scalajs.js.typedarray.ArrayBuffer
 
 /**
@@ -134,10 +130,11 @@ object NetGameHolder extends js.JSApp {
       subFrame = 0
       if (wsSetup) {
         if (!justSynced) {
-          update()
+          update(false)
         } else {
           sync(syncData)
           syncData = None
+          update(true)
           justSynced = false
         }
       }
@@ -145,8 +142,8 @@ object NetGameHolder extends js.JSApp {
     draw(subFrame)
   }
 
-  def update(): Unit = {
-    grid.update()
+  def update(isSynced: Boolean): Unit = {
+    grid.update(isSynced: Boolean)
   }
 
   def draw(subFrame: Int): Unit = {
@@ -158,7 +155,7 @@ object NetGameHolder extends js.JSApp {
     }
   }
 
-  def drawGrid(uid: Long, data: GridDataSync, subFrame: Int): Unit = {
+  def drawGrid(uid: Long, data: GridData, subFrame: Int): Unit = {
 
 //    ctx.fillStyle = Color.Black.toString()
 //    ctx.fillRect(0, 0, bounds.x , bounds.y)
@@ -167,19 +164,46 @@ object NetGameHolder extends js.JSApp {
 //    mapCtx.fillRect(0, 0, mapBoundary.x , mapBoundary.y )
 
     val snakes = data.snakes
-    val bodies = data.bodyDetails
+    var bodies = data.bodyDetails
     val apples = data.appleDetails
 
+    snakes.foreach { snake =>
+      val addBodies = snake.head.to(snake.head + snake.direction * snake.speed.toInt * subFrame / totalSubFrame)
+        .map(p => Bd(snake.id, p.x, p.y))
+      val deleteBodies = {
+        var recorder = List.empty[Point]
+        var step = snake.speed.toInt * subFrame / totalSubFrame - snake.extend
+        var tail = snake.tail
+        var joints = snake.joints
+        while(step > 0) {
+          val distance = tail.distance(joints.dequeue._1)
+          if(distance >= step) { //尾巴在移动到下一个节点前就需要停止。
+            val target = tail + tail.getDirection(joints.dequeue._1) * step
+            recorder ++= tail.to(target)
+            step = -1
+          } else { //尾巴在移动到下一个节点后，还需要继续移动。
+            step -= distance
+            recorder ++= tail.to(joints.dequeue._1)
+            tail = joints.dequeue._1
+            joints = joints.dequeue._2
+          }
+        }
+        recorder.map(p => Bd(snake.id, p.x, p.y))
+      }
+      bodies = (bodies ++ addBodies).filterNot(p => deleteBodies.contains(p))
+    }
+    
+    
     val mySubFrameRevise =
       try {
-        snakes.filter(_.id == uid).head.direction * snakes.filter(_.id == uid).head.speed * subFrame / totalSubFrame
+        snakes.filter(_.id == uid).head.direction * snakes.filter(_.id == uid).head.speed.toInt * subFrame / totalSubFrame
       } catch {
         case e: Exception =>
           Point(0, 0)
       }
     val centerX = MyBoundary.w/2
     val centerY = MyBoundary.h/2
-    val myHead = if(snakes.exists(_.id == uid)) snakes.filter(_.id == uid).head.header + mySubFrameRevise else Point(centerX, centerY)
+    val myHead = if(snakes.exists(_.id == uid)) snakes.filter(_.id == uid).head.head + mySubFrameRevise else Point(centerX, centerY)
 
     val proportion = if(snakes.exists(_.id == uid)){
      val length = snakes.filter(_.id == uid).head.length
@@ -204,7 +228,7 @@ object NetGameHolder extends js.JSApp {
     mapCtx.fillRect(0,0,mapCanvas.width,mapCanvas.height)
 
     //小地图
-    val maxLength = if(snakes.nonEmpty) snakes.sortBy(r=>(r.length,r.id)).reverse.head.header else Point(0,0)
+    val maxLength = if(snakes.nonEmpty) snakes.sortBy(r=>(r.length,r.id)).reverse.head.head else Point(0,0)
     val maxId = if(snakes.nonEmpty) snakes.sortBy(r=>(r.length,r.id)).reverse.head.id else 0L
     mapCtx.save()
     val maxPic = dom.document.getElementById("maxPic").asInstanceOf[HTMLElement]
@@ -213,15 +237,13 @@ object NetGameHolder extends js.JSApp {
     mapCtx.restore()
 
     ctx.fillStyle = MyColors.otherBody
-    bodies.foreach { case Bd(id, life, frameIndex, x, y) =>
+    bodies.foreach { case Bd(id, x, y) =>
       //println(s"draw body at $p body[$life]")
       val totalIndex = snakes.filter(_.id == id).head.speed - 1
       if (id == uid) {
         ctx.save()
         ctx.fillStyle = MyColors.myBody
-        if(life >= 0 || frameIndex > totalIndex * (subFrame + 1) / totalSubFrame) {
-          ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
-        }
+        ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
         if(maxId != uid){
           mapCtx.globalAlpha = 1
           mapCtx.fillStyle = MyColors.myBody
@@ -229,9 +251,7 @@ object NetGameHolder extends js.JSApp {
         }
 				ctx.restore()
       } else {
-				if(life >= 0 || frameIndex > totalIndex * (subFrame+1) / totalSubFrame) {
-					ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2, square * 2)
-				}
+        ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2, square * 2)
       }
     }
 
@@ -249,10 +269,10 @@ object NetGameHolder extends js.JSApp {
 
     snakes.foreach { snake =>
       val id = snake.id
-      println(s"${snake.header.x}, ${snake.header.y}")
-      val x = snake.header.x + snake.direction.x * snake.speed * subFrame / totalSubFrame
-      val y = snake.header.y + snake.direction.y * snake.speed * subFrame / totalSubFrame
-      if(snake.speedUp >= 3){
+      println(s"${snake.head.x}, ${snake.head.y}")
+      val x = snake.head.x + snake.direction.x * snake.speed * subFrame / totalSubFrame
+      val y = snake.head.y + snake.direction.y * snake.speed * subFrame / totalSubFrame
+      if(snake.speed >= 13.0){
         ctx.save()
         ctx.fillStyle = MyColors.speedUpHeader
         ctx.fillRect(x - 1.5 * square - myHead.x + centerX, y - 1.5 * square - myHead.y + centerY, square * 3 , square * 3)
@@ -455,8 +475,7 @@ object NetGameHolder extends js.JSApp {
       grid.frameCount = data.frameCount
       grid.snakes = data.snakes.map(s => s.id -> s).toMap
       val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, 0)).toMap
-      val bodyMap = data.bodyDetails.map(b => Point(b.x, b.y) -> Body(b.id, b.life, b.frameIndex)).toMap
-      val gridMap = appleMap ++ bodyMap
+      val gridMap = appleMap
       grid.grid = gridMap
     }
   }

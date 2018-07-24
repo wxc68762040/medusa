@@ -1,5 +1,7 @@
 package com.neo.sk.medusa
 
+import scala.collection.immutable.Queue
+
 /**
   * User: Taoz
   * Date: 8/29/2016
@@ -8,13 +10,13 @@ package com.neo.sk.medusa
 package object snake {
 
   sealed trait Spot
-  case class Body(id: Long, life: Double, frameIndex: Int) extends Spot
+  case class Body(id: Long) extends Spot
   case class Header(id: Long, life: Int) extends Spot
 	case class Apple(score: Int, life: Int, appleType: Int) extends Spot //食物类型，0：普通食物，1：死蛇身体
 	case class Bound() extends Spot
 
   case class Score(id: Long, n: String, k: Int, l: Int, t: Option[Long] = None)
-  case class Bd(id: Long, life: Double, frameIndex: Int, x: Int, y: Int)
+  case class Bd(id: Long, x: Int, y: Int)
   case class Ap(score: Int, life: Int, x: Int, y: Int)
 
 
@@ -83,6 +85,16 @@ package object snake {
 				Point(0, 0)
 			}
 		}
+	
+		def distance(destination: Point) = {
+			if(destination.x == x) {
+				Math.abs(destination.y - y)
+			} else if(destination.y == y) {
+				Math.abs(destination.x - x)
+			} else {
+				0
+			}
+		}
 
 		/**
 			* 获取点对应的前方矩形范围的一个区域，用于碰撞检测。
@@ -148,13 +160,25 @@ package object snake {
 		head: Point,
 		tail: Point,
 		direction: Point = Point(1, 0),
-		joints: scala.collection.mutable.Queue[Point] = scala.collection.mutable.Queue(),
+		joints: Queue[Point] = Queue(),
 		speed: Double = 10.0,
 		freeFrame: Int = 0,
 		length: Int = 50,
 		extend: Int = 50, //需要伸长的量
 		kill: Int = 0
-	)
+	) {
+		def getBodies: Map[Point, Spot] = {
+			var bodyMap = Map.empty[Point, Spot]
+			joints.enqueue(head).foldLeft(tail) { (start: Point, end: Point) =>
+				val points = start.to(end)
+				points.foreach { e =>
+					bodyMap += ((e, Body(id)))
+				}
+				end
+			}
+			bodyMap
+		}
+	}
 
 
   object Boundary{

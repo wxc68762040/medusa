@@ -11,7 +11,6 @@ import akka.util.{ByteString, Timeout}
 import com.neo.sk.medusa.snake.PlayGround
 import com.neo.sk.medusa.snake.Protocol._
 import com.neo.sk.utils.MiddleBufferInJvm
-import com.neo.sk.utils.byteObject.encoder.BytesEncoder
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContextExecutor
