@@ -61,6 +61,28 @@ package object snake {
 		} yield {
 			Point(xs, ys)
 		}).toList
+		
+		def getDirection(destination: Point) = {
+			if(destination.x == x) {
+				if(destination.y < y) {
+					Point(0, -1)
+				} else if(destination.y > y) {
+					Point(0, 1)
+				} else {
+					Point(0, 0)
+				}
+			} else if(destination.y == y) {
+				if(destination.x < x) {
+					Point(-1, 0)
+				} else if(destination.x > x) {
+					Point(1, 0)
+				} else {
+					Point(0, 0)
+				}
+			} else {
+				Point(0, 0)
+			}
+		}
 
 		/**
 			* 获取点对应的前方矩形范围的一个区域，用于碰撞检测。
@@ -115,10 +137,24 @@ package object snake {
     direction: Point = Point(1, 0),
     speed: Int = 10,
     speedUp : Double = 0.0,
-    freeFrame : Int = 0,
+    freeFrame : Int = 0,   //脱离加速条件的帧数
     length: Int = 50,
     kill: Int = 0
   )
+	
+	case class SnakeInfo(
+		id: Long,
+		name: String,
+		head: Point,
+		tail: Point,
+		direction: Point = Point(1, 0),
+		joints: scala.collection.mutable.Queue[Point] = scala.collection.mutable.Queue(),
+		speed: Double = 10.0,
+		freeFrame: Int = 0,
+		length: Int = 50,
+		extend: Int = 50, //需要伸长的量
+		kill: Int = 0
+	)
 
 
   object Boundary{

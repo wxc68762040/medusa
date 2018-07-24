@@ -252,7 +252,7 @@ object NetGameHolder extends js.JSApp {
       println(s"${snake.header.x}, ${snake.header.y}")
       val x = snake.header.x + snake.direction.x * snake.speed * subFrame / totalSubFrame
       val y = snake.header.y + snake.direction.y * snake.speed * subFrame / totalSubFrame
-      if(snake.speedUp > 3){
+      if(snake.speedUp >= 3){
         ctx.save()
         ctx.fillStyle = MyColors.speedUpHeader
         ctx.fillRect(x - 1.5 * square - myHead.x + centerX, y - 1.5 * square - myHead.y + centerY, square * 3 , square * 3)

@@ -36,11 +36,11 @@ trait Grid {
 
   var frameCount = 0l
   var grid = Map[Point, Spot]()
-  var snakes = Map.empty[Long, SkDt]
+  var snakes = Map.empty[Long, SnakeInfo]
   var actionMap = Map.empty[Long, Map[Long, Int]]
 
 
-  def removeSnake(id: Long): Option[SkDt] = {
+  def removeSnake(id: Long): Option[SnakeInfo] = {
     val r = snakes.get(id)
     if (r.isDefined) {
       snakes -= id
@@ -106,7 +106,7 @@ trait Grid {
 
 
   private[this] def updateSnakes() = {
-    def updateASnake(snake: SkDt, actMap: Map[Long, Int]): Either[Long, SkDt] = {
+    def updateASnake(snake: SnakeInfo, actMap: Map[Long, Int]): Either[Long, SnakeInfo] = {
       val keyCode = actMap.get(snake.id)
 //      debug(s" +++ snake[${snake.id}] feel key: $keyCode at frame=$frameCount")
       val newDirection = {
@@ -126,9 +126,9 @@ trait Grid {
       //检测加速
       var speedOrNot :Boolean = false
       val headerLeftRight=if(newDirection.y == 0){
-        Point(snake.header.x - square,snake.header.y - square - speedUpRange).zone(square * 2,(speedUpRange+square) * 2)
+        Point(snake.head.x - square, snake.head.y - square - speedUpRange).zone(square * 2, (speedUpRange+square) * 2)
       }else{
-        Point(snake.header.x - square- speedUpRange,snake.header.y - square ).zone((speedUpRange+square) * 2,square*2)
+        Point(snake.head.x - square- speedUpRange, snake.head.y - square).zone((speedUpRange+square) * 2, square*2)
       }
       //val speedUpCheckList = snake.header.zone(speedUpRange)
       headerLeftRight.foreach{
@@ -146,7 +146,12 @@ trait Grid {
       }
 
       //加速上限
-      val newSpeedUpLength = if(((snake.speedUp + 1) / speedUpLength).toInt * speedUpLength > 1 * snake.speed)  1 * snake.speed  else snake.speedUp
+      val newSpeedUpLength =
+        if(((snake.speedUp + 1) / speedUpLength).toInt * speedUpLength > 1 * snake.speed) {
+          1 * snake.speed
+        } else {
+          snake.speedUp
+        }
       // 判断加速减速
       var newSpeedUp = if(speedOrNot){
         newSpeedUpLength.toInt + 1
@@ -157,7 +162,6 @@ trait Grid {
       }else{
         0
       }
-      //val newFreeFrame = if(!speedOrNot && snake.freeFrame < freeFrameTime)  snake.freeFrame + 1 else 0
 
 
 //      println(snake.id +"*********"+ snake.freeFrame +"**************"+( (newSpeedUp / speedUpLength) * speedUpLength))
