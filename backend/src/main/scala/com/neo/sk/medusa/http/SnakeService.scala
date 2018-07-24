@@ -11,6 +11,7 @@ import akka.util.{ByteString, Timeout}
 import com.neo.sk.medusa.snake.PlayGround
 import com.neo.sk.medusa.snake.Protocol._
 import com.neo.sk.utils.MiddleBufferInJvm
+import com.neo.sk.utils.byteObject.ByteObject._
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContextExecutor
@@ -22,7 +23,6 @@ import scala.concurrent.ExecutionContextExecutor
   */
 trait SnakeService {
   
-  import com.neo.sk.utils.byteObject.ByteObject._
 
   implicit val system: ActorSystem
 
@@ -83,7 +83,6 @@ trait SnakeService {
       BinaryMessage.Strict(ByteString(
           //encoded process
           message.fillMiddleBuffer(sendBuffer).result()
-//          BytesEncoder[GameMessage].encode(message, sendBuffer).result().asInstanceOf[Array[Byte]]
         ))
         
       }.withAttributes(ActorAttributes.supervisionStrategy(decider))    // ... then log any processing errors on stdin
