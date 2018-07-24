@@ -15,13 +15,6 @@ object Protocol {
     appleDetails: List[Ap]
   ) extends GameMessage
   
-  case class GridData(
-    frameCount: Long,
-    snakes: List[SnakeInfo],
-    bodyDetails: List[Bd],
-    appleDetails: List[Ap]
-  ) extends GameMessage
-  
   case class FeedApples(
     aLs: List[Ap]
   ) extends GameMessage

@@ -197,13 +197,13 @@ trait Grid {
       if (newDirection != snake.direction) {
         newJoints = newJoints.enqueue(newHead)
       }
-      
+      newJoints = newJoints.enqueue(newHead)
       while(step > 0) {
         val distance = newTail.distance(newJoints.dequeue._1)
         if(distance >= step) { //尾巴在移动到下一个节点前就需要停止。
           newTail = newTail + newTail.getDirection(newJoints.dequeue._1) * step
           newJoints = newJoints.dequeue._2
-          step -= -1
+          step = -1
         } else { //尾巴在移动到下一个节点后，还需要继续移动。
           step -= distance
           newTail = newJoints.dequeue._1
@@ -282,7 +282,7 @@ trait Grid {
 //      case (p, Header(id, life)) => bodyDetails ::= Bd(id, p.x, p.y)
       case _ =>
     }
-    Protocol.GridData(
+    GridData(
       frameCount,
       snakes.values.toList,
       bodyDetails,

@@ -18,7 +18,13 @@ package object snake {
   case class Score(id: Long, n: String, k: Int, l: Int, t: Option[Long] = None)
   case class Bd(id: Long, x: Int, y: Int)
   case class Ap(score: Int, life: Int, x: Int, y: Int)
-
+	
+	case class GridData(
+		frameCount: Long,
+		snakes: List[SnakeInfo],
+		bodyDetails: List[Bd],
+		appleDetails: List[Ap]
+	)
 
 
   case class Point(x: Int, y: Int) {

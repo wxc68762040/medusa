@@ -56,7 +56,7 @@ object PlayGround {
           grid.addSnake(id, name)
           dispatchTo(id, Protocol.Id(id))
           dispatch(Protocol.NewSnakeJoined(id, name))
-          dispatch(grid.getGridData)
+          dispatch(grid.getGridSyncData)
           
         case r@Left(id, name) =>
           log.info(s"got $r")
@@ -86,8 +86,8 @@ object PlayGround {
           grid.update(false)
           val feedApples = grid.getFeededApple
           if (tickCount % 20 == 5) {
-            val gridData = grid.getGridData
-            dispatch(gridData)
+            val GridSyncData = grid.getGridSyncData
+            dispatch(GridSyncData)
           } else {
             if (feedApples.nonEmpty) {
               dispatch(Protocol.FeedApples(feedApples))
