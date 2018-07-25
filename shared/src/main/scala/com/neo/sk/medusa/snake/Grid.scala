@@ -196,7 +196,7 @@ trait Grid {
       }
 
       val newFreeFrame = if(newSpeedUp != fSpeed)  snake.freeFrame + 1 else 0
-      println(newSpeedUp+"*************"+newFreeFrame)
+//      println(newSpeedUp+"*************"+newFreeFrame)
       if(dead.nonEmpty) {
         val appleCount = math.round(snake.length * 0.5).toInt
         feedApple(appleCount, 1, Some(snake.id))
