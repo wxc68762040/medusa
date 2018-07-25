@@ -237,8 +237,8 @@ object NetGameHolder extends js.JSApp {
 
     apples.foreach { case Ap(score, life, x, y) =>
       ctx.fillStyle = score match {
-        case 10 => Color.Yellow.toString()
-        case 5 => Color.Blue.toString()
+        case 50 => Color.Yellow.toString()
+        case 25 => Color.Blue.toString()
         case _ => Color.Red.toString()
       }
       ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)

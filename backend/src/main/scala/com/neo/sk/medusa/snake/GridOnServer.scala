@@ -97,9 +97,9 @@ class GridOnServer(override val boundary: Point) extends Grid {
         while (appleNeeded > 0) {
           val p = randomEmptyPoint()
           val score = random.nextDouble() match {
-            case x if x > 0.95 => 100
-            case x if x > 0.8 => 50
-            case x => 10
+            case x if x > 0.95 => 50
+            case x if x > 0.8 => 25
+            case x => 5
           }
           val apple = Apple(score, appleLife, appleType)
           feededApples ::= Ap(score, appleLife, p.x, p.y)
@@ -145,9 +145,9 @@ class GridOnServer(override val boundary: Point) extends Grid {
         dead => if (appleNeeded != 0) {
           val p = pointAroundSnack(dead._1)
           val score = random.nextDouble() match {
-            case x if x > 0.95 => 100
-            case x if x > 0.8 => 50
-            case x => 10
+            case x if x > 0.95 => 50
+            case x if x > 0.8 => 25
+            case x => 5
           }
           val apple = Apple(score, appleLife, appleType)
           feededApples ::= Ap(score, appleLife, p.x, p.y)
