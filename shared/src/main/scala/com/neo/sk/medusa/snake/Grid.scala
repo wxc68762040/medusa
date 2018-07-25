@@ -149,10 +149,10 @@ trait Grid {
       val s = snake.speed match {
         case x if x > fSpeed && x < fSpeed + 3 => 0.3
         case x if x >= fSpeed && x <= fSpeed + 6 => 0.4
-        case x if x > fSpeed && x < fSpeed + 10 => 0.5
+        case x if x > fSpeed && x <= fSpeed + 10 => 0.5
         case _ => 0
       }
-      val newSpeedUpLength = if(s > 1 * fSpeed)  1 * fSpeed  else snake.speed
+      val newSpeedUpLength = if(snake.speed > 2 * fSpeed)  2 * fSpeed  else snake.speed
       // 判断加速减速
       var newSpeedUp = if(speedOrNot){
         newSpeedUpLength + s
@@ -196,7 +196,7 @@ trait Grid {
       }
 
       val newFreeFrame = if(newSpeedUp != fSpeed)  snake.freeFrame + 1 else 0
-      println(newSpeedUp)
+      println(newSpeedUp+"*************"+newFreeFrame)
       if(dead.nonEmpty) {
         val appleCount = math.round(snake.length * 0.5).toInt
         feedApple(appleCount, 1, Some(snake.id))
