@@ -198,7 +198,7 @@ trait Grid {
       val newFreeFrame = if(newSpeedUp != fSpeed)  snake.freeFrame + 1 else 0
 //      println(newSpeedUp+"*************"+newFreeFrame)
       if(dead.nonEmpty) {
-        val appleCount = math.round(snake.length * 0.05).toInt
+        val appleCount = math.round(snake.length * 0.11).toInt
         feedApple(appleCount, 1, Some(snake.id))
         grid.get(dead.head) match {
           case Some(x: Body) =>
