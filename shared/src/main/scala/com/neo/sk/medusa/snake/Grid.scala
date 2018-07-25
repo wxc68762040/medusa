@@ -229,16 +229,33 @@ trait Grid {
 
 
     //if two (or more) headers go to the same point,
-    val snakesInDanger = updatedSnakes.groupBy(_.header).filter(_._2.size > 1).values
-
-    val deadSnakes =
-      snakesInDanger.flatMap { hits =>
-        val sorted = hits.toSeq.sortBy(_.length)
-        val winner = sorted.head
-        val deads = sorted.tail
-        mapKillCounter += winner.id -> (mapKillCounter.getOrElse(winner.id, 0) + deads.length)
-        deads
-      }.map(_.id).toSet
+//    val snakesInDanger = updatedSnakes.groupBy(_.header).filter(_._2.size > 1).values
+//
+//    val deadSnakes =
+//      snakesInDanger.flatMap { hits =>
+//        val sorted = hits.toSeq.sortBy(_.length)
+//        val winner = sorted.head
+//        val deads = sorted.tail
+//        mapKillCounter += winner.id -> (mapKillCounter.getOrElse(winner.id, 0) + deads.length)
+//        deads
+//      }.map(_.id).toSet
+		val dangerBodies = scala.collection.mutable.Map.empty[Point, List[SkDt]]
+		updatedSnakes.foreach { s =>
+			(s.lastHeader to s.header).tail.foreach { p =>
+				if(dangerBodies.get(p).isEmpty) {
+					dangerBodies += ((p, List(s)))
+				} else {
+					dangerBodies.update(p, s :: dangerBodies(p))
+				}
+			}
+		}
+		val deadSnakes = dangerBodies.filter(_._2.lengthCompare(2) >= 0).flatMap { point =>
+			val sorted = point._2.sortBy(_.length)
+			val winner = sorted.head
+			val deads = sorted.tail
+			mapKillCounter += winner.id -> (mapKillCounter.getOrElse(winner.id, 0) + deads.length)
+			deads
+		}.map(_.id).toSet
 
 
     val newSnakes = updatedSnakes.filterNot(s => deadSnakes.contains(s.id)).map { s =>
