@@ -173,7 +173,7 @@ trait Grid {
       //val newHeader = snake.header + newDirection * snake.speed
       val newHeader = snake.header + newDirection * newSpeedUp.toInt
 
-      val sum = newHeader.zone(10).foldLeft(0) { (sum: Int, e: Point) =>
+      val sum = newHeader.zone(15).foldLeft(0) { (sum: Int, e: Point) =>
         grid.get(e) match {
           case Some(Apple(score, _, _)) =>
             grid -= e
@@ -198,7 +198,7 @@ trait Grid {
       val newFreeFrame = if(newSpeedUp != fSpeed)  snake.freeFrame + 1 else 0
 //      println(newSpeedUp+"*************"+newFreeFrame)
       if(dead.nonEmpty) {
-        val appleCount = math.round(snake.length * 0.5).toInt
+        val appleCount = math.round(snake.length * 0.05).toInt
         feedApple(appleCount, 1, Some(snake.id))
         grid.get(dead.head) match {
           case Some(x: Body) =>
