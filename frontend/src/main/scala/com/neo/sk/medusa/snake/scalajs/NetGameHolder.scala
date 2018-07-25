@@ -193,7 +193,7 @@ object NetGameHolder extends js.JSApp {
     }else{
        1
     }
-
+    ctx.font = "10px Verdana"
     ctx.fillStyle = "#009393"
     ctx.fillRect(0, 0 ,canvas.width,canvas.height)
     ctx.drawImage(canvasPic,0 - myHead.x + centerX, 0 - myHead.y + centerY,Boundary.w,Boundary.h)
@@ -252,6 +252,11 @@ object NetGameHolder extends js.JSApp {
       println(s"${snake.header.x}, ${snake.header.y}")
       val x = snake.header.x + snake.direction.x * snake.speed * subFrame / totalSubFrame
       val y = snake.header.y + snake.direction.y * snake.speed * subFrame / totalSubFrame
+      val nameLength = snake.name.length
+      ctx.save()
+      ctx.fillStyle = Color.White.toString()
+      ctx.fillText(snake.name, x - myHead.x  + centerX - nameLength * 4, y - myHead.y + centerY - 20)
+      ctx.restore()
       if(snake.speed > fSpeed +1){
         ctx.save()
         ctx.fillStyle = MyColors.speedUpHeader
