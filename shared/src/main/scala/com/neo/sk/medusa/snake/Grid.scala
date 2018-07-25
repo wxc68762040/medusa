@@ -32,7 +32,7 @@ trait Grid {
   val speedUpRange = 30
   val speedUpLength = 3
 
-  val freeFrameTime = 30
+  val freeFrameTime = 50
 
   var frameCount = 0l
   var grid = Map[Point, Spot]()
@@ -147,12 +147,12 @@ trait Grid {
 
       //加速上限
       val s = snake.speed match {
-        case x if x > fSpeed && x < fSpeed + 3 => 0.3
-        case x if x >= fSpeed && x <= fSpeed + 6 => 0.4
-        case x if x > fSpeed && x <= fSpeed + 10 => 0.5
+        case x if x > fSpeed && x < fSpeed + 4 => 0.3
+        case x if x >= fSpeed && x <= fSpeed + 9 => 0.4
+        case x if x > fSpeed && x <= fSpeed + 15 => 0.5
         case _ => 0
       }
-      val newSpeedUpLength = if(snake.speed > 2 * fSpeed)  2 * fSpeed  else snake.speed
+      val newSpeedUpLength = if(snake.speed > 2.5 * fSpeed)  2.5 * fSpeed  else snake.speed
       // 判断加速减速
       var newSpeedUp = if(speedOrNot){
         newSpeedUpLength + s
