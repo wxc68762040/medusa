@@ -217,7 +217,7 @@ object NetGameHolder extends js.JSApp {
     }else{
        1
     }
-
+    ctx.font = "10px Verdana"
     ctx.fillStyle = "#009393"
     ctx.fillRect(0, 0 ,canvas.width,canvas.height)
     ctx.drawImage(canvasPic,0 - myHead.x + centerX, 0 - myHead.y + centerY,Boundary.w,Boundary.h)
@@ -257,8 +257,8 @@ object NetGameHolder extends js.JSApp {
 
     apples.foreach { case Ap(score, life, x, y) =>
       ctx.fillStyle = score match {
-        case 10 => Color.Yellow.toString()
-        case 5 => Color.Blue.toString()
+        case 50 => Color.Yellow.toString()
+        case 25 => Color.Blue.toString()
         case _ => Color.Red.toString()
       }
       ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
@@ -269,6 +269,15 @@ object NetGameHolder extends js.JSApp {
 
     snakes.foreach { snake =>
       val id = snake.id
+      println(s"${snake.header.x}, ${snake.header.y}")
+      val x = snake.header.x + snake.direction.x * snake.speed * subFrame / totalSubFrame
+      val y = snake.header.y + snake.direction.y * snake.speed * subFrame / totalSubFrame
+      val nameLength = snake.name.length
+      ctx.save()
+      ctx.fillStyle = Color.White.toString()
+      ctx.fillText(snake.name, x - myHead.x  + centerX - nameLength * 4, y - myHead.y + centerY - 20)
+      ctx.restore()
+      if(snake.speed > fSpeed +1){
       println(s"${snake.head.x}, ${snake.head.y}")
       val x = snake.head.x + snake.direction.x * snake.speed * subFrame / totalSubFrame
       val y = snake.head.y + snake.direction.y * snake.speed * subFrame / totalSubFrame

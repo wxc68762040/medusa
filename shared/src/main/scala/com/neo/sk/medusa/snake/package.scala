@@ -153,7 +153,7 @@ package object snake {
     header: Point = Point(20, 20),
     lastHeader: Point = Point(20, 20),
     direction: Point = Point(1, 0),
-    speed: Int = 10,
+    speed: Double = 10,
     speedUp : Double = 0.0,
     freeFrame : Int = 0,   //脱离加速条件的帧数
     length: Int = 50,

@@ -2,7 +2,7 @@ package com.neo.sk.medusa.snake
 
 import java.awt.event.KeyEvent
 
-import com.neo.sk.medusa.snake.Protocol.square
+import com.neo.sk.medusa.snake.Protocol.{square,fSpeed}
 
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
@@ -33,7 +33,7 @@ trait Grid {
   val speedUpRange = 30
   val speedUpLength = 3
 
-  val freeFrameTime = 30
+  val freeFrameTime = 40
 
   var frameCount = 0l
   var grid = Map[Point, Spot]()
@@ -85,7 +85,7 @@ trait Grid {
     }.map {
       //case (p, Header(id, life)) => (p, Body(id, life - 1))
 //      case (p, b@Body(id, life, _)) =>
-//        val lifeMinus = snakes.filter(_._2.id == id).map(e => e._2.speed + e._2.speedUp).head
+//        val lifeMinus = snakes.filter(_._2.id == id).map(e => e._2.speed).head
 //        (p, b.copy(life = life - lifeMinus))
       
       case (p, a@Apple(_, _, appleType)) =>
@@ -137,7 +137,7 @@ trait Grid {
       }else{
         Point(snake.head.x - square- speedUpRange, snake.head.y - square).zone((speedUpRange+square) * 2, square*2)
       }
-      //val speedUpCheckList = snake.header.zone(speedUpRange)
+
       headerLeftRight.foreach {
         s =>
           grid.get(s) match {
@@ -151,6 +151,15 @@ trait Grid {
               speedOrNot = speedOrNot
           }
       }
+
+      //加速上限
+      val s = snake.speed match {
+        case x if x > fSpeed && x < fSpeed + 4 => 0.3
+        case x if x >= fSpeed && x <= fSpeed + 9 => 0.4
+        case x if x > fSpeed && x <= fSpeed + 15 => 0.5
+        case _ => 0
+      }
+      val newSpeedUpLength = if(snake.speed > 2.5 * fSpeed)  2.5 * fSpeed  else snake.speed
       
       // 判断加速减速
       var newSpeed = if(speedOrNot) {
@@ -159,22 +168,39 @@ trait Grid {
         snake.speed
       } else {
         Math.max(snake.speed - 0.9, basicSpeed)
+      var newSpeedUp = if(speedOrNot){
+        newSpeedUpLength + s
+      }else if(!speedOrNot && snake.freeFrame <= freeFrameTime){
+        newSpeedUpLength
+      }else if(!speedOrNot && snake.freeFrame > freeFrameTime && newSpeedUpLength > fSpeed + 0.1){
+        newSpeedUpLength - s
+      }else{
+        fSpeed
       }
       
       val newHead = snake.head + snake.direction * newSpeed.toInt
 
       val foodSum = newHead.zone(10).foldLeft(0) { (sum: Int, e: Point) =>
+//      println(snake.id +"*********"+ snake.freeFrame +"**************"+( (newSpeedUp / speedUpLength) * speedUpLength))
+
+
+      val oldHeader = snake.header
+      //val newHeader = snake.header + newDirection * snake.speed
+      val newHeader = snake.header + newDirection * newSpeedUp.toInt
+
+      val sum = newHeader.zone(15).foldLeft(0) { (sum: Int, e: Point) =>
         grid.get(e) match {
           case Some(Apple(score, _, _)) =>
             grid -= e
             newSpeed += 0.3
+            newSpeedUp += 0.3
             sum + score
           case _ =>
             sum
         }
       }
       val len = snake.length + foodSum
-      var dead = newHead.frontZone(snake.direction, square * 2, snake.speed.toInt).filter { e =>
+      var dead = newHead.frontZone(snake.direction, square * 2, snake.speed.toInt ).filter { e =>
         grid.get(e) match {
           case Some(x: Body) => true
           case _ => false
@@ -212,8 +238,10 @@ trait Grid {
       }
 
       val newFreeFrame = if(newSpeed != basicSpeed) snake.freeFrame + 1 else 0
+      val newFreeFrame = if(newSpeedUp != fSpeed)  snake.freeFrame + 1 else 0
+//      println(newSpeedUp+"*************"+newFreeFrame)
       if(dead.nonEmpty) {
-        val appleCount = math.round(snake.length * 0.5).toInt
+        val appleCount = math.round(snake.length * 0.11).toInt
         feedApple(appleCount, 1, Some(snake.id))
         grid.get(dead.head) match {
           case Some(x: Body) =>
@@ -226,6 +254,7 @@ trait Grid {
       } else {
 				Right(snake.copy(head = newHead, tail = newTail, direction = newDirection, joints = newJoints,
           speed = newSpeed, freeFrame = newFreeFrame, length = len, extend = newExtend))
+				Right(snake.copy(header = newHeader, lastHeader = oldHeader, direction = newDirection,speed = newSpeedUp,freeFrame=newFreeFrame, length = len))
 			}
     }
 
@@ -245,16 +274,33 @@ trait Grid {
 
 
     //if two (or more) headers go to the same point,
-    val snakesInDanger = updatedSnakes.groupBy(_.head).filter(_._2.size > 1).values
-
-    val deadSnakes =
-      snakesInDanger.flatMap { hits =>
-        val sorted = hits.toSeq.sortBy(_.length)
-        val winner = sorted.head
-        val deads = sorted.tail
-        mapKillCounter += winner.id -> (mapKillCounter.getOrElse(winner.id, 0) + deads.length)
-        deads
-      }.map(_.id).toSet
+//    val snakesInDanger = updatedSnakes.groupBy(_.head).filter(_._2.size > 1).values
+//
+//    val deadSnakes =
+//      snakesInDanger.flatMap { hits =>
+//        val sorted = hits.toSeq.sortBy(_.length)
+//        val winner = sorted.head
+//        val deads = sorted.tail
+//        mapKillCounter += winner.id -> (mapKillCounter.getOrElse(winner.id, 0) + deads.length)
+//        deads
+//      }.map(_.id).toSet
+		val dangerBodies = scala.collection.mutable.Map.empty[Point, List[SkDt]]
+		updatedSnakes.foreach { s =>
+			(s.lastHeader to s.header).tail.foreach { p =>
+				if(dangerBodies.get(p).isEmpty) {
+					dangerBodies += ((p, List(s)))
+				} else {
+					dangerBodies.update(p, s :: dangerBodies(p))
+				}
+			}
+		}
+		val deadSnakes = dangerBodies.filter(_._2.lengthCompare(2) >= 0).flatMap { point =>
+			val sorted = point._2.sortBy(_.length)
+			val winner = sorted.head
+			val deads = sorted.tail
+			mapKillCounter += winner.id -> (mapKillCounter.getOrElse(winner.id, 0) + deads.length)
+			deads
+		}.map(_.id).toSet
 
 
     val newSnakes = updatedSnakes.filterNot(s => deadSnakes.contains(s.id)).map { s =>
