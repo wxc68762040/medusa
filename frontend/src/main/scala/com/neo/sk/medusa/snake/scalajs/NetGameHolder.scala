@@ -312,7 +312,7 @@ object NetGameHolder extends js.JSApp {
         drawTextLine(s"your kill = ${mySnake.kill}", leftBegin, 1, baseLine)
         drawTextLine(s"your length = ${mySnake.length} ", leftBegin, 2, baseLine)
         if(killList != Nil){
-          var m = 1
+          var m = 0
           killList.foreach{i=>
             drawTextLine(s"your killed $i", 150, m, baseLine)
             m+=1
@@ -323,10 +323,11 @@ object NetGameHolder extends js.JSApp {
           ctx.font = "36px Helvetica"
           ctx.fillText("Please wait.", 150, 180)
         } else {
+          ctx.font = "12px Helvetica"
           if(killList.contains(myName)){
-            drawTextLine("You killed yourself", 150, 1, 1)
+            drawTextLine("You killed yourself", 150, 0, 1)
           }else if(grid.mapKillList.getOrElse(0L,Nil).contains(myName)){
-            drawTextLine("You hit wall", 150, 1, 1)
+            drawTextLine("You hit wall", 150, 0, 1)
           }else{
             ()
           }
