@@ -173,6 +173,7 @@ object NetGameHolder extends js.JSApp {
     val snakes = data.snakes
     val bodies = data.bodyDetails
     val apples = data.appleDetails
+    val killList = grid.mapKillList.getOrElse(uid,Nil)
 
     val mySubFrameRevise =
       try {
@@ -310,13 +311,30 @@ object NetGameHolder extends js.JSApp {
         drawTextLine(s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 0, baseLine)
         drawTextLine(s"your kill = ${mySnake.kill}", leftBegin, 1, baseLine)
         drawTextLine(s"your length = ${mySnake.length} ", leftBegin, 2, baseLine)
+        if(killList != Nil){
+          var m = 1
+          killList.foreach{i=>
+            drawTextLine(s"your killed $i", 150, m, baseLine)
+            m+=1
+          }
+        }
       case None =>
         if(firstCome) {
           ctx.font = "36px Helvetica"
           ctx.fillText("Please wait.", 150, 180)
         } else {
+          if(killList.contains(myName)){
+            drawTextLine("You killed yourself", 150, 1, 1)
+          }else if(grid.mapKillList.getOrElse(0L,Nil).contains(myName)){
+            drawTextLine("You hit wall", 150, 1, 1)
+          }else{
+            ()
+          }
+          drawTextLine(s"name:$myName", 150, 2, 1)
+          drawTextLine(s"length:$myLength", 150, 3, 1)
+          drawTextLine(s"kill:$myKill", 150, 4, 1)
           ctx.font = "36px Helvetica"
-          ctx.fillText(s"name:$myName\nlength:$myLength\nkill:$myKill\nPress Space Key To Restart!", 150- myHead.x + centerX, 180- myHead.x + centerX)
+          ctx.fillText("Press Space Key To Restart!", 150- myHead.x + centerX, 180- myHead.x + centerX)
         }
     }
 
