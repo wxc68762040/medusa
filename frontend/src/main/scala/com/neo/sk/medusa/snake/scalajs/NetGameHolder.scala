@@ -38,6 +38,10 @@ object NetGameHolder extends js.JSApp {
   var myId = -1l
   var subFrame = -1
 
+  var myName:String = ""
+  var myLength:Int = 0
+  var myKill:Int = 0
+
   val grid = new GridOnClient(bounds)
 
   var firstCome = true
@@ -298,6 +302,9 @@ object NetGameHolder extends js.JSApp {
     snakes.find(_.id == uid) match {
       case Some(mySnake) =>
         firstCome = false
+        myName=mySnake.name
+        myLength=mySnake.length
+        myKill=mySnake.kill
         val baseLine = 1
         ctx.font = "12px Helvetica"
         drawTextLine(s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 0, baseLine)
@@ -309,7 +316,7 @@ object NetGameHolder extends js.JSApp {
           ctx.fillText("Please wait.", 150, 180)
         } else {
           ctx.font = "36px Helvetica"
-          ctx.fillText("Ops, Press Space Key To Restart!", 150- myHead.x + centerX, 180- myHead.x + centerX)
+          ctx.fillText(s"name:$myName\nlength:$myLength\nkill:$myKill\nPress Space Key To Restart!", 150- myHead.x + centerX, 180- myHead.x + centerX)
         }
     }
 
