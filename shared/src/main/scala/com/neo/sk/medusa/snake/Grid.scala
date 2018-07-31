@@ -184,7 +184,7 @@ trait Grid {
         }
       }
       val len = snake.length + sum
-      var dead = newHeader.frontZone(snake.direction, square * 2, snake.speed.toInt ).filter { e =>
+      var dead = newHeader.frontZone(snake.direction, square * 2, newSpeedUp.toInt ).filter { e =>
         grid.get(e) match {
           case Some(x: Body) => true
           case _ => false
