@@ -24,7 +24,7 @@ trait Grid {
   val random = new Random(System.nanoTime())
 
 
-  val defaultLength = 5
+  val defaultLength = 50
   val appleNum = 25
   val appleLife = 500
   val historyRankLength = 5
