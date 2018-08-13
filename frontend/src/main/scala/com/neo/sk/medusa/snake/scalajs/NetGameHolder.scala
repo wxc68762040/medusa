@@ -157,7 +157,6 @@ object NetGameHolder extends js.JSApp {
     val mySubFrameRevise =
       try {
         snakes.filter(_.id == uid).head.direction * snakes.filter(_.id == uid).head.speed.toInt * subFrame / totalSubFrame
-
       } catch {
         case e: Exception =>
           Point(0, 0)
@@ -177,7 +176,7 @@ object NetGameHolder extends js.JSApp {
     val deviationX = centerX - myHead.x
     val deviationY = centerY - myHead.y
 
-
+    ctx.font = "10px Verdana"
     ctx.fillStyle = "#009393"
     ctx.fillRect(0, 0 ,canvas.width,canvas.height)
     ctx.save()
@@ -223,8 +222,8 @@ object NetGameHolder extends js.JSApp {
 
     apples.foreach { case Ap(score, life, x, y) =>
       ctx.fillStyle = score match {
-        case 10 => Color.Yellow.toString()
-        case 5 => Color.Blue.toString()
+        case 50 => Color.Yellow.toString()
+        case 25 => Color.Blue.toString()
         case _ => Color.Red.toString()
       }
       ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 , square * 2)
@@ -237,6 +236,11 @@ object NetGameHolder extends js.JSApp {
       println(s"${snake.header.x}, ${snake.header.y}")
       val x = snake.header.x + snake.direction.x * snake.speed * subFrame / totalSubFrame
       val y = snake.header.y + snake.direction.y * snake.speed * subFrame / totalSubFrame
+      val nameLength = snake.name.length
+      ctx.save()
+      ctx.fillStyle = Color.White.toString()
+      ctx.fillText(snake.name, x - myHead.x  + centerX - nameLength * 4, y - myHead.y + centerY - 20)
+      ctx.restore()
       if(snake.speed > fSpeed +1){
         ctx.fillStyle = MyColors.speedUpHeader
         ctx.fillRect(x - 1.5 * square + deviationX, y - 1.5 * square + deviationY, square * 3 , square * 3)
