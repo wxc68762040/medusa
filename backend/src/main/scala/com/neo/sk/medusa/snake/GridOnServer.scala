@@ -76,7 +76,9 @@ class GridOnServer(override val boundary: Point) extends Grid {
   }
 
   override def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[Long] = None) = {
-    if (appleType == 0) {
+    feededApples = Nil
+
+    if (appleType == FoodType.normal) {
       def appleDecrease = {
         val step = 5
         snakes.size match {
@@ -89,8 +91,6 @@ class GridOnServer(override val boundary: Point) extends Grid {
         }
       }
 
-      feededApples = Nil
-
       var appleNeeded = appleNum - appleCount - appleDecrease
 
       if (appleNeeded > 0) {
@@ -102,13 +102,13 @@ class GridOnServer(override val boundary: Point) extends Grid {
             case x => 5
           }
           val apple = Apple(score, appleLife, appleType)
-          feededApples ::= Ap(score, appleLife, p.x, p.y)
+          feededApples ::= Ap(score, appleLife, appleType, p.x, p.y)
           grid += (p -> apple)
           appleNeeded -= 1
         }
       } else {
         grid.filter { _._2 match {
-          case x: Apple if x.appleType == 0 => true
+          case x: Apple if x.appleType == FoodType.normal => true
           case _ => false
         }
         }.foreach{
@@ -143,15 +143,15 @@ class GridOnServer(override val boundary: Point) extends Grid {
         case _ => false
       }}.foreach {
         dead => if (appleNeeded != 0) {
-          val p = pointAroundSnack(dead._1)
+          val targetPoint = pointAroundSnack(dead._1)
           val score = random.nextDouble() match {
             case x if x > 0.95 => 50
             case x if x > 0.8 => 25
             case x => 5
           }
-          val apple = Apple(score, appleLife, appleType)
-          feededApples ::= Ap(score, appleLife, p.x, p.y)
-          grid += (p -> apple)
+          val apple = Apple(score, appleLife, FoodType.intermediate, Some(targetPoint, score))
+          feededApples ::= Ap(score, appleLife, FoodType.intermediate, dead._1.x, dead._1.y, Some(targetPoint, score))
+          grid += (dead._1 -> apple)
           appleNeeded -= 1
         }
       }

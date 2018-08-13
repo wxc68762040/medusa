@@ -181,18 +181,18 @@ object NetGameHolder extends js.JSApp {
     val centerY = MyBoundary.h/2
     val myHead = if(snakes.exists(_.id == uid)) snakes.filter(_.id == uid).head.header + mySubFrameRevise else Point(centerX, centerY)
 
-    val proportion = if(snakes.exists(_.id == uid)){
-     val length = snakes.filter(_.id == uid).head.length
-      if(length < 100){
-        1
-      }else if (length > 100 && length <500){
-        2
-      }else{
-        3
-      }
-    }else{
-       1
-    }
+//    val proportion = if(snakes.exists(_.id == uid)){
+//     val length = snakes.filter(_.id == uid).head.length
+//      if(length < 100){
+//        1
+//      }else if (length > 100 && length <500){
+//        2
+//      }else{
+//        3
+//      }
+//    }else{
+//       1
+//    }
     ctx.font = "10px Verdana"
     ctx.fillStyle = "#009393"
     ctx.fillRect(0, 0 ,canvas.width,canvas.height)
@@ -235,7 +235,7 @@ object NetGameHolder extends js.JSApp {
       }
     }
 
-    apples.foreach { case Ap(score, life, x, y) =>
+    apples.foreach { case Ap(score, _, _, x, y, _) =>
       ctx.fillStyle = score match {
         case 50 => Color.Yellow.toString()
         case 25 => Color.Blue.toString()
@@ -409,7 +409,7 @@ object NetGameHolder extends js.JSApp {
                   historyRank = history
                 case Protocol.FeedApples(apples) =>
                   writeToArea(s"apple feeded = $apples") //for debug.
-                  grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, 0))
+                  grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt))
                 case data: Protocol.GridDataSync =>
                   //writeToArea(s"grid data got: $msgData")
                   //TODO here should be better code.
@@ -459,7 +459,7 @@ object NetGameHolder extends js.JSApp {
       grid.actionMap = grid.actionMap.filterKeys(_ > data.frameCount)
       grid.frameCount = data.frameCount
       grid.snakes = data.snakes.map(s => s.id -> s).toMap
-      val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, 0)).toMap
+      val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
       val bodyMap = data.bodyDetails.map(b => Point(b.x, b.y) -> Body(b.id, b.life, b.frameIndex)).toMap
       val gridMap = appleMap ++ bodyMap
       grid.grid = gridMap
