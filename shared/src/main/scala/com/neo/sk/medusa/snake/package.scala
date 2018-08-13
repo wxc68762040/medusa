@@ -126,7 +126,7 @@ package object snake {
     val h = 1000
   }
 
-  val boundaryWidth = 5
+  val boundaryWidth = 3
 
   object MyBoundary{
     val w = 1000

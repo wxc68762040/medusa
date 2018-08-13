@@ -95,17 +95,11 @@ object NetGameHolder extends js.JSApp {
   }
 
   def drawGameOn(): Unit = {
-//    ctx.fillStyle = Color.Black.toString()
-//    ctx.fillRect(0, 0, canvas.width, canvas.height)
-//    mapCtx.fillStyle = Color.Black.toString()
-//    mapCtx.fillRect(0, 0,mapCanvas.width, mapCanvas.height)
     ctx.drawImage(canvasPic,0,0,canvas.width,canvas.height)
     mapCtx.drawImage(canvasPic,0,0,mapCanvas.width,mapCanvas.height)
   }
 
   def drawGameOff(): Unit = {
-//    ctx.fillStyle = Color.Black.toString()
-//    ctx.fillRect(0, 0, bounds.x, bounds.y )
     ctx.drawImage(canvasPic,0,0,canvas.width,canvas.height)
     ctx.fillStyle = "rgb(250, 250, 250)"
     if (firstCome) {
@@ -116,10 +110,6 @@ object NetGameHolder extends js.JSApp {
       ctx.fillText("Ops, connection lost.", 150, 180)
     }
 
-//    mapCtx.fillStyle = Color.Black.toString()
-//    mapCtx.fillRect(0, 0, mapBoundary.x, mapBoundary.y )
-//    mapCtx.drawImage(canvasPic,0,0,mapCanvas.width,mapCanvas.height)
-//
     mapCtx.clearRect(0,0,mapCanvas.width,mapCanvas.height)
     mapCtx.globalAlpha=0.2
     mapCtx.fillStyle= Color.Black.toString()
@@ -160,12 +150,6 @@ object NetGameHolder extends js.JSApp {
 
   def drawGrid(uid: Long, data: GridDataSync, subFrame: Int): Unit = {
 
-//    ctx.fillStyle = Color.Black.toString()
-//    ctx.fillRect(0, 0, bounds.x , bounds.y)
-//
-//    mapCtx.fillStyle = Color.Black.toString()
-//    mapCtx.fillRect(0, 0, mapBoundary.x , mapBoundary.y )
-
     val snakes = data.snakes
     val bodies = data.bodyDetails
     val apples = data.appleDetails
@@ -173,31 +157,36 @@ object NetGameHolder extends js.JSApp {
     val mySubFrameRevise =
       try {
         snakes.filter(_.id == uid).head.direction * snakes.filter(_.id == uid).head.speed.toInt * subFrame / totalSubFrame
+
       } catch {
         case e: Exception =>
           Point(0, 0)
       }
+
+    val proportion = if(snakes.exists(_.id == uid)){
+      val length = snakes.filter(_.id == uid).head.length
+      1 / (0.0005 * length + 0.975)
+      //50.0 / length
+    }else{
+      1.0
+    }
+
     val centerX = MyBoundary.w/2
     val centerY = MyBoundary.h/2
     val myHead = if(snakes.exists(_.id == uid)) snakes.filter(_.id == uid).head.header + mySubFrameRevise else Point(centerX, centerY)
+    val deviationX = centerX - myHead.x
+    val deviationY = centerY - myHead.y
 
-    val proportion = if(snakes.exists(_.id == uid)){
-     val length = snakes.filter(_.id == uid).head.length
-      if(length < 100){
-        1
-      }else if (length > 100 && length <500){
-        2
-      }else{
-        3
-      }
-    }else{
-       1
-    }
 
     ctx.fillStyle = "#009393"
     ctx.fillRect(0, 0 ,canvas.width,canvas.height)
-    ctx.drawImage(canvasPic,0 - myHead.x + centerX, 0 - myHead.y + centerY,Boundary.w,Boundary.h)
-    //mapCtx.drawImage(canvasPic,0,0,mapCanvas.width,mapCanvas.height)
+    ctx.save()
+    ctx.translate(MyBoundary.w / 2, MyBoundary.h / 2)
+    ctx.scale(proportion, proportion)
+    ctx.translate(-MyBoundary.w / 2, -MyBoundary.h / 2)
+    ctx.drawImage(canvasPic,0 + deviationX, 0 + deviationY,Boundary.w,Boundary.h)
+    //ctx.restore()
+
     mapCtx.clearRect(0,0,mapCanvas.width,mapCanvas.height)
     mapCtx.globalAlpha=0.2
     mapCtx.fillStyle= Color.Black.toString()
@@ -209,28 +198,25 @@ object NetGameHolder extends js.JSApp {
     mapCtx.save()
     val maxPic = dom.document.getElementById("maxPic").asInstanceOf[HTMLElement]
     mapCtx.globalAlpha=1
-    mapCtx.drawImage(maxPic,(maxLength.x * LittleMap.w) / Boundary.w - 7,(maxLength.y * LittleMap.h - 7) / Boundary.h,15,15)
+    mapCtx.drawImage(maxPic,(maxLength.x * LittleMap.w) / Boundary.w - 7,(maxLength.y * LittleMap.h) / Boundary.h -7 ,15,15)
     mapCtx.restore()
 
     ctx.fillStyle = MyColors.otherBody
     bodies.foreach { case Bd(id, life, frameIndex, x, y) =>
-      //println(s"draw body at $p body[$life]")
       val totalIndex = snakes.filter(_.id == id).head.speed - 1
       if (id == uid) {
-        ctx.save()
         ctx.fillStyle = MyColors.myBody
         if(life >= 0 || frameIndex > totalIndex * (subFrame + 1) / totalSubFrame) {
-          ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
+          ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 , square * 2)
         }
         if(maxId != uid){
           mapCtx.globalAlpha = 1
           mapCtx.fillStyle = MyColors.myBody
           mapCtx.fillRect((x  * LittleMap.w) / Boundary.w,(y * LittleMap.h) / Boundary.h,2,2)
         }
-				ctx.restore()
       } else {
 				if(life >= 0 || frameIndex > totalIndex * (subFrame+1) / totalSubFrame) {
-					ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2, square * 2)
+					ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2, square * 2)
 				}
       }
     }
@@ -241,8 +227,7 @@ object NetGameHolder extends js.JSApp {
         case 5 => Color.Blue.toString()
         case _ => Color.Red.toString()
       }
-      ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
-
+      ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 , square * 2)
     }
 
     ctx.fillStyle = MyColors.otherHeader
@@ -253,34 +238,30 @@ object NetGameHolder extends js.JSApp {
       val x = snake.header.x + snake.direction.x * snake.speed * subFrame / totalSubFrame
       val y = snake.header.y + snake.direction.y * snake.speed * subFrame / totalSubFrame
       if(snake.speed > fSpeed +1){
-        ctx.save()
         ctx.fillStyle = MyColors.speedUpHeader
-        ctx.fillRect(x - 1.5 * square - myHead.x + centerX, y - 1.5 * square - myHead.y + centerY, square * 3 , square * 3)
-        ctx.restore()
+        ctx.fillRect(x - 1.5 * square + deviationX, y - 1.5 * square + deviationY, square * 3 , square * 3)
+        //ctx.restore()
       }
       if (id == uid) {
-        ctx.save()
         ctx.fillStyle = MyColors.myHeader
-        ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
+        ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 , square * 2)
         if(maxId != id){
           mapCtx.globalAlpha = 1
           mapCtx.fillStyle = MyColors.myHeader
           mapCtx.fillRect((x * LittleMap.w) / Boundary.w, (y * LittleMap.h) / Boundary.h, 2, 2)
         }
-        ctx.restore()
       } else {
-        ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
+        ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 , square * 2)
 
       }
     }
 
     //画边界
-    ctx.save()
     ctx.fillStyle = MyColors.boundaryColor
-    ctx.fillRect(0 - myHead.x + centerX, 0 - myHead.y + centerY, Boundary.w, boundaryWidth)
-    ctx.fillRect(0 - myHead.x + centerX, 0 - myHead.y + centerY, boundaryWidth, Boundary.h)
-    ctx.fillRect(0 - myHead.x + centerX, Boundary.h - myHead.y + centerY, Boundary.w, boundaryWidth)
-    ctx.fillRect(Boundary.w - myHead.x + centerX, 0 - myHead.y + centerY, boundaryWidth, Boundary.h)
+    ctx.fillRect(0 + deviationX, 0 + deviationY, Boundary.w, boundaryWidth)
+    ctx.fillRect(0 + deviationX, 0 + deviationY, boundaryWidth, Boundary.h)
+    ctx.fillRect(0+ deviationX, Boundary.h + deviationY, Boundary.w, boundaryWidth)
+    ctx.fillRect(Boundary.w + deviationX, 0 + deviationY, boundaryWidth, Boundary.h)
     ctx.restore()
 
     ctx.fillStyle = "rgb(250, 250, 250)"

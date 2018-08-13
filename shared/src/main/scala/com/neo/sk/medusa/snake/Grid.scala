@@ -97,9 +97,9 @@ trait Grid {
 
 
   def randomEmptyPoint(): Point = {
-    var p = Point(random.nextInt(boundary.x - 2 * boundaryWidth) + boundaryWidth, random.nextInt(boundary.y - 2 * boundaryWidth) + boundaryWidth)
+    var p = Point(random.nextInt(boundary.x - 20 * boundaryWidth) + 10 * boundaryWidth, random.nextInt(boundary.y - 20 * boundaryWidth) + 10 * boundaryWidth)
     while (grid.contains(p)) {
-      p = Point(random.nextInt(boundary.x), random.nextInt(boundary.y))
+      p = Point(random.nextInt(boundary.x - 20 * boundaryWidth) + 10 * boundaryWidth, random.nextInt(boundary.y - 20 * boundaryWidth) + 10 * boundaryWidth)
     }
     p
   }
@@ -178,6 +178,7 @@ trait Grid {
           case Some(Apple(score, _, _)) =>
             grid -= e
             newSpeedUp += 0.3
+            speedOrNot = true
             sum + score
           case _ =>
             sum
@@ -190,12 +191,12 @@ trait Grid {
           case _ => false
         }
       }
-      if(newHeader.x < 0+5 || newHeader.y <0+5 || newHeader.x -5 > Boundary.w || newHeader.y - 5> Boundary.h) {
+      if(newHeader.x < 0 + square  || newHeader.y < 0 + square || newHeader.x > Boundary.w - square  || newHeader.y > Boundary.h -square) {
         println(s"snake[${snake.id}] hit wall.")
         dead = Point(0, 0) :: dead
       }
 
-      val newFreeFrame = if(newSpeedUp != fSpeed)  snake.freeFrame + 1 else 0
+      val newFreeFrame = if(speedOrNot)  0 else snake.freeFrame + 1
       println(newSpeedUp+"*************"+newFreeFrame)
       if(dead.nonEmpty) {
         val appleCount = math.round(snake.length * 0.5).toInt
