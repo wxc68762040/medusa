@@ -10,12 +10,13 @@ import org.scalajs.dom
 import org.scalajs.dom.ext.{Color, KeyCode}
 import org.scalajs.dom.html.{Document => _, _}
 import org.scalajs.dom.raw._
-
 import io.circe.generic.auto._
 import io.circe.parser._
+
 import scala.scalajs.js
 import scala.scalajs.js.Math
 import scala.scalajs.js.typedarray.ArrayBuffer
+import scala.util.Random
 
 /**
   * User: Taoz
@@ -54,7 +55,7 @@ object NetGameHolder extends js.JSApp {
   )
 
   object MyColors {
-    val myHeader = "#FF0000"
+    val myHeader = "#FFFFFF"
     val myBody = "#FFFFFF"
     val boundaryColor = "#FFFFFF"
     val otherHeader = Color.Blue.toString()
@@ -200,17 +201,19 @@ object NetGameHolder extends js.JSApp {
     mapCtx.drawImage(maxPic,(maxLength.x * LittleMap.w) / Boundary.w - 7,(maxLength.y * LittleMap.h) / Boundary.h -7 ,15,15)
     mapCtx.restore()
 
-    ctx.fillStyle = MyColors.otherBody
-    bodies.foreach { case Bd(id, life, frameIndex, x, y) =>
+    //ctx.fillStyle = MyColors.otherBody
+    bodies.foreach { case Bd(id, life, frameIndex, x, y,color) =>
       val totalIndex = snakes.filter(_.id == id).head.speed - 1
+      ctx.fillStyle = color
+      ctx.shadowBlur= 5
+      ctx.shadowColor= "#FFFFFF"
       if (id == uid) {
-        ctx.fillStyle = MyColors.myBody
         if(life >= 0 || frameIndex > totalIndex * (subFrame + 1) / totalSubFrame) {
           ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 , square * 2)
         }
         if(maxId != uid){
           mapCtx.globalAlpha = 1
-          mapCtx.fillStyle = MyColors.myBody
+          mapCtx.fillStyle = color
           mapCtx.fillRect((x  * LittleMap.w) / Boundary.w,(y * LittleMap.h) / Boundary.h,2,2)
         }
       } else {
@@ -222,10 +225,12 @@ object NetGameHolder extends js.JSApp {
 
     apples.foreach { case Ap(score, life, x, y) =>
       ctx.fillStyle = score match {
-        case 50 => Color.Yellow.toString()
-        case 25 => Color.Blue.toString()
-        case _ => Color.Red.toString()
+        case 50 => "#ffeb3bd9"
+        case 25 => "#1474c1"
+        case _ => "#e91e63ed"
       }
+      ctx.shadowBlur= 20
+      ctx.shadowColor= "#FFFFFF"
       ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 , square * 2)
     }
 
@@ -243,7 +248,7 @@ object NetGameHolder extends js.JSApp {
       ctx.restore()
       if(snake.speed > fSpeed +1){
         ctx.fillStyle = MyColors.speedUpHeader
-        ctx.fillRect(x - 1.5 * square + deviationX, y - 1.5 * square + deviationY, square * 3 , square * 3)
+        ctx.fillRect(x - 2 * square + deviationX, y - 2 * square + deviationY, square * 4 , square * 4)
         //ctx.restore()
       }
       if (id == uid) {
@@ -311,6 +316,7 @@ object NetGameHolder extends js.JSApp {
     }
 
   }
+
 
   def drawTextLine(str: String, x: Int, lineNum: Int, lineBegin: Int = 0) = {
     ctx.fillText(str, x, (lineNum + lineBegin - 1) * textLineHeight)
@@ -440,7 +446,7 @@ object NetGameHolder extends js.JSApp {
       grid.frameCount = data.frameCount
       grid.snakes = data.snakes.map(s => s.id -> s).toMap
       val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, 0)).toMap
-      val bodyMap = data.bodyDetails.map(b => Point(b.x, b.y) -> Body(b.id, b.life, b.frameIndex)).toMap
+      val bodyMap = data.bodyDetails.map(b => Point(b.x, b.y) -> Body(b.id, b.life, b.frameIndex,b.color)).toMap
       val gridMap = appleMap ++ bodyMap
       grid.grid = gridMap
     }

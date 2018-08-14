@@ -75,14 +75,14 @@ trait Grid {
     var appleCount = 0
     grid = grid.filter { case (p, spot) =>
       spot match {
-        case Body(id, life, _) if life >= 0 && snakes.contains(id) => true
+        case Body(id, life, _,_) if life >= 0 && snakes.contains(id) => true
         case Apple(_, life, _) if life >= 0 => true
         //case Header(id, _) if snakes.contains(id) => true
         case _ => false
       }
     }.map {
       //case (p, Header(id, life)) => (p, Body(id, life - 1))
-      case (p, b@Body(id, life, _)) =>
+      case (p, b@Body(id, life, _,_)) =>
         val lifeMinus = snakes.filter(_._2.id == id).map(e => e._2.speed).head
         (p, b.copy(life = life - lifeMinus))
       
@@ -197,7 +197,7 @@ trait Grid {
       }
 
       val newFreeFrame = if(speedOrNot)  0 else snake.freeFrame + 1
-      println(newSpeedUp+"*************"+newFreeFrame)
+      //println(newSpeedUp+"*************"+newFreeFrame)
       if(dead.nonEmpty) {
         val appleCount = math.round(snake.length * 0.11).toInt
         feedApple(appleCount, 1, Some(snake.id))
@@ -269,7 +269,7 @@ trait Grid {
     newSnakes.foreach { s =>
       val bodies = s.lastHeader to s.header
         bodies.tail.indices.foreach { p =>
-          grid ++= Map(bodies(p) -> Body(s.id, s.length, p))
+          grid ++= Map(bodies(p) -> Body(s.id, s.length, p,s.color))
         }
     }
     snakes = newSnakes.map(s => (s.id, s)).toMap
@@ -285,9 +285,9 @@ trait Grid {
     var bodyDetails: List[Bd] = Nil
     var appleDetails: List[Ap] = Nil
     grid.foreach {
-      case (p, Body(id, life, frameIndex)) => bodyDetails ::= Bd(id, life, frameIndex, p.x, p.y)
+      case (p, Body(id, life, frameIndex, color)) => bodyDetails ::= Bd(id, life, frameIndex, p.x, p.y,color)
       case (p, Apple(score, life, _)) => appleDetails ::= Ap(score, life, p.x, p.y)
-      case (p, Header(id, life)) => bodyDetails ::= Bd(id, life, 0, p.x, p.y)
+      case (p, Header(id, life)) => bodyDetails ::= Bd(id, life, 0, p.x, p.y,"")
       case _ =>
     }
     Protocol.GridDataSync(

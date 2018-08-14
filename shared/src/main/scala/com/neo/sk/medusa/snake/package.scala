@@ -8,13 +8,13 @@ package com.neo.sk.medusa
 package object snake {
 
   sealed trait Spot
-  case class Body(id: Long, life: Double, frameIndex: Int) extends Spot
+  case class Body(id: Long, life: Double, frameIndex: Int, color:String) extends Spot
   case class Header(id: Long, life: Int) extends Spot
 	case class Apple(score: Int, life: Int, appleType: Int) extends Spot //食物类型，0：普通食物，1：死蛇身体
 	case class Bound() extends Spot
 
   case class Score(id: Long, n: String, k: Int, l: Int, t: Option[Long] = None)
-  case class Bd(id: Long, life: Double, frameIndex: Int, x: Int, y: Int)
+  case class Bd(id: Long, life: Double, frameIndex: Int, x: Int, y: Int, color:String)
   case class Ap(score: Int, life: Int, x: Int, y: Int)
 
 
@@ -110,6 +110,7 @@ package object snake {
   case class SkDt(
     id: Long,
     name: String,
+    color: String,
     header: Point = Point(20, 20),
     lastHeader: Point = Point(20, 20),
     direction: Point = Point(1, 0),
@@ -122,20 +123,20 @@ package object snake {
 
 
   object Boundary{
-    val w = 2000
-    val h = 1000
+    val w = 3600
+    val h = 1800
   }
 
   val boundaryWidth = 3
 
   object MyBoundary{
-    val w = 1000
-    val h = 500
+    val w = 1500
+    val h = 700
   }
 
   object LittleMap{
-    val w = 100
-    val h = 100
+    val w = 200
+    val h = 200
   }
 
 
