@@ -1,5 +1,7 @@
 package com.neo.sk.medusa
 
+import scala.collection.immutable.Queue
+
 /**
   * User: Taoz
   * Date: 8/29/2016
@@ -8,15 +10,21 @@ package com.neo.sk.medusa
 package object snake {
 
   sealed trait Spot
-  case class Body(id: Long, life: Double, frameIndex: Int) extends Spot
+  case class Body(id: Long, color:String) extends Spot
   case class Header(id: Long, life: Int) extends Spot
 	case class Apple(score: Int, life: Int, appleType: Int, targetAppleOpt: Option[(Point, Int)] = None) extends Spot //食物类型，0：普通食物，1：死蛇身体，2：中间路径
 	case class Bound() extends Spot
 
   case class Score(id: Long, n: String, k: Int, l: Int, t: Option[Long] = None)
-  case class Bd(id: Long, life: Double, frameIndex: Int, x: Int, y: Int)
+  case class Bd(id: Long, x: Int, y: Int, color:String)
   case class Ap(score: Int, life: Int, appleType: Int, x: Int, y: Int, targetAppleOpt: Option[(Point, Int)] = None)
-
+	
+	case class GridData(
+		frameCount: Long,
+		snakes: List[SnakeInfo],
+		bodyDetails: List[Bd],
+		appleDetails: List[Ap]
+	)
 
 
   case class Point(x: Int, y: Int) {
@@ -89,6 +97,38 @@ package object snake {
 		} yield {
 			Point(xs, ys)
 		}).toList
+		
+		def getDirection(destination: Point) = {
+			if(destination.x == x) {
+				if(destination.y < y) {
+					Point(0, -1)
+				} else if(destination.y > y) {
+					Point(0, 1)
+				} else {
+					Point(0, 0)
+				}
+			} else if(destination.y == y) {
+				if(destination.x < x) {
+					Point(-1, 0)
+				} else if(destination.x > x) {
+					Point(1, 0)
+				} else {
+					Point(0, 0)
+				}
+			} else {
+				Point(0, 0)
+			}
+		}
+	
+		def distance(destination: Point) = {
+			if(destination.x == x) {
+				Math.abs(destination.y - y)
+			} else if(destination.y == y) {
+				Math.abs(destination.x - x)
+			} else {
+				0
+			}
+		}
 
 		/**
 			* 获取点对应的前方矩形范围的一个区域，用于碰撞检测。
@@ -138,32 +178,61 @@ package object snake {
   case class SkDt(
     id: Long,
     name: String,
+    color: String,
     header: Point = Point(20, 20),
     lastHeader: Point = Point(20, 20),
     direction: Point = Point(1, 0),
     speed: Double = 10,
     speedUp : Double = 0.0,
-    freeFrame : Int = 0,
+    freeFrame : Int = 0,   //脱离加速条件的帧数
     length: Int = 50,
     kill: Int = 0
   )
+	
+	case class SnakeInfo(
+		id: Long,
+		name: String,
+		head: Point,
+		tail: Point,
+		lastHead: Point,
+		color: String,
+		direction: Point = Point(1, 0),
+		joints: Queue[Point] = Queue(),
+		speed: Double = 10.0,
+		freeFrame: Int = 0,
+		length: Int = 50,
+		extend: Int = 50, //需要伸长的量
+		kill: Int = 0
+	) {
+		def getBodies: Map[Point, Spot] = {
+			var bodyMap = Map.empty[Point, Spot]
+			joints.enqueue(head).foldLeft(tail) { (start: Point, end: Point) =>
+				val points = start.to(end)
+				points.foreach { e =>
+					bodyMap += ((e, Body(id, color)))
+				}
+				end
+			}
+			bodyMap
+		}
+	}
 
 
   object Boundary{
-    val w = 2000
-    val h = 1000
+    val w = 3600
+    val h = 1800
   }
 
-  val boundaryWidth = 5
+  val boundaryWidth = 3
 
   object MyBoundary{
-    val w = 1000
-    val h = 500
+    val w = 1500
+    val h = 700
   }
 
   object LittleMap{
-    val w = 100
-    val h = 100
+    val w = 200
+    val h = 200
   }
 
   object FoodType {

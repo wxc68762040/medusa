@@ -2,6 +2,8 @@ package com.neo.sk.medusa.snake
 
 import org.slf4j.LoggerFactory
 
+import scala.util.Random
+
 /**
   * User: Taoz
   * Date: 9/3/2016
@@ -17,7 +19,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
   override def info(msg: String): Unit = log.info(msg)
 
 
-  private[this] var waitingJoin = Map.empty[Long, String]
+  private[this] var waitingJoin =  Map.empty[Long, (String,Long)]
   private[this] var feededApples: List[Ap] = Nil
   private[this] var deadBodies: List[Ap] = Nil
 
@@ -28,16 +30,34 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
   private[this] var historyRankThreshold = if (historyRankList.isEmpty) -1 else historyRankList.map(_.k).min
 
-  def addSnake(id: Long, name: String) = waitingJoin += (id -> name)
+  def addSnake(id: Long, name: String, roomId:Long) = waitingJoin += (id -> (name,roomId))
+
+  def randomColor()={
+    val a = random.nextInt(7)
+    val color = a match{
+      case 0 => "#FF0033"
+      case 1 => "#FF6633"
+      case 2  => "#FF3399"
+      case 3  => "#FFFF33"
+      case 4  => "#66CCFF"
+      case 5  => "#33FFCC"
+      case 6  => "#6633FF"
+      case _  => "#FFFFFF"
+    }
+    println(a)
+    println(color)
+    color
+  }
 
 
   private[this] def genWaitingSnake() = {
-    waitingJoin.filterNot(kv => snakes.contains(kv._1)).foreach { case (id, name) =>
-      val header = randomEmptyPoint()
-      grid += header -> Body(id, defaultLength, 0)
-      snakes += id -> SkDt(id, name, header, header)
+    waitingJoin.filterNot(kv => snakes.contains(kv._1)).foreach { case (id, (name,roomId)) =>
+      val color = randomColor()
+      val head = randomEmptyPoint()
+      grid += head -> Body(id, color)
+      snakes += id -> SnakeInfo(id, name, head, head, head, color)
     }
-    waitingJoin = Map.empty[Long, String]
+    waitingJoin =  Map.empty[Long, (String,Long)]
   }
 
   implicit val scoreOrdering = new Ordering[Score] {
@@ -160,8 +180,8 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
   }
 
-  override def update(): Unit = {
-    super.update()
+  override def update(isSynced: Boolean): Unit = {
+    super.update(isSynced: Boolean)
     genWaitingSnake()
     updateRanks()
   }
