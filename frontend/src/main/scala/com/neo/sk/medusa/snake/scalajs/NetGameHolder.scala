@@ -202,7 +202,7 @@ object NetGameHolder extends js.JSApp {
     mapCtx.restore()
 
     //ctx.fillStyle = MyColors.otherBody
-    bodies.foreach { case Bd(id, life, frameIndex, x, y,color) =>
+    bodies.foreach { case Bd(id, life, frameIndex, x, y, color) =>
       val totalIndex = snakes.filter(_.id == id).head.speed - 1
       ctx.fillStyle = color
       ctx.shadowBlur= 5
@@ -223,7 +223,7 @@ object NetGameHolder extends js.JSApp {
       }
     }
 
-    apples.foreach { case Ap(score, life, x, y) =>
+    apples.foreach { case Ap(score, _, _, x, y, _) =>
       ctx.fillStyle = score match {
         case 50 => "#ffeb3bd9"
         case 25 => "#1474c1"
@@ -395,7 +395,7 @@ object NetGameHolder extends js.JSApp {
                   historyRank = history
                 case Protocol.FeedApples(apples) =>
                   writeToArea(s"apple feeded = $apples") //for debug.
-                  grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, 0))
+                  grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt))
                 case data: Protocol.GridDataSync =>
                   //writeToArea(s"grid data got: $msgData")
                   //TODO here should be better code.
@@ -445,7 +445,7 @@ object NetGameHolder extends js.JSApp {
       grid.actionMap = grid.actionMap.filterKeys(_ > data.frameCount)
       grid.frameCount = data.frameCount
       grid.snakes = data.snakes.map(s => s.id -> s).toMap
-      val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, 0)).toMap
+      val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
       val bodyMap = data.bodyDetails.map(b => Point(b.x, b.y) -> Body(b.id, b.life, b.frameIndex,b.color)).toMap
       val gridMap = appleMap ++ bodyMap
       grid.grid = gridMap

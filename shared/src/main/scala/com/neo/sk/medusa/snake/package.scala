@@ -10,12 +10,12 @@ package object snake {
   sealed trait Spot
   case class Body(id: Long, life: Double, frameIndex: Int, color:String) extends Spot
   case class Header(id: Long, life: Int) extends Spot
-	case class Apple(score: Int, life: Int, appleType: Int) extends Spot //食物类型，0：普通食物，1：死蛇身体
+	case class Apple(score: Int, life: Int, appleType: Int, targetAppleOpt: Option[(Point, Int)] = None) extends Spot //食物类型，0：普通食物，1：死蛇身体，2：中间路径
 	case class Bound() extends Spot
 
   case class Score(id: Long, n: String, k: Int, l: Int, t: Option[Long] = None)
   case class Bd(id: Long, life: Double, frameIndex: Int, x: Int, y: Int, color:String)
-  case class Ap(score: Int, life: Int, x: Int, y: Int)
+  case class Ap(score: Int, life: Int, appleType: Int, x: Int, y: Int, targetAppleOpt: Option[(Point, Int)] = None)
 
 
 
@@ -47,6 +47,34 @@ package object snake {
 				else list.sortBy(_.y).reverse
 			}
     }
+
+    def pathTo(other: Point): Option[Point] = {
+
+      val (x0, x1) = if(x > other.x) (other.x, x) else (x, other.x)
+      val (y0, y1) = if(y > other.y) (other.y, y) else (y, other.y)
+
+      def step(distance: Int) = {
+        distance match {
+          case 0 => 0
+          case n if n > 0 && n < 5 => 1
+          case n if n >= 5 && n < 10 => 3
+          case n if n >= 10 && n < 15 => 5
+          case n if n >= 15 && n < 20 => 7
+          case n if n >= 20 && n < 25 => 9
+          case n if n >= 25 && n <= 30 => 11
+        }
+      }
+
+      if (x1 - x0 <= 4 && y1 - y0 <= 4) {
+        None
+      } else  {
+        val nextX = if (x > other.x) x - step(x - other.x) else x + step(other.x - x)
+        val nextY = if (y > other.y) y - step(y - other.y) else y + step(other.y - y)
+
+        Some(Point(nextX, nextY))
+      }
+    }
+
 
     def zone(range: Int) = (for {
       xs <- x - range to x + range
@@ -137,6 +165,12 @@ package object snake {
   object LittleMap{
     val w = 200
     val h = 200
+  }
+
+  object FoodType {
+    val normal = 0
+    val deadBody = 1
+    val intermediate = 2
   }
 
 
