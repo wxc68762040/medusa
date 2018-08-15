@@ -196,22 +196,31 @@ trait Grid {
 
       val sum = newHeader.zone(30).foldLeft(0) { (sum: Int, e: Point) =>
         grid.get(e) match {
-          case Some(Apple(score, _, appleType,_)) =>if (sum == 0) {
-            grid -= e
-            val nextAppleOpt = e pathTo newHeader
-              if (nextAppleOpt.nonEmpty) {
-                val nextApple = nextAppleOpt.get
-                grid.get(nextApple) match {
-                  case Some(Body(_, _, _)) => //do nothing
-                  case _ =>
-                    val pathApple = Apple(score, appleLife, FoodType.intermediate)
-                    grid += (nextApple -> pathApple)
-                }
-              }
-              if (appleType != FoodType.intermediate) {newSpeedUp += 0.3
-            speedOrNot = truesum + score
-          } else sum
-            } else sumcase _ =>
+          case Some(Apple(score, _, appleType,_)) =>
+						if (sum == 0) {
+							grid -= e
+							val nextAppleOpt = e pathTo newHeader
+								if (nextAppleOpt.nonEmpty) {
+									val nextApple = nextAppleOpt.get
+									grid.get(nextApple) match {
+										case Some(Body(_, _, _, _)) => //do nothing
+										case _ =>
+											val pathApple = Apple(score, appleLife, FoodType.intermediate)
+											grid += (nextApple -> pathApple)
+									}
+								}
+							if (appleType != FoodType.intermediate) {
+								newSpeedUp += 0.3
+								speedOrNot = true
+								sum + score
+							} else {
+								sum
+							}
+            } else {
+							sum
+						}
+					
+					case _ =>
             sum
         }
       }
