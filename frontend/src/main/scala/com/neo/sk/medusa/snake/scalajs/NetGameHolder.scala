@@ -269,19 +269,15 @@ object NetGameHolder extends js.JSApp {
 
     snakes.foreach { snake =>
       val id = snake.id
-      println(s"${snake.header.x}, ${snake.header.y}")
-      val x = snake.header.x + snake.direction.x * snake.speed * subFrame / totalSubFrame
-      val y = snake.header.y + snake.direction.y * snake.speed * subFrame / totalSubFrame
+      println(s"${snake.head.x}, ${snake.head.y}")
+      val x = snake.head.x + snake.direction.x * snake.speed * subFrame / totalSubFrame
+      val y = snake.head.y + snake.direction.y * snake.speed * subFrame / totalSubFrame
       val nameLength = snake.name.length
       ctx.save()
       ctx.fillStyle = Color.White.toString()
       ctx.fillText(snake.name, x - myHead.x  + centerX - nameLength * 4, y - myHead.y + centerY - 20)
       ctx.restore()
       if(snake.speed > fSpeed +1){
-      println(s"${snake.head.x}, ${snake.head.y}")
-      val x = snake.head.x + snake.direction.x * snake.speed * subFrame / totalSubFrame
-      val y = snake.head.y + snake.direction.y * snake.speed * subFrame / totalSubFrame
-      if(snake.speed >= 13.0){
         ctx.save()
         ctx.fillStyle = MyColors.speedUpHeader
         ctx.fillRect(x - 1.5 * square - myHead.x + centerX, y - 1.5 * square - myHead.y + centerY, square * 3 , square * 3)

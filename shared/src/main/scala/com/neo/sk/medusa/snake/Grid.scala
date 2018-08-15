@@ -162,13 +162,8 @@ trait Grid {
       val newSpeedUpLength = if(snake.speed > 2.5 * fSpeed)  2.5 * fSpeed  else snake.speed
       
       // 判断加速减速
-      var newSpeed = if(speedOrNot) {
-        Math.min(snake.speed + 0.9, 30.0)
-      } else if(!speedOrNot && snake.freeFrame <= freeFrameTime){
-        snake.speed
-      } else {
-        Math.max(snake.speed - 0.9, basicSpeed)
-      var newSpeedUp = if(speedOrNot){
+				
+      var newSpeed = if(speedOrNot){
         newSpeedUpLength + s
       }else if(!speedOrNot && snake.freeFrame <= freeFrameTime){
         newSpeedUpLength
@@ -179,21 +174,13 @@ trait Grid {
       }
       
       val newHead = snake.head + snake.direction * newSpeed.toInt
-
-      val foodSum = newHead.zone(10).foldLeft(0) { (sum: Int, e: Point) =>
-//      println(snake.id +"*********"+ snake.freeFrame +"**************"+( (newSpeedUp / speedUpLength) * speedUpLength))
-
-
-      val oldHeader = snake.header
-      //val newHeader = snake.header + newDirection * snake.speed
-      val newHeader = snake.header + newDirection * newSpeedUp.toInt
-
-      val sum = newHeader.zone(15).foldLeft(0) { (sum: Int, e: Point) =>
+			val oldHead = snake.head
+			
+      val foodSum = newHead.zone(15).foldLeft(0) { (sum: Int, e: Point) =>
         grid.get(e) match {
           case Some(Apple(score, _, _)) =>
             grid -= e
             newSpeed += 0.3
-            newSpeedUp += 0.3
             sum + score
           case _ =>
             sum
@@ -237,8 +224,7 @@ trait Grid {
         }
       }
 
-      val newFreeFrame = if(newSpeed != basicSpeed) snake.freeFrame + 1 else 0
-      val newFreeFrame = if(newSpeedUp != fSpeed)  snake.freeFrame + 1 else 0
+      val newFreeFrame = if(newSpeed != fSpeed)  snake.freeFrame + 1 else 0
 //      println(newSpeedUp+"*************"+newFreeFrame)
       if(dead.nonEmpty) {
         val appleCount = math.round(snake.length * 0.11).toInt
@@ -252,9 +238,8 @@ trait Grid {
             Left(0L) //撞墙的情况
         }
       } else {
-				Right(snake.copy(head = newHead, tail = newTail, direction = newDirection, joints = newJoints,
-          speed = newSpeed, freeFrame = newFreeFrame, length = len, extend = newExtend))
-				Right(snake.copy(header = newHeader, lastHeader = oldHeader, direction = newDirection,speed = newSpeedUp,freeFrame=newFreeFrame, length = len))
+				Right(snake.copy(head = newHead, tail = newTail, lastHead = oldHead, direction = newDirection,
+					joints = newJoints, speed = newSpeed, freeFrame = newFreeFrame, length = len, extend = newExtend))
 			}
     }
 
@@ -284,9 +269,9 @@ trait Grid {
 //        mapKillCounter += winner.id -> (mapKillCounter.getOrElse(winner.id, 0) + deads.length)
 //        deads
 //      }.map(_.id).toSet
-		val dangerBodies = scala.collection.mutable.Map.empty[Point, List[SkDt]]
+		val dangerBodies = scala.collection.mutable.Map.empty[Point, List[SnakeInfo]]
 		updatedSnakes.foreach { s =>
-			(s.lastHeader to s.header).tail.foreach { p =>
+			(s.lastHead to s.head).tail.foreach { p =>
 				if(dangerBodies.get(p).isEmpty) {
 					dangerBodies += ((p, List(s)))
 				} else {

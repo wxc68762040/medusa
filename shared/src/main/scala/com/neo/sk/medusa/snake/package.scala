@@ -165,6 +165,7 @@ package object snake {
 		name: String,
 		head: Point,
 		tail: Point,
+		lastHead: Point,
 		direction: Point = Point(1, 0),
 		joints: Queue[Point] = Queue(),
 		speed: Double = 10.0,
