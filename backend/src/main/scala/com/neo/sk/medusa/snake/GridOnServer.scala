@@ -53,8 +53,8 @@ class GridOnServer(override val boundary: Point) extends Grid {
     waitingJoin.filterNot(kv => snakes.contains(kv._1)).foreach { case (id, name) =>
       val color = randomColor()
       val head = randomEmptyPoint()
-      grid += head -> Body(id)
-      snakes += id -> SnakeInfo(id, name, head, head)
+      grid += head -> Body(id, color)
+      snakes += id -> SnakeInfo(id, name, head, head, head, color)
     }
     waitingJoin = Map.empty[Long, String]
   }

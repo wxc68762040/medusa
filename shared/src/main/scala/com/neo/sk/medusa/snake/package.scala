@@ -195,6 +195,7 @@ package object snake {
 		head: Point,
 		tail: Point,
 		lastHead: Point,
+		color: String,
 		direction: Point = Point(1, 0),
 		joints: Queue[Point] = Queue(),
 		speed: Double = 10.0,
@@ -208,7 +209,7 @@ package object snake {
 			joints.enqueue(head).foldLeft(tail) { (start: Point, end: Point) =>
 				val points = start.to(end)
 				points.foreach { e =>
-					bodyMap += ((e, Body(id)))
+					bodyMap += ((e, Body(id, color)))
 				}
 				end
 			}

@@ -208,7 +208,7 @@ trait Grid {
 								if (nextAppleOpt.nonEmpty) {
 									val nextApple = nextAppleOpt.get
 									grid.get(nextApple) match {
-										case Some(Body(_)) => //do nothing
+										case Some(Body(_, _)) => //do nothing
 										case _ =>
 											val pathApple = Apple(score, appleLife, FoodType.intermediate)
 											grid += (nextApple -> pathApple)
@@ -231,7 +231,7 @@ trait Grid {
       }
 
       val len = snake.length + foodSum
-      var dead = newHead.frontZone(snake.direction, square * 2, newSpeedUp.toInt ).filter { e =>
+      var dead = newHead.frontZone(snake.direction, square * 2, newSpeed.toInt).filter { e =>
         grid.get(e) match {
           case Some(x: Body) => true
           case _ => false
@@ -351,7 +351,7 @@ trait Grid {
     var bodyDetails: List[Bd] = Nil
     var appleDetails: List[Ap] = Nil
     grid.foreach {
-      case (p, Body(id)) => bodyDetails ::= Bd(id, p.x, p.y)
+      case (p, Body(id, color)) => bodyDetails ::= Bd(id, p.x, p.y, color)
       case (p, Apple(score, life, appleType, targetAppleOpt)) => appleDetails ::= Ap(score, life, appleType, p.x, p.y, targetAppleOpt)
 //      case (p, Header(id, life)) => bodyDetails ::= Bd(id, p.x, p.y)
       case _ =>

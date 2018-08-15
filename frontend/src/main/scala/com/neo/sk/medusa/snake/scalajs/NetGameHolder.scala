@@ -157,7 +157,7 @@ object NetGameHolder extends js.JSApp {
 
     snakes.foreach { snake =>
       val addBodies = snake.head.to(snake.head + snake.direction * snake.speed.toInt * subFrame / totalSubFrame)
-        .map(p => Bd(snake.id, p.x, p.y))
+        .map(p => Bd(snake.id, p.x, p.y, snake.color))
       val deleteBodies = {
         var recorder = List.empty[Point]
         var step = snake.speed.toInt * subFrame / totalSubFrame - snake.extend
@@ -176,7 +176,7 @@ object NetGameHolder extends js.JSApp {
             joints = joints.dequeue._2
           }
         }
-        recorder.map(p => Bd(snake.id, p.x, p.y))
+        recorder.map(p => Bd(snake.id, p.x, p.y, snake.color))
       }
       bodies = (bodies ++ addBodies).filterNot(p => deleteBodies.contains(p))
     }
@@ -194,9 +194,9 @@ object NetGameHolder extends js.JSApp {
       val length = snakes.filter(_.id == uid).head.length
       1 / (0.0005 * length + 0.975)
       //50.0 / length
-    }else{
-      1.0
-    }
+    } else {
+			1.0
+		}
 
     val centerX = MyBoundary.w/2
     val centerY = MyBoundary.h/2
@@ -230,12 +230,10 @@ object NetGameHolder extends js.JSApp {
 
     //ctx.fillStyle = MyColors.otherBody
     bodies.foreach { case Bd(id, x, y, color) =>
-      val totalIndex = snakes.filter(_.id == id).head.speed - 1
       ctx.fillStyle = color
       ctx.shadowBlur= 5
       ctx.shadowColor= "#FFFFFF"
       if (id == uid) {
-        ctx.save()
         ctx.fillStyle = MyColors.myBody
         ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
         if(maxId != uid){
@@ -267,10 +265,10 @@ object NetGameHolder extends js.JSApp {
       val x = snake.head.x + snake.direction.x * snake.speed * subFrame / totalSubFrame
       val y = snake.head.y + snake.direction.y * snake.speed * subFrame / totalSubFrame
       val nameLength = snake.name.length
-      ctx.save()
+//      ctx.save()
       ctx.fillStyle = Color.White.toString()
       ctx.fillText(snake.name, x - myHead.x  + centerX - nameLength * 4, y - myHead.y + centerY - 20)
-      ctx.restore()
+//      ctx.restore()
       if(snake.speed > fSpeed +1){
         ctx.fillStyle = MyColors.speedUpHeader
         ctx.fillRect(x - 2 * square + deviationX, y - 2 * square + deviationY, square * 4 , square * 4)
