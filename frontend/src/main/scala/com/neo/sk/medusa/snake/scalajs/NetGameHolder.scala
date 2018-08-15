@@ -231,10 +231,10 @@ object NetGameHolder extends js.JSApp {
     //ctx.fillStyle = MyColors.otherBody
     bodies.foreach { case Bd(id, x, y, color) =>
       ctx.fillStyle = color
-      ctx.shadowBlur= 5
-      ctx.shadowColor= "#FFFFFF"
+//      ctx.shadowBlur= 1
+//      ctx.shadowColor= "#FFFFFF"
       if (id == uid) {
-        ctx.fillStyle = MyColors.myBody
+        //ctx.fillStyle = MyColors.myBody
         ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
         if(maxId != uid){
           mapCtx.globalAlpha = 1
@@ -265,14 +265,13 @@ object NetGameHolder extends js.JSApp {
       val x = snake.head.x + snake.direction.x * snake.speed * subFrame / totalSubFrame
       val y = snake.head.y + snake.direction.y * snake.speed * subFrame / totalSubFrame
       val nameLength = snake.name.length
-//      ctx.save()
       ctx.fillStyle = Color.White.toString()
       ctx.fillText(snake.name, x - myHead.x  + centerX - nameLength * 4, y - myHead.y + centerY - 20)
-//      ctx.restore()
       if(snake.speed > fSpeed +1){
+        ctx.shadowBlur= 5
+        ctx.shadowColor= "#FFFFFF"
         ctx.fillStyle = MyColors.speedUpHeader
-        ctx.fillRect(x - 2 * square + deviationX, y - 2 * square + deviationY, square * 4 , square * 4)
-        //ctx.restore()
+        ctx.fillRect(x - 1.5 * square + deviationX, y - 1.5 * square + deviationY, square * 3 , square * 3)
       }
       if (id == uid) {
         ctx.fillStyle = MyColors.myHeader
