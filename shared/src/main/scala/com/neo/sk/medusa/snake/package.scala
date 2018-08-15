@@ -66,10 +66,11 @@ package object snake {
           case 0 => 0
           case n if n > 0 && n < 5 => 1
           case n if n >= 5 && n < 10 => 3
-          case n if n >= 10 && n < 15 => 5
-          case n if n >= 15 && n < 20 => 7
-          case n if n >= 20 && n < 25 => 9
-          case n if n >= 25 && n <= 30 => 11
+          case n if n >= 10 && n < 15 => 6
+          case n if n >= 15 && n < 20 => 8
+          case n if n >= 20 && n < 25 => 10
+          case n if n >= 25 && n <= 30 => 20
+          case _ => 30
         }
       }
 
