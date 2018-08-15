@@ -91,17 +91,14 @@ trait Grid {
         } else if (appleType == FoodType.intermediate && targetAppleOpt.nonEmpty) {
           val targetApple = targetAppleOpt.get
           if (p == targetApple._1) {
-            info(s"reach the target $p")
             val apple = Apple(targetApple._2, appleLife, FoodType.deadBody)
             (p, apple)
           } else {
             val nextLoc = p pathTo targetApple._1
             if (nextLoc.nonEmpty) {
-              info(s"curLoc: $p, nextLoc: $nextLoc, targetLoc: ${targetApple._1}")
               val apple = Apple(targetApple._2, appleLife, FoodType.intermediate, targetAppleOpt)
               (nextLoc.get, apple)
             } else {
-              info(s"close to the target.curLoc: $p")
               val apple = Apple(targetApple._2, appleLife, FoodType.deadBody)
               (p, apple)
             }

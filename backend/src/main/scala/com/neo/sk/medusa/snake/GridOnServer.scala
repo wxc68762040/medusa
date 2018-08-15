@@ -19,6 +19,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
   private[this] var waitingJoin = Map.empty[Long, String]
   private[this] var feededApples: List[Ap] = Nil
+  private[this] var deadBodies: List[Ap] = Nil
 
 
   var currentRank = List.empty[Score]
@@ -76,9 +77,8 @@ class GridOnServer(override val boundary: Point) extends Grid {
   }
 
   override def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[Long] = None) = {
-    feededApples = Nil
-
     if (appleType == FoodType.normal) {
+
       def appleDecrease = {
         val step = 5
         snakes.size match {
@@ -120,17 +120,17 @@ class GridOnServer(override val boundary: Point) extends Grid {
       }
     } else {
       def pointAroundSnack(newBound: Point): Point = {
-        var x = newBound.x - 20 + random.nextInt(40)
-        var y = newBound.y - 20 + random.nextInt(40)
+        var x = newBound.x - 30 + random.nextInt(60)
+        var y = newBound.y - 30 + random.nextInt(60)
         var p = Point(x, y)
         while (grid.contains(p)) {
-          x = newBound.x - 20 + random.nextInt(40)
-          y = newBound.y - 20 + random.nextInt(40)
+          x = newBound.x - 30 + random.nextInt(60)
+          y = newBound.y - 30 + random.nextInt(60)
           p = Point(x, y)
         }
         while (x <= 0 || x >= Boundary.w || y <= 0 || y >= Boundary.h) {
-          x = newBound.x - 30 + random.nextInt(60)
-          y = newBound.y - 30 + random.nextInt(60)
+          x = newBound.x - 50 + random.nextInt(100)
+          y = newBound.y - 50 + random.nextInt(100)
           p = Point(x, y)
         }
         p
@@ -150,7 +150,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
             case x => 5
           }
           val apple = Apple(score, appleLife, FoodType.intermediate, Some(targetPoint, score))
-          feededApples ::= Ap(score, appleLife, FoodType.intermediate, dead._1.x, dead._1.y, Some(targetPoint, score))
+          deadBodies ::= Ap(score, appleLife, FoodType.intermediate, dead._1.x, dead._1.y, Some(targetPoint, score))
           grid += (dead._1 -> apple)
           appleNeeded -= 1
         }
@@ -166,6 +166,11 @@ class GridOnServer(override val boundary: Point) extends Grid {
     updateRanks()
   }
 
-  def getFeededApple: List[Ap] = feededApples
+  def getFeededApple: List[Ap] = feededApples ::: deadBodies
+
+  def resetFoodData(): Unit = {
+    feededApples = Nil
+    deadBodies = Nil
+  }
 
 }

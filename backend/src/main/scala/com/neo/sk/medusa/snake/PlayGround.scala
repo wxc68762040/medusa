@@ -85,6 +85,7 @@ object PlayGround {
           tickCount += 1
           grid.update()
           val feedApples = grid.getFeededApple
+          grid.resetFoodData()
           if (tickCount % 20 == 5) {
             val gridData = grid.getGridData
             dispatch(gridData)

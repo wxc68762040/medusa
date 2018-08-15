@@ -249,7 +249,7 @@ object NetGameHolder extends js.JSApp {
 
     snakes.foreach { snake =>
       val id = snake.id
-      println(s"${snake.header.x}, ${snake.header.y}")
+//      println(s"${snake.header.x}, ${snake.header.y}")
       val x = snake.header.x + snake.direction.x * snake.speed * subFrame / totalSubFrame
       val y = snake.header.y + snake.direction.y * snake.speed * subFrame / totalSubFrame
       val nameLength = snake.name.length
@@ -350,9 +350,9 @@ object NetGameHolder extends js.JSApp {
       canvas.focus()
       canvas.onkeydown = {
         (e: dom.KeyboardEvent) => {
-          println(s"keydown: ${e.keyCode}")
+//          println(s"keydown: ${e.keyCode}")
           if (watchKeys.contains(e.keyCode)) {
-            println(s"key down: [${e.keyCode}]")
+//            println(s"key down: [${e.keyCode}]")
             e.preventDefault()
             val msg: Protocol.UserAction = if (e.keyCode == KeyCode.F2) {
               NetTest(myId, System.currentTimeMillis())
