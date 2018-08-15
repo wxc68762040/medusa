@@ -51,10 +51,10 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
   private[this] def genWaitingSnake() = {
     waitingJoin.filterNot(kv => snakes.contains(kv._1)).foreach { case (id, name) =>
-      val header = randomEmptyPoint()
       val color = randomColor()
-      grid += header -> Body(id, defaultLength, 0,color)
-      snakes += id -> SkDt(id, name,color, header, header)
+      val head = randomEmptyPoint()
+      grid += head -> Body(id)
+      snakes += id -> SnakeInfo(id, name, head, head)
     }
     waitingJoin = Map.empty[Long, String]
   }
@@ -180,8 +180,8 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
   }
 
-  override def update(): Unit = {
-    super.update()
+  override def update(isSynced: Boolean): Unit = {
+    super.update(isSynced: Boolean)
     genWaitingSnake()
     updateRanks()
   }

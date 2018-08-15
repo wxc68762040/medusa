@@ -29,6 +29,7 @@ trait Grid {
   val appleLife = 500
   val historyRankLength = 5
 //  val stepLength = 4
+  val basicSpeed = 10.0
   val speedUpRange = 30
 //  val speedUpLength = 3
 
@@ -36,11 +37,11 @@ trait Grid {
 
   var frameCount = 0l
   var grid = Map[Point, Spot]()
-  var snakes = Map.empty[Long, SkDt]
+  var snakes = Map.empty[Long, SnakeInfo]
   var actionMap = Map.empty[Long, Map[Long, Int]]
 
 
-  def removeSnake(id: Long): Option[SkDt] = {
+  def removeSnake(id: Long): Option[SnakeInfo] = {
     val r = snakes.get(id)
     if (r.isDefined) {
       snakes -= id
@@ -60,8 +61,11 @@ trait Grid {
   }
 
 
-  def update() = {
-    updateSnakes()
+  def update(isSynced: Boolean) = {
+    //info(s"-------- grid update frameCount= $frameCount ---------")
+    if(!isSynced) {
+      updateSnakes()
+    }
     updateSpots()
     actionMap -= frameCount
     frameCount += 1
@@ -71,18 +75,18 @@ trait Grid {
 
   private[this] def updateSpots() = {
     var appleCount = 0
-    grid = grid.filter { case (p, spot) =>
+    grid = grid.filter { case (_, spot) =>
       spot match {
-        case Body(id, life, _, _) if life >= 0 && snakes.contains(id) => true
+//        case Body(id, life, _, _) if life >= 0 && snakes.contains(id) => true
         case Apple(_, life, _, _) if life >= 0 => true
         //case Header(id, _) if snakes.contains(id) => true
         case _ => false
       }
     }.map {
       //case (p, Header(id, life)) => (p, Body(id, life - 1))
-      case (p, b@Body(id, life, _, _)) =>
-        val lifeMinus = snakes.filter(_._2.id == id).map(e => e._2.speed).head
-        (p, b.copy(life = life - lifeMinus))
+//      case (p, b@Body(id, life, _, _)) =>
+//        val lifeMinus = snakes.filter(_._2.id == id).map(e => e._2.speed).head
+//        (p, b.copy(life = life - lifeMinus))
       
       case (p, a@Apple(_, _, appleType, targetAppleOpt)) =>
         if (appleType == FoodType.normal) {
@@ -112,7 +116,11 @@ trait Grid {
 
       case x => x
     }
-
+    val bodies = snakes.values.map(e => e.getBodies)
+      .fold(Map.empty[Point, Spot]) { (a: Map[Point, Spot], b: Map[Point, Spot]) =>
+        a ++ b
+    }
+    grid ++= bodies
     feedApple(appleCount, FoodType.normal)
   }
 
@@ -127,7 +135,7 @@ trait Grid {
 
 
   private[this] def updateSnakes() = {
-    def updateASnake(snake: SkDt, actMap: Map[Long, Int]): Either[Long, SkDt] = {
+    def updateASnake(snake: SnakeInfo, actMap: Map[Long, Int]): Either[Long, SnakeInfo] = {
       val keyCode = actMap.get(snake.id)
 //      debug(s" +++ snake[${snake.id}] feel key: $keyCode at frame=$frameCount")
       val newDirection = {
@@ -144,21 +152,22 @@ trait Grid {
           snake.direction
         }
       }
+      
       //检测加速
       var speedOrNot :Boolean = false
       val headerLeftRight=if(newDirection.y == 0){
-        Point(snake.header.x - square,snake.header.y - square - speedUpRange).zone(square * 2,(speedUpRange+square) * 2)
+        Point(snake.head.x - square, snake.head.y - square - speedUpRange).zone(square * 2, (speedUpRange+square) * 2)
       }else{
-        Point(snake.header.x - square- speedUpRange,snake.header.y - square ).zone((speedUpRange+square) * 2,square*2)
+        Point(snake.head.x - square- speedUpRange, snake.head.y - square).zone((speedUpRange+square) * 2, square*2)
       }
 
-      headerLeftRight.foreach{
-        s=>
+      headerLeftRight.foreach {
+        s =>
           grid.get(s) match {
-            case Some(x:Body) =>
-              if(x.id != snake.id){
+            case Some(x: Body) =>
+              if (x.id != snake.id) {
                 speedOrNot = true
-              }else{
+              } else {
                 speedOrNot = speedOrNot
               }
             case _ =>
@@ -174,8 +183,10 @@ trait Grid {
         case _ => 0
       }
       val newSpeedUpLength = if(snake.speed > 2.5 * fSpeed)  2.5 * fSpeed  else snake.speed
+      
       // 判断加速减速
-      var newSpeedUp = if(speedOrNot){
+				
+      var newSpeed = if(speedOrNot){
         newSpeedUpLength + s
       }else if(!speedOrNot && snake.freeFrame <= freeFrameTime){
         newSpeedUpLength
@@ -184,33 +195,27 @@ trait Grid {
       }else{
         fSpeed
       }
-      //val newFreeFrame = if(!speedOrNot && snake.freeFrame < freeFrameTime)  snake.freeFrame + 1 else 0
-
-
-//      println(snake.id +"*********"+ snake.freeFrame +"**************"+( (newSpeedUp / speedUpLength) * speedUpLength))
-
-
-      val oldHeader = snake.header
-      //val newHeader = snake.header + newDirection * snake.speed
-      val newHeader = snake.header + newDirection * newSpeedUp.toInt
-
-      val sum = newHeader.zone(30).foldLeft(0) { (sum: Int, e: Point) =>
+      
+      val newHead = snake.head + snake.direction * newSpeed.toInt
+			val oldHead = snake.head
+			
+      val foodSum = newHead.zone(30).foldLeft(0) { (sum: Int, e: Point) =>
         grid.get(e) match {
           case Some(Apple(score, _, appleType,_)) =>
 						if (sum == 0) {
 							grid -= e
-							val nextAppleOpt = e pathTo newHeader
+							val nextAppleOpt = e pathTo newHead
 								if (nextAppleOpt.nonEmpty) {
 									val nextApple = nextAppleOpt.get
 									grid.get(nextApple) match {
-										case Some(Body(_, _, _, _)) => //do nothing
+										case Some(Body(_)) => //do nothing
 										case _ =>
 											val pathApple = Apple(score, appleLife, FoodType.intermediate)
 											grid += (nextApple -> pathApple)
 									}
 								}
 							if (appleType != FoodType.intermediate) {
-								newSpeedUp += 0.3
+								newSpeed += 0.3
 								speedOrNot = true
 								sum + score
 							} else {
@@ -225,16 +230,42 @@ trait Grid {
         }
       }
 
-      val len = snake.length + sum
-      var dead = newHeader.frontZone(snake.direction, square * 2, newSpeedUp.toInt ).filter { e =>
+      val len = snake.length + foodSum
+      var dead = newHead.frontZone(snake.direction, square * 2, newSpeedUp.toInt ).filter { e =>
         grid.get(e) match {
           case Some(x: Body) => true
           case _ => false
         }
       }
-      if(newHeader.x < 0 + square || newHeader.y < 0 + square || newHeader.x > Boundary.w - square  || newHeader.y > Boundary.h -square) {
+      if(newHead.x < 0 + square || newHead.y < 0 + square || newHead.x  > Boundary.w - square|| newHead.y > Boundary.h-square) {
         println(s"snake[${snake.id}] hit wall.")
         dead = Point(0, 0) :: dead
+      }
+      
+      //处理身体及尾巴的移动
+      var newJoints = snake.joints
+      var newTail = snake.tail
+      var step = snake.speed.toInt - (snake.extend + foodSum)
+      val newExtend = if(step >= 0) {
+        0
+      } else {
+        snake.extend - snake.speed.toInt
+      }
+      if (newDirection != snake.direction) {
+        newJoints = newJoints.enqueue(newHead)
+      }
+      newJoints = newJoints.enqueue(newHead)
+      while(step > 0) {
+        val distance = newTail.distance(newJoints.dequeue._1)
+        if(distance >= step) { //尾巴在移动到下一个节点前就需要停止。
+          newTail = newTail + newTail.getDirection(newJoints.dequeue._1) * step
+          newJoints = newJoints.dequeue._2
+          step = -1
+        } else { //尾巴在移动到下一个节点后，还需要继续移动。
+          step -= distance
+          newTail = newJoints.dequeue._1
+          newJoints = newJoints.dequeue._2
+        }
       }
 
       val newFreeFrame = if(speedOrNot) 0 else snake.freeFrame + 1
@@ -250,13 +281,14 @@ trait Grid {
             Left(0L) //撞墙的情况
         }
       } else {
-				Right(snake.copy(header = newHeader, lastHeader = oldHeader, direction = newDirection,speed = newSpeedUp,freeFrame=newFreeFrame, length = len))
+				Right(snake.copy(head = newHead, tail = newTail, lastHead = oldHead, direction = newDirection,
+					joints = newJoints, speed = newSpeed, freeFrame = newFreeFrame, length = len, extend = newExtend))
 			}
     }
 
 
     var mapKillCounter = Map.empty[Long, Int]
-    var updatedSnakes = List.empty[SkDt]
+    var updatedSnakes = List.empty[SnakeInfo]
 
     val acts = actionMap.getOrElse(frameCount, Map.empty[Long, Int])
 
@@ -270,7 +302,7 @@ trait Grid {
 
 
     //if two (or more) headers go to the same point,
-//    val snakesInDanger = updatedSnakes.groupBy(_.header).filter(_._2.size > 1).values
+//    val snakesInDanger = updatedSnakes.groupBy(_.head).filter(_._2.size > 1).values
 //
 //    val deadSnakes =
 //      snakesInDanger.flatMap { hits =>
@@ -280,9 +312,9 @@ trait Grid {
 //        mapKillCounter += winner.id -> (mapKillCounter.getOrElse(winner.id, 0) + deads.length)
 //        deads
 //      }.map(_.id).toSet
-		val dangerBodies = scala.collection.mutable.Map.empty[Point, List[SkDt]]
+		val dangerBodies = scala.collection.mutable.Map.empty[Point, List[SnakeInfo]]
 		updatedSnakes.foreach { s =>
-			(s.lastHeader to s.header).tail.foreach { p =>
+			(s.lastHead to s.head).tail.foreach { p =>
 				if(dangerBodies.get(p).isEmpty) {
 					dangerBodies += ((p, List(s)))
 				} else {
@@ -305,19 +337,13 @@ trait Grid {
         case None => s
       }
     }
-
-    newSnakes.foreach { s =>
-      val bodies = s.lastHeader to s.header
-        bodies.tail.indices.foreach { p =>
-          grid ++= Map(bodies(p) -> Body(s.id, s.length, p,s.color))
-        }
-    }
+    
     snakes = newSnakes.map(s => (s.id, s)).toMap
   }
 
 
 //  def updateAndGetGridData() = {
-//    update()
+//    update(false)
 //    getGridData
 //  }
 
@@ -325,15 +351,31 @@ trait Grid {
     var bodyDetails: List[Bd] = Nil
     var appleDetails: List[Ap] = Nil
     grid.foreach {
-      case (p, Body(id, life, frameIndex, color)) => bodyDetails ::= Bd(id, life, frameIndex, p.x, p.y, color)
+      case (p, Body(id)) => bodyDetails ::= Bd(id, p.x, p.y)
       case (p, Apple(score, life, appleType, targetAppleOpt)) => appleDetails ::= Ap(score, life, appleType, p.x, p.y, targetAppleOpt)
-      case (p, Header(id, life)) => bodyDetails ::= Bd(id, life, 0, p.x, p.y, "")
+//      case (p, Header(id, life)) => bodyDetails ::= Bd(id, p.x, p.y)
+      case _ =>
+    }
+    GridData(
+      frameCount,
+      snakes.values.toList,
+      bodyDetails,
+      appleDetails
+    )
+  }
+  
+  def getGridSyncData = {
+    var appleDetails: List[Ap] = Nil
+    grid.foreach {
+//      case (p, Body(id)) => bodyDetails ::= Bd(id, p.x, p.y)
+      case (p, Apple(score, life, appleType, targetAppleOpt)) => appleDetails ::= Ap(score, life, appleType, p.x, p.y, targetAppleOpt)
+//      case (p, Header(id, life)) => bodyDetails ::= Bd(id, p.x, p.y)
       case _ =>
     }
     Protocol.GridDataSync(
       frameCount,
       snakes.values.toList,
-      bodyDetails,
+//      bodyDetails,
       appleDetails
     )
   }

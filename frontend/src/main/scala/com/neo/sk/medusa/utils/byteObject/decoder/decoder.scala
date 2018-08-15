@@ -4,6 +4,7 @@ import com.neo.sk.medusa.utils.MiddleBuffer
 import shapeless.labelled.{FieldType, field}
 import shapeless.{:+:, ::, CNil, Coproduct, HList, HNil, Inl, Inr, LabelledGeneric, Lazy, Witness}
 
+import scala.collection.immutable.Queue
 import scala.reflect.ClassTag
 import scala.util.Try
 
@@ -198,6 +199,17 @@ package object decoder {
           dec.decode(buffer).right.map(b => Some(b))
         } else {
           Right(None)
+        }
+      }
+    }
+    
+    implicit def queueDecoder[A](implicit dec: BytesDecoder[A], m: ClassTag[A]): BytesDecoder[Queue[A]] = {
+      instance[Queue[A]] { buffer =>
+        val len = buffer.getInt()
+        readToArray(buffer, len, dec).right.map { right =>
+          var queue = Queue.empty[A]
+          right.foreach(e => queue = queue.enqueue(e))
+          queue
         }
       }
     }
