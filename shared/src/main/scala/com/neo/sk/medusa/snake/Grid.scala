@@ -23,7 +23,6 @@ trait Grid {
 
   val random = new Random(System.nanoTime())
 
-
   val defaultLength = 5
   val appleNum = 25
   val appleLife = 500
@@ -67,8 +66,10 @@ trait Grid {
       updateSnakes()
     }
     updateSpots()
-    actionMap -= frameCount
-    frameCount += 1
+    actionMap -= (frameCount - Protocol.advanceFrame)
+    if(!isSynced) {
+      frameCount += 1
+    }
   }
 
   def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[Long] = None): Unit
@@ -249,20 +250,20 @@ trait Grid {
       val newExtend = if(step >= 0) {
         0
       } else {
-        snake.extend - snake.speed.toInt
+        snake.extend + foodSum - snake.speed.toInt
       }
       if (newDirection != snake.direction) {
         newJoints = newJoints.enqueue(newHead)
       }
-      newJoints = newJoints.enqueue(newHead)
+      var headAndJoints = newJoints.enqueue(newHead)
       while(step > 0) {
-        val distance = newTail.distance(newJoints.dequeue._1)
+        val distance = newTail.distance(headAndJoints.dequeue._1)
         if(distance >= step) { //尾巴在移动到下一个节点前就需要停止。
-          newTail = newTail + newTail.getDirection(newJoints.dequeue._1) * step
-          newJoints = newJoints.dequeue._2
+          newTail = newTail + newTail.getDirection(headAndJoints.dequeue._1) * step
           step = -1
         } else { //尾巴在移动到下一个节点后，还需要继续移动。
           step -= distance
+          headAndJoints = headAndJoints.dequeue._2
           newTail = newJoints.dequeue._1
           newJoints = newJoints.dequeue._2
         }
@@ -293,7 +294,10 @@ trait Grid {
     val acts = actionMap.getOrElse(frameCount, Map.empty[Long, Int])
 
     snakes.values.map(updateASnake(_, acts)).foreach {
-      case Right(s) => updatedSnakes ::= s
+      case Right(s) =>
+        info(frameCount.toString)
+				info(s.head.toString)
+				updatedSnakes ::= s
       case Left(killerId) =>
         if(killerId != 0){
           mapKillCounter += killerId -> (mapKillCounter.getOrElse(killerId, 0) + 1)
@@ -342,6 +346,156 @@ trait Grid {
   }
 
 
+  def updateMySnake(snake: SnakeInfo, actMap: Map[Long, Int]) = {
+    val keyCode = actMap.get(snake.id)
+    //      debug(s" +++ snake[${snake.id}] feel key: $keyCode at frame=$frameCount")
+    val newDirection = {
+      val keyDirection = keyCode match {
+        case Some(KeyEvent.VK_LEFT) => info("left"); Point(-1, 0)
+        case Some(KeyEvent.VK_RIGHT) => info("right"); Point(1, 0)
+        case Some(KeyEvent.VK_UP) => info("up"); Point(0, -1)
+        case Some(KeyEvent.VK_DOWN) => info("down"); Point(0, 1)
+        case _ => info("none"); snake.direction
+      }
+      if (keyDirection + snake.direction != Point(0, 0)) {
+        keyDirection
+      } else {
+        snake.direction
+      }
+    }
+  
+    //检测加速
+    var speedOrNot :Boolean = false
+    val headerLeftRight=if(newDirection.y == 0){
+      Point(snake.head.x - square, snake.head.y - square - speedUpRange).zone(square * 2, (speedUpRange+square) * 2)
+    }else{
+      Point(snake.head.x - square- speedUpRange, snake.head.y - square).zone((speedUpRange+square) * 2, square*2)
+    }
+  
+    headerLeftRight.foreach {
+      s =>
+        grid.get(s) match {
+          case Some(x: Body) =>
+            if (x.id != snake.id) {
+              speedOrNot = true
+            } else {
+              speedOrNot = speedOrNot
+            }
+          case _ =>
+            speedOrNot = speedOrNot
+        }
+    }
+  
+    //加速上限
+    val s = snake.speed match {
+      case x if x > fSpeed && x < fSpeed + 4 => 0.3
+      case x if x >= fSpeed && x <= fSpeed + 9 => 0.4
+      case x if x > fSpeed && x <= fSpeed + 15 => 0.5
+      case _ => 0
+    }
+    val newSpeedUpLength = if(snake.speed > 2.5 * fSpeed)  2.5 * fSpeed  else snake.speed
+  
+    // 判断加速减速
+  
+    var newSpeed = if(speedOrNot){
+      newSpeedUpLength + s
+    }else if(!speedOrNot && snake.freeFrame <= freeFrameTime){
+      newSpeedUpLength
+    }else if(!speedOrNot && snake.freeFrame > freeFrameTime && newSpeedUpLength > fSpeed + 0.1){
+      newSpeedUpLength - s
+    }else{
+      fSpeed
+    }
+  
+    val newHead = snake.head + snake.direction * newSpeed.toInt
+    val oldHead = snake.head
+  
+    val foodSum = newHead.zone(30).foldLeft(0) { (sum: Int, e: Point) =>
+      grid.get(e) match {
+        case Some(Apple(score, _, appleType,_)) =>
+          if (sum == 0) {
+            grid -= e
+            val nextAppleOpt = e pathTo newHead
+            if (nextAppleOpt.nonEmpty) {
+              val nextApple = nextAppleOpt.get
+              grid.get(nextApple) match {
+                case Some(Body(_, _)) => //do nothing
+                case _ =>
+                  val pathApple = Apple(score, appleLife, FoodType.intermediate)
+                  grid += (nextApple -> pathApple)
+              }
+            }
+            if (appleType != FoodType.intermediate) {
+              newSpeed += 0.3
+              speedOrNot = true
+              sum + score
+            } else {
+              sum
+            }
+          } else {
+            sum
+          }
+      
+        case _ =>
+          sum
+      }
+    }
+  
+    val len = snake.length + foodSum
+    var dead = newHead.frontZone(snake.direction, square * 2, newSpeed.toInt).filter { e =>
+      grid.get(e) match {
+        case Some(x: Body) => true
+        case _ => false
+      }
+    }
+    if(newHead.x < 0 + square || newHead.y < 0 + square || newHead.x  > Boundary.w - square|| newHead.y > Boundary.h-square) {
+      println(s"snake[${snake.id}] hit wall.")
+      dead = Point(0, 0) :: dead
+    }
+  
+    //处理身体及尾巴的移动
+    var newJoints = snake.joints
+    var newTail = snake.tail
+    var step = snake.speed.toInt - (snake.extend + foodSum)
+    val newExtend = if(step >= 0) {
+      0
+    } else {
+      snake.extend - snake.speed.toInt
+    }
+    if (newDirection != snake.direction) {
+      newJoints = newJoints.enqueue(newHead)
+    }
+    var headAndJoints = newJoints.enqueue(newHead)
+    while(step > 0) {
+      val distance = newTail.distance(headAndJoints.dequeue._1)
+      if (distance >= step) { //尾巴在移动到下一个节点前就需要停止。
+        newTail = newTail + newTail.getDirection(headAndJoints.dequeue._1) * step
+        step = -1
+      } else { //尾巴在移动到下一个节点后，还需要继续移动。
+        step -= distance
+        headAndJoints = headAndJoints.dequeue._2
+        newTail = newJoints.dequeue._1
+        newJoints = newJoints.dequeue._2
+      }
+    }
+  
+    val newFreeFrame = if(speedOrNot) 0 else snake.freeFrame + 1
+    //println(newSpeedUp+"*************"+newFreeFrame)
+    if(dead.nonEmpty) {
+      val appleCount = math.round(snake.length * 0.11).toInt
+      feedApple(appleCount, FoodType.deadBody, Some(snake.id))
+      grid.get(dead.head) match {
+        case Some(x: Body) =>
+          info(s"koko ${x.id.toString}")
+          Left(x.id)
+        case _ =>
+          Left(0L) //撞墙的情况
+      }
+    } else {
+      Right(snake.copy(head = newHead, tail = newTail, lastHead = oldHead, direction = newDirection,
+        joints = newJoints, speed = newSpeed, freeFrame = newFreeFrame, length = len, extend = newExtend))
+    }
+  }
 //  def updateAndGetGridData() = {
 //    update(false)
 //    getGridData

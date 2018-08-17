@@ -1,5 +1,7 @@
 package com.neo.sk.medusa.snake.scalajs
 
+import java.awt.event.KeyEvent
+
 import com.neo.sk.medusa.snake.Protocol._
 import com.neo.sk.medusa.snake._
 import com.neo.sk.medusa.utils.MiddleBufferInJs
@@ -9,7 +11,6 @@ import org.scalajs.dom
 import org.scalajs.dom.ext.{Color, KeyCode}
 import org.scalajs.dom.html.{Document => _, _}
 import org.scalajs.dom.raw._
-
 import io.circe.generic.auto._
 import io.circe.parser._
 
@@ -119,6 +120,7 @@ object NetGameHolder extends js.JSApp {
 
 
   def gameLoop(): Unit = {
+    println(s"length: ${grid.snakes.find(_._1 == myId).getOrElse((0L, SnakeInfo(0L, "", Point(0,0), Point(0,0), Point(0,0), "")))._2.length}")
 		subFrame += 1
     if(subFrame >= totalSubFrame) {
       subFrame = 0
@@ -162,7 +164,7 @@ object NetGameHolder extends js.JSApp {
         var recorder = List.empty[Point]
         var step = snake.speed.toInt * subFrame / totalSubFrame - snake.extend
         var tail = snake.tail
-        var joints = snake.joints
+        var joints = snake.joints.enqueue(snake.head)
         while(step > 0) {
           val distance = tail.distance(joints.dequeue._1)
           if(distance >= step) { //尾巴在移动到下一个节点前就需要停止。
@@ -261,7 +263,7 @@ object NetGameHolder extends js.JSApp {
 
     snakes.foreach { snake =>
       val id = snake.id
-      println(s"${snake.head.x}, ${snake.head.y}")
+//      println(s"${snake.head.x}, ${snake.head.y}")
       val x = snake.head.x + snake.direction.x * snake.speed * subFrame / totalSubFrame
       val y = snake.head.y + snake.direction.y * snake.speed * subFrame / totalSubFrame
       val nameLength = snake.name.length
@@ -317,7 +319,7 @@ object NetGameHolder extends js.JSApp {
           ctx.fillText("Please wait.", 150, 180)
         } else {
           ctx.font = "36px Helvetica"
-          ctx.fillText("Ops, Press Space Key To Restart!", 150- myHead.x + centerX, 180- myHead.x + centerX)
+          ctx.fillText("Ops, Press Space Key To Restart!", 150 - myHead.x + centerX, 180 - myHead.x + centerX)
         }
     }
 
@@ -366,7 +368,8 @@ object NetGameHolder extends js.JSApp {
             val msg: Protocol.UserAction = if (e.keyCode == KeyCode.F2) {
               NetTest(myId, System.currentTimeMillis())
             } else {
-              Key(myId, e.keyCode)
+              grid.addActionWithFrame(myId, e.keyCode, grid.frameCount)
+              Key(myId, e.keyCode, grid.frameCount + advanceFrame) //客户端自己的行为提前帧
             }
             msg.fillMiddleBuffer(sendBuffer) //encode msg
             val ab: ArrayBuffer = sendBuffer.result() //get encoded data.
@@ -404,14 +407,10 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.TextMsg(message) => writeToArea(s"MESSAGE: $message")
                 case Protocol.NewSnakeJoined(id, user) => writeToArea(s"$user joined!")
                 case Protocol.SnakeLeft(id, user) => writeToArea(s"$user left!")
-                case a@Protocol.SnakeAction(id, keyCode, frame) =>
-                  if (frame > grid.frameCount) {
-                    //writeToArea(s"!!! got snake action=$a whem i am in frame=${grid.frameCount}")
-                  } else {
-                    //writeToArea(s"got snake action=$a")
+                case Protocol.SnakeAction(id, keyCode, frame) =>
+                  if(id != myId) {
+                    grid.addActionWithFrame(id, keyCode, frame)
                   }
-                  grid.addActionWithFrame(id, keyCode, frame)
-
                 case Protocol.Ranks(current, history) =>
                   //writeToArea(s"rank update. current = $current") //for debug.
                   currentRank = current
@@ -465,9 +464,45 @@ object NetGameHolder extends js.JSApp {
   def sync(dataOpt: scala.Option[Protocol.GridDataSync]) = {
     if(dataOpt.nonEmpty) {
       val data = dataOpt.get
-      grid.actionMap = grid.actionMap.filterKeys(_ > data.frameCount)
+      grid.actionMap = grid.actionMap.filterKeys(_ >= data.frameCount - 1 - advanceFrame)
       grid.frameCount = data.frameCount
       grid.snakes = data.snakes.map(s => s.id -> s).toMap
+      grid.grid = grid.grid.filter { case (_, spot) =>
+        spot match {
+          case Apple(_, life, _, _) if life >= 0 => true
+          case _ => false
+        }
+      }
+      val bodies = grid.snakes.values.map(_.getBodies).fold(Map.empty[Point, Spot]) {
+        import scala.collection.immutable.Map
+        (a: Map[Point, Spot], b: Map[Point, Spot]) =>
+          a ++ b
+      }
+      grid.grid ++= bodies
+      val mySnakeOpt = grid.snakes.find(_._1 == myId)
+      if(mySnakeOpt.nonEmpty) {
+        var mySnake = mySnakeOpt.get._2
+        for(i <- advanceFrame to 1 by -1) {
+          grid.updateMySnake(mySnake, grid.actionMap.getOrElse(data.frameCount - 1 - i, Map.empty)) match {
+            case Right(snake) =>
+              mySnake = snake
+            case Left(_) =>
+          }
+        }
+        val before = grid.snakes.find(_._1 == myId)
+        if(before.nonEmpty) {
+          println(data.frameCount.toString)
+          println(s"before: ${before.get._2.head.toString}, after: ${mySnake.head.toString}")
+        }
+        val newDirection = grid.actionMap.getOrElse(data.frameCount - 1, Map.empty).get(myId) match {
+          case Some(KeyEvent.VK_LEFT) => Point(-1, 0) //37
+          case Some(KeyEvent.VK_RIGHT) => Point(1, 0) //39
+          case Some(KeyEvent.VK_UP) => Point(0, -1)   //38
+          case Some(KeyEvent.VK_DOWN) => Point(0, 1)  //40
+          case _ => mySnake.direction
+        }
+        grid.snakes += ((mySnake.id, mySnake.copy(direction = newDirection)))
+      }
       val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
       val gridMap = appleMap
       grid.grid = gridMap
