@@ -483,7 +483,7 @@ object NetGameHolder extends js.JSApp {
       val mySnakeOpt = grid.snakes.find(_._1 == myId)
       if(mySnakeOpt.nonEmpty) {
         var mySnake = mySnakeOpt.get._2
-        for(i <- advanceFrame - 1 to 0 by -1) {
+        for(i <- advanceFrame to 1 by -1) {
           grid.updateMySnake(mySnake, grid.actionMap.getOrElse(data.frameCount - i, Map.empty)) match {
             case Right(snake) =>
               mySnake = snake
