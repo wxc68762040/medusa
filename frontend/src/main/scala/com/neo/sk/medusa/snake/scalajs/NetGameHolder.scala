@@ -65,8 +65,10 @@ object NetGameHolder extends js.JSApp {
   private[this] val nameField = dom.document.getElementById("name").asInstanceOf[HTMLInputElement]
   private[this] val joinButton = dom.document.getElementById("join").asInstanceOf[HTMLButtonElement]
   private[this] val canvas = dom.document.getElementById("GameView").asInstanceOf[Canvas]
+  private [this] val bgCanvas = dom.document.getElementById("BGPic").asInstanceOf[Canvas]
   private[this] val mapCanvas = dom.document.getElementById("GameMap").asInstanceOf[Canvas]
   private[this] val canvasPic = dom.document.getElementById("canvasPic").asInstanceOf[HTMLElement]
+  private[this] val bgCtx = bgCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
   private[this] val ctx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
   private[this] val mapCtx = mapCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
@@ -155,31 +157,31 @@ object NetGameHolder extends js.JSApp {
     var bodies = data.bodyDetails
     val apples = data.appleDetails
 
-    snakes.foreach { snake =>
-      val addBodies = snake.head.to(snake.head + snake.direction * snake.speed.toInt * subFrame / totalSubFrame)
-        .map(p => Bd(snake.id, p.x, p.y, snake.color))
-      val deleteBodies = {
-        var recorder = List.empty[Point]
-        var step = snake.speed.toInt * subFrame / totalSubFrame - snake.extend
-        var tail = snake.tail
-        var joints = snake.joints
-        while(step > 0) {
-          val distance = tail.distance(joints.dequeue._1)
-          if(distance >= step) { //尾巴在移动到下一个节点前就需要停止。
-            val target = tail + tail.getDirection(joints.dequeue._1) * step
-            recorder ++= tail.to(target)
-            step = -1
-          } else { //尾巴在移动到下一个节点后，还需要继续移动。
-            step -= distance
-            recorder ++= tail.to(joints.dequeue._1)
-            tail = joints.dequeue._1
-            joints = joints.dequeue._2
-          }
-        }
-        recorder.map(p => Bd(snake.id, p.x, p.y, snake.color))
-      }
-      bodies = (bodies ++ addBodies).filterNot(p => deleteBodies.contains(p))
-    }
+//    snakes.foreach { snake =>
+//      val addBodies = snake.head.to(snake.head + snake.direction * snake.speed.toInt * subFrame / totalSubFrame)
+//        .map(p => Bd(snake.id, p.x, p.y, snake.color))
+//      val deleteBodies = {
+//        var recorder = List.empty[Point]
+//        var step = snake.speed.toInt * subFrame / totalSubFrame - snake.extend
+//        var tail = snake.tail
+//        var joints = snake.joints
+//        while(step > 0) {
+//          val distance = tail.distance(joints.dequeue._1)
+//          if(distance >= step) { //尾巴在移动到下一个节点前就需要停止。
+//            val target = tail + tail.getDirection(joints.dequeue._1) * step
+//            recorder ++= tail.to(target)
+//            step = -1
+//          } else { //尾巴在移动到下一个节点后，还需要继续移动。
+//            step -= distance
+//            recorder ++= tail.to(joints.dequeue._1)
+//            tail = joints.dequeue._1
+//            joints = joints.dequeue._2
+//          }
+//        }
+//        recorder.map(p => Bd(snake.id, p.x, p.y, snake.color))
+//      }
+//      bodies = (bodies ++ addBodies).filterNot(p => deleteBodies.contains(p))
+//    }
 
 
     val mySubFrameRevise =
@@ -212,7 +214,6 @@ object NetGameHolder extends js.JSApp {
     ctx.scale(proportion, proportion)
     ctx.translate(-MyBoundary.w / 2, -MyBoundary.h / 2)
     ctx.drawImage(canvasPic,0 + deviationX, 0 + deviationY,Boundary.w,Boundary.h)
-    //ctx.restore()
 
     mapCtx.clearRect(0,0,mapCanvas.width,mapCanvas.height)
     mapCtx.globalAlpha=0.2
@@ -228,25 +229,21 @@ object NetGameHolder extends js.JSApp {
     mapCtx.drawImage(maxPic,(maxLength.x * LittleMap.w) / Boundary.w - 7,(maxLength.y * LittleMap.h) / Boundary.h -7 ,15,15)
     mapCtx.restore()
 
-    //ctx.fillStyle = MyColors.otherBody
-    bodies.foreach { case Bd(id, x, y, color) =>
-      ctx.fillStyle = color
-//      ctx.shadowBlur= 1
-//      ctx.shadowColor= "#FFFFFF"
-      if (id == uid) {
-        //ctx.fillStyle = MyColors.myBody
-        ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
-        if(maxId != uid){
-          mapCtx.globalAlpha = 1
-          mapCtx.fillStyle = color
-          mapCtx.fillRect((x  * LittleMap.w) / Boundary.w,(y * LittleMap.h) / Boundary.h,2,2)
-        }
-      } else {
-        ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2, square * 2)
-      }
-    }
+//    bodies.filterNot(b=>b.x < myHead.x -  centerX || b.x > myHead.x + centerX || b.y < myHead.y - centerY || b.y > myHead.y + centerY).foreach { case Bd(id, x, y, color) =>
+//      ctx.fillStyle = color
+//      if (id == uid) {
+//        ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
+//        if(maxId != uid){
+//          mapCtx.globalAlpha = 1
+//          mapCtx.fillStyle = color
+//          mapCtx.fillRect((x  * LittleMap.w) / Boundary.w,(y * LittleMap.h) / Boundary.h,2,2)
+//        }
+//      } else {
+//        ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2, square * 2)
+//      }
+//    }
 
-    apples.foreach { case Ap(score, _, _, x, y, _) =>
+    apples.filterNot(a=>a.x < myHead.x -  centerX || a.x > myHead.x + centerX || a.y < myHead.y - centerY || a.y > myHead.y + centerY).foreach { case Ap(score, _, _, x, y, _) =>
       ctx.fillStyle = score match {
         case 50 => "#ffeb3bd9"
         case 25 => "#1474c1"
@@ -259,33 +256,89 @@ object NetGameHolder extends js.JSApp {
 
     ctx.fillStyle = MyColors.otherHeader
 
-    snakes.foreach { snake =>
+//    snakes.foreach { snake =>
+//      val id = snake.id
+//      println(s"${snake.head.x}, ${snake.head.y}")
+//      val x = snake.head.x + snake.direction.x * snake.speed * subFrame / totalSubFrame
+//      val y = snake.head.y + snake.direction.y * snake.speed * subFrame / totalSubFrame
+//      if(!(x < myHead.x -  centerX || x > myHead.x + centerX || y < myHead.y - centerY || y > myHead.y + centerY)){
+//        val nameLength = snake.name.length
+//        ctx.fillStyle = Color.White.toString()
+//        ctx.fillText(snake.name, x - myHead.x  + centerX - nameLength * 4, y - myHead.y + centerY - 20)
+//        if(snake.speed > fSpeed +1){
+//          ctx.shadowBlur= 5
+//          ctx.shadowColor= "#FFFFFF"
+//          ctx.fillStyle = MyColors.speedUpHeader
+//          ctx.fillRect(x - 1.5 * square + deviationX, y - 1.5 * square + deviationY, square * 3 , square * 3)
+//        }
+//        if (id == uid) {
+//          ctx.fillStyle = MyColors.myHeader
+//          ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 , square * 2)
+//          if(maxId != id){
+//            mapCtx.globalAlpha = 1
+//            mapCtx.fillStyle = MyColors.myHeader
+//            mapCtx.fillRect((x * LittleMap.w) / Boundary.w, (y * LittleMap.h) / Boundary.h, 2, 2)
+//          }
+//        } else {
+//          ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 , square * 2)
+//
+//        }
+//      }
+//    }
+
+    snakes.foreach{ snake=>
       val id = snake.id
-      println(s"${snake.head.x}, ${snake.head.y}")
       val x = snake.head.x + snake.direction.x * snake.speed * subFrame / totalSubFrame
       val y = snake.head.y + snake.direction.y * snake.speed * subFrame / totalSubFrame
-      val nameLength = snake.name.length
-      ctx.fillStyle = Color.White.toString()
-      ctx.fillText(snake.name, x - myHead.x  + centerX - nameLength * 4, y - myHead.y + centerY - 20)
-      if(snake.speed > fSpeed +1){
-        ctx.shadowBlur= 5
-        ctx.shadowColor= "#FFFFFF"
-        ctx.fillStyle = MyColors.speedUpHeader
-        ctx.fillRect(x - 1.5 * square + deviationX, y - 1.5 * square + deviationY, square * 3 , square * 3)
-      }
-      if (id == uid) {
-        ctx.fillStyle = MyColors.myHeader
-        ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 , square * 2)
-        if(maxId != id){
-          mapCtx.globalAlpha = 1
-          mapCtx.fillStyle = MyColors.myHeader
-          mapCtx.fillRect((x * LittleMap.w) / Boundary.w, (y * LittleMap.h) / Boundary.h, 2, 2)
+      ctx.fillStyle = snake.color
+      if(snake.joints.length > 0){
+        println(snake.joints.length+"joints>0" +snake.joints)
+        for(i <- 0 to snake.joints.length){
+          ctx.fillRect(snake.joints(i).x- square + deviationX, snake.joints(i).y- square + deviationY,square * 2, square * 2)
         }
-      } else {
-        ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 , square * 2)
+//        for(i <- 0 to snake.joints.length){
+//          if(i == 0){
+//            if(snake.tail.x == snake.joints.head.x){
+//              val startPoint = Point(snake.tail.x, List(snake.tail.y,snake.joints.head.x).min)
+//              ctx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY, square * 2, List(snake.tail.y,snake.joints.head.x).max -  List(snake.tail.y,snake.joints.head.x).min)
+//            }else{
+//              val startPoint = Point(List(snake.tail.y,snake.joints.head.x).min, snake.tail.x)
+//              ctx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY, List(snake.tail.y,snake.joints.head.x).max -  List(snake.tail.y,snake.joints.head.x).min, square * 2 )
+//            }
+//          }else if(i == snake.joints.length){
+//            if(snake.head.x == snake.joints.last.x){
+//              val startPoint = Point(snake.head.x, List(snake.head.y,snake.joints.last.x).min)
+//              ctx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY, square * 2, List(snake.head.y,snake.joints.last.x).max -  List(snake.head.y,snake.joints.last.x).min)
+//            }else{
+//              val startPoint = Point(List(snake.head.y,snake.joints.last.x).min, snake.head.x)
+//              ctx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY, List(snake.head.y,snake.joints.last.x).max -  List(snake.head.y,snake.joints.last.x).min, square * 2 )
+//            }
+//          }else{
+//            //中间节点
+//            if(snake.joints(i).x == snake.joints.head.x){
+//              val startPoint = Point(snake.tail.x, List(snake.tail.y,snake.joints.head.x).min)
+//              ctx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY, square * 2, List(snake.tail.y,snake.joints.head.x).max -  List(snake.tail.y,snake.joints.head.x).min)
+//            }else{
+//              val startPoint = Point(List(snake.tail.y,snake.joints.head.x).min, snake.tail.x)
+//              ctx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY, List(snake.tail.y,snake.joints.head.x).max -  List(snake.tail.y,snake.joints.head.x).min, square * 2 )
+//            }
+//          }
+//
+//        }
+      }else{
+        println("joints =0"+snake.joints)
+        if(snake.tail.x == snake.head.x){
+          val startPoint = Point(snake.tail.x ,List(snake.tail.y, snake.tail.y).min)
+          ctx.fillRect(startPoint.x, startPoint.y, square * 2, List(snake.tail.y, snake.tail.y).max - List(snake.tail.y, snake.tail.y).min)
+        }else{
+          val startPoint = Point(List(snake.tail.y, snake.tail.y).min ,snake.tail.x)
+          ctx.fillRect(startPoint.x, startPoint.y, List(snake.tail.y, snake.tail.y).max - List(snake.tail.y, snake.tail.y).min, square * 2)
+        }
 
       }
     }
+
+
 
     //画边界
     ctx.fillStyle = MyColors.boundaryColor
