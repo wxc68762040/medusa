@@ -120,7 +120,7 @@ object NetGameHolder extends js.JSApp {
 
 
   def gameLoop(): Unit = {
-    println(s"length: ${grid.snakes.find(_._1 == myId).getOrElse((0L, SnakeInfo(0L, "", Point(0,0), Point(0,0), Point(0,0), "")))._2.length}")
+//    println(s"length: ${grid.snakes.find(_._1 == myId).getOrElse((0L, SnakeInfo(0L, "", Point(0,0), Point(0,0), Point(0,0), "")))._2.length}")
 		subFrame += 1
     if(subFrame >= totalSubFrame) {
       subFrame = 0
@@ -489,11 +489,11 @@ object NetGameHolder extends js.JSApp {
             case Left(_) =>
           }
         }
-        val before = grid.snakes.find(_._1 == myId)
-        if(before.nonEmpty) {
-          println(data.frameCount.toString)
-          println(s"before: ${before.get._2.head.toString}, after: ${mySnake.head.toString}")
-        }
+//        val before = grid.snakes.find(_._1 == myId)
+//        if(before.nonEmpty) {
+//          println(data.frameCount.toString)
+//          println(s"before: ${before.get._2.head.toString}, after: ${mySnake.head.toString}")
+//        }
         val newDirection = grid.actionMap.getOrElse(data.frameCount - 1, Map.empty).get(myId) match {
           case Some(KeyEvent.VK_LEFT) => Point(-1, 0) //37
           case Some(KeyEvent.VK_RIGHT) => Point(1, 0) //39
