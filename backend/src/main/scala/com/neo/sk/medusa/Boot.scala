@@ -6,6 +6,9 @@ import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import com.neo.sk.medusa.http.HttpService
+import akka.actor.typed.scaladsl.adapter._
+import com.neo.sk.medusa.snake.Delayer
+import com.neo.sk.medusa.snake.Delayer.{Hello, Start}
 
 import scala.language.postfixOps
 
@@ -28,13 +31,14 @@ object Boot extends HttpService {
   override val timeout = Timeout(20 seconds) // for actor asks
 
   val log: LoggingAdapter = Logging(system, getClass)
-
+//  val delayer = system.spawn(Delayer.start, "Delayer")
 
 
   def main(args: Array[String]) {
     log.info("Starting.")
     Http().bindAndHandle(routes, httpInterface, httpPort)
     log.info(s"Listen to the $httpInterface:$httpPort")
+//    delayer ! Start
     log.info("Done.")
   }
 

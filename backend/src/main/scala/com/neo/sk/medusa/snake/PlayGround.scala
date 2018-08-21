@@ -34,6 +34,7 @@ object PlayGround {
   val bounds = Point(Boundary.w, Boundary.h)
 
   val log = LoggerFactory.getLogger(this.getClass)
+//  var timestamp = 0L
 
 
   def create(system: ActorSystem)(implicit executor: ExecutionContext): PlayGround = {
@@ -92,7 +93,7 @@ object PlayGround {
           }
 
         case userAction: UserAction => userAction match {
-          case r@Key(id, keyCode) =>
+          case r@Key(id, keyCode, frame) =>
             log.debug(s"got $r")
             val roomId = userMap(id)._2
             dispatch(Protocol.TextMsg(s"Aha! $id click [$keyCode],"),roomId) //just for test
@@ -100,16 +101,20 @@ object PlayGround {
             if (keyCode == KeyEvent.VK_SPACE) {
               grid.addSnake(id,userMap.getOrElse(id, ( "Unknown",0))._1,roomId)
             } else {
-              grid.addAction(id, keyCode)
+              grid.addActionWithFrame(id, keyCode, frame)
               dispatch(Protocol.SnakeAction(id, keyCode, grid.frameCount),roomId)
             }
             
           case NetTest(id, createTime) =>
             log.info(s"Net Test: createTime=$createTime")
             dispatchTo(id, Protocol.NetDelayTest(createTime))
+
+          case _ =>
         }
         
         case Sync =>
+//          log.info(s"time: ${(System.currentTimeMillis() - timestamp).toString}")
+//          timestamp = System.currentTimeMillis()
           //log.error("i got msg : sync")
           tickCount += 1
           roomMap.foreach{ room=>
