@@ -160,6 +160,7 @@ object NetGameHolder extends js.JSApp {
     var bodies = data.bodyDetails
     val apples = data.appleDetails
 
+
     snakes.foreach { snake =>
       val addBodies = snake.head.to(snake.head + snake.direction * snake.speed.toInt * subFrame / totalSubFrame)
         .map(p => Bd(snake.id, p.x, p.y, snake.color))
@@ -246,7 +247,7 @@ object NetGameHolder extends js.JSApp {
 //      }
 //    }
 
-    apples.filterNot(a=>a.x < myHead.x -  centerX || a.x > myHead.x + centerX || a.y < myHead.y - centerY || a.y > myHead.y + centerY).foreach { case Ap(score, _, _, x, y, _) =>
+    apples.foreach { case Ap(score, _, _, x, y, _) =>
       ctx.fillStyle = score match {
         case 50 => "#ffeb3bd9"
         case 25 => "#1474c1"
@@ -292,6 +293,79 @@ object NetGameHolder extends js.JSApp {
       val id = snake.id
       val x = snake.head.x + snake.direction.x * snake.speed * subFrame / totalSubFrame
       val y = snake.head.y + snake.direction.y * snake.speed * subFrame / totalSubFrame
+
+      var recorder = List.empty[Point]
+      var step = snake.speed.toInt * subFrame / totalSubFrame - snake.extend
+      var tail = snake.tail
+      var joints = snake.joints.enqueue(snake.head)
+      println("step"+ step)
+      while(step > 0) {
+        val distance = tail.distance(joints.dequeue._1)
+        if(distance >= step) { //尾巴在移动到下一个节点前就需要停止。
+          val target = tail + tail.getDirection(joints.dequeue._1) * step
+          recorder ++= tail.to(target)
+          step = -1
+        } else { //尾巴在移动到下一个节点后，还需要继续移动。
+          step -= distance
+          recorder ++= tail.to(joints.dequeue._1)
+          tail = joints.dequeue._1
+          joints = joints.dequeue._2
+        }
+      }
+      if(tail == snake.tail){
+        println("*********************")
+      }else if(tail != snake.tail){
+        println("*-*-*-*-*-*-*-*-*-*-*-")
+      }
+
+      ctx.fillStyle = snake.color
+      ctx.shadowBlur= 0
+      if(joints.length > 0){
+        joints.foreach{ s =>
+          ctx.fillRect(s.x- square + deviationX, s.y - square + deviationY, square * 2,square * 2)
+        }
+        for(i <- 0 to joints.length){
+
+          if(i == 0){
+            //首
+            if(tail.x == joints.head.x){
+              val startPoint = Point(tail.x, List(tail.y,joints.head.y).min)
+              ctx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY, square * 2, List(tail.y,joints.head.y).max -  List(tail.y,joints.head.y).min)
+            }else{
+              val startPoint = Point(List(tail.x,joints.head.x).min, tail.y)
+              ctx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY, List(tail.x,joints.head.x).max -  List(tail.x,joints.head.x).min, square * 2 )
+            }
+          }else if(i == joints.length){
+            //尾
+            if(x == joints.last.x){
+              ctx.fillRect(x - square + deviationX, List(y,joints.last.y).min - square + deviationY, square * 2, List(y,joints.last.y).max -  List(y,joints.last.y).min)
+            }else{
+              ctx.fillRect(List(x,joints.last.x).min - square + deviationX, y - square + deviationY, List(x,joints.last.x).max -  List(x,joints.last.x).min, square * 2 )
+            }
+          }else{
+            //中间节点
+            if(joints(i).x == joints(i-1).x){
+              val startPoint = Point(joints(i).x, List(joints(i).y,joints(i - 1).y).min)
+              ctx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY, square * 2, List(joints(i).y,joints(i - 1).y).max -  List(joints(i).y,joints(i - 1).y).min)
+            }else{
+              val startPoint = Point(List(joints(i).x,joints(i - 1).x).min, joints(i).y)
+              ctx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY,List(joints(i).x,joints(i - 1).x).max -  List(joints(i).x,joints(i - 1).x).min, square * 2 )
+            }
+          }
+
+        }
+      }else{
+        if(tail.x == x){
+          ctx.fillRect(tail.x - square + deviationX, List(tail.y, y).min - square + deviationY, square * 2 , square * 2)
+          ctx.fillRect(tail.x - square + deviationX, List(tail.y, y).min - square + deviationY, square * 2, List(tail.y, y).max - List(tail.y, y).min)
+        }else{
+          ctx.fillRect(List(tail.x, x).min - square + deviationX, tail.y - square + deviationY, square * 2 , square * 2)
+          ctx.fillRect(List(tail.x, x).min - square + deviationX, tail.y - square + deviationY, List(tail.x, x).max - List(tail.x, x).min, square * 2)
+        }
+
+      }
+
+      // 头部信息
       val nameLength = snake.name.length
       ctx.fillStyle = Color.White.toString()
       ctx.fillText(snake.name, x - myHead.x  + centerX - nameLength * 4, y - myHead.y + centerY - 20)
@@ -311,57 +385,6 @@ object NetGameHolder extends js.JSApp {
         }
       } else {
         ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 , square * 2)
-      }
-      ctx.fillStyle = snake.color
-      ctx.shadowBlur= 0
-      if(snake.joints.length > 0){
-        println(snake.joints.length+"joints>0" +snake.joints)
-        snake.joints.foreach{ s =>
-          ctx.fillRect(s.x- square + deviationX, s.y - square + deviationY, square * 2,square * 2)
-        }
-        for(i <- 0 to snake.joints.length){
-
-          if(i == 0){
-            //首
-            if(snake.tail.x == snake.joints.head.x){
-              val startPoint = Point(snake.tail.x, List(snake.tail.y,snake.joints.head.y).min)
-              ctx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY, square * 2, List(snake.tail.y,snake.joints.head.y).max -  List(snake.tail.y,snake.joints.head.y).min)
-            }else{
-              val startPoint = Point(List(snake.tail.x,snake.joints.head.x).min, snake.tail.y)
-              ctx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY, List(snake.tail.x,snake.joints.head.x).max -  List(snake.tail.x,snake.joints.head.x).min, square * 2 )
-            }
-          }else if(i == snake.joints.length){
-            //尾
-            if(snake.head.x == snake.joints.last.x){
-              val startPoint = Point(snake.head.x, List(snake.head.y,snake.joints.last.y).min)
-              ctx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY, square * 2, List(snake.head.y,snake.joints.last.y).max -  List(snake.head.y,snake.joints.last.y).min)
-            }else{
-              val startPoint = Point(List(snake.head.x,snake.joints.last.x).min, snake.head.y)
-              ctx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY, List(snake.head.x,snake.joints.last.x).max -  List(snake.head.x,snake.joints.last.x).min, square * 2 )
-            }
-          }else{
-            //中间节点
-            if(snake.joints(i).x == snake.joints(i-1).x){
-              val startPoint = Point(snake.joints(i).x, List(snake.joints(i).y,snake.joints(i - 1).y).min)
-              ctx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY, square * 2, List(snake.joints(i).y,snake.joints(i - 1).y).max -  List(snake.joints(i).y,snake.joints(i - 1).y).min)
-            }else{
-              val startPoint = Point(List(snake.joints(i).x,snake.joints(i - 1).x).min, snake.tail.y)
-              ctx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY,List(snake.joints(i).x,snake.joints(i - 1).x).max -  List(snake.joints(i).x,snake.joints(i - 1).x).min, square * 2 )
-            }
-          }
-
-        }
-      }else{
-        if(snake.tail.x == snake.head.x){
-          val startPoint = Point(snake.tail.x ,List(snake.tail.y, snake.head.y).min)
-          ctx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY, square * 2 , square * 2)
-          ctx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY, square * 2, List(snake.tail.y, snake.head.y).max - List(snake.tail.y, snake.head.y).min)
-        }else{
-          val startPoint = Point(List(snake.tail.x, snake.head.x).min ,snake.tail.y)
-          ctx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY, square * 2 , square * 2)
-          ctx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY, List(snake.tail.x, snake.head.x).max - List(snake.tail.x, snake.head.x).min, square * 2)
-        }
-
       }
     }
 
