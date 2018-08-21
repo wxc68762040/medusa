@@ -461,8 +461,10 @@ object NetGameHolder extends js.JSApp {
   }
 
   def sync(dataOpt: scala.Option[Protocol.GridDataSync]) = {
+    println(grid.frameCount.toString)
     if(dataOpt.nonEmpty) {
       val data = dataOpt.get
+      println(s"client frame: ${grid.frameCount}, server frame: ${data.frameCount}")
       grid.actionMap = grid.actionMap.filterKeys(_ >= data.frameCount - 1 - advanceFrame)
       grid.frameCount = data.frameCount
       grid.snakes = data.snakes.map(s => s.id -> s).toMap
@@ -481,8 +483,8 @@ object NetGameHolder extends js.JSApp {
       val mySnakeOpt = grid.snakes.find(_._1 == myId)
       if(mySnakeOpt.nonEmpty) {
         var mySnake = mySnakeOpt.get._2
-        for(i <- advanceFrame to 1 by -1) {
-          grid.updateMySnake(mySnake, grid.actionMap.getOrElse(data.frameCount - 1 - i, Map.empty)) match {
+        for(i <- advanceFrame - 1 to 0 by -1) {
+          grid.updateMySnake(mySnake, grid.actionMap.getOrElse(data.frameCount - i, Map.empty)) match {
             case Right(snake) =>
               mySnake = snake
             case Left(_) =>
@@ -493,14 +495,14 @@ object NetGameHolder extends js.JSApp {
 //          println(data.frameCount.toString)
 //          println(s"before: ${before.get._2.head.toString}, after: ${mySnake.head.toString}")
 //        }
-        val newDirection = grid.actionMap.getOrElse(data.frameCount - 1, Map.empty).get(myId) match {
-          case Some(KeyEvent.VK_LEFT) => Point(-1, 0) //37
-          case Some(KeyEvent.VK_RIGHT) => Point(1, 0) //39
-          case Some(KeyEvent.VK_UP) => Point(0, -1)   //38
-          case Some(KeyEvent.VK_DOWN) => Point(0, 1)  //40
-          case _ => mySnake.direction
-        }
-        grid.snakes += ((mySnake.id, mySnake.copy(direction = newDirection)))
+//        val newDirection = grid.actionMap.getOrElse(data.frameCount - 1, Map.empty).get(myId) match {
+//          case Some(KeyEvent.VK_LEFT) => Point(-1, 0) //37
+//          case Some(KeyEvent.VK_RIGHT) => Point(1, 0) //39
+//          case Some(KeyEvent.VK_UP) => Point(0, -1)   //38
+//          case Some(KeyEvent.VK_DOWN) => Point(0, 1)  //40
+//          case _ => mySnake.direction
+//        }
+        grid.snakes += ((mySnake.id, mySnake))
       }
       val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
       val gridMap = appleMap
