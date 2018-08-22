@@ -418,8 +418,6 @@ object NetGameHolder extends js.JSApp {
                   writeToArea(s"apple feeded = $apples") //for debug.
                   grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt))
                 case data: Protocol.GridDataSync =>
-                  //writeToArea(s"grid data got: $msgData")
-                  //TODO here should be better code.
                   syncData = Some(data)
                   justSynced = true
                 //drawGrid(msgData.uid, data)
