@@ -1,5 +1,7 @@
 package com.neo.sk.medusa
 
+import scala.collection.immutable.Queue
+
 /**
   * User: Taoz
   * Date: 8/29/2016
@@ -8,15 +10,21 @@ package com.neo.sk.medusa
 package object snake {
 
   sealed trait Spot
-  case class Body(id: Long, life: Double, frameIndex: Int) extends Spot
+  case class Body(id: Long, color:String) extends Spot
   case class Header(id: Long, life: Int) extends Spot
-	case class Apple(score: Int, life: Int, appleType: Int) extends Spot //食物类型，0：普通食物，1：死蛇身体
+	case class Apple(score: Int, life: Int, appleType: Int, targetAppleOpt: Option[(Point, Int)] = None) extends Spot //食物类型，0：普通食物，1：死蛇身体，2：中间路径
 	case class Bound() extends Spot
 
   case class Score(id: Long, n: String, k: Int, l: Int, t: Option[Long] = None)
-  case class Bd(id: Long, life: Double, frameIndex: Int, x: Int, y: Int)
-  case class Ap(score: Int, life: Int, x: Int, y: Int)
-
+  case class Bd(id: Long, x: Int, y: Int, color:String)
+  case class Ap(score: Int, life: Int, appleType: Int, x: Int, y: Int, targetAppleOpt: Option[(Point, Int)] = None)
+	
+	case class GridData(
+		frameCount: Long,
+		snakes: List[SnakeInfo],
+		bodyDetails: List[Bd],
+		appleDetails: List[Ap]
+	)
 
 
   case class Point(x: Int, y: Int) {
@@ -48,6 +56,35 @@ package object snake {
 			}
     }
 
+    def pathTo(other: Point): Option[Point] = {
+
+      val (x0, x1) = if(x > other.x) (other.x, x) else (x, other.x)
+      val (y0, y1) = if(y > other.y) (other.y, y) else (y, other.y)
+
+      def step(distance: Int) = {
+        distance match {
+          case 0 => 0
+          case n if n > 0 && n < 5 => 1
+          case n if n >= 5 && n < 10 => 3
+          case n if n >= 10 && n < 15 => 6
+          case n if n >= 15 && n < 20 => 8
+          case n if n >= 20 && n < 25 => 10
+          case n if n >= 25 && n <= 30 => 20
+          case _ => 30
+        }
+      }
+
+      if (x1 - x0 <= 4 && y1 - y0 <= 4) {
+        None
+      } else  {
+        val nextX = if (x > other.x) x - step(x - other.x) else x + step(other.x - x)
+        val nextY = if (y > other.y) y - step(y - other.y) else y + step(other.y - y)
+
+        Some(Point(nextX, nextY))
+      }
+    }
+
+
     def zone(range: Int) = (for {
       xs <- x - range to x + range
       ys <- y - range to y + range
@@ -61,6 +98,38 @@ package object snake {
 		} yield {
 			Point(xs, ys)
 		}).toList
+		
+		def getDirection(destination: Point) = {
+			if(destination.x == x) {
+				if(destination.y < y) {
+					Point(0, -1)
+				} else if(destination.y > y) {
+					Point(0, 1)
+				} else {
+					Point(0, 0)
+				}
+			} else if(destination.y == y) {
+				if(destination.x < x) {
+					Point(-1, 0)
+				} else if(destination.x > x) {
+					Point(1, 0)
+				} else {
+					Point(0, 0)
+				}
+			} else {
+				Point(0, 0)
+			}
+		}
+	
+		def distance(destination: Point) = {
+			if(destination.x == x) {
+				Math.abs(destination.y - y)
+			} else if(destination.y == y) {
+				Math.abs(destination.x - x)
+			} else {
+				0
+			}
+		}
 
 		/**
 			* 获取点对应的前方矩形范围的一个区域，用于碰撞检测。
@@ -110,32 +179,67 @@ package object snake {
   case class SkDt(
     id: Long,
     name: String,
+    color: String,
     header: Point = Point(20, 20),
     lastHeader: Point = Point(20, 20),
     direction: Point = Point(1, 0),
     speed: Double = 10,
     speedUp : Double = 0.0,
-    freeFrame : Int = 0,
+    freeFrame : Int = 0,   //脱离加速条件的帧数
     length: Int = 50,
     kill: Int = 0
   )
+	
+	case class SnakeInfo(
+		id: Long,
+		name: String,
+		head: Point,
+		tail: Point,
+		lastHead: Point,
+		color: String,
+		direction: Point = Point(1, 0),
+		joints: Queue[Point] = Queue(),
+		speed: Double = 10.0,
+		freeFrame: Int = 0,
+		length: Int = 400,
+		extend: Int = 400, //需要伸长的量
+		kill: Int = 0
+	) {
+		def getBodies: Map[Point, Spot] = {
+			var bodyMap = Map.empty[Point, Spot]
+			joints.enqueue(head).foldLeft(tail) { (start: Point, end: Point) =>
+				val points = start.to(end)
+				points.foreach { e =>
+					bodyMap += ((e, Body(id, color)))
+				}
+				end
+			}
+			bodyMap
+		}
+	}
 
 
   object Boundary{
-    val w = 2000
-    val h = 1000
+    val w = 3600
+    val h = 1800
   }
 
-  val boundaryWidth = 5
+  val boundaryWidth = 3
 
   object MyBoundary{
-    val w = 1000
-    val h = 500
+    val w = 1500
+    val h = 700
   }
 
   object LittleMap{
-    val w = 100
-    val h = 100
+    val w = 200
+    val h = 200
+  }
+
+  object FoodType {
+    val normal = 0
+    val deadBody = 1
+    val intermediate = 2
   }
 
 

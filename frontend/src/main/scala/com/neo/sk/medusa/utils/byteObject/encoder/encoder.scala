@@ -4,6 +4,8 @@ import com.neo.sk.medusa.utils.MiddleBuffer
 import shapeless.labelled.FieldType
 import shapeless.{:+:, ::, CNil, Coproduct, HList, HNil, Inl, Inr, LabelledGeneric, Lazy, Witness}
 
+import scala.collection.immutable.Queue
+
 /**
   * User: Taoz
   * Date: 7/15/2018
@@ -70,6 +72,14 @@ package object encoder {
       instance { (option, buffer) =>
         buffer.putInt(if (option.isDefined) 1 else 0)
         option.foreach { item => enc.encode(item, buffer) }
+        buffer
+      }
+    }
+  
+    implicit def queueEncoder[A](implicit enc: BytesEncoder[A]): BytesEncoder[Queue[A]] = {
+      instance { (arr, buffer) =>
+        buffer.putInt(arr.length)
+        arr.foreach { item => enc.encode(item, buffer) }
         buffer
       }
     }

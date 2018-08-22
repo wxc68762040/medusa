@@ -11,8 +11,7 @@ object Protocol {
 
   case class GridDataSync(
     frameCount: Long,
-    snakes: List[SkDt],
-    bodyDetails: List[Bd],
+    snakes: List[SnakeInfo],
     appleDetails: List[Ap]
   ) extends GameMessage
   
@@ -32,7 +31,7 @@ object Protocol {
   
   sealed trait UserAction
   
-  case class Key(id: Long, keyCode: Int) extends UserAction
+  case class Key(id: Long, keyCode: Int, frame: Long) extends UserAction
   case class NetTest(id: Long, createTime: Long) extends UserAction
   case class TextInfo(id: Long, info: String) extends UserAction
   
@@ -42,5 +41,6 @@ object Protocol {
   val square = 4
 
   val fSpeed = 10
-
+	
+	val advanceFrame = 2 //客户端提前的帧数
 }
