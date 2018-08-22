@@ -161,33 +161,6 @@ object NetGameHolder extends js.JSApp {
     val apples = data.appleDetails
 
 
-    snakes.foreach { snake =>
-      val addBodies = snake.head.to(snake.head + snake.direction * snake.speed.toInt * subFrame / totalSubFrame)
-        .map(p => Bd(snake.id, p.x, p.y, snake.color))
-      val deleteBodies = {
-        var recorder = List.empty[Point]
-        var step = snake.speed.toInt * subFrame / totalSubFrame - snake.extend
-        var tail = snake.tail
-        var joints = snake.joints.enqueue(snake.head)
-        while(step > 0) {
-          val distance = tail.distance(joints.dequeue._1)
-          if(distance >= step) { //尾巴在移动到下一个节点前就需要停止。
-            val target = tail + tail.getDirection(joints.dequeue._1) * step
-            recorder ++= tail.to(target)
-            step = -1
-          } else { //尾巴在移动到下一个节点后，还需要继续移动。
-            step -= distance
-            recorder ++= tail.to(joints.dequeue._1)
-            tail = joints.dequeue._1
-            joints = joints.dequeue._2
-          }
-        }
-        recorder.map(p => Bd(snake.id, p.x, p.y, snake.color))
-      }
-      bodies = (bodies ++ addBodies).filterNot(p => deleteBodies.contains(p))
-    }
-
-
     val mySubFrameRevise =
       try {
         snakes.filter(_.id == uid).head.direction * snakes.filter(_.id == uid).head.speed.toInt * subFrame / totalSubFrame
@@ -303,11 +276,10 @@ object NetGameHolder extends js.JSApp {
         val distance = tail.distance(joints.dequeue._1)
         if(distance >= step) { //尾巴在移动到下一个节点前就需要停止。
           val target = tail + tail.getDirection(joints.dequeue._1) * step
-          recorder ++= tail.to(target)
+          tail = target
           step = -1
         } else { //尾巴在移动到下一个节点后，还需要继续移动。
           step -= distance
-          recorder ++= tail.to(joints.dequeue._1)
           tail = joints.dequeue._1
           joints = joints.dequeue._2
         }
