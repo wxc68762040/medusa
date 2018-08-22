@@ -102,7 +102,7 @@ object PlayGround {
               grid.addSnake(id,userMap.getOrElse(id, ( "Unknown",0))._1,roomId)
             } else {
               grid.addActionWithFrame(id, keyCode, frame)
-              dispatch(Protocol.SnakeAction(id, keyCode, grid.frameCount),roomId)
+              dispatch(Protocol.SnakeAction(id, keyCode, frame),roomId)
             }
             
           case NetTest(id, createTime) =>
