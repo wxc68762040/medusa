@@ -189,7 +189,6 @@ object NetGameHolder extends js.JSApp {
     val myHead = if(snakes.exists(_.id == uid)) snakes.filter(_.id == uid).head.head + mySubFrameRevise else Point(centerX, centerY)
     val deviationX = centerX - myHead.x
     val deviationY = centerY - myHead.y
-    println("----------------------"+ myProportion + "--------------------"+ proportion)
 
     ctx.font = "10px Verdana"
     ctx.fillStyle = "#009393"
