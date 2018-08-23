@@ -273,7 +273,7 @@ trait Grid {
         feedApple(appleCount, FoodType.deadBody, Some(snake.id))
         grid.get(dead.head) match {
           case Some(x: Body) =>
-            info(x.id.toString)
+//            info(x.id.toString)
             Left(x.id)
 					case _ =>
             Left(0L) //撞墙的情况
@@ -292,8 +292,8 @@ trait Grid {
 
     snakes.values.map(updateASnake(_, acts)).foreach {
       case Right(s) =>
-        info(frameCount.toString)
-				info(s.head.toString)
+//        info(frameCount.toString)
+//				info(s.head.toString)
 				updatedSnakes ::= s
       case Left(killerId) =>
         if(killerId != 0){
