@@ -120,6 +120,7 @@ object NetGameHolder extends js.JSApp {
 
 
   def startLoop(): Unit = {
+    gameLoop()
     gameLoopControl = dom.window.setInterval(() => gameLoop(), Protocol.frameRate)
   }
 
