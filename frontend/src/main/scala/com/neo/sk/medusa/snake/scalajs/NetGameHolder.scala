@@ -426,7 +426,7 @@ object NetGameHolder extends js.JSApp {
                 case data: Protocol.GridDataSync =>
                   if(!grid.init) {
                     grid.init = true
-                    val timeout = System.currentTimeMillis() - data.timestamp
+                    val timeout = 100 - (System.currentTimeMillis() - data.timestamp)
                     dom.window.setTimeout(() => startLoop(), timeout)
                   }
                   syncData = Some(data)
