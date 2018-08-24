@@ -94,13 +94,16 @@ object PlayGround {
 
         case userAction: UserAction => userAction match {
           case r@Key(id, keyCode, frame) =>
-            log.debug(s"got $r")
+            log.info(s"got $r")
             val roomId = userMap(id)._2
             dispatch(Protocol.TextMsg(s"Aha! $id click [$keyCode],"),roomId) //just for test
-          val grid = roomMap(roomId)._2
+            val grid = roomMap(roomId)._2
             if (keyCode == KeyEvent.VK_SPACE) {
               grid.addSnake(id,userMap.getOrElse(id, ( "Unknown",0))._1,roomId)
             } else {
+              if(frame < grid.frameCount) {
+                log.info(s"key loss: server: ${grid.frameCount} client: $frame")
+              }
               grid.addActionWithFrame(id, keyCode, frame)
               dispatch(Protocol.SnakeAction(id, keyCode, frame),roomId)
             }
@@ -141,7 +144,7 @@ object PlayGround {
           log.warn(s"got $r")
           subscribers.find(_._2.equals(actor)).foreach { case (id, _) =>
             log.debug(s"got Terminated id = $id")
-            if(userMap.filter(_._1 == id).nonEmpty){
+            if(userMap.exists(_._1 == id)){
               val roomId = userMap(id)._2
               val grid = roomMap(roomId)._2
               subscribers -= id

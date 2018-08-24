@@ -32,13 +32,14 @@ object NetGameHolder extends js.JSApp {
   val canvasBoundary = Point(MyBoundary.w,MyBoundary.h)
   val mapBoundary = Point(LittleMap.w ,LittleMap.h)
   val textLineHeight = 14
-  val totalSubFrame = 2
   
   var syncData: scala.Option[Protocol.GridDataSync] = None
   var currentRank = List.empty[Score]
   var historyRank = List.empty[Score]
   var myId = -1l
-  var subFrame = -1
+  var basicTime = 0L
+  var nextAnimation = 0.0 //保存requestAnimationFrame的ID
+  var gameLoopControl = 0 //保存gameLoop的setInterval的ID
   var myProportion = 1.0
 
   val grid = new GridOnClient(bounds)
@@ -96,7 +97,7 @@ object NetGameHolder extends js.JSApp {
       }
     }
 
-    dom.window.setInterval(() => gameLoop(), Protocol.frameRate / totalSubFrame)
+    dom.window.requestAnimationFrame(drawLoop())
   }
 
   def drawGameOn(): Unit = {
@@ -124,41 +125,47 @@ object NetGameHolder extends js.JSApp {
   }
 
 
+  def startLoop(): Unit = {
+    gameLoop()
+    gameLoopControl = dom.window.setInterval(() => gameLoop(), Protocol.frameRate)
+  }
 
   def gameLoop(): Unit = {
 //    println(s"length: ${grid.snakes.find(_._1 == myId).getOrElse((0L, SnakeInfo(0L, "", Point(0,0), Point(0,0), Point(0,0), "")))._2.length}")
-		subFrame += 1
-    if(subFrame >= totalSubFrame) {
-      subFrame = 0
-      if (wsSetup) {
-        if (!justSynced) {
-          update(false)
-        } else {
-          sync(syncData)
-          syncData = None
-          update(true)
-          justSynced = false
-        }
+    basicTime = System.currentTimeMillis()
+    if (wsSetup) {
+      if (!justSynced) {
+        update(false)
+      } else {
+        sync(syncData)
+        syncData = None
+        update(true)
+        justSynced = false
       }
     }
-    draw(subFrame)
+  }
+  
+  def drawLoop(): Double => Unit = { _ =>
+    draw()
+    nextAnimation = dom.window.requestAnimationFrame(drawLoop())
   }
 
   def update(isSynced: Boolean): Unit = {
     grid.update(isSynced: Boolean)
   }
 
-  def draw(subFrame: Int): Unit = {
+  def draw(): Unit = {
     if (wsSetup) {
       val data = grid.getGridData
-      drawGrid(myId, data, subFrame)
+      drawGrid(myId, data)
     } else {
       drawGameOff()
     }
   }
 
-  def drawGrid(uid: Long, data: GridData, subFrame: Int): Unit = {
+  def drawGrid(uid: Long, data: GridData): Unit = {
 
+    val period = (System.currentTimeMillis() - basicTime).toInt
     val snakes = data.snakes
     var bodies = data.bodyDetails
     val apples = data.appleDetails
@@ -166,7 +173,7 @@ object NetGameHolder extends js.JSApp {
 
     val mySubFrameRevise =
       try {
-        snakes.filter(_.id == uid).head.direction * snakes.filter(_.id == uid).head.speed.toInt * subFrame / totalSubFrame
+        snakes.filter(_.id == uid).head.direction * snakes.filter(_.id == uid).head.speed.toInt * period / frameRate
       } catch {
         case e: Exception =>
           Point(0, 0)
@@ -243,8 +250,8 @@ object NetGameHolder extends js.JSApp {
     snakes.foreach { snake =>
       val id = snake.id
       println(s"${snake.head.x}, ${snake.head.y}")
-      val x = snake.head.x + snake.direction.x * snake.speed * subFrame / totalSubFrame
-      val y = snake.head.y + snake.direction.y * snake.speed * subFrame / totalSubFrame
+      val x = snake.head.x + snake.direction.x * snake.speed * period / frameRate
+      val y = snake.head.y + snake.direction.y * snake.speed * period / frameRate
       if(!(x < myHead.x -  centerX || x > myHead.x + centerX || y < myHead.y - centerY || y > myHead.y + centerY)){
         val nameLength = snake.name.length
         ctx.fillStyle = Color.White.toString()
@@ -436,9 +443,9 @@ object NetGameHolder extends js.JSApp {
       canvas.focus()
       canvas.onkeydown = {
         (e: dom.KeyboardEvent) => {
-          println(s"keydown: ${e.keyCode}")
+//          println(s"keydown: ${e.keyCode}")
           if (watchKeys.contains(e.keyCode)) {
-            println(s"key down: [${e.keyCode}]")
+//            println(s"key down: [${e.keyCode}]")
             e.preventDefault()
             val msg: Protocol.UserAction = if (e.keyCode == KeyCode.F2) {
               NetTest(myId, System.currentTimeMillis())
@@ -494,8 +501,12 @@ object NetGameHolder extends js.JSApp {
                   writeToArea(s"apple feeded = $apples") //for debug.
                   grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt))
                 case data: Protocol.GridDataSync =>
-                  //writeToArea(s"grid data got: $msgData")
-                  //TODO here should be better code.
+                  if(!grid.init) {
+                    grid.init = true
+                    val timeout = 100 - (System.currentTimeMillis() - data.timestamp) % 100
+                    println(s"delayTime: ${100 - timeout}")
+                    dom.window.setTimeout(() => startLoop(), timeout)
+                  }
                   syncData = Some(data)
                   justSynced = true
                 //drawGrid(msgData.uid, data)

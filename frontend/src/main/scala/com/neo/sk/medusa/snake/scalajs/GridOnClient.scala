@@ -14,4 +14,6 @@ class GridOnClient(override val boundary: Point) extends Grid {
   override def info(msg: String): Unit = println(msg)
 
   override def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[Long] = None): Unit = {} //do nothing.
+  
+  var init: Boolean = false
 }
