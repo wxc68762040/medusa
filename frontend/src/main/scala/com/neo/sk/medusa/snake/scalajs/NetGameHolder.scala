@@ -39,6 +39,7 @@ object NetGameHolder extends js.JSApp {
   var historyRank = List.empty[Score]
   var myId = -1l
   var subFrame = -1
+  var myProportion = 1.0
 
   val grid = new GridOnClient(bounds)
 
@@ -109,9 +110,11 @@ object NetGameHolder extends js.JSApp {
     if (firstCome) {
       ctx.font = "36px Helvetica"
       ctx.fillText("Welcome.", 150, 180)
+      myProportion = 1.0
     } else {
       ctx.font = "36px Helvetica"
       ctx.fillText("Ops, connection lost.", 150, 180)
+      myProportion = 1.0
     }
 
     mapCtx.clearRect(0,0,mapCanvas.width,mapCanvas.height)
@@ -171,11 +174,15 @@ object NetGameHolder extends js.JSApp {
 
     val proportion = if(snakes.exists(_.id == uid)){
       val length = snakes.filter(_.id == uid).head.length
-      1 / (0.0005 * length + 0.975)
-      //50.0 / length
+      val p= (0.0005 * length + 0.975)
+      if(p < 1.5) p else 1.5
     } else {
 			1.0
 		}
+
+    if(myProportion < proportion){
+      myProportion += 0.001
+    }
 
     val centerX = MyBoundary.w/2
     val centerY = MyBoundary.h/2
@@ -188,7 +195,7 @@ object NetGameHolder extends js.JSApp {
     ctx.fillRect(0, 0 ,canvas.width,canvas.height)
     ctx.save()
     ctx.translate(MyBoundary.w / 2, MyBoundary.h / 2)
-    ctx.scale(proportion, proportion)
+    ctx.scale(1/myProportion, 1/myProportion)
     ctx.translate(-MyBoundary.w / 2, -MyBoundary.h / 2)
     ctx.drawImage(canvasPic,0 + deviationX, 0 + deviationY,Boundary.w,Boundary.h)
 
@@ -283,11 +290,6 @@ object NetGameHolder extends js.JSApp {
           tail = joints.dequeue._1
           joints = joints.dequeue._2
         }
-      }
-      if(tail == snake.tail){
-        println("*********************")
-      }else if(tail != snake.tail){
-        println("*-*-*-*-*-*-*-*-*-*-*-")
       }
 
       ctx.fillStyle = snake.color
@@ -392,6 +394,7 @@ object NetGameHolder extends js.JSApp {
         } else {
           ctx.font = "36px Helvetica"
           ctx.fillText("Ops, Press Space Key To Restart!", 150 - myHead.x + centerX, 180 - myHead.x + centerX)
+          myProportion = 1.0
         }
     }
 
