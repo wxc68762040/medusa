@@ -167,7 +167,7 @@ object NetGameHolder extends js.JSApp {
 
     val period = (System.currentTimeMillis() - basicTime).toInt
     val snakes = data.snakes
-    var bodies = data.bodyDetails
+//    var bodies = data.bodyDetails
     val apples = data.appleDetails
 
 
@@ -181,7 +181,7 @@ object NetGameHolder extends js.JSApp {
 
     val proportion = if(snakes.exists(_.id == uid)){
       val length = snakes.filter(_.id == uid).head.length
-      val p= (0.0005 * length + 0.975)
+      val p = 0.0005 * length + 0.975
       if(p < 1.5) p else 1.5
     } else {
 			1.0
@@ -278,11 +278,10 @@ object NetGameHolder extends js.JSApp {
 */
     snakes.foreach{ snake=>
       val id = snake.id
-      val x = snake.head.x + snake.direction.x * snake.speed * subFrame / totalSubFrame
-      val y = snake.head.y + snake.direction.y * snake.speed * subFrame / totalSubFrame
-
-      var recorder = List.empty[Point]
-      var step = snake.speed.toInt * subFrame / totalSubFrame - snake.extend
+      val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
+      val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
+			
+      var step = snake.speed.toInt * period / Protocol.frameRate - snake.extend
       var tail = snake.tail
       var joints = snake.joints.enqueue(snake.head)
       println("step"+ step)
