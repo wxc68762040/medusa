@@ -373,8 +373,8 @@ object NetGameHolder extends js.JSApp {
             val msg: Protocol.UserAction = if (e.keyCode == KeyCode.F2) {
               NetTest(myId, System.currentTimeMillis())
             } else {
-              grid.addActionWithFrame(myId, e.keyCode, grid.frameCount + 1)
-              Key(myId, e.keyCode, grid.frameCount + advanceFrame + 1) //客户端自己的行为提前帧
+              grid.addActionWithFrame(myId, e.keyCode, grid.frameCount)
+              Key(myId, e.keyCode, grid.frameCount + advanceFrame) //客户端自己的行为提前帧
             }
             msg.fillMiddleBuffer(sendBuffer) //encode msg
             val ab: ArrayBuffer = sendBuffer.result() //get encoded data.
