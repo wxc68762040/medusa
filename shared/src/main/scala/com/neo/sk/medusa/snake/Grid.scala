@@ -292,8 +292,8 @@ trait Grid {
 
     snakes.values.map(updateASnake(_, acts)).foreach {
       case Right(s) =>
-//        info(frameCount.toString)
-//				info(s.head.toString)
+        info(frameCount.toString)
+				info(s.head.toString)
 				updatedSnakes ::= s
       case Left(killerId) =>
         if(killerId != 0){
@@ -527,7 +527,8 @@ trait Grid {
       frameCount,
       snakes.values.toList,
 //      bodyDetails,
-      appleDetails
+      appleDetails,
+      System.currentTimeMillis()
     )
   }
 

@@ -37,7 +37,8 @@ object NetGameHolder extends js.JSApp {
   var historyRank = List.empty[Score]
   var myId = -1l
   var basicTime = 0L
-  var nextAnimation = 0.0
+  var nextAnimation = 0.0 //保存requestAnimationFrame的ID
+  var gameLoopControl = 0 //保存gameLoop的setInterval的ID
 
   val grid = new GridOnClient(bounds)
 
@@ -92,7 +93,6 @@ object NetGameHolder extends js.JSApp {
       }
     }
 
-    dom.window.setInterval(() => gameLoop(), Protocol.frameRate)
     dom.window.requestAnimationFrame(drawLoop())
   }
 
@@ -119,6 +119,9 @@ object NetGameHolder extends js.JSApp {
   }
 
 
+  def startLoop(): Unit = {
+    gameLoopControl = dom.window.setInterval(() => gameLoop(), Protocol.frameRate)
+  }
 
   def gameLoop(): Unit = {
 //    println(s"length: ${grid.snakes.find(_._1 == myId).getOrElse((0L, SnakeInfo(0L, "", Point(0,0), Point(0,0), Point(0,0), "")))._2.length}")
@@ -421,6 +424,11 @@ object NetGameHolder extends js.JSApp {
                   writeToArea(s"apple feeded = $apples") //for debug.
                   grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt))
                 case data: Protocol.GridDataSync =>
+                  if(!grid.init) {
+                    grid.init = true
+                    val timeout = System.currentTimeMillis() - data.timestamp
+                    dom.window.setTimeout(() => startLoop(), timeout)
+                  }
                   syncData = Some(data)
                   justSynced = true
                 //drawGrid(msgData.uid, data)

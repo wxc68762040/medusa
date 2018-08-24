@@ -144,7 +144,7 @@ object PlayGround {
           log.warn(s"got $r")
           subscribers.find(_._2.equals(actor)).foreach { case (id, _) =>
             log.debug(s"got Terminated id = $id")
-            if(userMap.filter(_._1 == id).nonEmpty){
+            if(userMap.exists(_._1 == id)){
               val roomId = userMap(id)._2
               val grid = roomMap(roomId)._2
               subscribers -= id
