@@ -372,6 +372,7 @@ object NetGameHolder extends js.JSApp {
 
     //画边界
     ctx.fillStyle = MyColors.boundaryColor
+    ctx.shadowBlur = 5
     ctx.fillRect(0 + deviationX, 0 + deviationY, Boundary.w, boundaryWidth)
     ctx.fillRect(0 + deviationX, 0 + deviationY, boundaryWidth, Boundary.h)
     ctx.fillRect(0+ deviationX, Boundary.h + deviationY, Boundary.w, boundaryWidth)
