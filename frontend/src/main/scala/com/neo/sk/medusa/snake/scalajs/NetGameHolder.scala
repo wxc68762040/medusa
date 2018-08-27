@@ -219,20 +219,7 @@ object NetGameHolder extends js.JSApp {
     mapCtx.globalAlpha=1
     mapCtx.drawImage(maxPic,(maxLength.x * LittleMap.w) / Boundary.w - 7,(maxLength.y * LittleMap.h) / Boundary.h -7 ,15,15)
     mapCtx.restore()
-
-//    bodies.filterNot(b=>b.x < myHead.x -  centerX || b.x > myHead.x + centerX || b.y < myHead.y - centerY || b.y > myHead.y + centerY).foreach { case Bd(id, x, y, color) =>
-//      ctx.fillStyle = color
-//      if (id == uid) {
-//        ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
-//        if(maxId != uid){
-//          mapCtx.globalAlpha = 1
-//          mapCtx.fillStyle = color
-//          mapCtx.fillRect((x  * LittleMap.w) / Boundary.w,(y * LittleMap.h) / Boundary.h,2,2)
-//        }
-//      } else {
-//        ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2, square * 2)
-//      }
-//    }
+    
 
     apples.foreach { case Ap(score, _, _, x, y, _) =>
       ctx.fillStyle = score match {
@@ -246,36 +233,7 @@ object NetGameHolder extends js.JSApp {
     }
 
     ctx.fillStyle = MyColors.otherHeader
-/*
-    snakes.foreach { snake =>
-      val id = snake.id
-      println(s"${snake.head.x}, ${snake.head.y}")
-      val x = snake.head.x + snake.direction.x * snake.speed * period / frameRate
-      val y = snake.head.y + snake.direction.y * snake.speed * period / frameRate
-      if(!(x < myHead.x -  centerX || x > myHead.x + centerX || y < myHead.y - centerY || y > myHead.y + centerY)){
-        val nameLength = snake.name.length
-        ctx.fillStyle = Color.White.toString()
-        ctx.fillText(snake.name, x - myHead.x  + centerX - nameLength * 4, y - myHead.y + centerY - 20)
-        if(snake.speed > fSpeed +1){
-          ctx.shadowBlur= 5
-          ctx.shadowColor= "#FFFFFF"
-          ctx.fillStyle = MyColors.speedUpHeader
-          ctx.fillRect(x - 1.5 * square + deviationX, y - 1.5 * square + deviationY, square * 3 , square * 3)
-        }
-        if (id == uid) {
-          ctx.fillStyle = MyColors.myHeader
-          ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 , square * 2)
-          if(maxId != id){
-            mapCtx.globalAlpha = 1
-            mapCtx.fillStyle = MyColors.myHeader
-            mapCtx.fillRect((x * LittleMap.w) / Boundary.w, (y * LittleMap.h) / Boundary.h, 2, 2)
-          }
-        } else {
-          ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 , square * 2)
-        }
-      }
-    }
-*/
+
     snakes.foreach{ snake=>
       val id = snake.id
       val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
@@ -346,9 +304,6 @@ object NetGameHolder extends js.JSApp {
       }
 
       // 头部信息
-      val nameLength = snake.name.length
-      ctx.fillStyle = Color.White.toString()
-      ctx.fillText(snake.name, x - myHead.x  + centerX - nameLength * 4, y - myHead.y + centerY - 20)
       if(snake.speed > fSpeed +1){
         ctx.shadowBlur= 5
         ctx.shadowColor= "#FFFFFF"
@@ -378,6 +333,15 @@ object NetGameHolder extends js.JSApp {
     ctx.fillRect(0+ deviationX, Boundary.h + deviationY, Boundary.w, boundaryWidth)
     ctx.fillRect(Boundary.w + deviationX, 0 + deviationY, boundaryWidth, Boundary.h)
     ctx.restore()
+
+    //名称信息
+    snakes.foreach{ snake=>
+      val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
+      val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
+      val nameLength = snake.name.length
+      ctx.fillStyle = Color.White.toString()
+      ctx.fillText(snake.name, x - myHead.x  + centerX - nameLength * 4, y - myHead.y + centerY - 20)
+    }
 
     ctx.fillStyle = "rgb(250, 250, 250)"
     ctx.textAlign = "left"
