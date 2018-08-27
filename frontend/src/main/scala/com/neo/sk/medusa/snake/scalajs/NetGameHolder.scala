@@ -196,7 +196,8 @@ object NetGameHolder extends js.JSApp {
                 grid.grid -= Point(apple.x, apple.y)
                 if (apple.appleType != FoodType.intermediate) {
                   val newLength = snake.length + apple.score
-                  val newSnakeInfo = snake.copy(length = newLength)
+                  val newExtend = snake.extend + apple.score
+                  val newSnakeInfo = snake.copy(length = newLength, extend = newExtend)
                   grid.snakes += (snake.id -> newSnakeInfo)
                 }
                 val nextLocOpt = Point(apple.x, apple.y) pathTo snake.head
