@@ -193,7 +193,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
     var newSpeed = newSpeedInit
     var speedOrNot = speedOrNotInit
     var apples = List.empty[Ap]
-    newHead.zone(square * 10).foreach { e =>
+    newHead.zone(square * 15).foreach { e =>
       grid.get(e) match {
         case Some(x: Apple) =>
           if (x.appleType != FoodType.intermediate) {

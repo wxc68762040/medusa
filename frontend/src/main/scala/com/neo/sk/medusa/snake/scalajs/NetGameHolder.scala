@@ -153,7 +153,6 @@ object NetGameHolder extends js.JSApp {
   def moveEatenApple(): Unit = {
     val invalidApple = Ap(0, 0, 0, 0, 0)
     eatenApples = eatenApples.filterNot{ apple => !grid.snakes.exists(_._2.id == apple._1)}
-    val mySnake = grid.snakes.get(myId)
 
     eatenApples.foreach { info =>
         val snakeOpt = grid.snakes.get(info._1)
@@ -499,7 +498,7 @@ object NetGameHolder extends js.JSApp {
                   currentRank = current
                   historyRank = history
                 case Protocol.FeedApples(apples) =>
-                  writeToArea(s"apple feeded = $apples") //for debug.
+//                  writeToArea(s"apple feeded = $apples") //for debug.
                   grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt))
 
                 case Protocol.EatApples(apples) =>

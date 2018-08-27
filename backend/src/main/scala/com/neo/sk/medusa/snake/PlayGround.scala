@@ -95,7 +95,7 @@ object PlayGround {
           case r@Key(id, keyCode, frame) =>
 //            log.info(s"got $r")
             val roomId = userMap(id)._2
-            dispatch(Protocol.TextMsg(s"Aha! $id click [$keyCode],"),roomId) //just for test
+//            dispatch(Protocol.TextMsg(s"Aha! $id click [$keyCode],"),roomId) //just for test
             val grid = roomMap(roomId)._2
             if (keyCode == KeyEvent.VK_SPACE) {
               grid.addSnake(id,userMap.getOrElse(id, ( "Unknown",0))._1,roomId)
