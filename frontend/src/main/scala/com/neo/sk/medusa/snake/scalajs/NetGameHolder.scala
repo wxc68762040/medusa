@@ -132,7 +132,6 @@ object NetGameHolder extends js.JSApp {
   }
 
   def gameLoop(): Unit = {
-//    println(s"length: ${grid.snakes.find(_._1 == myId).getOrElse((0L, SnakeInfo(0L, "", Point(0,0), Point(0,0), Point(0,0), "")))._2.length}")
     basicTime = System.currentTimeMillis()
     if (wsSetup) {
       if (!justSynced) {
@@ -155,38 +154,11 @@ object NetGameHolder extends js.JSApp {
     val invalidApple = Ap(0, 0, 0, 0, 0)
     eatenApples = eatenApples.filterNot{ apple => !grid.snakes.exists(_._2.id == apple._1)}
     val mySnake = grid.snakes.get(myId)
-//    if (mySnake.isDefined) {
-//      val myHeader = mySnake.get.head
-//      val myApplesOpt = eatenApples.get(myId)
-//      var myApples = List.empty[Ap]
-//      if (myApplesOpt.isDefined) {
-//        myApples = myApplesOpt.get
-//        if (myApples.nonEmpty) {
-//          println(s"myApples: $myApples")
-//          myApples = myApples.map { apple =>
-//            grid.grid -= Point(apple.x, apple.y)
-//            val nextLocOpt = Point(apple.x, apple.y) pathTo myHeader
-//            if (nextLocOpt.nonEmpty) {
-//              val nextLoc = nextLocOpt.get
-//              grid.grid.get(nextLoc) match {
-//                case Some(Body(_, _)) => invalidApple
-//                case _ =>
-//                  val nextApple = Apple(apple.score, apple.life, FoodType.intermediate)
-//                  grid.grid += (nextLoc -> nextApple)
-//                  Ap(apple.score, apple.life, FoodType.intermediate, nextLoc.x, nextLoc.y)
-//              }
-//            } else invalidApple
-//          }.filterNot(_ == invalidApple)
-//          eatenApples += (myId -> myApples)
-//        }
-//      }
-//    }
 
     eatenApples.foreach { info =>
-//      if (info._1 != myId) {
-        val snake = grid.snakes.get(info._1)
-        if (snake.isDefined) {
-          val header = snake.get.head
+        val snakeOpt = grid.snakes.get(info._1)
+        if (snakeOpt.isDefined) {
+          val snake = snakeOpt.get
           val applesOpt = eatenApples.get(info._1)
           var apples = List.empty[Ap]
           if (applesOpt.isDefined) {
@@ -195,9 +167,12 @@ object NetGameHolder extends js.JSApp {
               apples = apples.map { apple =>
                 grid.grid -= Point(apple.x, apple.y)
                 if (apple.appleType != FoodType.intermediate) {
-
+                  val newLength = snake.length + apple.score
+                  val newExtend = snake.extend + apple.score
+                  val newSnakeInfo = snake.copy(length = newLength, extend = newExtend)
+                  grid.snakes += (snake.id -> newSnakeInfo)
                 }
-                val nextLocOpt = Point(apple.x, apple.y) pathTo header
+                val nextLocOpt = Point(apple.x, apple.y) pathTo snake.head
                 if (nextLocOpt.nonEmpty) {
                   val nextLoc = nextLocOpt.get
                   grid.grid.get(nextLoc) match {
@@ -209,12 +184,10 @@ object NetGameHolder extends js.JSApp {
                   }
                 } else invalidApple
               }.filterNot(_ == invalidApple)
-              eatenApples += (snake.get.id -> apples)
+              eatenApples += (snake.id -> apples)
             }
           }
         }
-
-//      }
     }
 
   }
@@ -237,7 +210,6 @@ object NetGameHolder extends js.JSApp {
 
     val period = (System.currentTimeMillis() - basicTime).toInt
     val snakes = data.snakes
-//    var bodies = data.bodyDetails
     val apples = data.appleDetails
 
 
@@ -312,7 +284,6 @@ object NetGameHolder extends js.JSApp {
       var step = snake.speed.toInt * period / Protocol.frameRate - snake.extend
       var tail = snake.tail
       var joints = snake.joints.enqueue(snake.head)
-//      println("step"+ step)
       while(step > 0) {
         val distance = tail.distance(joints.dequeue._1)
         if(distance >= step) { //尾巴在移动到下一个节点前就需要停止。
@@ -477,9 +448,7 @@ object NetGameHolder extends js.JSApp {
       canvas.focus()
       canvas.onkeydown = {
         (e: dom.KeyboardEvent) => {
-//          println(s"keydown: ${e.keyCode}")
           if (watchKeys.contains(e.keyCode)) {
-//            println(s"key down: [${e.keyCode}]")
             e.preventDefault()
             val msg: Protocol.UserAction = if (e.keyCode == KeyCode.F2) {
               NetTest(myId, System.currentTimeMillis())
@@ -511,8 +480,7 @@ object NetGameHolder extends js.JSApp {
           fr.readAsArrayBuffer(blobMsg)
           fr.onloadend = { _: Event =>
             val buf = fr.result.asInstanceOf[ArrayBuffer] // read data from ws.
-            //            println(s"load length: ${buf.byteLength}")
-  
+
             //decode process.
             val middleDataInJs = new MiddleBufferInJs(buf) //put data into MiddleBuffer
             val encodedData: Either[decoder.DecoderFailure, Protocol.GameMessage] =
@@ -528,7 +496,6 @@ object NetGameHolder extends js.JSApp {
                     grid.addActionWithFrame(id, keyCode, frame)
                   }
                 case Protocol.Ranks(current, history) =>
-                  //writeToArea(s"rank update. current = $current") //for debug.
                   currentRank = current
                   historyRank = history
                 case Protocol.FeedApples(apples) =>
@@ -542,6 +509,16 @@ object NetGameHolder extends js.JSApp {
                     eatenApples += (apple.snakeId -> curEatenFood)
                   }
 
+                case Protocol.SpeedUp(speedInfo) =>
+                  speedInfo.foreach { info =>
+                    val oldSnake = grid.snakes.get(info.snakeId)
+                    if (oldSnake.nonEmpty) {
+                      val freeFrame = if (info.speedUpOrNot) 0 else oldSnake.get.freeFrame + 1
+                      val newSnake = oldSnake.get.copy(speed = info.newSpeed, freeFrame = freeFrame)
+                      grid.snakes += (info.snakeId -> newSnake)
+                    }
+                  }
+
                 case data: Protocol.GridDataSync =>
                   if(!grid.init) {
                     grid.init = true
@@ -551,7 +528,6 @@ object NetGameHolder extends js.JSApp {
                   }
                   syncData = Some(data)
                   justSynced = true
-                //drawGrid(msgData.uid, data)
                 case Protocol.NetDelayTest(createTime) =>
                   val receiveTime = System.currentTimeMillis()
                   val m = s"Net Delay Test: createTime=$createTime, receiveTime=$receiveTime, twoWayDelay=${receiveTime - createTime}"
@@ -593,7 +569,6 @@ object NetGameHolder extends js.JSApp {
     println(grid.frameCount.toString)
     if(dataOpt.nonEmpty) {
       val data = dataOpt.get
-//      println(s"client frame: ${grid.frameCount}, server frame: ${data.frameCount}")
       grid.actionMap = grid.actionMap.filterKeys(_ >= data.frameCount - 1 - advanceFrame)
       grid.frameCount = data.frameCount
       grid.snakes = data.snakes.map(s => s.id -> s).toMap
@@ -613,24 +588,12 @@ object NetGameHolder extends js.JSApp {
       if(mySnakeOpt.nonEmpty) {
         var mySnake = mySnakeOpt.get._2
         for(i <- advanceFrame to 1 by -1) {
-          grid.updateMySnake(mySnake, grid.actionMap.getOrElse(data.frameCount - i, Map.empty)) match {
+          grid.updateASnake(mySnake, grid.actionMap.getOrElse(data.frameCount - i, Map.empty)) match {
             case Right(snake) =>
               mySnake = snake
             case Left(_) =>
           }
         }
-//        val before = grid.snakes.find(_._1 == myId)
-//        if(before.nonEmpty) {
-//          println(data.frameCount.toString)
-//          println(s"before: ${before.get._2.head.toString}, after: ${mySnake.head.toString}")
-//        }
-//        val newDirection = grid.actionMap.getOrElse(data.frameCount - 1, Map.empty).get(myId) match {
-//          case Some(KeyEvent.VK_LEFT) => Point(-1, 0) //37
-//          case Some(KeyEvent.VK_RIGHT) => Point(1, 0) //39
-//          case Some(KeyEvent.VK_UP) => Point(0, -1)   //38
-//          case Some(KeyEvent.VK_DOWN) => Point(0, 1)  //40
-//          case _ => mySnake.direction
-//        }
         grid.snakes += ((mySnake.id, mySnake))
       }
       val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap

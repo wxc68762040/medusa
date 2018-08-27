@@ -34,7 +34,6 @@ object PlayGround {
   val bounds = Point(Boundary.w, Boundary.h)
 
   val log = LoggerFactory.getLogger(this.getClass)
-//  var timestamp = 0L
 
 
   def create(system: ActorSystem)(implicit executor: ExecutionContext): PlayGround = {
@@ -47,14 +46,14 @@ object PlayGround {
       //(roomId.(userNumber,grid))
       var roomMap = Map.empty[Long,(Int,GridOnServer)]
       var roomNum = -1
-      val maxRoomNum = 2
+      val maxRoomNum = 30
 
       var tickCount = 0l
 
       override def receive: Receive = {
         case r@Join(id, name, subscriber) =>
           log.info(s"got $r")
-          val roomId = if(roomMap.filter(_._2._1 < maxRoomNum).isEmpty){
+          val roomId = if(!roomMap.exists(_._2._1 < maxRoomNum)){
             println(roomMap)
             roomNum += 1
             roomNum
@@ -116,9 +115,6 @@ object PlayGround {
         }
         
         case Sync =>
-//          log.info(s"time: ${(System.currentTimeMillis() - timestamp).toString}")
-//          timestamp = System.currentTimeMillis()
-          //log.error("i got msg : sync")
           tickCount += 1
           roomMap.foreach{ room=>
             val grid = room._2._2
@@ -126,10 +122,10 @@ object PlayGround {
             grid.update(false)
             val feedApples = grid.getFeededApple
             val eatenApples = grid.getEatenApples
+            val speedUpInfo = grid.getSpeedUpInfo
             grid.resetFoodData()
             if (tickCount % 20 == 5) {
               val GridSyncData = grid.getGridSyncData
-              //println("sync------------"+gridData)
               dispatch(GridSyncData,roomId)
             } else {
               if (feedApples.nonEmpty) {
@@ -137,6 +133,9 @@ object PlayGround {
               }
               if (eatenApples.nonEmpty) {
                 dispatch(Protocol.EatApples(eatenApples.map(r => EatFoodInfo(r._1, r._2)).toList), roomId)
+              }
+              if (speedUpInfo.nonEmpty) {
+                dispatch(Protocol.SpeedUp(speedUpInfo), roomId)
               }
             }
             if (tickCount % 20 == 1) {
@@ -172,10 +171,7 @@ object PlayGround {
 
       def dispatch(gameOutPut: Protocol.GameMessage, roomId: Long) = {
         val user = userMap.filter(_._2._2 == roomId).keys.toList
-        //println("userMap----"+userMap)
-        //println("userId---"+user+"roomId----"+roomId+"msg--------"+ gameOutPut)
         subscribers.foreach { case (id, ref) if user.contains(id) => ref ! gameOutPut case _ =>}
-        //subscribers.foreach { case (_, ref) => ref ! gameOutPut }
       }
 
 
