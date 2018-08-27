@@ -126,6 +126,7 @@ object PlayGround {
             grid.update(false)
             val feedApples = grid.getFeededApple
             val eatenApples = grid.getEatenApples
+            val speedUpInfo = grid.getSpeedUpInfo
             grid.resetFoodData()
             if (tickCount % 20 == 5) {
               val GridSyncData = grid.getGridSyncData
@@ -137,6 +138,9 @@ object PlayGround {
               }
               if (eatenApples.nonEmpty) {
                 dispatch(Protocol.EatApples(eatenApples.map(r => EatFoodInfo(r._1, r._2)).toList), roomId)
+              }
+              if (speedUpInfo.nonEmpty) {
+                dispatch(Protocol.SpeedUp(speedUpInfo), roomId)
               }
             }
             if (tickCount % 20 == 1) {

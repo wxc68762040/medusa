@@ -24,6 +24,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
   private[this] var feededApples: List[Ap] = Nil
   private[this] var deadBodies: List[Ap] = Nil
   private [this] var eatenApples = Map.empty[Long, List[Ap]]
+  private [this] var speedUpInfo = List.empty[SpeedUpInfo]
 
 
   var currentRank = List.empty[Score]
@@ -209,6 +210,54 @@ class GridOnServer(override val boundary: Point) extends Grid {
     Some((totalScore, newSpeed, speedOrNot))
   }
 
+  override def speedUp(snake: SnakeInfo, newDirection: Point): Option[(Boolean, Double)] = {
+    //检测加速
+    var speedOrNot :Boolean = false
+    val headerLeftRight=if(newDirection.y == 0){
+      Point(snake.head.x - square, snake.head.y - square - speedUpRange).zone(square * 2, (speedUpRange+square) * 2)
+    }else{
+      Point(snake.head.x - square- speedUpRange, snake.head.y - square).zone((speedUpRange+square) * 2, square*2)
+    }
+
+    headerLeftRight.foreach {
+      s =>
+        grid.get(s) match {
+          case Some(x: Body) =>
+            if (x.id != snake.id) {
+              speedOrNot = true
+            } else {
+              speedOrNot = speedOrNot
+            }
+          case _ =>
+            speedOrNot = speedOrNot
+        }
+    }
+
+    //加速上限
+    val s = snake.speed match {
+      case x if x > fSpeed && x < fSpeed + 4 => 0.3
+      case x if x >= fSpeed && x <= fSpeed + 9 => 0.4
+      case x if x > fSpeed && x <= fSpeed + 15 => 0.5
+      case _ => 0
+    }
+    val newSpeedUpLength = if(snake.speed > 2.5 * fSpeed)  2.5 * fSpeed  else snake.speed
+
+    // 判断加速减速
+
+    val newSpeed = if(speedOrNot){
+      newSpeedUpLength + s
+    }else if(!speedOrNot && snake.freeFrame <= freeFrameTime){
+      newSpeedUpLength
+    }else if(!speedOrNot && snake.freeFrame > freeFrameTime && newSpeedUpLength > fSpeed + 0.1){
+      newSpeedUpLength - s
+    }else{
+      fSpeed
+    }
+
+    speedUpInfo ::= SpeedUpInfo(snake.id, speedOrNot, newSpeed)
+    Some((speedOrNot, newSpeed))
+  }
+
   override def update(isSynced: Boolean): Unit = {
     super.update(isSynced: Boolean)
     genWaitingSnake()
@@ -219,10 +268,13 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
   def getEatenApples: Map[Long, List[Ap]] = eatenApples
 
+  def getSpeedUpInfo: List[SpeedUpInfo] = speedUpInfo
+
   def resetFoodData(): Unit = {
     feededApples = Nil
     deadBodies = Nil
     eatenApples = Map.empty
+    speedUpInfo = Nil
   }
 
 }

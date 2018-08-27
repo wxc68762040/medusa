@@ -184,9 +184,9 @@ object NetGameHolder extends js.JSApp {
 
     eatenApples.foreach { info =>
 //      if (info._1 != myId) {
-        val snake = grid.snakes.get(info._1)
-        if (snake.isDefined) {
-          val header = snake.get.head
+        val snakeOpt = grid.snakes.get(info._1)
+        if (snakeOpt.isDefined) {
+          val snake = snakeOpt.get
           val applesOpt = eatenApples.get(info._1)
           var apples = List.empty[Ap]
           if (applesOpt.isDefined) {
@@ -195,9 +195,11 @@ object NetGameHolder extends js.JSApp {
               apples = apples.map { apple =>
                 grid.grid -= Point(apple.x, apple.y)
                 if (apple.appleType != FoodType.intermediate) {
-
+                  val newLength = snake.length + apple.score
+                  val newSnakeInfo = snake.copy(length = newLength)
+                  grid.snakes += (snake.id -> newSnakeInfo)
                 }
-                val nextLocOpt = Point(apple.x, apple.y) pathTo header
+                val nextLocOpt = Point(apple.x, apple.y) pathTo snake.head
                 if (nextLocOpt.nonEmpty) {
                   val nextLoc = nextLocOpt.get
                   grid.grid.get(nextLoc) match {
@@ -209,7 +211,7 @@ object NetGameHolder extends js.JSApp {
                   }
                 } else invalidApple
               }.filterNot(_ == invalidApple)
-              eatenApples += (snake.get.id -> apples)
+              eatenApples += (snake.id -> apples)
             }
           }
         }
@@ -540,6 +542,16 @@ object NetGameHolder extends js.JSApp {
                     val lastEatenFood = eatenApples.getOrElse(apple.snakeId, List.empty)
                     val curEatenFood = lastEatenFood ::: apple.apples
                     eatenApples += (apple.snakeId -> curEatenFood)
+                  }
+
+                case Protocol.SpeedUp(speedInfo) =>
+                  speedInfo.foreach { info =>
+                    val oldSnake = grid.snakes.get(info.snakeId)
+                    if (oldSnake.nonEmpty) {
+                      val freeFrame = if (info.speedUpOrNot) 0 else oldSnake.get.freeFrame + 1
+                      val newSnake = oldSnake.get.copy(speed = info.newSpeed, freeFrame = freeFrame)
+                      grid.snakes += (info.snakeId -> newSnake)
+                    }
                   }
 
                 case data: Protocol.GridDataSync =>

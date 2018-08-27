@@ -76,6 +76,8 @@ trait Grid {
 
   def eatFood(snakeId: Long, newHead: Point, newSpeedInit: Double, speedOrNotInit: Boolean): Option[(Int, Double, Boolean)]
 
+  def speedUp(snake: SnakeInfo, newDirection: Point): Option[(Boolean, Double)]
+
   private[this] def updateSpots() = {
     var appleCount = 0
     grid = grid.filter { case (_, spot) =>
@@ -153,93 +155,54 @@ trait Grid {
         }
       }
       
-      //检测加速
-      var speedOrNot :Boolean = false
-      val headerLeftRight=if(newDirection.y == 0){
-        Point(snake.head.x - square, snake.head.y - square - speedUpRange).zone(square * 2, (speedUpRange+square) * 2)
-      }else{
-        Point(snake.head.x - square- speedUpRange, snake.head.y - square).zone((speedUpRange+square) * 2, square*2)
-      }
-
-      headerLeftRight.foreach {
-        s =>
-          grid.get(s) match {
-            case Some(x: Body) =>
-              if (x.id != snake.id) {
-                speedOrNot = true
-              } else {
-                speedOrNot = speedOrNot
-              }
-            case _ =>
-              speedOrNot = speedOrNot
-          }
-      }
-
-      //加速上限
-      val s = snake.speed match {
-        case x if x > fSpeed && x < fSpeed + 4 => 0.3
-        case x if x >= fSpeed && x <= fSpeed + 9 => 0.4
-        case x if x > fSpeed && x <= fSpeed + 15 => 0.5
-        case _ => 0
-      }
-      val newSpeedUpLength = if(snake.speed > 2.5 * fSpeed)  2.5 * fSpeed  else snake.speed
-      
-      // 判断加速减速
-				
-      var newSpeed = if(speedOrNot){
-        newSpeedUpLength + s
-      }else if(!speedOrNot && snake.freeFrame <= freeFrameTime){
-        newSpeedUpLength
-      }else if(!speedOrNot && snake.freeFrame > freeFrameTime && newSpeedUpLength > fSpeed + 0.1){
-        newSpeedUpLength - s
-      }else{
-        fSpeed
-      }
+//      //检测加速
+//      var speedOrNot :Boolean = false
+//      val headerLeftRight=if(newDirection.y == 0){
+//        Point(snake.head.x - square, snake.head.y - square - speedUpRange).zone(square * 2, (speedUpRange+square) * 2)
+//      }else{
+//        Point(snake.head.x - square- speedUpRange, snake.head.y - square).zone((speedUpRange+square) * 2, square*2)
+//      }
+//
+//      headerLeftRight.foreach {
+//        s =>
+//          grid.get(s) match {
+//            case Some(x: Body) =>
+//              if (x.id != snake.id) {
+//                speedOrNot = true
+//              } else {
+//                speedOrNot = speedOrNot
+//              }
+//            case _ =>
+//              speedOrNot = speedOrNot
+//          }
+//      }
+//
+//      //加速上限
+//      val s = snake.speed match {
+//        case x if x > fSpeed && x < fSpeed + 4 => 0.3
+//        case x if x >= fSpeed && x <= fSpeed + 9 => 0.4
+//        case x if x > fSpeed && x <= fSpeed + 15 => 0.5
+//        case _ => 0
+//      }
+//      val newSpeedUpLength = if(snake.speed > 2.5 * fSpeed)  2.5 * fSpeed  else snake.speed
+//
+//      // 判断加速减速
+//
+//      var newSpeed = if(speedOrNot){
+//        newSpeedUpLength + s
+//      }else if(!speedOrNot && snake.freeFrame <= freeFrameTime){
+//        newSpeedUpLength
+//      }else if(!speedOrNot && snake.freeFrame > freeFrameTime && newSpeedUpLength > fSpeed + 0.1){
+//        newSpeedUpLength - s
+//      }else{
+//        fSpeed
+//      }
+      val speedInfoOpt = speedUp(snake, newDirection)
+      var newSpeed = if (speedInfoOpt.nonEmpty) speedInfoOpt.get._2 else snake.speed
+      var speedOrNot = if (speedInfoOpt.nonEmpty) speedInfoOpt.get._1 else false
       
       val newHead = snake.head + snake.direction * newSpeed.toInt
 			val oldHead = snake.head
-			
-//      val foodSum = newHead.zone(square * 10).foldLeft(0) { (sum: Int, e: Point) =>
-//        grid.get(e) match {
-//          case Some(Apple(score, _, appleType,_)) =>
-//						if (sum == 0) {
-//							grid -= e
-//							val nextAppleOpt = e pathTo newHead
-//								if (nextAppleOpt.nonEmpty) {
-//									val nextApple = nextAppleOpt.get
-//                  var applesAround = 0
-//                  var ifNearBody = false
-//                  nextApple.zone(square * 2).foreach { p =>
-//                    grid.get(p) match {
-//                      case Some(Body(_, _)) =>
-//                        ifNearBody = true
-//                      case Some(Apple(_, _, _, _)) =>
-//                        applesAround += 1
-//                      case _ => // do nothing
-//                    }
-//                  }
-//
-//                  if (!ifNearBody && !(applesAround > 0 && newSpeed > fSpeed * 1.5)) {
-//                    val pathApple = Apple(score, appleLife, FoodType.intermediate)
-//                    grid += (nextApple -> pathApple)
-//                  }
-//
-//								}
-//							if (appleType != FoodType.intermediate) {
-//								newSpeed += 0.3
-//								speedOrNot = true
-//								sum + score
-//							} else {
-//								sum
-//							}
-//            } else {
-//							sum
-//						}
-//
-//					case _ =>
-//            sum
-//        }
-//      }
 
       val foodEaten = eatFood(snake.id, newHead, newSpeed, speedOrNot)
 
@@ -288,7 +251,10 @@ trait Grid {
         }
       }
 
-      val newFreeFrame = if(speedOrNot) 0 else snake.freeFrame + 1
+      val newFreeFrame = if (speedInfoOpt.nonEmpty) {
+        if(speedOrNot) 0 else snake.freeFrame + 1
+      } else snake.freeFrame
+
       //println(newSpeedUp+"*************"+newFreeFrame)
       if(dead.nonEmpty) {
         val appleCount = math.round(snake.length * 0.11).toInt

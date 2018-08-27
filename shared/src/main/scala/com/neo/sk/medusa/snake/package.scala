@@ -226,6 +226,12 @@ package object snake {
     apples: List[Ap]
   )
 
+  case class SpeedUpInfo(
+    snakeId: Long,
+    speedUpOrNot: Boolean,
+    newSpeed: Double
+  )
+
 
   object Boundary{
     val w = 3600
