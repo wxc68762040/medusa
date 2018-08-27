@@ -41,6 +41,7 @@ object NetGameHolder extends js.JSApp {
   var nextAnimation = 0.0 //保存requestAnimationFrame的ID
   var gameLoopControl = 0 //保存gameLoop的setInterval的ID
   var myProportion = 1.0
+  var eatenApples  = Map[Long, List[Ap]]()
 
   val grid = new GridOnClient(bounds)
 
@@ -150,7 +151,76 @@ object NetGameHolder extends js.JSApp {
     nextAnimation = dom.window.requestAnimationFrame(drawLoop())
   }
 
+  def moveEatenApple(): Unit = {
+    val invalidApple = Ap(0, 0, 0, 0, 0)
+    eatenApples = eatenApples.filterNot{ apple => !grid.snakes.exists(_._2.id == apple._1)}
+    val mySnake = grid.snakes.get(myId)
+//    if (mySnake.isDefined) {
+//      val myHeader = mySnake.get.head
+//      val myApplesOpt = eatenApples.get(myId)
+//      var myApples = List.empty[Ap]
+//      if (myApplesOpt.isDefined) {
+//        myApples = myApplesOpt.get
+//        if (myApples.nonEmpty) {
+//          println(s"myApples: $myApples")
+//          myApples = myApples.map { apple =>
+//            grid.grid -= Point(apple.x, apple.y)
+//            val nextLocOpt = Point(apple.x, apple.y) pathTo myHeader
+//            if (nextLocOpt.nonEmpty) {
+//              val nextLoc = nextLocOpt.get
+//              grid.grid.get(nextLoc) match {
+//                case Some(Body(_, _)) => invalidApple
+//                case _ =>
+//                  val nextApple = Apple(apple.score, apple.life, FoodType.intermediate)
+//                  grid.grid += (nextLoc -> nextApple)
+//                  Ap(apple.score, apple.life, FoodType.intermediate, nextLoc.x, nextLoc.y)
+//              }
+//            } else invalidApple
+//          }.filterNot(_ == invalidApple)
+//          eatenApples += (myId -> myApples)
+//        }
+//      }
+//    }
+
+    eatenApples.foreach { info =>
+//      if (info._1 != myId) {
+        val snake = grid.snakes.get(info._1)
+        if (snake.isDefined) {
+          val header = snake.get.head
+          val applesOpt = eatenApples.get(info._1)
+          var apples = List.empty[Ap]
+          if (applesOpt.isDefined) {
+            apples = applesOpt.get
+            if (apples.nonEmpty) {
+              apples = apples.map { apple =>
+                grid.grid -= Point(apple.x, apple.y)
+                if (apple.appleType != FoodType.intermediate) {
+
+                }
+                val nextLocOpt = Point(apple.x, apple.y) pathTo header
+                if (nextLocOpt.nonEmpty) {
+                  val nextLoc = nextLocOpt.get
+                  grid.grid.get(nextLoc) match {
+                    case Some(Body(_, _)) => invalidApple
+                    case _ =>
+                      val nextApple = Apple(apple.score, apple.life, FoodType.intermediate)
+                      grid.grid += (nextLoc -> nextApple)
+                      Ap(apple.score, apple.life, FoodType.intermediate, nextLoc.x, nextLoc.y)
+                  }
+                } else invalidApple
+              }.filterNot(_ == invalidApple)
+              eatenApples += (snake.get.id -> apples)
+            }
+          }
+        }
+
+//      }
+    }
+
+  }
+
   def update(isSynced: Boolean): Unit = {
+    moveEatenApple()
     grid.update(isSynced: Boolean)
   }
 
@@ -242,7 +312,7 @@ object NetGameHolder extends js.JSApp {
       var step = snake.speed.toInt * period / Protocol.frameRate - snake.extend
       var tail = snake.tail
       var joints = snake.joints.enqueue(snake.head)
-      println("step"+ step)
+//      println("step"+ step)
       while(step > 0) {
         val distance = tail.distance(joints.dequeue._1)
         if(distance >= step) { //尾巴在移动到下一个节点前就需要停止。
@@ -464,6 +534,14 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.FeedApples(apples) =>
                   writeToArea(s"apple feeded = $apples") //for debug.
                   grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt))
+
+                case Protocol.EatApples(apples) =>
+                  apples.foreach { apple =>
+                    val lastEatenFood = eatenApples.getOrElse(apple.snakeId, List.empty)
+                    val curEatenFood = lastEatenFood ::: apple.apples
+                    eatenApples += (apple.snakeId -> curEatenFood)
+                  }
+
                 case data: Protocol.GridDataSync =>
                   if(!grid.init) {
                     grid.init = true
@@ -515,7 +593,7 @@ object NetGameHolder extends js.JSApp {
     println(grid.frameCount.toString)
     if(dataOpt.nonEmpty) {
       val data = dataOpt.get
-      println(s"client frame: ${grid.frameCount}, server frame: ${data.frameCount}")
+//      println(s"client frame: ${grid.frameCount}, server frame: ${data.frameCount}")
       grid.actionMap = grid.actionMap.filterKeys(_ >= data.frameCount - 1 - advanceFrame)
       grid.frameCount = data.frameCount
       grid.snakes = data.snakes.map(s => s.id -> s).toMap

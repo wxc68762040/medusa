@@ -19,6 +19,10 @@ object Protocol {
   case class FeedApples(
     aLs: List[Ap]
   ) extends GameMessage
+
+  case class EatApples(
+    eatFoodInfo: List[EatFoodInfo]
+  ) extends GameMessage
   
   case class TextMsg(msg: String) extends GameMessage
   case class Id(id: Long) extends GameMessage

@@ -94,7 +94,7 @@ object PlayGround {
 
         case userAction: UserAction => userAction match {
           case r@Key(id, keyCode, frame) =>
-            log.info(s"got $r")
+//            log.info(s"got $r")
             val roomId = userMap(id)._2
             dispatch(Protocol.TextMsg(s"Aha! $id click [$keyCode],"),roomId) //just for test
             val grid = roomMap(roomId)._2
@@ -125,6 +125,7 @@ object PlayGround {
             val roomId = room._1
             grid.update(false)
             val feedApples = grid.getFeededApple
+            val eatenApples = grid.getEatenApples
             grid.resetFoodData()
             if (tickCount % 20 == 5) {
               val GridSyncData = grid.getGridSyncData
@@ -133,6 +134,9 @@ object PlayGround {
             } else {
               if (feedApples.nonEmpty) {
                 dispatch(Protocol.FeedApples(feedApples),roomId)
+              }
+              if (eatenApples.nonEmpty) {
+                dispatch(Protocol.EatApples(eatenApples.map(r => EatFoodInfo(r._1, r._2)).toList), roomId)
               }
             }
             if (tickCount % 20 == 1) {

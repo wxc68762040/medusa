@@ -1,5 +1,6 @@
 package com.neo.sk.medusa.snake
 
+import com.neo.sk.medusa.snake.Protocol.{fSpeed, square}
 import org.slf4j.LoggerFactory
 
 import scala.util.Random
@@ -19,9 +20,10 @@ class GridOnServer(override val boundary: Point) extends Grid {
   override def info(msg: String): Unit = log.info(msg)
 
 
-  private[this] var waitingJoin =  Map.empty[Long, (String,Long)]
+  private[this] var waitingJoin = Map.empty[Long, (String, Long)]
   private[this] var feededApples: List[Ap] = Nil
   private[this] var deadBodies: List[Ap] = Nil
+  private [this] var eatenApples = Map.empty[Long, List[Ap]]
 
 
   var currentRank = List.empty[Score]
@@ -30,19 +32,19 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
   private[this] var historyRankThreshold = if (historyRankList.isEmpty) -1 else historyRankList.map(_.k).min
 
-  def addSnake(id: Long, name: String, roomId:Long) = waitingJoin += (id -> (name,roomId))
+  def addSnake(id: Long, name: String, roomId: Long) = waitingJoin += (id -> (name, roomId))
 
-  def randomColor()={
+  def randomColor() = {
     val a = random.nextInt(7)
-    val color = a match{
+    val color = a match {
       case 0 => "#FF0033"
       case 1 => "#FF6633"
-      case 2  => "#FF3399"
-      case 3  => "#FFFF33"
-      case 4  => "#66CCFF"
-      case 5  => "#33FFCC"
-      case 6  => "#6633FF"
-      case _  => "#FFFFFF"
+      case 2 => "#FF3399"
+      case 3 => "#FFFF33"
+      case 4 => "#66CCFF"
+      case 5 => "#33FFCC"
+      case 6 => "#6633FF"
+      case _ => "#FFFFFF"
     }
     println(a)
     println(color)
@@ -51,13 +53,13 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
 
   private[this] def genWaitingSnake() = {
-    waitingJoin.filterNot(kv => snakes.contains(kv._1)).foreach { case (id, (name,roomId)) =>
+    waitingJoin.filterNot(kv => snakes.contains(kv._1)).foreach { case (id, (name, roomId)) =>
       val color = randomColor()
       val head = randomEmptyPoint()
       grid += head -> Body(id, color)
       snakes += id -> SnakeInfo(id, name, head, head, head, color)
     }
-    waitingJoin =  Map.empty[Long, (String,Long)]
+    waitingJoin = Map.empty[Long, (String, Long)]
   }
 
   implicit val scoreOrdering = new Ordering[Score] {
@@ -127,15 +129,17 @@ class GridOnServer(override val boundary: Point) extends Grid {
           appleNeeded -= 1
         }
       } else {
-        grid.filter { _._2 match {
-          case x: Apple if x.appleType == FoodType.normal => true
-          case _ => false
-        }
-        }.foreach{
-          apple => if (appleNeeded != 0) {
-            grid -= apple._1
-            appleNeeded += 1
+        grid.filter {
+          _._2 match {
+            case x: Apple if x.appleType == FoodType.normal => true
+            case _ => false
           }
+        }.foreach {
+          apple =>
+            if (appleNeeded != 0) {
+              grid -= apple._1
+              appleNeeded += 1
+            }
         }
       }
     } else {
@@ -157,27 +161,52 @@ class GridOnServer(override val boundary: Point) extends Grid {
       }
 
       var appleNeeded = appleCount
-      grid.filter { _._2 match {
-        case x: Header if x.id == deadSnake.get => true
-        case x: Body if x.id == deadSnake.get => true
-        case _ => false
-      }}.foreach {
-        dead => if (appleNeeded != 0) {
-          val targetPoint = pointAroundSnack(dead._1)
-          val score = random.nextDouble() match {
-            case x if x > 0.95 => 50
-            case x if x > 0.8 => 25
-            case x => 5
-          }
-          val apple = Apple(score, appleLife, FoodType.intermediate, Some(targetPoint, score))
-          deadBodies ::= Ap(score, appleLife, FoodType.intermediate, dead._1.x, dead._1.y, Some(targetPoint, score))
-          grid += (dead._1 -> apple)
-          appleNeeded -= 1
+      grid.filter {
+        _._2 match {
+          case x: Header if x.id == deadSnake.get => true
+          case x: Body if x.id == deadSnake.get => true
+          case _ => false
         }
+      }.foreach {
+        dead =>
+          if (appleNeeded != 0) {
+            val targetPoint = pointAroundSnack(dead._1)
+            val score = random.nextDouble() match {
+              case x if x > 0.95 => 50
+              case x if x > 0.8 => 25
+              case x => 5
+            }
+            val apple = Apple(score, appleLife, FoodType.intermediate, Some(targetPoint, score))
+            deadBodies ::= Ap(score, appleLife, FoodType.intermediate, dead._1.x, dead._1.y, Some(targetPoint, score))
+            grid += (dead._1 -> apple)
+            appleNeeded -= 1
+          }
       }
 
     }
 
+  }
+
+  override def eatFood(snakeId: Long, newHead: Point, newSpeedInit: Double, speedOrNotInit: Boolean): Option[(Int, Double, Boolean)] = {
+    var totalScore = 0
+    var newSpeed = newSpeedInit
+    var speedOrNot = speedOrNotInit
+    var apples = List.empty[Ap]
+    newHead.zone(square * 10).foreach { e =>
+      grid.get(e) match {
+        case Some(x: Apple) =>
+          if (x.appleType != FoodType.intermediate) {
+            grid -= e
+            totalScore += x.score
+            newSpeed += 0.3
+            speedOrNot = true
+            apples ::= Ap(x.score, x.life, x.appleType, e.x, e.y, x.targetAppleOpt)
+          }
+        case _ => //do nothing
+      }
+    }
+    eatenApples += (snakeId -> apples)
+    Some((totalScore, newSpeed, speedOrNot))
   }
 
   override def update(isSynced: Boolean): Unit = {
@@ -188,9 +217,12 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
   def getFeededApple: List[Ap] = feededApples ::: deadBodies
 
+  def getEatenApples: Map[Long, List[Ap]] = eatenApples
+
   def resetFoodData(): Unit = {
     feededApples = Nil
     deadBodies = Nil
+    eatenApples = Map.empty
   }
 
 }

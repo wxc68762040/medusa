@@ -57,24 +57,27 @@ package object snake {
     }
 
     def pathTo(other: Point): Option[Point] = {
+      import math._
 
       val (x0, x1) = if(x > other.x) (other.x, x) else (x, other.x)
       val (y0, y1) = if(y > other.y) (other.y, y) else (y, other.y)
+
+      val distance = sqrt(pow(x1 - x0, 2) + pow(y1 - y0, 2))
 
       def step(distance: Int) = {
         distance match {
           case 0 => 0
           case n if n > 0 && n < 5 => 1
           case n if n >= 5 && n < 10 => 3
-          case n if n >= 10 && n < 15 => 6
-          case n if n >= 15 && n < 20 => 8
-          case n if n >= 20 && n < 25 => 10
+          case n if n >= 10 && n < 15 => 5
+          case n if n >= 15 && n < 20 => 10
+          case n if n >= 20 && n < 25 => 15
           case n if n >= 25 && n <= 30 => 20
-          case _ => 30
+          case _ => 25
         }
       }
 
-      if (x1 - x0 <= 4 && y1 - y0 <= 4) {
+      if (distance <= 16) {
         None
       } else  {
         val nextX = if (x > other.x) x - step(x - other.x) else x + step(other.x - x)
@@ -217,6 +220,11 @@ package object snake {
 			bodyMap
 		}
 	}
+
+  case class EatFoodInfo(
+    snakeId: Long,
+    apples: List[Ap]
+  )
 
 
   object Boundary{
