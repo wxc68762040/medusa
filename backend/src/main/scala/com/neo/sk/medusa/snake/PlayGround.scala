@@ -47,7 +47,7 @@ object PlayGround {
       //(roomId.(userNumber,grid))
       var roomMap = Map.empty[Long,(Int,GridOnServer)]
       var roomNum = -1
-      val maxRoomNum = 2
+      val maxRoomNum = 30
 
       var tickCount = 0l
 
