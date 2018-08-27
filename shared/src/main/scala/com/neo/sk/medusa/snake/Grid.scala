@@ -74,6 +74,8 @@ trait Grid {
 
   def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[Long] = None): Unit
 
+  def eatFood(snakeId: Long, newHead: Point, newSpeedInit: Double, speedOrNotInit: Boolean): Option[(Int, Double, Boolean)]
+
   private[this] def updateSpots() = {
     var appleCount = 0
     grid = grid.filter { case (_, spot) =>
@@ -197,38 +199,58 @@ trait Grid {
       val newHead = snake.head + snake.direction * newSpeed.toInt
 			val oldHead = snake.head
 			
-      val foodSum = newHead.zone(30).foldLeft(0) { (sum: Int, e: Point) =>
-        grid.get(e) match {
-          case Some(Apple(score, _, appleType,_)) =>
-						if (sum == 0) {
-							grid -= e
-							val nextAppleOpt = e pathTo newHead
-								if (nextAppleOpt.nonEmpty) {
-									val nextApple = nextAppleOpt.get
-									grid.get(nextApple) match {
-										case Some(Body(_, _)) => //do nothing
-										case _ =>
-											val pathApple = Apple(score, appleLife, FoodType.intermediate)
-											grid += (nextApple -> pathApple)
-									}
-								}
-							if (appleType != FoodType.intermediate) {
-								newSpeed += 0.3
-								speedOrNot = true
-								sum + score
-							} else {
-								sum
-							}
-            } else {
-							sum
-						}
-					
-					case _ =>
-            sum
-        }
-      }
+//      val foodSum = newHead.zone(square * 10).foldLeft(0) { (sum: Int, e: Point) =>
+//        grid.get(e) match {
+//          case Some(Apple(score, _, appleType,_)) =>
+//						if (sum == 0) {
+//							grid -= e
+//							val nextAppleOpt = e pathTo newHead
+//								if (nextAppleOpt.nonEmpty) {
+//									val nextApple = nextAppleOpt.get
+//                  var applesAround = 0
+//                  var ifNearBody = false
+//                  nextApple.zone(square * 2).foreach { p =>
+//                    grid.get(p) match {
+//                      case Some(Body(_, _)) =>
+//                        ifNearBody = true
+//                      case Some(Apple(_, _, _, _)) =>
+//                        applesAround += 1
+//                      case _ => // do nothing
+//                    }
+//                  }
+//
+//                  if (!ifNearBody && !(applesAround > 0 && newSpeed > fSpeed * 1.5)) {
+//                    val pathApple = Apple(score, appleLife, FoodType.intermediate)
+//                    grid += (nextApple -> pathApple)
+//                  }
+//
+//								}
+//							if (appleType != FoodType.intermediate) {
+//								newSpeed += 0.3
+//								speedOrNot = true
+//								sum + score
+//							} else {
+//								sum
+//							}
+//            } else {
+//							sum
+//						}
+//
+//					case _ =>
+//            sum
+//        }
+//      }
+
+      val foodEaten = eatFood(snake.id, newHead, newSpeed, speedOrNot)
+
+      val foodSum = if (foodEaten.nonEmpty) {
+        newSpeed = foodEaten.get._2
+        speedOrNot = foodEaten.get._3
+        foodEaten.get._1
+      } else 0
 
       val len = snake.length + foodSum
+
       var dead = newHead.frontZone(snake.direction, square * 2, newSpeed.toInt).filter { e =>
         grid.get(e) match {
           case Some(x: Body) => true
@@ -273,7 +295,7 @@ trait Grid {
         feedApple(appleCount, FoodType.deadBody, Some(snake.id))
         grid.get(dead.head) match {
           case Some(x: Body) =>
-            info(x.id.toString)
+//            info(x.id.toString)
             Left(x.id)
 					case _ =>
             Left(0L) //撞墙的情况
@@ -292,8 +314,8 @@ trait Grid {
 
     snakes.values.map(updateASnake(_, acts)).foreach {
       case Right(s) =>
-        info(frameCount.toString)
-				info(s.head.toString)
+//        info(frameCount.toString)
+//				info(s.head.toString)
 				updatedSnakes ::= s
       case Left(killerId) =>
         if(killerId != 0){
@@ -352,7 +374,7 @@ trait Grid {
         case Some(KeyEvent.VK_RIGHT) => info("right"); Point(1, 0)
         case Some(KeyEvent.VK_UP) => info("up"); Point(0, -1)
         case Some(KeyEvent.VK_DOWN) => info("down"); Point(0, 1)
-        case _ => info("none"); snake.direction
+        case _ =>  snake.direction
       }
       if (keyDirection + snake.direction != Point(0, 0)) {
         keyDirection
@@ -407,36 +429,54 @@ trait Grid {
     val newHead = snake.head + snake.direction * newSpeed.toInt
     val oldHead = snake.head
   
-    val foodSum = newHead.zone(30).foldLeft(0) { (sum: Int, e: Point) =>
-      grid.get(e) match {
-        case Some(Apple(score, _, appleType,_)) =>
-          if (sum == 0) {
-            grid -= e
-            val nextAppleOpt = e pathTo newHead
-            if (nextAppleOpt.nonEmpty) {
-              val nextApple = nextAppleOpt.get
-              grid.get(nextApple) match {
-                case Some(Body(_, _)) => //do nothing
-                case _ =>
-                  val pathApple = Apple(score, appleLife, FoodType.intermediate)
-                  grid += (nextApple -> pathApple)
-              }
-            }
-            if (appleType != FoodType.intermediate) {
-              newSpeed += 0.3
-              speedOrNot = true
-              sum + score
-            } else {
-              sum
-            }
-          } else {
-            sum
-          }
-      
-        case _ =>
-          sum
-      }
-    }
+//    val foodSum = newHead.zone(30).foldLeft(0) { (sum: Int, e: Point) =>
+//      grid.get(e) match {
+//        case Some(Apple(score, _, appleType,_)) =>
+//          if (sum == 0) {
+//            grid -= e
+//            val nextAppleOpt = e pathTo newHead
+//            if (nextAppleOpt.nonEmpty) {
+//              val nextApple = nextAppleOpt.get
+//              var applesAround = 0
+//              var ifNearBody = false
+//              nextApple.zone(8).foreach { p =>
+//                grid.get(p) match {
+//                  case Some(Body(_, _)) =>
+//                    ifNearBody = true
+//                  case Some(Apple(_, _, _, _)) =>
+//                    applesAround += 1
+//                  case _ => // do nothing
+//                }
+//              }
+//
+//              if (!ifNearBody && !(applesAround > 0 && newSpeed > fSpeed * 1.5)) {
+//                val pathApple = Apple(score, appleLife, FoodType.intermediate)
+//                grid += (nextApple -> pathApple)
+//              }
+//            }
+//            if (appleType != FoodType.intermediate) {
+//              newSpeed += 0.3
+//              speedOrNot = true
+//              sum + score
+//            } else {
+//              sum
+//            }
+//          } else {
+//            sum
+//          }
+//
+//        case _ =>
+//          sum
+//      }
+//    }
+
+    val foodEaten = eatFood(snake.id, newHead, newSpeed, speedOrNot)
+
+    val foodSum = if (foodEaten.nonEmpty) {
+      newSpeed = foodEaten.get._2
+      speedOrNot = foodEaten.get._3
+      foodEaten.get._1
+    } else 0
   
     val len = snake.length + foodSum
     var dead = newHead.frontZone(snake.direction, square * 2, newSpeed.toInt).filter { e =>
@@ -527,7 +567,8 @@ trait Grid {
       frameCount,
       snakes.values.toList,
 //      bodyDetails,
-      appleDetails
+      appleDetails,
+      System.currentTimeMillis()
     )
   }
 

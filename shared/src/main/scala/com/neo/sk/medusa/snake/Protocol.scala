@@ -12,11 +12,16 @@ object Protocol {
   case class GridDataSync(
     frameCount: Long,
     snakes: List[SnakeInfo],
-    appleDetails: List[Ap]
+    appleDetails: List[Ap],
+    timestamp: Long
   ) extends GameMessage
   
   case class FeedApples(
     aLs: List[Ap]
+  ) extends GameMessage
+
+  case class EatApples(
+    eatFoodInfo: List[EatFoodInfo]
   ) extends GameMessage
   
   case class TextMsg(msg: String) extends GameMessage

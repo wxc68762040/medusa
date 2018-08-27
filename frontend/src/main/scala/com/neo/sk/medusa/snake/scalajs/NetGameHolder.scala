@@ -32,14 +32,16 @@ object NetGameHolder extends js.JSApp {
   val canvasBoundary = Point(MyBoundary.w,MyBoundary.h)
   val mapBoundary = Point(LittleMap.w ,LittleMap.h)
   val textLineHeight = 14
-  val totalSubFrame = 2
   
   var syncData: scala.Option[Protocol.GridDataSync] = None
   var currentRank = List.empty[Score]
   var historyRank = List.empty[Score]
   var myId = -1l
-  var subFrame = -1
+  var basicTime = 0L
+  var nextAnimation = 0.0 //保存requestAnimationFrame的ID
+  var gameLoopControl = 0 //保存gameLoop的setInterval的ID
   var myProportion = 1.0
+  var eatenApples  = Map[Long, List[Ap]]()
 
   val grid = new GridOnClient(bounds)
 
@@ -96,7 +98,7 @@ object NetGameHolder extends js.JSApp {
       }
     }
 
-    dom.window.setInterval(() => gameLoop(), Protocol.frameRate / totalSubFrame)
+    dom.window.requestAnimationFrame(drawLoop())
   }
 
   def drawGameOn(): Unit = {
@@ -124,49 +126,124 @@ object NetGameHolder extends js.JSApp {
   }
 
 
+  def startLoop(): Unit = {
+    gameLoop()
+    gameLoopControl = dom.window.setInterval(() => gameLoop(), Protocol.frameRate)
+  }
 
   def gameLoop(): Unit = {
 //    println(s"length: ${grid.snakes.find(_._1 == myId).getOrElse((0L, SnakeInfo(0L, "", Point(0,0), Point(0,0), Point(0,0), "")))._2.length}")
-		subFrame += 1
-    if(subFrame >= totalSubFrame) {
-      subFrame = 0
-      if (wsSetup) {
-        if (!justSynced) {
-          update(false)
-        } else {
-          sync(syncData)
-          syncData = None
-          update(true)
-          justSynced = false
-        }
+    basicTime = System.currentTimeMillis()
+    if (wsSetup) {
+      if (!justSynced) {
+        update(false)
+      } else {
+        sync(syncData)
+        syncData = None
+        update(true)
+        justSynced = false
       }
     }
-    draw(subFrame)
+  }
+  
+  def drawLoop(): Double => Unit = { _ =>
+    draw()
+    nextAnimation = dom.window.requestAnimationFrame(drawLoop())
+  }
+
+  def moveEatenApple(): Unit = {
+    val invalidApple = Ap(0, 0, 0, 0, 0)
+    eatenApples = eatenApples.filterNot{ apple => !grid.snakes.exists(_._2.id == apple._1)}
+    val mySnake = grid.snakes.get(myId)
+//    if (mySnake.isDefined) {
+//      val myHeader = mySnake.get.head
+//      val myApplesOpt = eatenApples.get(myId)
+//      var myApples = List.empty[Ap]
+//      if (myApplesOpt.isDefined) {
+//        myApples = myApplesOpt.get
+//        if (myApples.nonEmpty) {
+//          println(s"myApples: $myApples")
+//          myApples = myApples.map { apple =>
+//            grid.grid -= Point(apple.x, apple.y)
+//            val nextLocOpt = Point(apple.x, apple.y) pathTo myHeader
+//            if (nextLocOpt.nonEmpty) {
+//              val nextLoc = nextLocOpt.get
+//              grid.grid.get(nextLoc) match {
+//                case Some(Body(_, _)) => invalidApple
+//                case _ =>
+//                  val nextApple = Apple(apple.score, apple.life, FoodType.intermediate)
+//                  grid.grid += (nextLoc -> nextApple)
+//                  Ap(apple.score, apple.life, FoodType.intermediate, nextLoc.x, nextLoc.y)
+//              }
+//            } else invalidApple
+//          }.filterNot(_ == invalidApple)
+//          eatenApples += (myId -> myApples)
+//        }
+//      }
+//    }
+
+    eatenApples.foreach { info =>
+//      if (info._1 != myId) {
+        val snake = grid.snakes.get(info._1)
+        if (snake.isDefined) {
+          val header = snake.get.head
+          val applesOpt = eatenApples.get(info._1)
+          var apples = List.empty[Ap]
+          if (applesOpt.isDefined) {
+            apples = applesOpt.get
+            if (apples.nonEmpty) {
+              apples = apples.map { apple =>
+                grid.grid -= Point(apple.x, apple.y)
+                if (apple.appleType != FoodType.intermediate) {
+
+                }
+                val nextLocOpt = Point(apple.x, apple.y) pathTo header
+                if (nextLocOpt.nonEmpty) {
+                  val nextLoc = nextLocOpt.get
+                  grid.grid.get(nextLoc) match {
+                    case Some(Body(_, _)) => invalidApple
+                    case _ =>
+                      val nextApple = Apple(apple.score, apple.life, FoodType.intermediate)
+                      grid.grid += (nextLoc -> nextApple)
+                      Ap(apple.score, apple.life, FoodType.intermediate, nextLoc.x, nextLoc.y)
+                  }
+                } else invalidApple
+              }.filterNot(_ == invalidApple)
+              eatenApples += (snake.get.id -> apples)
+            }
+          }
+        }
+
+//      }
+    }
+
   }
 
   def update(isSynced: Boolean): Unit = {
+    moveEatenApple()
     grid.update(isSynced: Boolean)
   }
 
-  def draw(subFrame: Int): Unit = {
+  def draw(): Unit = {
     if (wsSetup) {
       val data = grid.getGridData
-      drawGrid(myId, data, subFrame)
+      drawGrid(myId, data)
     } else {
       drawGameOff()
     }
   }
 
-  def drawGrid(uid: Long, data: GridData, subFrame: Int): Unit = {
+  def drawGrid(uid: Long, data: GridData): Unit = {
 
+    val period = (System.currentTimeMillis() - basicTime).toInt
     val snakes = data.snakes
-    var bodies = data.bodyDetails
+//    var bodies = data.bodyDetails
     val apples = data.appleDetails
 
 
     val mySubFrameRevise =
       try {
-        snakes.filter(_.id == uid).head.direction * snakes.filter(_.id == uid).head.speed.toInt * subFrame / totalSubFrame
+        snakes.filter(_.id == uid).head.direction * snakes.filter(_.id == uid).head.speed.toInt * period / frameRate
       } catch {
         case e: Exception =>
           Point(0, 0)
@@ -174,7 +251,7 @@ object NetGameHolder extends js.JSApp {
 
     val proportion = if(snakes.exists(_.id == uid)){
       val length = snakes.filter(_.id == uid).head.length
-      val p= (0.0005 * length + 0.975)
+      val p = 0.0005 * length + 0.975
       if(p < 1.5) p else 1.5
     } else {
 			1.0
@@ -212,20 +289,7 @@ object NetGameHolder extends js.JSApp {
     mapCtx.globalAlpha=1
     mapCtx.drawImage(maxPic,(maxLength.x * LittleMap.w) / Boundary.w - 7,(maxLength.y * LittleMap.h) / Boundary.h -7 ,15,15)
     mapCtx.restore()
-
-//    bodies.filterNot(b=>b.x < myHead.x -  centerX || b.x > myHead.x + centerX || b.y < myHead.y - centerY || b.y > myHead.y + centerY).foreach { case Bd(id, x, y, color) =>
-//      ctx.fillStyle = color
-//      if (id == uid) {
-//        ctx.fillRect(x - square - myHead.x + centerX, y - square - myHead.y + centerY, square * 2 , square * 2)
-//        if(maxId != uid){
-//          mapCtx.globalAlpha = 1
-//          mapCtx.fillStyle = color
-//          mapCtx.fillRect((x  * LittleMap.w) / Boundary.w,(y * LittleMap.h) / Boundary.h,2,2)
-//        }
-//      } else {
-//        ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2, square * 2)
-//      }
-//    }
+    
 
     apples.foreach { case Ap(score, _, _, x, y, _) =>
       ctx.fillStyle = score match {
@@ -239,46 +303,16 @@ object NetGameHolder extends js.JSApp {
     }
 
     ctx.fillStyle = MyColors.otherHeader
-/*
-    snakes.foreach { snake =>
-      val id = snake.id
-      println(s"${snake.head.x}, ${snake.head.y}")
-      val x = snake.head.x + snake.direction.x * snake.speed * subFrame / totalSubFrame
-      val y = snake.head.y + snake.direction.y * snake.speed * subFrame / totalSubFrame
-      if(!(x < myHead.x -  centerX || x > myHead.x + centerX || y < myHead.y - centerY || y > myHead.y + centerY)){
-        val nameLength = snake.name.length
-        ctx.fillStyle = Color.White.toString()
-        ctx.fillText(snake.name, x - myHead.x  + centerX - nameLength * 4, y - myHead.y + centerY - 20)
-        if(snake.speed > fSpeed +1){
-          ctx.shadowBlur= 5
-          ctx.shadowColor= "#FFFFFF"
-          ctx.fillStyle = MyColors.speedUpHeader
-          ctx.fillRect(x - 1.5 * square + deviationX, y - 1.5 * square + deviationY, square * 3 , square * 3)
-        }
-        if (id == uid) {
-          ctx.fillStyle = MyColors.myHeader
-          ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 , square * 2)
-          if(maxId != id){
-            mapCtx.globalAlpha = 1
-            mapCtx.fillStyle = MyColors.myHeader
-            mapCtx.fillRect((x * LittleMap.w) / Boundary.w, (y * LittleMap.h) / Boundary.h, 2, 2)
-          }
-        } else {
-          ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 , square * 2)
-        }
-      }
-    }
-*/
+
     snakes.foreach{ snake=>
       val id = snake.id
-      val x = snake.head.x + snake.direction.x * snake.speed * subFrame / totalSubFrame
-      val y = snake.head.y + snake.direction.y * snake.speed * subFrame / totalSubFrame
-
-      var recorder = List.empty[Point]
-      var step = snake.speed.toInt * subFrame / totalSubFrame - snake.extend
+      val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
+      val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
+			
+      var step = snake.speed.toInt * period / Protocol.frameRate - snake.extend
       var tail = snake.tail
       var joints = snake.joints.enqueue(snake.head)
-      println("step"+ step)
+//      println("step"+ step)
       while(step > 0) {
         val distance = tail.distance(joints.dequeue._1)
         if(distance >= step) { //尾巴在移动到下一个节点前就需要停止。
@@ -340,9 +374,6 @@ object NetGameHolder extends js.JSApp {
       }
 
       // 头部信息
-      val nameLength = snake.name.length
-      ctx.fillStyle = Color.White.toString()
-      ctx.fillText(snake.name, x - myHead.x  + centerX - nameLength * 4, y - myHead.y + centerY - 20)
       if(snake.speed > fSpeed +1){
         ctx.shadowBlur= 5
         ctx.shadowColor= "#FFFFFF"
@@ -366,11 +397,21 @@ object NetGameHolder extends js.JSApp {
 
     //画边界
     ctx.fillStyle = MyColors.boundaryColor
+    ctx.shadowBlur = 5
     ctx.fillRect(0 + deviationX, 0 + deviationY, Boundary.w, boundaryWidth)
     ctx.fillRect(0 + deviationX, 0 + deviationY, boundaryWidth, Boundary.h)
     ctx.fillRect(0+ deviationX, Boundary.h + deviationY, Boundary.w, boundaryWidth)
     ctx.fillRect(Boundary.w + deviationX, 0 + deviationY, boundaryWidth, Boundary.h)
     ctx.restore()
+
+    //名称信息
+    snakes.foreach{ snake=>
+      val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
+      val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
+      val nameLength = snake.name.length
+      ctx.fillStyle = Color.White.toString()
+      ctx.fillText(snake.name, x - myHead.x  + centerX - nameLength * 4, y - myHead.y + centerY - 20)
+    }
 
     ctx.fillStyle = "rgb(250, 250, 250)"
     ctx.textAlign = "left"
@@ -436,9 +477,9 @@ object NetGameHolder extends js.JSApp {
       canvas.focus()
       canvas.onkeydown = {
         (e: dom.KeyboardEvent) => {
-          println(s"keydown: ${e.keyCode}")
+//          println(s"keydown: ${e.keyCode}")
           if (watchKeys.contains(e.keyCode)) {
-            println(s"key down: [${e.keyCode}]")
+//            println(s"key down: [${e.keyCode}]")
             e.preventDefault()
             val msg: Protocol.UserAction = if (e.keyCode == KeyCode.F2) {
               NetTest(myId, System.currentTimeMillis())
@@ -493,9 +534,21 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.FeedApples(apples) =>
                   writeToArea(s"apple feeded = $apples") //for debug.
                   grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt))
+
+                case Protocol.EatApples(apples) =>
+                  apples.foreach { apple =>
+                    val lastEatenFood = eatenApples.getOrElse(apple.snakeId, List.empty)
+                    val curEatenFood = lastEatenFood ::: apple.apples
+                    eatenApples += (apple.snakeId -> curEatenFood)
+                  }
+
                 case data: Protocol.GridDataSync =>
-                  //writeToArea(s"grid data got: $msgData")
-                  //TODO here should be better code.
+                  if(!grid.init) {
+                    grid.init = true
+                    val timeout = 100 - (System.currentTimeMillis() - data.timestamp) % 100
+                    println(s"delayTime: ${100 - timeout}")
+                    dom.window.setTimeout(() => startLoop(), timeout)
+                  }
                   syncData = Some(data)
                   justSynced = true
                 //drawGrid(msgData.uid, data)
@@ -540,7 +593,7 @@ object NetGameHolder extends js.JSApp {
     println(grid.frameCount.toString)
     if(dataOpt.nonEmpty) {
       val data = dataOpt.get
-      println(s"client frame: ${grid.frameCount}, server frame: ${data.frameCount}")
+//      println(s"client frame: ${grid.frameCount}, server frame: ${data.frameCount}")
       grid.actionMap = grid.actionMap.filterKeys(_ >= data.frameCount - 1 - advanceFrame)
       grid.frameCount = data.frameCount
       grid.snakes = data.snakes.map(s => s.id -> s).toMap
