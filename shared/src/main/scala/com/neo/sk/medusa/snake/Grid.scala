@@ -28,7 +28,7 @@ trait Grid {
   val appleLife = 500
   val historyRankLength = 5
   val basicSpeed = 10.0
-  val speedUpRange = 30
+  val speedUpRange = 50
 
   val freeFrameTime = 40
 
@@ -237,7 +237,7 @@ trait Grid {
 
     val len = snake.length + foodSum
 
-    var dead = newHead.frontZone(snake.direction, square * 2, newSpeed.toInt).filter { e =>
+    var dead = newHead.frontZone(newDirection, square * 2, newSpeed.toInt).filter { e =>
       grid.get(e) match {
         case Some(x: Body) => true
         case _ => false
@@ -279,7 +279,7 @@ trait Grid {
     } else snake.freeFrame
 
     if(dead.nonEmpty) {
-      val appleCount = math.round(snake.length * 0.11).toInt
+      val appleCount = math.round(snake.length * Protocol.foodRate).toInt
       feedApple(appleCount, FoodType.deadBody, Some(snake.id))
       grid.get(dead.head) match {
         case Some(x: Body) =>
