@@ -146,10 +146,11 @@ trait Grid {
     deadSnakeList = Nil
     val acts = actionMap.getOrElse(frameCount, Map.empty[Long, Int])
 
-    snakes.values.map(updateASnake(_, acts)).foreach {
-      case Right(s) =>
+    snakes.values.map(i=>(updateASnake(i, acts),i)).foreach {
+      case (Right(s),_) =>
 				updatedSnakes ::= s
-      case Left(killerId) =>
+      case (Left(killerId),j) =>
+        deadSnakeList ::= DeadSnakeInfo(j.id,j.name,j.length,j.kill)
         if(killerId != 0){
           mapKillCounter += killerId -> (mapKillCounter.getOrElse(killerId, 0) + 1)
         }
@@ -275,7 +276,6 @@ trait Grid {
     } else snake.freeFrame
 
     if(dead.nonEmpty) {
-      deadSnakeList ::= DeadSnakeInfo(snake.id,snake.name,snake.length,snake.kill)
       val appleCount = math.round(snake.length * 0.11).toInt
       feedApple(appleCount, FoodType.deadBody, Some(snake.id))
       grid.get(dead.head) match {

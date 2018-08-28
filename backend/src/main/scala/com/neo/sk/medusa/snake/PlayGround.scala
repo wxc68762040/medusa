@@ -124,6 +124,7 @@ object PlayGround {
             val eatenApples = grid.getEatenApples
             val speedUpInfo = grid.getSpeedUpInfo
             grid.resetFoodData()
+            dispatch(Protocol.DeadList(grid.deadSnakeList.map(_.id)),roomId)
             grid.deadSnakeList.foreach{
               s=>
                 dispatchTo(s.id,Protocol.DeadInfo(s.name,s.length,s.kill))
