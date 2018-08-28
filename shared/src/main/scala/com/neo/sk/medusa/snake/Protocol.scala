@@ -56,6 +56,6 @@ object Protocol {
   val square = 4
 
   val fSpeed = 10
-	
-	val advanceFrame = 2 //客户端提前的帧数
+  
+  val advanceFrame = 2 //客户端提前的帧数
 }
