@@ -37,6 +37,9 @@ object NetGameHolder extends js.JSApp {
   var currentRank = List.empty[Score]
   var historyRank = List.empty[Score]
   var myId = -1l
+  var deadName = ""
+  var deadLength=0
+  var deadKill=0
   var basicTime = 0L
   var nextAnimation = 0.0 //保存requestAnimationFrame的ID
   var gameLoopControl = 0 //保存gameLoop的setInterval的ID
@@ -404,6 +407,10 @@ object NetGameHolder extends js.JSApp {
           ctx.font = "36px Helvetica"
           ctx.fillText("Please wait.", 150, 180)
         } else {
+          ctx.font = "24px Helvetica"
+          ctx.fillText(s"your name : $deadName", centerX-150, centerY-30)
+          ctx.fillText(s"your length : $deadLength", centerX-150, centerY)
+          ctx.fillText(s"your kill : $deadKill", centerX-150, centerY+30)
           ctx.font = "36px Helvetica"
           ctx.fillText("Ops, Press Space Key To Restart!", 150 - myHead.x + centerX, 180 - myHead.x + centerX)
           myProportion = 1.0
@@ -534,6 +541,9 @@ object NetGameHolder extends js.JSApp {
                   writeToArea(m)
                 case Protocol.DeadInfo(myName,myLength,myKill) =>
                   grid.snakes -= myId
+                  deadName=myName
+                  deadLength=myLength
+                  deadKill=myKill
               }
 
               case Left(e) =>
