@@ -194,7 +194,7 @@ object NetGameHolder extends js.JSApp {
 
   def update(isSynced: Boolean): Unit = {
     moveEatenApple()
-    grid.update(isSynced: Boolean)
+    grid.updateFront(isSynced: Boolean)
   }
 
   def draw(): Unit = {
