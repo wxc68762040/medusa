@@ -27,6 +27,12 @@ object Protocol {
   case class SpeedUp(
     info: List[SpeedUpInfo]
   ) extends GameMessage
+
+  case class DeadInfo(
+                       name:String,
+                       length:Int,
+                       kill:Int
+                     ) extends GameMessage
   
   case class TextMsg(msg: String) extends GameMessage
   case class Id(id: Long) extends GameMessage

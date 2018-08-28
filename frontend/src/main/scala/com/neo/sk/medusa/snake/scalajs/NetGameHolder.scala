@@ -532,6 +532,8 @@ object NetGameHolder extends js.JSApp {
                   val receiveTime = System.currentTimeMillis()
                   val m = s"Net Delay Test: createTime=$createTime, receiveTime=$receiveTime, twoWayDelay=${receiveTime - createTime}"
                   writeToArea(m)
+                case Protocol.DeadInfo(myName,myLength,myKill) =>
+                  grid.snakes -= myId
               }
 
               case Left(e) =>

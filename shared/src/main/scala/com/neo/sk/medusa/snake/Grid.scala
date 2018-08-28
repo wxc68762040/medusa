@@ -36,6 +36,7 @@ trait Grid {
   var grid = Map[Point, Spot]()
   var snakes = Map.empty[Long, SnakeInfo]
   var actionMap = Map.empty[Long, Map[Long, Int]]
+  var deadSnakeList = List.empty[DeadSnakeInfo]
 
 
   def removeSnake(id: Long): Option[SnakeInfo] = {
@@ -142,7 +143,7 @@ trait Grid {
 
     var mapKillCounter = Map.empty[Long, Int]
     var updatedSnakes = List.empty[SnakeInfo]
-
+    deadSnakeList = Nil
     val acts = actionMap.getOrElse(frameCount, Map.empty[Long, Int])
 
     snakes.values.map(updateASnake(_, acts)).foreach {
@@ -168,6 +169,7 @@ trait Grid {
 			val sorted = point._2.sortBy(_.length)
 			val winner = sorted.head
 			val deads = sorted.tail
+      deadSnakeList :::= deads.map(i=>DeadSnakeInfo(i.id,i.name,i.length,i.kill))
 			mapKillCounter += winner.id -> (mapKillCounter.getOrElse(winner.id, 0) + deads.length)
 			deads
 		}.map(_.id).toSet
@@ -273,6 +275,7 @@ trait Grid {
     } else snake.freeFrame
 
     if(dead.nonEmpty) {
+      deadSnakeList ::= DeadSnakeInfo(snake.id,snake.name,snake.length,snake.kill)
       val appleCount = math.round(snake.length * 0.11).toInt
       feedApple(appleCount, FoodType.deadBody, Some(snake.id))
       grid.get(dead.head) match {

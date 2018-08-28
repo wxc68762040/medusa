@@ -221,6 +221,13 @@ package object snake {
 		}
 	}
 
+  case class DeadSnakeInfo(
+                          id:Long,
+                          name:String,
+                          length:Int,
+                          kill:Int
+                          )
+
   case class EatFoodInfo(
     snakeId: Long,
     apples: List[Ap]
