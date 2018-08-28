@@ -522,7 +522,7 @@ object NetGameHolder extends js.JSApp {
                   if(!grid.init) {
                     grid.init = true
                     val timeout = 100 - (System.currentTimeMillis() - data.timestamp) % 100
-                    println(s"delayTime: ${100 - timeout}")
+//                    println(s"delayTime: ${100 - timeout}")
                     dom.window.setTimeout(() => startLoop(), timeout)
                   }
                   syncData = Some(data)
@@ -565,7 +565,6 @@ object NetGameHolder extends js.JSApp {
   }
 
   def sync(dataOpt: scala.Option[Protocol.GridDataSync]) = {
-    println(grid.frameCount.toString)
     if(dataOpt.nonEmpty) {
       val data = dataOpt.get
       grid.actionMap = grid.actionMap.filterKeys(_ >= data.frameCount - 1 - advanceFrame)
