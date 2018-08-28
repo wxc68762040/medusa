@@ -555,6 +555,9 @@ object NetGameHolder extends js.JSApp {
                   deadKill=myKill
                 case Protocol.DeadList(deadList) =>
                   deadList.foreach(i=>grid.snakes  -= i)
+                case Protocol.KillList(killList)
+
+
               }
 
               case Left(e) =>

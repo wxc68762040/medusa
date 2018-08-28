@@ -124,10 +124,16 @@ object PlayGround {
             val eatenApples = grid.getEatenApples
             val speedUpInfo = grid.getSpeedUpInfo
             grid.resetFoodData()
-            dispatch(Protocol.DeadList(grid.deadSnakeList.map(_.id)),roomId)
-            grid.deadSnakeList.foreach{
-              s=>
-                dispatchTo(s.id,Protocol.DeadInfo(s.name,s.length,s.kill))
+            if(grid.deadSnakeList.nonEmpty){
+              dispatch(Protocol.DeadList(grid.deadSnakeList.map(_.id)),roomId)
+              grid.deadSnakeList.foreach{
+                s=>
+                  dispatchTo(s.id,Protocol.DeadInfo(s.name,s.length,s.kill))
+              }
+            }
+            grid.killMap.foreach{
+              g=>
+                dispatchTo(g._1,Protocol.KillList(g._2))
             }
             if (tickCount % 20 == 5) {
               val GridSyncData = grid.getGridSyncData

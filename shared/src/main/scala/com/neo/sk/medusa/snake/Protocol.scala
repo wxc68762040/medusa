@@ -38,6 +38,10 @@ object Protocol {
                      deadList:List[Long]
                      ) extends GameMessage
 
+  case class KillList(
+                     killList: List[String]
+                     ) extends GameMessage
+
   case class TextMsg(msg: String) extends GameMessage
   case class Id(id: Long) extends GameMessage
   case class NewSnakeJoined(id: Long, name: String) extends GameMessage
