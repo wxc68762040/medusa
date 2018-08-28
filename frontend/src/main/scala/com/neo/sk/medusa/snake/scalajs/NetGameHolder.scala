@@ -446,13 +446,14 @@ object NetGameHolder extends js.JSApp {
       index += 1
       drawTextLine(s"[$index]: ${score.n.+("   ").take(3)} kill=${score.k} len=${score.l}", rightBegin, index, historyRankBaseLine)
     }
-    var i=2
+    ctx.font = "18px Helvetica"
+    var i=1
     waitingShowKillList.foreach{
       j=>
         if(j._1 != myId){
-          drawTextLine(s"你击杀了 ${j._2}",centerX-100,i)
+          ctx.fillText(s"你击杀了 ${j._2}", centerX-60, i*20)
         }else{
-          drawTextLine(s"你自杀了",centerX-30,i)
+          ctx.fillText(s"你自杀了",centerX-40,i*20)
         }
         i += 1
     }
