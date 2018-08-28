@@ -61,6 +61,8 @@ object NetGameHolder extends js.JSApp {
     KeyCode.F2
   )
 
+  var waitingShowKillList=List.empty[(Long,String)]
+
   object MyColors {
     val myHeader = "#FFFFFF"
     val myBody = "#FFFFFF"
@@ -412,6 +414,7 @@ object NetGameHolder extends js.JSApp {
         drawTextLine(s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 0, baseLine)
         drawTextLine(s"your kill = ${mySnake.kill}", leftBegin, 1, baseLine)
         drawTextLine(s"your length = ${mySnake.length} ", leftBegin, 2, baseLine)
+
       case None =>
         if(firstCome) {
           ctx.font = "36px Helvetica"
@@ -443,7 +446,16 @@ object NetGameHolder extends js.JSApp {
       index += 1
       drawTextLine(s"[$index]: ${score.n.+("   ").take(3)} kill=${score.k} len=${score.l}", rightBegin, index, historyRankBaseLine)
     }
-
+    var i=2
+    waitingShowKillList.foreach{
+      j=>
+        if(j._1 != myId){
+          drawTextLine(s"你击杀了 ${j._2}",centerX-100,i)
+        }else{
+          drawTextLine(s"你自杀了",centerX-30,i)
+        }
+        i += 1
+    }
   }
 
 
@@ -555,9 +567,9 @@ object NetGameHolder extends js.JSApp {
                   deadKill=myKill
                 case Protocol.DeadList(deadList) =>
                   deadList.foreach(i=>grid.snakes  -= i)
-                case Protocol.KillList(killList)
-
-
+                case Protocol.KillList(killList) =>
+                  waitingShowKillList :::= killList
+                  dom.window.setTimeout(()=>waitingShowKillList = waitingShowKillList.drop(killList.length),2000)
               }
 
               case Left(e) =>

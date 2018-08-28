@@ -39,7 +39,7 @@ object Protocol {
                      ) extends GameMessage
 
   case class KillList(
-                     killList: List[String]
+                     killList: List[(Long,String)]
                      ) extends GameMessage
 
   case class TextMsg(msg: String) extends GameMessage

@@ -37,7 +37,7 @@ trait Grid {
   var snakes = Map.empty[Long, SnakeInfo]
   var actionMap = Map.empty[Long, Map[Long, Int]]
   var deadSnakeList = List.empty[DeadSnakeInfo]
-  var killMap = Map.empty[Long, List[String]]
+  var killMap = Map.empty[Long, List[(Long,String)]]
 
   def removeSnake(id: Long): Option[SnakeInfo] = {
     val r = snakes.get(id)
@@ -152,9 +152,9 @@ trait Grid {
 				updatedSnakes ::= s
       case (Left(killerId),j) =>
         deadSnakeList ::= DeadSnakeInfo(j.id,j.name,j.length,j.kill)
-        killMap += killerId->(j.name::killMap.getOrElse(killerId,Nil))
         if(killerId != 0){
           mapKillCounter += killerId -> (mapKillCounter.getOrElse(killerId, 0) + 1)
+          killMap += killerId->((j.id,j.name)::killMap.getOrElse(killerId,Nil))
         }
     }
 
@@ -173,7 +173,7 @@ trait Grid {
 			val winner = sorted.head
 			val deads = sorted.tail
       deadSnakeList :::= deads.map(i=>DeadSnakeInfo(i.id,i.name,i.length,i.kill))
-      killMap += winner.id->(killMap.getOrElse(winner.id,Nil):::deads.map(_.name))
+      killMap += winner.id->(killMap.getOrElse(winner.id,Nil):::deads.map(i=>(i.id,i.name)))
 			mapKillCounter += winner.id -> (mapKillCounter.getOrElse(winner.id, 0) + deads.length)
 			deads
 		}.map(_.id).toSet
