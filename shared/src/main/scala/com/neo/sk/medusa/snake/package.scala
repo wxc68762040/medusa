@@ -147,12 +147,12 @@ package object snake {
       if (direction.x == 0) { //竖直方向
         val (yStart, yEnd) =
           if(direction.y < 0)
-            (y + length * direction.y, y)
+            (y + (length + squareWide) * direction.y, y)
           else
-            (y, y + length * direction.y)
+            (y, y + (length + squareWide) * direction.y)
 
         (for {
-          xs <- x - squareWide to x + squareWide
+          xs <- (x - squareWide to x + squareWide).filter(_ != x)
           ys <- yStart to yEnd
         } yield {
           Point(xs, ys)
@@ -160,13 +160,13 @@ package object snake {
       } else { //横的方向
         val (xStart, xEnd) =
           if(direction.x < 0)
-            (x + length * direction.x, x)
+            (x + (length + squareWide) * direction.x, x)
           else
-            (x, x + length * direction.x)
+            (x, x + (length + squareWide) * direction.x)
 
         (for {
           xs <- xStart to xEnd
-          ys <- y - squareWide to y + squareWide
+          ys <- (y - squareWide to y + squareWide).filter(_ != y)
         } yield {
           Point(xs, ys)
         }).toList
