@@ -404,7 +404,7 @@ object NetGameHolder extends js.JSApp {
     ctx.textBaseline = "top"
 
     val leftBegin = 10
-    val rightBegin = canvasBoundary.x - 150
+    val rightBegin = canvasBoundary.x - 200
 
     snakes.find(_.id == uid) match {
       case Some(mySnake) =>
@@ -436,7 +436,7 @@ object NetGameHolder extends js.JSApp {
     drawTextLine(s" --- Current Rank --- ", leftBegin, index, currentRankBaseLine)
     currentRank.foreach { score =>
       index += 1
-      drawTextLine(s"[$index]: ${score.n.+("   ").take(3)} kill=${score.k} len=${score.l}", leftBegin, index, currentRankBaseLine)
+      drawTextLine(s"[$index]: ${score.n.+("   ").take(8)} kill=${score.k} len=${score.l}", leftBegin, index, currentRankBaseLine)
     }
 
     val historyRankBaseLine = 1
@@ -444,7 +444,7 @@ object NetGameHolder extends js.JSApp {
     drawTextLine(s" --- History Rank --- ", rightBegin, index, historyRankBaseLine)
     historyRank.foreach { score =>
       index += 1
-      drawTextLine(s"[$index]: ${score.n.+("   ").take(3)} kill=${score.k} len=${score.l}", rightBegin, index, historyRankBaseLine)
+      drawTextLine(s"[$index]: ${score.n.+("   ").take(8)} kill=${score.k} len=${score.l}", rightBegin, index, historyRankBaseLine)
     }
     ctx.font = "18px Helvetica"
     var i=1
