@@ -116,11 +116,11 @@ object NetGameHolder extends js.JSApp {
     ctx.fillStyle = "rgb(250, 250, 250)"
     if (firstCome) {
       ctx.font = "36px Helvetica"
-      ctx.fillText("Welcome.", 150, 180)
+      ctx.fillText("Welcome.", MyBoundary.w/2 - 150,  MyBoundary.h/2 -150)
       myProportion = 1.0
     } else {
       ctx.font = "36px Helvetica"
-      ctx.fillText("Ops, connection lost.", 150, 180)
+      ctx.fillText("Ops, connection lost.", MyBoundary.w/2 - 250,  MyBoundary.h/2 -150)
       myProportion = 1.0
     }
 
@@ -418,14 +418,14 @@ object NetGameHolder extends js.JSApp {
       case None =>
         if(firstCome) {
           ctx.font = "36px Helvetica"
-          ctx.fillText("Please wait.", 150, 180)
+          ctx.fillText("Please wait.", centerX - 150,  centerY -150)
         } else {
           ctx.font = "24px Helvetica"
-          ctx.fillText(s"your name : $deadName", centerX-150, centerY-30)
-          ctx.fillText(s"your length : $deadLength", centerX-150, centerY)
-          ctx.fillText(s"your kill : $deadKill", centerX-150, centerY+30)
+          ctx.fillText(s"Your name   : $deadName", centerX-150, centerY-30)
+          ctx.fillText(s"Your length  : $deadLength", centerX-150, centerY)
+          ctx.fillText(s"Your kill        : $deadKill", centerX-150, centerY+30)
           ctx.font = "36px Helvetica"
-          ctx.fillText("Ops, Press Space Key To Restart!", 150 - myHead.x + centerX, 180 - myHead.x + centerX)
+          ctx.fillText("Ops, Press Space Key To Restart!", centerX - 350,  centerY -150)
           myProportion = 1.0
         }
     }
@@ -451,9 +451,9 @@ object NetGameHolder extends js.JSApp {
     waitingShowKillList.foreach{
       j=>
         if(j._1 != myId){
-          ctx.fillText(s"你击杀了 ${j._2}", centerX-60, i*20)
+          ctx.fillText(s"你击杀了 ${j._2}", centerX - 120, i*20)
         }else{
-          ctx.fillText(s"你自杀了",centerX-40,i*20)
+          ctx.fillText(s"你自杀了",centerX - 100,i*20)
         }
         i += 1
     }
