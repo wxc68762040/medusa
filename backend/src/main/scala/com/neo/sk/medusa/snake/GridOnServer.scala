@@ -29,9 +29,9 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
   var currentRank = List.empty[Score]
   private[this] var historyRankMap = Map.empty[Long, Score]
-  var historyRankList = historyRankMap.values.toList.sortBy(_.k).reverse
+  var historyRankList = historyRankMap.values.toList.sortBy(_.l).reverse
 
-  private[this] var historyRankThreshold = if (historyRankList.isEmpty) -1 else historyRankList.map(_.k).min
+  private[this] var historyRankThreshold = if (historyRankList.isEmpty) -1 else historyRankList.map(_.l).min
 
   def addSnake(id: Long, name: String, roomId: Long) = waitingJoin += (id -> (name, roomId))
 
@@ -65,9 +65,9 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
   implicit val scoreOrdering = new Ordering[Score] {
     override def compare(x: Score, y: Score): Int = {
-      var r = y.k - x.k
+      var r = y.l - x.l
       if (r == 0) {
-        r = y.l - x.l
+        r = y.k - x.k
       }
       if (r == 0) {
         r = (x.id - y.id).toInt
@@ -81,10 +81,10 @@ class GridOnServer(override val boundary: Point) extends Grid {
     var historyChange = false
     currentRank.foreach { cScore =>
       historyRankMap.get(cScore.id) match {
-        case Some(oldScore) if cScore.k > oldScore.k =>
+        case Some(oldScore) if cScore.l > oldScore.l =>
           historyRankMap += (cScore.id -> cScore)
           historyChange = true
-        case None if cScore.k > historyRankThreshold =>
+        case None if cScore.l > historyRankThreshold =>
           historyRankMap += (cScore.id -> cScore)
           historyChange = true
         case _ => //do nothing.
@@ -93,7 +93,12 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
     if (historyChange) {
       historyRankList = historyRankMap.values.toList.sorted.take(historyRankLength)
-      historyRankThreshold = historyRankList.lastOption.map(_.k).getOrElse(-1)
+      historyRankThreshold =
+        if(historyRankList.lengthCompare(5) >= 0) {
+          historyRankList.lastOption.map(_.l).getOrElse(-1)
+        } else {
+          -1
+        }
       historyRankMap = historyRankList.map(s => s.id -> s).toMap
     }
 
