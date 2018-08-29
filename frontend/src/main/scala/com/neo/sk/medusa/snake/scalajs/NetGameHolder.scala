@@ -267,7 +267,8 @@ object NetGameHolder extends js.JSApp {
     mapCtx.restore()
     
 
-    apples.foreach { case Ap(score, _, _, x, y, _) =>
+
+    apples.filterNot( a=>a.x < myHead.x - MyBoundary.w/2 *myProportion || a.y < myHead.y - MyBoundary.h/2 * myProportion || a.x >myHead.x + MyBoundary.w/2 * myProportion|| a.y > myHead.y + MyBoundary.h/2* myProportion).foreach { case Ap(score, _, _, x, y, _) =>
       ctx.fillStyle = score match {
         case 50 => "#ffeb3bd9"
         case 25 => "#1474c1"
