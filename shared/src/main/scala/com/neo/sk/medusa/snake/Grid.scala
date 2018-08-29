@@ -240,7 +240,7 @@ trait Grid {
 
     val len = snake.length + foodSum
 
-    var dead = newHead.frontZone(newDirection, square * 2, newSpeed.toInt).filter { e =>
+    var dead = oldHead.frontZone(snake.direction, square * 2, newSpeed.toInt).filter { e =>
       grid.get(e) match {
         case Some(x: Body) => true
         case _ => false
