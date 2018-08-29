@@ -150,17 +150,17 @@ class GridOnServer(override val boundary: Point) extends Grid {
       }
     } else {
       def pointAroundSnack(newBound: Point): Point = {
-        var x = newBound.x - 30 + random.nextInt(60)
-        var y = newBound.y - 30 + random.nextInt(60)
+        var x = newBound.x - 50 + random.nextInt(100)
+        var y = newBound.y - 50 + random.nextInt(100)
         var p = Point(x, y)
         while (grid.contains(p)) {
-          x = newBound.x - 30 + random.nextInt(60)
-          y = newBound.y - 30 + random.nextInt(60)
+          x = newBound.x - 50 + random.nextInt(100)
+          y = newBound.y - 50 + random.nextInt(100)
           p = Point(x, y)
         }
         while (x <= 0 || x >= Boundary.w || y <= 0 || y >= Boundary.h) {
-          x = newBound.x - 50 + random.nextInt(100)
-          y = newBound.y - 50 + random.nextInt(100)
+          x = newBound.x - 80 + random.nextInt(160)
+          y = newBound.y - 80 + random.nextInt(160)
           p = Point(x, y)
         }
         p
