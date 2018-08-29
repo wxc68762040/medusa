@@ -19,7 +19,29 @@ object Protocol {
   case class FeedApples(
     aLs: List[Ap]
   ) extends GameMessage
-  
+
+  case class EatApples(
+    eatFoodInfo: List[EatFoodInfo]
+  ) extends GameMessage
+
+  case class SpeedUp(
+    info: List[SpeedUpInfo]
+  ) extends GameMessage
+
+  case class DeadInfo(
+                       name:String,
+                       length:Int,
+                       kill:Int
+                     ) extends GameMessage
+
+  case class DeadList(
+                     deadList:List[Long]
+                     ) extends GameMessage
+
+  case class KillList(
+                     killList: List[(Long,String)]
+                     ) extends GameMessage
+
   case class TextMsg(msg: String) extends GameMessage
   case class Id(id: Long) extends GameMessage
   case class NewSnakeJoined(id: Long, name: String) extends GameMessage
@@ -42,6 +64,8 @@ object Protocol {
   val square = 4
 
   val fSpeed = 10
+  
+	val foodRate = 0.06 //尸体生成食物的倍率
 	
-	val advanceFrame = 2 //客户端提前的帧数
+  val advanceFrame = 2 //客户端提前的帧数
 }

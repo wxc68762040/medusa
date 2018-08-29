@@ -57,24 +57,29 @@ package object snake {
     }
 
     def pathTo(other: Point): Option[Point] = {
+      import math._
 
       val (x0, x1) = if(x > other.x) (other.x, x) else (x, other.x)
       val (y0, y1) = if(y > other.y) (other.y, y) else (y, other.y)
+
+      val distance = sqrt(pow(x1 - x0, 2) + pow(y1 - y0, 2))
 
       def step(distance: Int) = {
         distance match {
           case 0 => 0
           case n if n > 0 && n < 5 => 1
           case n if n >= 5 && n < 10 => 3
-          case n if n >= 10 && n < 15 => 6
-          case n if n >= 15 && n < 20 => 8
-          case n if n >= 20 && n < 25 => 10
-          case n if n >= 25 && n <= 30 => 20
+          case n if n >= 10 && n < 15 => 5
+          case n if n >= 15 && n < 20 => 7
+          case n if n >= 20 && n < 25 => 9
+          case n if n >= 25 && n <= 30 => 11
+          case n if n >= 30 && n <= 40 => 19
+          case n if n >= 40 && n <= 50 => 25
           case _ => 30
         }
       }
 
-      if (x1 - x0 <= 4 && y1 - y0 <= 4) {
+      if (distance <= 16) {
         None
       } else  {
         val nextX = if (x > other.x) x - step(x - other.x) else x + step(other.x - x)
@@ -142,9 +147,9 @@ package object snake {
       if (direction.x == 0) { //竖直方向
         val (yStart, yEnd) =
           if(direction.y < 0)
-            (y + length * direction.y, y - squareWide / 2)
+            (y + (length + squareWide) * direction.y, y - squareWide)
           else
-            (y + squareWide / 2, y + length * direction.y)
+            (y + squareWide, y + (length + squareWide) * direction.y)
 
         (for {
           xs <- (x - squareWide to x + squareWide).filter(_ != x)
@@ -155,9 +160,9 @@ package object snake {
       } else { //横的方向
         val (xStart, xEnd) =
           if(direction.x < 0)
-            (x + length * direction.x, x - squareWide / 2)
+            (x + (length + squareWide) * direction.x, x  - squareWide)
           else
-            (x + squareWide / 2, x + length * direction.x)
+            (x + squareWide, x + (length + squareWide) * direction.x)
 
         (for {
           xs <- xStart to xEnd
@@ -201,8 +206,8 @@ package object snake {
 		joints: Queue[Point] = Queue(),
 		speed: Double = 10.0,
 		freeFrame: Int = 0,
-		length: Int = 50,
-		extend: Int = 50, //需要伸长的量
+		length: Int = 100,
+		extend: Int = 100, //需要伸长的量
 		kill: Int = 0
 	) {
 		def getBodies: Map[Point, Spot] = {
@@ -217,6 +222,24 @@ package object snake {
 			bodyMap
 		}
 	}
+
+  case class DeadSnakeInfo(
+                          id:Long,
+                          name:String,
+                          length:Int,
+                          kill:Int
+                          )
+
+  case class EatFoodInfo(
+    snakeId: Long,
+    apples: List[Ap]
+  )
+
+  case class SpeedUpInfo(
+    snakeId: Long,
+    speedUpOrNot: Boolean,
+    newSpeed: Double
+  )
 
 
   object Boundary{

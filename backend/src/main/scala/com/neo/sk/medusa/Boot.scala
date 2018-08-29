@@ -23,7 +23,7 @@ object Boot extends HttpService {
   import com.neo.sk.medusa.common.AppSettings._
 
 
-  override implicit val system = ActorSystem("arges", config)
+  override implicit val system = ActorSystem("medusa", config)
   // the executor should not be the default dispatcher.
   override implicit val executor = system.dispatchers.lookup("akka.actor.my-blocking-dispatcher")
   override implicit val materializer = ActorMaterializer()
