@@ -1,5 +1,7 @@
 package com.neo.sk.medusa.snake
 
+import java.awt.event.KeyEvent
+
 import com.neo.sk.medusa.snake.Protocol.{fSpeed, square}
 import org.slf4j.LoggerFactory
 
@@ -104,6 +106,149 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
   }
 
+  override def updateSnakes() = {
+  
+    var mapKillCounter = Map.empty[Long, Int]
+    var updatedSnakes = List.empty[SnakeInfo]
+    deadSnakeList = Nil
+    killMap = Map()
+    val acts = actionMap.getOrElse(frameCount, Map.empty[Long, Int])
+  
+    snakes.values.map(i=>(updateASnake(i, acts),i)).foreach {
+      case (Right(s),_) =>
+        updatedSnakes ::= s
+      case (Left(killerId),j) =>
+        deadSnakeList ::= DeadSnakeInfo(j.id,j.name,j.length,j.kill)
+        if(killerId != 0){
+          mapKillCounter += killerId -> (mapKillCounter.getOrElse(killerId, 0) + 1)
+          killMap += killerId->((j.id,j.name)::killMap.getOrElse(killerId,Nil))
+        }
+    }
+  
+    val dangerBodies = scala.collection.mutable.Map.empty[Point, List[SnakeInfo]]
+    updatedSnakes.foreach { s =>
+      (s.lastHead to s.head).tail.foreach { p =>
+        if(dangerBodies.get(p).isEmpty) {
+          dangerBodies += ((p, List(s)))
+        } else {
+          dangerBodies.update(p, s :: dangerBodies(p))
+        }
+      }
+    }
+    val deadSnakes = dangerBodies.filter(_._2.lengthCompare(2) >= 0).flatMap { point =>
+      val sorted = point._2.sortBy(_.length)
+      val winner = sorted.head
+      val deads = sorted.tail
+      deadSnakeList :::= deads.map(i=>DeadSnakeInfo(i.id,i.name,i.length,i.kill))
+      killMap += winner.id->(killMap.getOrElse(winner.id,Nil):::deads.map(i=>(i.id,i.name)))
+      mapKillCounter += winner.id -> (mapKillCounter.getOrElse(winner.id, 0) + deads.length)
+      deads.foreach { snake =>
+        val appleCount = math.round(snake.length * Protocol.foodRate).toInt
+        feedApple(appleCount, FoodType.deadBody, Some(snake.id))
+      }
+      deads
+    }.map(_.id).toSet
+  
+    val newSnakes = updatedSnakes.filterNot(s => deadSnakes.contains(s.id)).map { s =>
+      mapKillCounter.get(s.id) match {
+        case Some(k) => s.copy(kill = s.kill + k)
+        case None => s
+      }
+    }
+  
+    snakes = newSnakes.map(s => (s.id, s)).toMap
+  }
+  
+  override def updateASnake(snake: SnakeInfo, actMap: Map[Long, Int]): Either[Long, SnakeInfo] = {
+    val keyCode = actMap.get(snake.id)
+    val newDirection = {
+      val keyDirection = keyCode match {
+        case Some(KeyEvent.VK_LEFT) => Point(-1, 0)
+        case Some(KeyEvent.VK_RIGHT) => Point(1, 0)
+        case Some(KeyEvent.VK_UP) => Point(0, -1)
+        case Some(KeyEvent.VK_DOWN) => Point(0, 1)
+        case _ => snake.direction
+      }
+      if (keyDirection + snake.direction != Point(0, 0)) {
+        keyDirection
+      } else {
+        snake.direction
+      }
+    }
+  
+    val speedInfoOpt = speedUp(snake, newDirection)
+    var newSpeed = if (speedInfoOpt.nonEmpty) speedInfoOpt.get._2 else snake.speed
+    var speedOrNot = if (speedInfoOpt.nonEmpty) speedInfoOpt.get._1 else false
+  
+    val newHead = snake.head + snake.direction * newSpeed.toInt
+    val oldHead = snake.head
+  
+    val foodEaten = eatFood(snake.id, newHead, newSpeed, speedOrNot)
+  
+    val foodSum = if (foodEaten.nonEmpty) {
+      newSpeed = foodEaten.get._2
+      speedOrNot = foodEaten.get._3
+      foodEaten.get._1
+    } else 0
+  
+    val len = snake.length + foodSum
+  
+    var dead = oldHead.frontZone(snake.direction, square * 2, newSpeed.toInt).filter { e =>
+      grid.get(e) match {
+        case Some(x: Body) => true
+        case _ => false
+      }
+    }
+    if(newHead.x < 0 + square || newHead.y < 0 + square || newHead.x  > Boundary.w - square|| newHead.y > Boundary.h-square) {
+      println(s"snake[${snake.id}] hit wall.")
+      dead = Point(0, 0) :: dead
+    }
+  
+    //处理身体及尾巴的移动
+    var newJoints = snake.joints
+    var newTail = snake.tail
+    var step = snake.speed.toInt - (snake.extend + foodSum)
+    val newExtend = if(step >= 0) {
+      0
+    } else {
+      snake.extend + foodSum - snake.speed.toInt
+    }
+    if (newDirection != snake.direction) {
+      newJoints = newJoints.enqueue(newHead)
+    }
+    var headAndJoints = newJoints.enqueue(newHead)
+    while(step > 0) {
+      val distance = newTail.distance(headAndJoints.dequeue._1)
+      if(distance >= step) { //尾巴在移动到下一个节点前就需要停止。
+        newTail = newTail + newTail.getDirection(headAndJoints.dequeue._1) * step
+        step = -1
+      } else { //尾巴在移动到下一个节点后，还需要继续移动。
+        step -= distance
+        headAndJoints = headAndJoints.dequeue._2
+        newTail = newJoints.dequeue._1
+        newJoints = newJoints.dequeue._2
+      }
+    }
+  
+    val newFreeFrame = if (speedInfoOpt.nonEmpty) {
+      if(speedOrNot) 0 else snake.freeFrame + 1
+    } else snake.freeFrame
+  
+    if(dead.nonEmpty) {
+      val appleCount = math.round(snake.length * Protocol.foodRate).toInt
+      feedApple(appleCount, FoodType.deadBody, Some(snake.id))
+      grid.get(dead.head) match {
+        case Some(x: Body) =>
+          Left(x.id)
+        case _ =>
+          Left(0L) //撞墙的情况
+      }
+    } else {
+      Right(snake.copy(head = newHead, tail = newTail, lastHead = oldHead, direction = newDirection,
+        joints = newJoints, speed = newSpeed, freeFrame = newFreeFrame, length = len, extend = newExtend))
+    }
+  }
+  
   override def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[Long] = None) = {
     if (appleType == FoodType.normal) {
 
@@ -280,6 +425,14 @@ class GridOnServer(override val boundary: Point) extends Grid {
     deadBodies = Nil
     eatenApples = Map.empty
     speedUpInfo = Nil
+  }
+  
+  override def countBody(): Unit = {
+    val bodies = snakes.values.map(e => e.getBodies)
+      .fold(Map.empty[Point, Spot]) { (a: Map[Point, Spot], b: Map[Point, Spot]) =>
+        a ++ b
+      }
+    grid ++= bodies
   }
 
 }
