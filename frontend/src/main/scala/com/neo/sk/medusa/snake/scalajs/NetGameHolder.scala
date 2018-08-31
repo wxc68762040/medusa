@@ -210,7 +210,16 @@ object NetGameHolder extends js.JSApp {
     }
   }
 
+  def drawTextLine(ctx:dom.CanvasRenderingContext2D,str: String, x: Int, lineNum: Int, lineBegin: Int = 0) = {
+    ctx.fillText(str, x, (lineNum + lineBegin - 1) * textLineHeight)
+  }
+
   def drawGrid(uid: Long, data: GridData): Unit = {
+
+    val cacheCanvas = dom.document.createElement("canvas").asInstanceOf[Canvas]
+    val cacheCtx = cacheCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
+    cacheCanvas.width = canvasBoundary.x
+    cacheCanvas.height = canvasBoundary.y
 
     val period = (System.currentTimeMillis() - basicTime).toInt
     val snakes = data.snakes
@@ -243,14 +252,14 @@ object NetGameHolder extends js.JSApp {
     val deviationX = centerX - myHead.x
     val deviationY = centerY - myHead.y
 
-    ctx.font = "10px Verdana"
-    ctx.fillStyle = "#009393"
-    ctx.fillRect(0, 0 ,canvas.width,canvas.height)
-    ctx.save()
-    ctx.translate(MyBoundary.w / 2, MyBoundary.h / 2)
-    ctx.scale(1/myProportion, 1/myProportion)
-    ctx.translate(-MyBoundary.w / 2, -MyBoundary.h / 2)
-    ctx.drawImage(canvasPic,0 + deviationX, 0 + deviationY,Boundary.w,Boundary.h)
+//    ctx.font = "10px Verdana"
+//    ctx.fillStyle = "#009393"
+//    ctx.fillRect(0, 0 ,canvas.width,canvas.height)
+    cacheCtx.save()
+    cacheCtx.translate(MyBoundary.w / 2, MyBoundary.h / 2)
+    cacheCtx.scale(1/myProportion, 1/myProportion)
+    cacheCtx.translate(-MyBoundary.w / 2, -MyBoundary.h / 2)
+    cacheCtx.drawImage(canvasPic,0 + deviationX, 0 + deviationY,Boundary.w,Boundary.h)
 
     mapCtx.clearRect(0,0,mapCanvas.width,mapCanvas.height)
     mapCtx.globalAlpha=0.2
@@ -269,17 +278,17 @@ object NetGameHolder extends js.JSApp {
 
 
     apples.filterNot( a=>a.x < myHead.x - MyBoundary.w/2 *myProportion || a.y < myHead.y - MyBoundary.h/2 * myProportion || a.x >myHead.x + MyBoundary.w/2 * myProportion|| a.y > myHead.y + MyBoundary.h/2* myProportion).foreach { case Ap(score, _, _, x, y, _) =>
-      ctx.fillStyle = score match {
+      cacheCtx.fillStyle = score match {
         case 50 => "#ffeb3bd9"
         case 25 => "#1474c1"
         case _ => "#e91e63ed"
       }
-      ctx.shadowBlur= 20
-      ctx.shadowColor= "#FFFFFF"
-      ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 , square * 2)
+      cacheCtx.shadowBlur= 20
+      cacheCtx.shadowColor= "#FFFFFF"
+      cacheCtx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 , square * 2)
     }
 
-    ctx.fillStyle = MyColors.otherHeader
+    cacheCtx.fillStyle = MyColors.otherHeader
 
     snakes.foreach{ snake=>
       val id = snake.id
@@ -302,12 +311,12 @@ object NetGameHolder extends js.JSApp {
         }
       }
 
-      ctx.fillStyle = snake.color
+      cacheCtx.fillStyle = snake.color
       mapCtx.fillStyle = Color.White.toString()
-      ctx.shadowBlur= 0
+      cacheCtx.shadowBlur= 0
       if(joints.length > 0){
         joints.foreach{ s =>
-          ctx.fillRect(s.x- square + deviationX, s.y - square + deviationY, square * 2,square * 2)
+          cacheCtx.fillRect(s.x- square + deviationX, s.y - square + deviationY, square * 2,square * 2)
           if(snake.id != maxId && snake.id == myId) mapCtx.fillRect(s.x * LittleMap.w / Boundary.w, s.y * LittleMap.h / Boundary.h ,2 ,2)
         }
         for(i <- 0 to joints.length){
@@ -316,20 +325,20 @@ object NetGameHolder extends js.JSApp {
             //首
             if(tail.x == joints.head.x){
               val startPoint = Point(tail.x, List(tail.y,joints.head.y).min)
-              ctx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY, square * 2, List(tail.y,joints.head.y).max -  List(tail.y,joints.head.y).min)
+              cacheCtx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY, square * 2, List(tail.y,joints.head.y).max -  List(tail.y,joints.head.y).min)
               if(snake.id != maxId && snake.id == myId) mapCtx.fillRect((startPoint.x * LittleMap.w) / Boundary.w, (startPoint.y * LittleMap.h) / Boundary.h, 2, ((List(tail.y,joints.head.y).max -  List(tail.y,joints.head.y).min) * LittleMap.h) / Boundary.h)
             }else{
               val startPoint = Point(List(tail.x,joints.head.x).min, tail.y)
-              ctx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY, List(tail.x,joints.head.x).max -  List(tail.x,joints.head.x).min, square * 2 )
+              cacheCtx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY, List(tail.x,joints.head.x).max -  List(tail.x,joints.head.x).min, square * 2 )
               if(snake.id != maxId && snake.id == myId) mapCtx.fillRect((startPoint.x * LittleMap.w) / Boundary.w, (startPoint.y * LittleMap.h) / Boundary.h, ((List(tail.x,joints.head.x).max -  List(tail.x,joints.head.x).min) * LittleMap.w) / Boundary.w, 2)
             }
           }else if(i == joints.length){
             //尾
             if(x == joints.last.x){
-              ctx.fillRect(x - square + deviationX, List(y,joints.last.y).min - square + deviationY, square * 2, List(y,joints.last.y).max -  List(y,joints.last.y).min)
+              cacheCtx.fillRect(x - square + deviationX, List(y,joints.last.y).min - square + deviationY, square * 2, List(y,joints.last.y).max -  List(y,joints.last.y).min)
               if(snake.id != maxId && snake.id == myId) mapCtx.fillRect((x * LittleMap.w) / Boundary.w, (List(y,joints.last.y).min * LittleMap.h) / Boundary.h,2, ((List(y,joints.last.y).max -  List(y,joints.last.y).min) * LittleMap.h) / Boundary.h)
             }else{
-              ctx.fillRect(List(x,joints.last.x).min - square + deviationX, y - square + deviationY, List(x,joints.last.x).max -  List(x,joints.last.x).min, square * 2 )
+              cacheCtx.fillRect(List(x,joints.last.x).min - square + deviationX, y - square + deviationY, List(x,joints.last.x).max -  List(x,joints.last.x).min, square * 2 )
               if(snake.id != maxId && snake.id == myId) mapCtx.fillRect((List(x,joints.last.x).min * LittleMap.w) / Boundary.w, (y * LittleMap.h) / Boundary.h, ((List(x,joints.last.x).max -  List(x,joints.last.x).min) * LittleMap.w) / Boundary.w,2)
 
             }
@@ -337,11 +346,11 @@ object NetGameHolder extends js.JSApp {
             //中间节点
             if(joints(i).x == joints(i-1).x){
               val startPoint = Point(joints(i).x, List(joints(i).y,joints(i - 1).y).min)
-              ctx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY, square * 2, List(joints(i).y,joints(i - 1).y).max -  List(joints(i).y,joints(i - 1).y).min)
+              cacheCtx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY, square * 2, List(joints(i).y,joints(i - 1).y).max -  List(joints(i).y,joints(i - 1).y).min)
               if(snake.id != maxId && snake.id == myId) mapCtx.fillRect((startPoint.x * LittleMap.w) / Boundary.w, (startPoint.y * LittleMap.h) / Boundary.h,2, ((List(joints(i).y,joints(i - 1).y).max -  List(joints(i).y,joints(i - 1).y).min) * LittleMap.h) / Boundary.h)
             }else{
               val startPoint = Point(List(joints(i).x,joints(i - 1).x).min, joints(i).y)
-              ctx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY,List(joints(i).x,joints(i - 1).x).max -  List(joints(i).x,joints(i - 1).x).min, square * 2 )
+              cacheCtx.fillRect(startPoint.x - square + deviationX, startPoint.y - square + deviationY,List(joints(i).x,joints(i - 1).x).max -  List(joints(i).x,joints(i - 1).x).min, square * 2 )
               if(snake.id != maxId && snake.id == myId) mapCtx.fillRect((startPoint.x * LittleMap.w) / Boundary.w, (startPoint.y * LittleMap.h) / Boundary.h,((List(joints(i).x,joints(i - 1).x).max -  List(joints(i).x,joints(i - 1).x).min) * LittleMap.w) / Boundary.w,2)
 
             }
@@ -350,11 +359,11 @@ object NetGameHolder extends js.JSApp {
         }
       }else{
         if(tail.x == x){
-          ctx.fillRect(tail.x - square + deviationX, List(tail.y, y).min - square + deviationY, square * 2, List(tail.y, y).max - List(tail.y, y).min)
+          cacheCtx.fillRect(tail.x - square + deviationX, List(tail.y, y).min - square + deviationY, square * 2, List(tail.y, y).max - List(tail.y, y).min)
           if(snake.id != maxId && snake.id == myId) mapCtx.fillRect((tail.x * LittleMap.w) / Boundary.w, (List(tail.y, y).min * LittleMap.h) / Boundary.h,2,((List(tail.y, y).max - List(tail.y, y).min) * LittleMap.h) / Boundary.h)
 
         }else{
-          ctx.fillRect(List(tail.x, x).min - square + deviationX, tail.y - square + deviationY, List(tail.x, x).max - List(tail.x, x).min, square * 2)
+          cacheCtx.fillRect(List(tail.x, x).min - square + deviationX, tail.y - square + deviationY, List(tail.x, x).max - List(tail.x, x).min, square * 2)
           if(snake.id != maxId && snake.id == myId) mapCtx.fillRect((List(tail.x, x).min * LittleMap.w) / Boundary.w, (tail.y * LittleMap.h) / Boundary.h,((List(tail.x, x).max - List(tail.x, x).min) * LittleMap.w) / Boundary.w,2)
         }
 
@@ -362,47 +371,47 @@ object NetGameHolder extends js.JSApp {
 
       // 头部信息
       if(snake.speed > fSpeed +1){
-        ctx.shadowBlur= 5
-        ctx.shadowColor= "#FFFFFF"
-        ctx.fillStyle = MyColors.speedUpHeader
-        ctx.fillRect(x - 1.5 * square + deviationX, y - 1.5 * square + deviationY, square * 3 , square * 3)
+        cacheCtx.shadowBlur= 5
+        cacheCtx.shadowColor= "#FFFFFF"
+        cacheCtx.fillStyle = MyColors.speedUpHeader
+        cacheCtx.fillRect(x - 1.5 * square + deviationX, y - 1.5 * square + deviationY, square * 3 , square * 3)
       }
-      ctx.fillStyle = MyColors.myHeader
+      cacheCtx.fillStyle = MyColors.myHeader
       if (id == uid) {
-        ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 , square * 2)
+        cacheCtx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 , square * 2)
         if(maxId != id){
           mapCtx.globalAlpha = 1
           mapCtx.fillStyle = MyColors.myHeader
           mapCtx.fillRect((x * LittleMap.w) / Boundary.w, (y * LittleMap.h) / Boundary.h, 2, 2)
         }
       } else {
-        ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 , square * 2)
+        cacheCtx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 , square * 2)
       }
     }
 
 
 
     //画边界
-    ctx.fillStyle = MyColors.boundaryColor
-    ctx.shadowBlur = 5
-    ctx.fillRect(0 + deviationX, 0 + deviationY, Boundary.w, boundaryWidth)
-    ctx.fillRect(0 + deviationX, 0 + deviationY, boundaryWidth, Boundary.h)
-    ctx.fillRect(0+ deviationX, Boundary.h + deviationY, Boundary.w, boundaryWidth)
-    ctx.fillRect(Boundary.w + deviationX, 0 + deviationY, boundaryWidth, Boundary.h)
-    ctx.restore()
+    cacheCtx.fillStyle = MyColors.boundaryColor
+    cacheCtx.shadowBlur = 5
+    cacheCtx.fillRect(0 + deviationX, 0 + deviationY, Boundary.w, boundaryWidth)
+    cacheCtx.fillRect(0 + deviationX, 0 + deviationY, boundaryWidth, Boundary.h)
+    cacheCtx.fillRect(0+ deviationX, Boundary.h + deviationY, Boundary.w, boundaryWidth)
+    cacheCtx.fillRect(Boundary.w + deviationX, 0 + deviationY, boundaryWidth, Boundary.h)
+    cacheCtx.restore()
 
     //名称信息
     snakes.foreach{ snake=>
       val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
       val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
       val nameLength = snake.name.length
-      ctx.fillStyle = Color.White.toString()
-      ctx.fillText(snake.name, (x - myHead.x ) / myProportion  + centerX- nameLength * 4, (y - myHead.y ) / myProportion + centerY- 20)
+      cacheCtx.fillStyle = Color.White.toString()
+      cacheCtx.fillText(snake.name, (x - myHead.x ) / myProportion  + centerX- nameLength * 4, (y - myHead.y ) / myProportion + centerY- 20)
     }
 
-    ctx.fillStyle = "rgb(250, 250, 250)"
-    ctx.textAlign = "left"
-    ctx.textBaseline = "top"
+    cacheCtx.fillStyle = "rgb(250, 250, 250)"
+    cacheCtx.textAlign = "left"
+    cacheCtx.textBaseline = "top"
 
     val leftBegin = 10
     val rightBegin = canvasBoundary.x - 200
@@ -411,59 +420,62 @@ object NetGameHolder extends js.JSApp {
       case Some(mySnake) =>
         firstCome = false
         val baseLine = 1
-        ctx.font = "12px Helvetica"
-        drawTextLine(s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 0, baseLine)
-        drawTextLine(s"your kill = ${mySnake.kill}", leftBegin, 1, baseLine)
-        drawTextLine(s"your length = ${mySnake.length} ", leftBegin, 2, baseLine)
+        cacheCtx.font = "12px Helvetica"
+        drawTextLine(cacheCtx,s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 0, baseLine)
+        drawTextLine(cacheCtx,s"your kill = ${mySnake.kill}", leftBegin, 1, baseLine)
+        drawTextLine(cacheCtx,s"your length = ${mySnake.length} ", leftBegin, 2, baseLine)
 
       case None =>
         if(firstCome) {
-          ctx.font = "36px Helvetica"
-          ctx.fillText("Please wait.", centerX - 150,  centerY -150)
+          cacheCtx.font = "36px Helvetica"
+          cacheCtx.fillText("Please wait.", centerX - 150,  centerY -150)
         } else {
-          ctx.font = "24px Helvetica"
-          ctx.fillText(s"Your name   : $deadName", centerX-150, centerY-30)
-          ctx.fillText(s"Your length  : $deadLength", centerX-150, centerY)
-          ctx.fillText(s"Your kill        : $deadKill", centerX-150, centerY+30)
-          ctx.font = "36px Helvetica"
-          ctx.fillText("Ops, Press Space Key To Restart!", centerX - 350,  centerY -150)
+          cacheCtx.font = "24px Helvetica"
+          cacheCtx.fillText(s"Your name   : $deadName", centerX-150, centerY-30)
+          cacheCtx.fillText(s"Your length  : $deadLength", centerX-150, centerY)
+          cacheCtx.fillText(s"Your kill        : $deadKill", centerX-150, centerY+30)
+          cacheCtx.font = "36px Helvetica"
+          cacheCtx.fillText("Ops, Press Space Key To Restart!", centerX - 350,  centerY -150)
           myProportion = 1.0
         }
     }
 
-    ctx.font = "12px Helvetica"
+    cacheCtx.font = "12px Helvetica"
     val currentRankBaseLine = 5
     var index = 0
-    drawTextLine(s" --- Current Rank --- ", leftBegin, index, currentRankBaseLine)
+    drawTextLine(cacheCtx,s" --- Current Rank --- ", leftBegin, index, currentRankBaseLine)
     currentRank.foreach { score =>
       index += 1
-      drawTextLine(s"[$index]: ${score.n.+("   ").take(8)} kill=${score.k} len=${score.l}", leftBegin, index, currentRankBaseLine)
+      drawTextLine(cacheCtx,s"[$index]: ${score.n.+("   ").take(8)} kill=${score.k} len=${score.l}", leftBegin, index, currentRankBaseLine)
     }
 
     val historyRankBaseLine = 1
     index = 0
-    drawTextLine(s" --- History Rank --- ", rightBegin, index, historyRankBaseLine)
+    drawTextLine(cacheCtx,s" --- History Rank --- ", rightBegin, index, historyRankBaseLine)
     historyRank.foreach { score =>
       index += 1
-      drawTextLine(s"[$index]: ${score.n.+("   ").take(8)} kill=${score.k} len=${score.l}", rightBegin, index, historyRankBaseLine)
+      drawTextLine(cacheCtx,s"[$index]: ${score.n.+("   ").take(8)} kill=${score.k} len=${score.l}", rightBegin, index, historyRankBaseLine)
     }
-    ctx.font = "18px Helvetica"
+    cacheCtx.font = "18px Helvetica"
     var i=1
     waitingShowKillList.foreach{
       j=>
         if(j._1 != myId){
-          ctx.fillText(s"你击杀了 ${j._2}", centerX - 120, i*20)
+          cacheCtx.fillText(s"你击杀了 ${j._2}", centerX - 120, i*20)
         }else{
-          ctx.fillText(s"你自杀了",centerX - 100,i*20)
+          cacheCtx.fillText(s"你自杀了",centerX - 100,i*20)
         }
         i += 1
     }
+
+    ctx.font = "10px Verdana"
+    ctx.fillStyle = "#009393"
+    ctx.fillRect(0, 0 ,canvas.width,canvas.height)
+    ctx.drawImage(cacheCanvas,0,0)
+
   }
 
 
-  def drawTextLine(str: String, x: Int, lineNum: Int, lineBegin: Int = 0) = {
-    ctx.fillText(str, x, (lineNum + lineBegin - 1) * textLineHeight)
-  }
   
   val sendBuffer = new MiddleBufferInJs(409600) //sender buffer
   
