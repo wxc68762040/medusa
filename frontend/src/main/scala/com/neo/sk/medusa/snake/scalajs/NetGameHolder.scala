@@ -29,9 +29,11 @@ object NetGameHolder extends js.JSApp {
 
   val bounds = Point(Boundary.w, Boundary.h)
   val canvasUnit = 7
-  val canvasBoundary = Point(MyBoundary.w,MyBoundary.h)
+  val canvasBoundary = Point(dom.document.documentElement.clientWidth,dom.document.documentElement.clientHeight)
   val mapBoundary = Point(LittleMap.w ,LittleMap.h)
   val textLineHeight = 14
+  val windowWidth = dom.document.documentElement.clientWidth
+  val windowHight = dom.document.documentElement.clientHeight
   
   var syncData: scala.Option[Protocol.GridDataSync] = None
   var currentRank = List.empty[Score]
@@ -77,6 +79,7 @@ object NetGameHolder extends js.JSApp {
   private[this] val canvas = dom.document.getElementById("GameView").asInstanceOf[Canvas]
   private [this] val bgCanvas = dom.document.getElementById("BGPic").asInstanceOf[Canvas]
   private[this] val mapCanvas = dom.document.getElementById("GameMap").asInstanceOf[Canvas]
+  dom.document.getElementById("GameMap").setAttribute("style",s"position:absolute;z-index:3;left: 0px;top:${windowHight}px")
   private[this] val canvasPic = dom.document.getElementById("canvasPic").asInstanceOf[HTMLElement]
   private[this] val bgCtx = bgCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
   private[this] val ctx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
@@ -120,11 +123,11 @@ object NetGameHolder extends js.JSApp {
     ctx.fillStyle = "rgb(250, 250, 250)"
     if (firstCome) {
       ctx.font = "36px Helvetica"
-      ctx.fillText("Welcome.", MyBoundary.w/2 - 150,  MyBoundary.h/2 -150)
+      ctx.fillText("Welcome.", windowWidth/2 - 150,  windowHight/2 -150)
       myProportion = 1.0
     } else {
       ctx.font = "36px Helvetica"
-      ctx.fillText("Ops, connection lost.", MyBoundary.w/2 - 250,  MyBoundary.h/2 -150)
+      ctx.fillText("Ops, connection lost.", windowWidth/2 - 250,  windowHight/2 -150)
       myProportion = 1.0
     }
 
@@ -250,8 +253,8 @@ object NetGameHolder extends js.JSApp {
       myProportion += 0.001
     }
 
-    val centerX = MyBoundary.w/2
-    val centerY = MyBoundary.h/2
+    val centerX = windowWidth/2
+    val centerY = windowHight/2
     val myHead = if(snakes.exists(_.id == uid)) snakes.filter(_.id == uid).head.head + mySubFrameRevise else Point(centerX, centerY)
     val deviationX = centerX - myHead.x
     val deviationY = centerY - myHead.y
@@ -260,9 +263,9 @@ object NetGameHolder extends js.JSApp {
 //    ctx.fillStyle = "#009393"
 //    ctx.fillRect(0, 0 ,canvas.width,canvas.height)
     cacheCtx.save()
-    cacheCtx.translate(MyBoundary.w / 2, MyBoundary.h / 2)
+    cacheCtx.translate(windowWidth / 2, windowHight / 2)
     cacheCtx.scale(1/myProportion, 1/myProportion)
-    cacheCtx.translate(-MyBoundary.w / 2, -MyBoundary.h / 2)
+    cacheCtx.translate(-windowWidth / 2, -windowHight / 2)
     //cacheCtx.drawImage(canvasPic,0 + deviationX, 0 + deviationY,Boundary.w,Boundary.h)
 
     mapCtx.clearRect(0,0,mapCanvas.width,mapCanvas.height)
@@ -281,7 +284,7 @@ object NetGameHolder extends js.JSApp {
     
 
 
-    apples.filterNot( a=>a.x < myHead.x - MyBoundary.w/2 *myProportion || a.y < myHead.y - MyBoundary.h/2 * myProportion || a.x >myHead.x + MyBoundary.w/2 * myProportion|| a.y > myHead.y + MyBoundary.h/2* myProportion).foreach { case Ap(score, _, _, x, y, _) =>
+    apples.filterNot( a=>a.x < myHead.x - windowWidth/2 *myProportion || a.y < myHead.y - windowHight/2 * myProportion || a.x >myHead.x + windowWidth/2 * myProportion|| a.y > myHead.y + windowHight/2* myProportion).foreach { case Ap(score, _, _, x, y, _) =>
       cacheCtx.fillStyle = score match {
         case 50 => "#ffeb3bd9"
         case 25 => "#1474c1"
