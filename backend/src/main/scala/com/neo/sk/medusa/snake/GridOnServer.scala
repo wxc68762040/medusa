@@ -40,14 +40,14 @@ class GridOnServer(override val boundary: Point) extends Grid {
   def randomColor() = {
     val a = random.nextInt(7)
     val color = a match {
-      case 0 => "#FF0033"
-      case 1 => "#FF6633"
-      case 2 => "#FF3399"
-      case 3 => "#FFFF33"
-      case 4 => "#66CCFF"
-      case 5 => "#33FFCC"
-      case 6 => "#6633FF"
-      case _ => "#FFFFFF"
+      case 0 => "rgba(255, 0, 51, 1)"
+      case 1 => "rgba(255, 102, 51,1)"
+      case 2 => "rgba(255, 51, 153, 1)"
+      case 3 => "rgba(255, 255, 51, 1)"
+      case 4 => "rgba(102, 204, 255, 1)"
+      case 5 => "rgba(51, 255, 204, 1)"
+      case 6 => "rgba(102, 51, 255, 1)"
+      case _ => "rgba(255, 255, 255, 1)"
     }
     println(a)
     println(color)
@@ -295,17 +295,17 @@ class GridOnServer(override val boundary: Point) extends Grid {
       }
     } else {
       def pointAroundSnack(newBound: Point): Point = {
-        var x = newBound.x - 30 + random.nextInt(60)
-        var y = newBound.y - 30 + random.nextInt(60)
+        var x = newBound.x - 50 + random.nextInt(100)
+        var y = newBound.y - 50 + random.nextInt(100)
         var p = Point(x, y)
         while (grid.contains(p)) {
-          x = newBound.x - 30 + random.nextInt(60)
-          y = newBound.y - 30 + random.nextInt(60)
+          x = newBound.x - 50 + random.nextInt(100)
+          y = newBound.y - 50 + random.nextInt(100)
           p = Point(x, y)
         }
         while (x <= 0 || x >= Boundary.w || y <= 0 || y >= Boundary.h) {
-          x = newBound.x - 50 + random.nextInt(100)
-          y = newBound.y - 50 + random.nextInt(100)
+          x = newBound.x - 80 + random.nextInt(160)
+          y = newBound.y - 80 + random.nextInt(160)
           p = Point(x, y)
         }
         p
