@@ -327,11 +327,11 @@ object NetGameHolder extends js.JSApp {
       cacheCtx.shadowBlur= 20
       cacheCtx.shadowColor= snake.color
       cacheCtx.lineWidth = square * 2
-      cacheCtx.moveTo( joints(0).x + deviationX, joints(0).y + deviationY)
+      cacheCtx.moveTo(joints(0).x + deviationX, joints(0).y + deviationY)
  //     cacheCtx.lineTo(joints(1).x + deviationX,joints(1).y + deviationY)
-        for(i<- 1 until  joints.length){
-          cacheCtx.lineTo(joints(i).x  + deviationX, joints(i ).y+ deviationY )
-      }
+        for(i <- 1 until joints.length) {
+					cacheCtx.lineTo(joints(i).x + deviationX, joints(i).y + deviationY)
+				}
 
       cacheCtx.stroke()
       cacheCtx.closePath()
@@ -444,10 +444,10 @@ object NetGameHolder extends js.JSApp {
         firstCome = false
         val baseLine = 1
         cacheCtx.font = "12px Helvetica"
-        drawTextLine(cacheCtx,s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 0, baseLine)
-        drawTextLine(cacheCtx,s"your kill = ${mySnake.kill}", leftBegin, 1, baseLine)
-        drawTextLine(cacheCtx,s"your length = ${mySnake.length} ", leftBegin, 2, baseLine)
-        drawTextLine(s"fps: ${fps.formatted("%.2f")}", leftBegin, 3, baseLine)
+        drawTextLine(cacheCtx, s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 0, baseLine)
+        drawTextLine(cacheCtx, s"your kill = ${mySnake.kill}", leftBegin, 1, baseLine)
+        drawTextLine(cacheCtx, s"your length = ${mySnake.length} ", leftBegin, 2, baseLine)
+        drawTextLine(cacheCtx, s"fps: ${fps.formatted("%.2f")}", leftBegin, 3, baseLine)
 
       case None =>
         if(firstCome) {
