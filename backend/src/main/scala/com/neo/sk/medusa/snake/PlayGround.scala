@@ -45,6 +45,9 @@ object PlayGround {
       var userMap = Map.empty[Long, (String,Long)]
       //(roomId.(userNumber,grid))
       var roomMap = Map.empty[Long,(Int,GridOnServer)]
+      
+      var lostSet = Set[Long]()
+      
       var roomNum = -1
       val maxRoomNum = 30
 
@@ -101,6 +104,7 @@ object PlayGround {
               grid.addSnake(id,userMap.getOrElse(id, ( "Unknown",0))._1,roomId)
             } else {
               if(frame < grid.frameCount) {
+                lostSet += id
                 log.info(s"key loss: server: ${grid.frameCount} client: $frame")
               }
               grid.addActionWithFrame(id, keyCode, frame)
@@ -151,6 +155,12 @@ object PlayGround {
             }
             if (tickCount % 20 == 1) {
               dispatch(Protocol.Ranks(grid.currentRank, grid.historyRankList),roomId)
+            }
+            if(lostSet.nonEmpty) { //指令丢失的玩家，立即同步数据
+              lostSet.foreach { id =>
+                dispatchTo(id, grid.getGridSyncData)
+              }
+              lostSet = Set[Long]()
             }
           }
 
