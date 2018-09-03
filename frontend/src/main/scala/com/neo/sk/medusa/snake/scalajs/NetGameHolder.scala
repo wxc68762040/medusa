@@ -111,16 +111,16 @@ object NetGameHolder extends js.JSApp {
   }
 
   def drawGameOn(): Unit = {
-    //ctx.drawImage(canvasPic,0,0,canvas.width,canvas.height)
-    ctx.fillStyle = "#024747"
-    ctx.fillRect(0, 0 ,canvas.width,canvas.height)
+    ctx.drawImage(canvasPic,0,0,canvas.width,canvas.height)
+//    ctx.fillStyle = "#024747"
+//    ctx.fillRect(0, 0 ,canvas.width,canvas.height)
     mapCtx.drawImage(canvasPic,0,0,mapCanvas.width,mapCanvas.height)
   }
 
   def drawGameOff(): Unit = {
-    //ctx.drawImage(canvasPic,0,0,canvas.width,canvas.height)
-    ctx.fillStyle = "#024747"
-    ctx.fillRect(0, 0 ,canvas.width,canvas.height)
+    ctx.drawImage(canvasPic,0,0,canvas.width,canvas.height)
+//    ctx.fillStyle = "#024747"
+//    ctx.fillRect(0, 0 ,canvas.width,canvas.height)
     ctx.fillStyle = "rgb(250, 250, 250)"
     if (firstCome) {
       ctx.font = "36px Helvetica"
@@ -270,7 +270,7 @@ object NetGameHolder extends js.JSApp {
     cacheCtx.translate(windowWidth / 2, windowHight / 2)
     cacheCtx.scale(1/myProportion, 1/myProportion)
     cacheCtx.translate(-windowWidth / 2, -windowHight / 2)
-    //cacheCtx.drawImage(canvasPic,0 + deviationX, 0 + deviationY,Boundary.w,Boundary.h)
+    cacheCtx.drawImage(canvasPic,0 + deviationX, 0 + deviationY,Boundary.w,Boundary.h)
 
     mapCtx.clearRect(0,0,mapCanvas.width,mapCanvas.height)
     mapCtx.globalAlpha=0.2
@@ -338,6 +338,15 @@ object NetGameHolder extends js.JSApp {
 
       cacheCtx.stroke()
       cacheCtx.closePath()
+
+      if(snake.id != maxId && snake.id == myId){
+        mapCtx.beginPath()
+        mapCtx.lineWidth = 2
+        mapCtx.moveTo(joints(0).x * LittleMap.w / Boundary.w, joints(0).y * LittleMap.h / Boundary.h)
+        for(i <- 1 until joints.length) {
+          mapCtx.lineTo(joints(i).x * LittleMap.w / Boundary.w, joints(i).y * LittleMap.h / Boundary.h)
+        }
+      }
  /*
       if(joints.length > 0){
         joints.foreach{ s =>
