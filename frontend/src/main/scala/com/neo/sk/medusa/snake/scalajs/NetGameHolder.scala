@@ -107,12 +107,16 @@ object NetGameHolder extends js.JSApp {
   }
 
   def drawGameOn(): Unit = {
-    ctx.drawImage(canvasPic,0,0,canvas.width,canvas.height)
+    //ctx.drawImage(canvasPic,0,0,canvas.width,canvas.height)
+    ctx.fillStyle = "#024747"
+    ctx.fillRect(0, 0 ,canvas.width,canvas.height)
     mapCtx.drawImage(canvasPic,0,0,mapCanvas.width,mapCanvas.height)
   }
 
   def drawGameOff(): Unit = {
-    ctx.drawImage(canvasPic,0,0,canvas.width,canvas.height)
+    //ctx.drawImage(canvasPic,0,0,canvas.width,canvas.height)
+    ctx.fillStyle = "#024747"
+    ctx.fillRect(0, 0 ,canvas.width,canvas.height)
     ctx.fillStyle = "rgb(250, 250, 250)"
     if (firstCome) {
       ctx.font = "36px Helvetica"
@@ -259,7 +263,7 @@ object NetGameHolder extends js.JSApp {
     cacheCtx.translate(MyBoundary.w / 2, MyBoundary.h / 2)
     cacheCtx.scale(1/myProportion, 1/myProportion)
     cacheCtx.translate(-MyBoundary.w / 2, -MyBoundary.h / 2)
-    cacheCtx.drawImage(canvasPic,0 + deviationX, 0 + deviationY,Boundary.w,Boundary.h)
+    //cacheCtx.drawImage(canvasPic,0 + deviationX, 0 + deviationY,Boundary.w,Boundary.h)
 
     mapCtx.clearRect(0,0,mapCanvas.width,mapCanvas.height)
     mapCtx.globalAlpha=0.2
@@ -297,7 +301,7 @@ object NetGameHolder extends js.JSApp {
 			
       var step = snake.speed.toInt * period / Protocol.frameRate - snake.extend
       var tail = snake.tail
-      var joints = snake.joints.enqueue(snake.head)
+      var joints = snake.joints.enqueue(Point(x.toInt,y.toInt))
       while(step > 0) {
         val distance = tail.distance(joints.dequeue._1)
         if(distance >= step) { //尾巴在移动到下一个节点前就需要停止。
@@ -310,10 +314,24 @@ object NetGameHolder extends js.JSApp {
           joints = joints.dequeue._2
         }
       }
-
-      cacheCtx.fillStyle = snake.color
+      println(joints)
+      joints = joints.reverse.enqueue(tail)
       mapCtx.fillStyle = Color.White.toString()
-      cacheCtx.shadowBlur= 0
+
+      cacheCtx.beginPath()
+      cacheCtx.strokeStyle = snake.color
+      cacheCtx.shadowBlur= 20
+      cacheCtx.shadowColor= snake.color
+      cacheCtx.lineWidth = square * 2
+      cacheCtx.moveTo( joints(0).x + deviationX, joints(0).y + deviationY)
+ //     cacheCtx.lineTo(joints(1).x + deviationX,joints(1).y + deviationY)
+        for(i<- 1 until  joints.length){
+          cacheCtx.lineTo(joints(i).x  + deviationX, joints(i ).y+ deviationY )
+      }
+
+      cacheCtx.stroke()
+      cacheCtx.closePath()
+ /*
       if(joints.length > 0){
         joints.foreach{ s =>
           cacheCtx.fillRect(s.x- square + deviationX, s.y - square + deviationY, square * 2,square * 2)
@@ -368,7 +386,7 @@ object NetGameHolder extends js.JSApp {
         }
 
       }
-
+*/
       // 头部信息
       if(snake.speed > fSpeed +1){
         cacheCtx.shadowBlur= 5
@@ -394,6 +412,7 @@ object NetGameHolder extends js.JSApp {
     //画边界
     cacheCtx.fillStyle = MyColors.boundaryColor
     cacheCtx.shadowBlur = 5
+    cacheCtx.shadowColor= "#FFFFFF"
     cacheCtx.fillRect(0 + deviationX, 0 + deviationY, Boundary.w, boundaryWidth)
     cacheCtx.fillRect(0 + deviationX, 0 + deviationY, boundaryWidth, Boundary.h)
     cacheCtx.fillRect(0+ deviationX, Boundary.h + deviationY, Boundary.w, boundaryWidth)
@@ -469,7 +488,7 @@ object NetGameHolder extends js.JSApp {
     }
 
     ctx.font = "10px Verdana"
-    ctx.fillStyle = "#009393"
+    ctx.fillStyle = "#024747"
     ctx.fillRect(0, 0 ,canvas.width,canvas.height)
     ctx.drawImage(cacheCanvas,0,0)
 

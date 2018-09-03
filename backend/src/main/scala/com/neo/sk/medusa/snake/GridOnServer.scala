@@ -38,14 +38,14 @@ class GridOnServer(override val boundary: Point) extends Grid {
   def randomColor() = {
     val a = random.nextInt(7)
     val color = a match {
-      case 0 => "#FF0033"
-      case 1 => "#FF6633"
-      case 2 => "#FF3399"
-      case 3 => "#FFFF33"
-      case 4 => "#66CCFF"
-      case 5 => "#33FFCC"
-      case 6 => "#6633FF"
-      case _ => "#FFFFFF"
+      case 0 => "rgba(255, 0, 51, 1)"
+      case 1 => "rgba(255, 102, 51,1)"
+      case 2 => "rgba(255, 51, 153, 1)"
+      case 3 => "rgba(255, 255, 51, 1)"
+      case 4 => "rgba(102, 204, 255, 1)"
+      case 5 => "rgba(51, 255, 204, 1)"
+      case 6 => "rgba(102, 51, 255, 1)"
+      case _ => "rgba(255, 255, 255, 1)"
     }
     println(a)
     println(color)
