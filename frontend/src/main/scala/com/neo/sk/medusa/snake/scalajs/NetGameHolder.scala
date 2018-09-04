@@ -331,7 +331,6 @@ object NetGameHolder extends js.JSApp {
       cacheCtx.shadowColor= snake.color
       cacheCtx.lineWidth = square * 2
       cacheCtx.moveTo(joints(0).x + deviationX, joints(0).y + deviationY)
- //     cacheCtx.lineTo(joints(1).x + deviationX,joints(1).y + deviationY)
         for(i <- 1 until joints.length) {
 					cacheCtx.lineTo(joints(i).x + deviationX, joints(i).y + deviationY)
 				}
