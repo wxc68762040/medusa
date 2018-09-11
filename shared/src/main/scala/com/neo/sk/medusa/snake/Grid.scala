@@ -55,7 +55,7 @@ trait Grid {
   def addActionWithFrame(id: Long, keyCode: Int, frame: Long) = {
     val map = actionMap.getOrElse(frame, Map.empty)
     val tmp = map + (id -> keyCode)
-    info(s"add $keyCode at ${frameCount + Protocol.operateDelay}")
+    info(s"add $keyCode at $frame")
     actionMap += (frame -> tmp)
   }
 
