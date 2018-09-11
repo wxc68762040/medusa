@@ -657,6 +657,7 @@ object NetGameHolder extends js.JSApp {
       val data = dataOpt.get
       grid.actionMap = grid.actionMap.filterKeys(_ >= data.frameCount - 1 - advanceFrame)
       val presentFrame = grid.frameCount
+      println(s"sync frame${grid.frameCount}")
       grid.frameCount = data.frameCount
       grid.snakes = data.snakes.map(s => s.id -> s).toMap
       grid.grid = grid.grid.filter { case (_, spot) =>
