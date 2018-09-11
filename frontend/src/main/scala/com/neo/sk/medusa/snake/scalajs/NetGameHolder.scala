@@ -655,7 +655,7 @@ object NetGameHolder extends js.JSApp {
   def sync(dataOpt: scala.Option[Protocol.GridDataSync]) = {
     if(dataOpt.nonEmpty) {
       val data = dataOpt.get
-//      grid.actionMap = grid.actionMap.filterKeys(_ >= data.frameCount - 1 - advanceFrame)
+      grid.actionMap = grid.actionMap.filterKeys(_ >= data.frameCount - 1 - advanceFrame)
       val presentFrame = grid.frameCount
       grid.frameCount = data.frameCount
       grid.snakes = data.snakes.map(s => s.id -> s).toMap
