@@ -321,7 +321,7 @@ object NetGameHolder extends js.JSApp {
           joints = joints.dequeue._2
         }
       }
-      println(joints)
+//      println(joints)
       joints = joints.reverse.enqueue(tail)
       mapCtx.fillStyle = Color.White.toString()
 
