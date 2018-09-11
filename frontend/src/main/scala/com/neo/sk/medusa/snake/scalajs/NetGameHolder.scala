@@ -321,7 +321,6 @@ object NetGameHolder extends js.JSApp {
           joints = joints.dequeue._2
         }
       }
-//      println(joints)
       joints = joints.reverse.enqueue(tail)
       mapCtx.fillStyle = Color.White.toString()
 
@@ -601,7 +600,6 @@ object NetGameHolder extends js.JSApp {
                   if(!grid.init) {
                     grid.init = true
                     val timeout = 100 - (System.currentTimeMillis() - data.timestamp) % 100
-//                    println(s"delayTime: ${100 - timeout}")
                     dom.window.setTimeout(() => startLoop(), timeout)
                   }
                   syncData = Some(data)
@@ -657,8 +655,6 @@ object NetGameHolder extends js.JSApp {
       val data = dataOpt.get
       grid.actionMap = grid.actionMap.filterKeys(_ >= data.frameCount - 1 - advanceFrame)
       val presentFrame = grid.frameCount
-      println(s"sync  front frame${grid.frameCount}  get frame${data.frameCount}")
-      println(s"mySnake direction ${data.snakes.filter(_.id == myId).map(_.direction)}")
       grid.frameCount = data.frameCount
       grid.snakes = data.snakes.map(s => s.id -> s).toMap
       grid.grid = grid.grid.filter { case (_, spot) =>

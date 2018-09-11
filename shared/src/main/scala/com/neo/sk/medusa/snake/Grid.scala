@@ -55,7 +55,6 @@ trait Grid {
   def addActionWithFrame(id: Long, keyCode: Int, frame: Long) = {
     val map = actionMap.getOrElse(frame, Map.empty)
     val tmp = map + (id -> keyCode)
-    info(s"add $keyCode at $frame")
     actionMap += (frame -> tmp)
   }
 
@@ -65,10 +64,11 @@ trait Grid {
       updateSnakes()
     }
     updateSpots(false)
-    actionMap -= (frameCount - Protocol.advanceFrame)
-    if(!isSynced) {
-      frameCount += 1
+    if(isSynced) {
+      frameCount -= 1
     }
+    actionMap -= (frameCount - Protocol.advanceFrame)
+    frameCount += 1
   }
 
   def countBody(): Unit

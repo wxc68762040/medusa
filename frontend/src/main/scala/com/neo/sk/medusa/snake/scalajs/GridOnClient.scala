@@ -34,10 +34,10 @@ class GridOnClient(override val boundary: Point) extends Grid {
     val keyCode = actMap.get(snake.id)
     val newDirection = {
       val keyDirection = keyCode match {
-        case Some(KeyEvent.VK_LEFT) => println(s"get key: left, frame: $frameCount"); Point(-1, 0)
-        case Some(KeyEvent.VK_RIGHT) => println(s"get key: right, frame: $frameCount"); Point(1, 0)
-        case Some(KeyEvent.VK_UP) => println(s"get key: up, frame: $frameCount"); Point(0, -1)
-        case Some(KeyEvent.VK_DOWN) => println(s"get key: down, frame: $frameCount"); Point(0, 1)
+        case Some(KeyEvent.VK_LEFT) => Point(-1, 0)
+        case Some(KeyEvent.VK_RIGHT) => Point(1, 0)
+        case Some(KeyEvent.VK_UP) => Point(0, -1)
+        case Some(KeyEvent.VK_DOWN) => Point(0, 1)
         case _ => snake.direction
       }
       if (keyDirection + snake.direction != Point(0, 0)) {
