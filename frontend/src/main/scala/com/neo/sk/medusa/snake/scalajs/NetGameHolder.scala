@@ -658,6 +658,7 @@ object NetGameHolder extends js.JSApp {
       grid.actionMap = grid.actionMap.filterKeys(_ >= data.frameCount - 1 - advanceFrame)
       val presentFrame = grid.frameCount
       println(s"sync  front frame${grid.frameCount}  get frame${data.frameCount}")
+      println(s"mySnake direction ${data.snakes.filter(_.id == myId).map(_.direction)}")
       grid.frameCount = data.frameCount
       grid.snakes = data.snakes.map(s => s.id -> s).toMap
       grid.grid = grid.grid.filter { case (_, spot) =>
@@ -674,7 +675,6 @@ object NetGameHolder extends js.JSApp {
       val mySnakeOpt = grid.snakes.find(_._1 == myId)
       if(mySnakeOpt.nonEmpty) {
         var mySnake = mySnakeOpt.get._2
-        println(s"mySnake direction ${mySnake.direction}")
         for(i <- advanceFrame to 1 by -1) {
           grid.updateASnake(mySnake, grid.actionMap.getOrElse(data.frameCount - i, Map.empty)) match {
             case Right(snake) =>
