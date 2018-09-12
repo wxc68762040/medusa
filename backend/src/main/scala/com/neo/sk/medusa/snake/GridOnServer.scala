@@ -199,7 +199,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
         case _ => false
       }
     }
-    if(newHead.x < 0 + square || newHead.y < 0 + square || newHead.x  > Boundary.w - square|| newHead.y > Boundary.h-square) {
+    if(newHead.x < 0 + square + boundaryWidth || newHead.y < 0 + square + boundaryWidth || newHead.x  > Boundary.w - square|| newHead.y > Boundary.h-square) {
       println(s"snake[${snake.id}] hit wall.")
       dead = Point(0, 0) :: dead
     }

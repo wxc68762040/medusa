@@ -306,10 +306,22 @@ object NetGameHolder extends js.JSApp {
       val id = snake.id
       val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
       val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
+
+      val newHeadX = x match {
+        case x if x < 0 => 0
+        case x if x > Boundary.w => Boundary.w
+        case _ => x
+      }
+
+      val newHeadY = y match {
+        case y if y < 0 => 0
+        case y if y > Boundary.h => Boundary.h
+        case _ => y
+      }
 			
       var step = snake.speed.toInt * period / Protocol.frameRate - snake.extend
       var tail = snake.tail
-      var joints = snake.joints.enqueue(Point(x.toInt,y.toInt))
+      var joints = snake.joints.enqueue(Point(newHeadX.toInt,newHeadY.toInt))
       while(step > 0) {
         val distance = tail.distance(joints.dequeue._1)
         if(distance >= step) { //尾巴在移动到下一个节点前就需要停止。
