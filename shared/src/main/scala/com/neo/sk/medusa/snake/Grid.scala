@@ -126,6 +126,14 @@ trait Grid {
     p
   }
   
+  def getSafeDirection(p: Point) = {
+    val down = (p.y, Point(0, 1))
+    val up = (boundary.y - p.y, Point(0, -1))
+    val right = (p.x, Point(1, 0))
+    val left = (boundary.x - p.x, Point(-1, 0))
+    List(down, up, right, left).minBy(_._1)._2
+  }
+  
   def updateSnakes():Unit
 
   def updateASnake(snake: SnakeInfo, actMap: Map[Long, Int]): Either[Long, SnakeInfo]
