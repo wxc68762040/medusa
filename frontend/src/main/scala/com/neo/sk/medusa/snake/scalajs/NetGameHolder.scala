@@ -49,7 +49,6 @@ object NetGameHolder extends js.JSApp {
   var eatenApples  = Map[Long, List[Ap]]()
   var fpsCounter = 0
   var fps = 0.0
-  var addExtend = 0
 
   val grid = new GridOnClient(bounds)
 
@@ -183,8 +182,8 @@ object NetGameHolder extends js.JSApp {
                 grid.grid -= Point(apple.x, apple.y)
                 if (apple.appleType != FoodType.intermediate) {
                   val newLength = snake.length + apple.score
-                  val newHead = snake.head + snake.direction * apple.score
-                  val newSnakeInfo = snake.copy(length = newLength, head = newHead)
+                  val newExtend = snake.extend + apple.score
+                  val newSnakeInfo = snake.copy(length = newLength, extend = newExtend)
                   grid.snakes += (snake.id -> newSnakeInfo)
                 }
                 val nextLocOpt = Point(apple.x, apple.y) pathTo snake.head
@@ -342,7 +341,7 @@ object NetGameHolder extends js.JSApp {
       cacheCtx.shadowBlur= 20
       cacheCtx.shadowColor= snake.color
       cacheCtx.lineWidth = square * 2
-      cacheCtx.moveTo(joints(0).x + deviationX, joints(0).y + deviationY)
+      cacheCtx.moveTo(joints.head.x + deviationX, joints.head.y + deviationY)
         for(i <- 1 until joints.length) {
 					cacheCtx.lineTo(joints(i).x + deviationX, joints(i).y + deviationY)
 				}
@@ -353,7 +352,7 @@ object NetGameHolder extends js.JSApp {
       if(snake.id != maxId && snake.id == myId){
         mapCtx.beginPath()
         mapCtx.lineWidth = 2
-        mapCtx.moveTo(joints(0).x * LittleMap.w / Boundary.w, joints(0).y * LittleMap.h / Boundary.h)
+        mapCtx.moveTo(joints.head.x * LittleMap.w / Boundary.w, joints.head.y * LittleMap.h / Boundary.h)
         for(i <- 1 until joints.length) {
           mapCtx.lineTo(joints(i).x * LittleMap.w / Boundary.w, joints(i).y * LittleMap.h / Boundary.h)
         }
