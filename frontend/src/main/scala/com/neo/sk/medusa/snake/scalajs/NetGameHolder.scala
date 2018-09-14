@@ -179,10 +179,10 @@ object NetGameHolder extends js.JSApp {
             apples = applesOpt.get
             if (apples.nonEmpty) {
               apples = apples.map { apple =>
-                grid.grid -= Point(apple.x, apple.y)
-                if (apple.appleType != FoodType.intermediate) {
-                  val newLength = snake.length + apple.score
-                  val newExtend = snake.extend + apple.score
+                grid.grid -= Point(apple.apple.x, apple.apple.y)
+                if (apple.apple.appleType != FoodType.intermediate) {
+                  val newLength = snake.length + apple.apple.score
+                  val newExtend = snake.extend + apple.apple.score
                   val newSnakeInfo = snake.copy(length = newLength, extend = newExtend)
                   grid.snakes += (snake.id -> newSnakeInfo)
                 }
