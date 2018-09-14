@@ -46,7 +46,7 @@ object NetGameHolder extends js.JSApp {
   var nextAnimation = 0.0 //保存requestAnimationFrame的ID
   var gameLoopControl = 0 //保存gameLoop的setInterval的ID
   var myProportion = 1.0
-  var eatenApples  = Map[Long, List[Ap]]()
+  var eatenApples  = Map[Long, List[AppleWithFrame]]()
   var fpsCounter = 0
   var fps = 0.0
   var addExtend = 0
@@ -175,30 +175,30 @@ object NetGameHolder extends js.JSApp {
         if (snakeOpt.isDefined) {
           val snake = snakeOpt.get
           val applesOpt = eatenApples.get(info._1)
-          var apples = List.empty[Ap]
+          var apples = List.empty[AppleWithFrame]
           if (applesOpt.isDefined) {
             apples = applesOpt.get
             if (apples.nonEmpty) {
               apples = apples.map { apple =>
-                grid.grid -= Point(apple.x, apple.y)
-                if (apple.appleType != FoodType.intermediate) {
-                  val newLength = snake.length + apple.score
-                  val newHead = snake.head + snake.direction * apple.score
+                grid.grid -= Point(apple.apple.x, apple.apple.y)
+                if (apple.apple.appleType != FoodType.intermediate) {
+                  val newLength = snake.length + apple.apple.score
+                  val newHead = snake.head + snake.direction * apple.apple.score
                   val newSnakeInfo = snake.copy(length = newLength, head = newHead)
                   grid.snakes += (snake.id -> newSnakeInfo)
                 }
-                val nextLocOpt = Point(apple.x, apple.y) pathTo snake.head
+                val nextLocOpt = Point(apple.apple.x, apple.apple.y).pathTo(snake.head, Some(apple.frameCount, grid.frameCount))
                 if (nextLocOpt.nonEmpty) {
                   val nextLoc = nextLocOpt.get
                   grid.grid.get(nextLoc) match {
-                    case Some(Body(_, _)) => invalidApple
+                    case Some(Body(_, _)) => AppleWithFrame(apple.frameCount, invalidApple)
                     case _ =>
-                      val nextApple = Apple(apple.score, apple.life, FoodType.intermediate)
+                      val nextApple = Apple(apple.apple.score, apple.apple.life, FoodType.intermediate)
                       grid.grid += (nextLoc -> nextApple)
-                      Ap(apple.score, apple.life, FoodType.intermediate, nextLoc.x, nextLoc.y)
+                      AppleWithFrame(apple.frameCount, Ap(apple.apple.score, apple.apple.life, FoodType.intermediate, nextLoc.x, nextLoc.y))
                   }
-                } else invalidApple
-              }.filterNot(_ == invalidApple)
+                } else AppleWithFrame(apple.frameCount, invalidApple)
+              }.filterNot(a => a.apple == invalidApple)
               eatenApples += (snake.id -> apples)
             }
           }

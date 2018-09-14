@@ -56,13 +56,14 @@ package object snake {
 			}
     }
 
-    def pathTo(other: Point): Option[Point] = {
+    def pathTo(other: Point, speedOp: Option[(Long, Long)] = None): Option[Point] = {
       import math._
 
       val (x0, x1) = if(x > other.x) (other.x, x) else (x, other.x)
       val (y0, y1) = if(y > other.y) (other.y, y) else (y, other.y)
 
       val distance = sqrt(pow(x1 - x0, 2) + pow(y1 - y0, 2))
+      val frameDiff = if(speedOp.nonEmpty) Some(speedOp.get._2 - speedOp.get._1) else None
 
       def step(distance: Int) = {
         distance match {
@@ -79,7 +80,7 @@ package object snake {
         }
       }
 
-      if (distance <= 16) {
+      if (distance <= 16 || (frameDiff.nonEmpty && frameDiff.get > 15)) {
         None
       } else  {
         val nextX = if (x > other.x) x - step(x - other.x) else x + step(other.x - x)
@@ -232,13 +233,18 @@ package object snake {
 
   case class EatFoodInfo(
     snakeId: Long,
-    apples: List[Ap]
+    apples: List[AppleWithFrame]
   )
 
   case class SpeedUpInfo(
     snakeId: Long,
     speedUpOrNot: Boolean,
     newSpeed: Double
+  )
+
+  case class AppleWithFrame(
+    frameCount: Long,
+    apple: Ap
   )
 
 

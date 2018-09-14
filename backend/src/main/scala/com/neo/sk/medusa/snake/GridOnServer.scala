@@ -25,7 +25,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
   private[this] var waitingJoin = Map.empty[Long, (String, Long)]
   private[this] var feededApples: List[Ap] = Nil
   private[this] var deadBodies: List[Ap] = Nil
-  private [this] var eatenApples = Map.empty[Long, List[Ap]]
+  private [this] var eatenApples = Map.empty[Long, List[AppleWithFrame]]
   private [this] var speedUpInfo = List.empty[SpeedUpInfo]
 
 
@@ -356,7 +356,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
         case _ => //do nothing
       }
     }
-    eatenApples += (snakeId -> apples)
+    eatenApples += (snakeId -> apples.map(a => AppleWithFrame(frameCount, a)))
     Some((totalScore, newSpeed, speedOrNot))
   }
 
@@ -416,7 +416,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
   def getFeededApple: List[Ap] = feededApples ::: deadBodies
 
-  def getEatenApples: Map[Long, List[Ap]] = eatenApples
+  def getEatenApples: Map[Long, List[AppleWithFrame]] = eatenApples
 
   def getSpeedUpInfo: List[SpeedUpInfo] = speedUpInfo
 
