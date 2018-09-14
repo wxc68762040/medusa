@@ -359,23 +359,23 @@ object NetGameHolder extends js.JSApp {
       }
 
       // 头部信息
-      if(! (snake.head.x  <  0 || snake.head.y < 0 || snake.head.x  > Boundary.w  || snake.head.y > Boundary.h ) ){
-        if(snake.speed > fSpeed +1){
-          cacheCtx.shadowBlur= 5
-          cacheCtx.shadowColor= "#FFFFFF"
+      if(snake.head.x >= 0 && snake.head.y >= 0 && snake.head.x <= Boundary.w && snake.head.y <= Boundary.h) {
+        if (snake.speed > fSpeed + 1) {
+          cacheCtx.shadowBlur = 5
+          cacheCtx.shadowColor = "#FFFFFF"
           cacheCtx.fillStyle = MyColors.speedUpHeader
-          cacheCtx.fillRect(x - 1.5 * square + deviationX, y - 1.5 * square + deviationY, square * 3 , square * 3)
+          cacheCtx.fillRect(x - 1.5 * square + deviationX, y - 1.5 * square + deviationY, square * 3, square * 3)
         }
         cacheCtx.fillStyle = MyColors.myHeader
         if (id == uid) {
-          cacheCtx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 , square * 2)
-          if(maxId != id){
+          cacheCtx.fillRect(x - square + deviationX, y - square + deviationY, square * 2, square * 2)
+          if (maxId != id) {
             mapCtx.globalAlpha = 1
             mapCtx.fillStyle = MyColors.myHeader
             mapCtx.fillRect((x * LittleMap.w) / Boundary.w, (y * LittleMap.h) / Boundary.h, 2, 2)
           }
         } else {
-          cacheCtx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 , square * 2)
+          cacheCtx.fillRect(x - square + deviationX, y - square + deviationY, square * 2, square * 2)
         }
       }
 
