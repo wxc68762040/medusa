@@ -49,6 +49,8 @@ object NetGameHolder extends js.JSApp {
   var eatenApples  = Map[Long, List[AppleWithFrame]]()
   var fpsCounter = 0
   var fps = 0.0
+  var ping = 0.0
+  var netInfoBasicTime = 0L
 
   val grid = new GridOnClient(bounds)
 
@@ -146,8 +148,8 @@ object NetGameHolder extends js.JSApp {
   }
 
   def gameLoop(): Unit = {
-    fps = fpsCounter / ((System.currentTimeMillis() - basicTime) / 1000.0)
-    fpsCounter = 0
+//    fps = fpsCounter / ((System.currentTimeMillis() - basicTime) / 1000.0)
+//    fpsCounter = 0
     basicTime = System.currentTimeMillis()
     if (wsSetup) {
       if (!justSynced) {
@@ -420,8 +422,8 @@ object NetGameHolder extends js.JSApp {
         drawTextLine(cacheCtx, s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 0, baseLine)
         drawTextLine(cacheCtx, s"your kill = ${mySnake.kill}", leftBegin, 1, baseLine)
         drawTextLine(cacheCtx, s"your length = ${mySnake.length} ", leftBegin, 2, baseLine)
-        drawTextLine(cacheCtx, s"fps: ${fps.formatted("%.2f")}", leftBegin, 3, baseLine)
-        drawTextLine(cacheCtx, s"roomId: ${myRoomId}", leftBegin, 4, baseLine)
+        drawTextLine(cacheCtx, s"fps: ${fps.formatted("%.2f")} ping:${ping.formatted("%.2f")}", leftBegin, 3, baseLine)
+        drawTextLine(cacheCtx, s"roomId: $myRoomId", leftBegin, 4, baseLine)
 
       case None =>
         if(firstCome) {
@@ -476,13 +478,25 @@ object NetGameHolder extends js.JSApp {
 
   
   val sendBuffer = new MiddleBufferInJs(409600) //sender buffer
+
   
   def joinGame(name: String): Unit = {
     joinButton.disabled = true
     val playground = dom.document.getElementById("playground")
     playground.innerHTML = s"Trying to join game as '$name'..."
     val gameStream = new WebSocket(getWebSocketUri(dom.document, name))
+    def refreshNetInfo(): Unit = {
+      fps = fpsCounter / ((System.currentTimeMillis() - netInfoBasicTime) / 1000.0)
+      fpsCounter = 0
+      netInfoBasicTime = System.currentTimeMillis()
+
+      val pingMsg: Protocol.UserAction = NetTest(myId, netInfoBasicTime)
+      pingMsg.fillMiddleBuffer(sendBuffer) //encode msg
+      val ab: ArrayBuffer = sendBuffer.result() //get encoded data.
+      gameStream.send(ab) // send data.
+    }
     gameStream.onopen = { (event0: Event) =>
+      dom.window.setInterval(() => refreshNetInfo(), Protocol.netInfoRate)
       drawGameOn()
       playground.insertBefore(p("Game connection was successful!"), playground.firstChild)
       wsSetup = true
@@ -572,7 +586,8 @@ object NetGameHolder extends js.JSApp {
                   justSynced = true
                 case Protocol.NetDelayTest(createTime) =>
                   val receiveTime = System.currentTimeMillis()
-                  val m = s"Net Delay Test: createTime=$createTime, receiveTime=$receiveTime, twoWayDelay=${receiveTime - createTime}"
+                  ping = receiveTime - createTime
+                  val m = s"Net Delay Test: createTime=$createTime, receiveTime=$receiveTime, twoWayDelay=${receiveTime - createTime}, ping: $ping"
                   writeToArea(m)
                 case Protocol.DeadInfo(myName,myLength,myKill) =>
                   deadName=myName
