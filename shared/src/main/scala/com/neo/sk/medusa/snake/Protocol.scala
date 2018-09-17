@@ -59,7 +59,7 @@ object Protocol {
   case class TextInfo(id: Long, info: String) extends UserAction
   
   
-  val frameRate = 150
+  val frameRate = 100
 
   val square = 4
 
