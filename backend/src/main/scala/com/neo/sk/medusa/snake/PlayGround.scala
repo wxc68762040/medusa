@@ -75,7 +75,7 @@ object PlayGround {
           subscribers += (id -> subscriber)
           roomMap(roomId)._2.addSnake(id, name,roomId)
           dispatchTo(id, Protocol.Id(id))
-          dispatch(Protocol.NewSnakeJoined(id, name),roomId)
+          dispatch(Protocol.NewSnakeJoined(id, name, roomId),roomId)
           dispatch(roomMap(roomId)._2.getGridSyncData,roomId)
           
         case r@Left(id, name) =>

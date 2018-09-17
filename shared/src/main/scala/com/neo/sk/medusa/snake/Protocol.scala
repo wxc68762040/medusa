@@ -44,7 +44,7 @@ object Protocol {
 
   case class TextMsg(msg: String) extends GameMessage
   case class Id(id: Long) extends GameMessage
-  case class NewSnakeJoined(id: Long, name: String) extends GameMessage
+  case class NewSnakeJoined(id: Long, name: String, roomId: Long) extends GameMessage
   case class SnakeAction(id: Long, keyCode: Int, frame: Long) extends GameMessage
   case class SnakeLeft(id: Long, name: String) extends GameMessage
   case class Ranks(currentRank: List[Score], historyRank: List[Score]) extends GameMessage

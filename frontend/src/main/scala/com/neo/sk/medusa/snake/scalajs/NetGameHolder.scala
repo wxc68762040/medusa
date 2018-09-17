@@ -55,6 +55,7 @@ object NetGameHolder extends js.JSApp {
   var firstCome = true
   var wsSetup = false
   var justSynced = false
+  var myRoomId = 0
 
   val watchKeys = Set(
     KeyCode.Space,
@@ -359,7 +360,7 @@ object NetGameHolder extends js.JSApp {
       }
 
       // 头部信息
-      if(snake.head.x >= 0 && snake.head.y >= 0 && snake.head.x <= Boundary.w && snake.head.y <= Boundary.h) {
+      if(snake.head.x >= 0 + 2*square && snake.head.y >= 0 + 2*square && snake.head.x <= Boundary.w - 2*square && snake.head.y <= Boundary.h - 2*square) {
         if (snake.speed > fSpeed + 1) {
           cacheCtx.shadowBlur = 5
           cacheCtx.shadowColor = "#FFFFFF"
@@ -418,6 +419,7 @@ object NetGameHolder extends js.JSApp {
         drawTextLine(cacheCtx, s"your kill = ${mySnake.kill}", leftBegin, 1, baseLine)
         drawTextLine(cacheCtx, s"your length = ${mySnake.length} ", leftBegin, 2, baseLine)
         drawTextLine(cacheCtx, s"fps: ${fps.formatted("%.2f")}", leftBegin, 3, baseLine)
+        drawTextLine(cacheCtx, s"roomId: ${myRoomId}", leftBegin, 4, baseLine)
 
       case None =>
         if(firstCome) {
@@ -526,7 +528,9 @@ object NetGameHolder extends js.JSApp {
               case Right(data) => data match {
                 case Protocol.Id(id) => myId = id
                 case Protocol.TextMsg(message) => writeToArea(s"MESSAGE: $message")
-                case Protocol.NewSnakeJoined(id, user) => writeToArea(s"$user joined!")
+                case Protocol.NewSnakeJoined(id, user, roomId) =>
+                  myRoomId = roomId.toInt + 1
+                  writeToArea(s"$user joined!")
                 case Protocol.SnakeLeft(id, user) => writeToArea(s"$user left!")
                 case Protocol.SnakeAction(id, keyCode, frame) =>
                   if(id != myId) {
