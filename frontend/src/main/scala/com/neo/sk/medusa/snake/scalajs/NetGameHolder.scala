@@ -49,6 +49,9 @@ object NetGameHolder extends js.JSApp {
   var eatenApples  = Map[Long, List[AppleWithFrame]]()
   var fpsCounter = 0
   var fps = 0.0
+  var drawNum = 0
+  var drawTime = 0l
+  var drawTimeAverage = 0
 
   val grid = new GridOnClient(bounds)
 
@@ -216,7 +219,17 @@ object NetGameHolder extends js.JSApp {
     fpsCounter += 1
     if (wsSetup) {
       val data = grid.getGridSyncData
+      val timeNow = System.currentTimeMillis()
       drawGrid(myId, data)
+      val drawOnceTime = System.currentTimeMillis() - timeNow
+      drawTimeAverage = drawOnceTime.toInt
+//      drawTime += drawOnceTime
+//      drawNum +=1
+//      if(drawNum > 120){
+//        drawTimeAverage = drawTime / drawNum
+//        drawTime = 0
+//        drawNum = 0
+//      }
     } else {
       drawGameOff()
     }
@@ -308,21 +321,21 @@ object NetGameHolder extends js.JSApp {
       val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
       val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
 
-      val newHeadX = x match {
-        case x if x < 0 => 0
-        case x if x > Boundary.w => Boundary.w
-        case _ => x
-      }
-
-      val newHeadY = y match {
-        case y if y < 0 => 0
-        case y if y > Boundary.h => Boundary.h
-        case _ => y
-      }
+//      val newHeadX = x match {
+//        case x if x < 0 => 0
+//        case x if x > Boundary.w => Boundary.w
+//        case _ => x
+//      }
+//
+//      val newHeadY = y match {
+//        case y if y < 0 => 0
+//        case y if y > Boundary.h => Boundary.h
+//        case _ => y
+//      }
 			
       var step = snake.speed.toInt * period / Protocol.frameRate - snake.extend
       var tail = snake.tail
-      var joints = snake.joints.enqueue(Point(newHeadX.toInt,newHeadY.toInt))
+      var joints = snake.joints.enqueue(Point(x.toInt,y.toInt))
       while(step > 0) {
         val distance = tail.distance(joints.dequeue._1)
         if(distance >= step) { //尾巴在移动到下一个节点前就需要停止。
@@ -421,7 +434,8 @@ object NetGameHolder extends js.JSApp {
         drawTextLine(cacheCtx, s"your kill = ${mySnake.kill}", leftBegin, 1, baseLine)
         drawTextLine(cacheCtx, s"your length = ${mySnake.length} ", leftBegin, 2, baseLine)
         drawTextLine(cacheCtx, s"fps: ${fps.formatted("%.2f")}", leftBegin, 3, baseLine)
-        drawTextLine(cacheCtx, s"roomId: ${myRoomId}", leftBegin, 4, baseLine)
+        drawTextLine(cacheCtx, s"drawTimeAverage: ${drawTimeAverage}", leftBegin, 4, baseLine)
+        drawTextLine(cacheCtx, s"roomId: ${myRoomId}", leftBegin, 5, baseLine)
 
       case None =>
         if(firstCome) {
@@ -439,7 +453,7 @@ object NetGameHolder extends js.JSApp {
     }
 
     cacheCtx.font = "12px Helvetica"
-    val currentRankBaseLine = 6
+    val currentRankBaseLine = 10
     var index = 0
     drawTextLine(cacheCtx,s" --- Current Rank --- ", leftBegin, index, currentRankBaseLine)
     currentRank.foreach { score =>
