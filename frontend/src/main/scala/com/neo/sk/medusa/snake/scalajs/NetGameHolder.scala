@@ -258,6 +258,7 @@ object NetGameHolder extends js.JSApp {
       myProportion += 0.001
     }
 
+
     val centerX = windowWidth/2
     val centerY = windowHight/2
     val myHead = if(snakes.exists(_.id == uid)) snakes.filter(_.id == uid).head.head + mySubFrameRevise else Point(centerX, centerY)
@@ -352,7 +353,8 @@ object NetGameHolder extends js.JSApp {
 
       if(snake.id != maxId && snake.id == myId){
         mapCtx.beginPath()
-        mapCtx.lineWidth = 2
+        val snakeWidth = square + snake.length * 0.05
+        mapCtx.lineWidth = snakeWidth
         mapCtx.moveTo(joints.head.x * LittleMap.w / Boundary.w, joints.head.y * LittleMap.h / Boundary.h)
         for(i <- 1 until joints.length) {
           mapCtx.lineTo(joints(i).x * LittleMap.w / Boundary.w, joints(i).y * LittleMap.h / Boundary.h)
