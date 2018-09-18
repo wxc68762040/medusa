@@ -153,7 +153,7 @@ package object snake {
             (y + squareWide, y + (length + squareWide) * direction.y)
 
         (for {
-          xs <- (x - squareWide to x + squareWide).filter(_ != x)
+          xs <- (x - squareWide to x + squareWide)
           ys <- yStart to yEnd
         } yield {
           Point(xs, ys)
@@ -167,7 +167,7 @@ package object snake {
 
         (for {
           xs <- xStart to xEnd
-          ys <- (y - squareWide to y + squareWide).filter(_ != y)
+          ys <- (y - squareWide to y + squareWide)
         } yield {
           Point(xs, ys)
         }).toList
