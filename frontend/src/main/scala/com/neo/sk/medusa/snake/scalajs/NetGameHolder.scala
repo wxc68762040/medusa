@@ -163,7 +163,7 @@ object NetGameHolder extends js.JSApp {
       }
     }
   }
-  
+
   def drawLoop(): Double => Unit = { _ =>
     draw()
     nextAnimation = dom.window.requestAnimationFrame(drawLoop())
@@ -433,7 +433,7 @@ object NetGameHolder extends js.JSApp {
         drawTextLine(cacheCtx, s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 0, baseLine)
         drawTextLine(cacheCtx, s"your kill = ${mySnake.kill}", leftBegin, 1, baseLine)
         drawTextLine(cacheCtx, s"your length = ${mySnake.length} ", leftBegin, 2, baseLine)
-        drawTextLine(cacheCtx, s"fps: ${netInfoHandler.fps.formatted("%.2f")} ping:${netInfoHandler.ping.formatted("%.2f")}", leftBegin, 3, baseLine)
+        drawTextLine(cacheCtx, s"fps: ${netInfoHandler.fps.formatted("%.2f")} ping:${netInfoHandler.ping.formatted("%.2f")} dataps:${netInfoHandler.dataps.formatted("%.2f")}", leftBegin, 3, baseLine)
 //        drawTextLine(cacheCtx, s"fps: ${fps.formatted("%.2f")}", leftBegin, 3, baseLine)
         drawTextLine(cacheCtx, s"drawTimeAverage: ${netInfoHandler.drawTimeAverage}", leftBegin, 4, baseLine)
         drawTextLine(cacheCtx, s"roomId: $myRoomId", leftBegin, 5, baseLine)
@@ -514,7 +514,7 @@ object NetGameHolder extends js.JSApp {
         val pingMsg = netInfoHandler.refreshNetInfo()
         gameStream.send(pingMsg)
       }, Protocol.netInfoRate)
-
+      dom.window.setInterval(() => netInfoHandler.refreshDataInfo(),Protocol.dataCounterRate)
       drawGameOn()
       playground.insertBefore(p("Game connection was successful!"), playground.firstChild)
       wsSetup = true
@@ -549,6 +549,7 @@ object NetGameHolder extends js.JSApp {
     gameStream.onmessage = { (event: MessageEvent) =>
       event.data match {
         case blobMsg: Blob =>
+          netInfoHandler.dataCounter += blobMsg.size
           val fr = new FileReader()
           fr.readAsArrayBuffer(blobMsg)
           fr.onloadend = { _: Event =>
