@@ -49,6 +49,9 @@ object NetGameHolder extends js.JSApp {
   var eatenApples  = Map[Long, List[AppleWithFrame]]()
   var fpsCounter = 0
   var fps = 0.0
+  var dataCounter = 0.0
+  var dataps = 0.0
+  var dataCounterLoopControl = 0
   var drawNum = 0
   var drawTime = 0l
   var drawTimeAverage = 0
@@ -163,7 +166,12 @@ object NetGameHolder extends js.JSApp {
       }
     }
   }
-  
+
+  def dataCounterLoop(): Unit = {
+    dataps = dataCounter/10
+    dataCounter = 0
+  }
+
   def drawLoop(): Double => Unit = { _ =>
     draw()
     nextAnimation = dom.window.requestAnimationFrame(drawLoop())
@@ -433,7 +441,7 @@ object NetGameHolder extends js.JSApp {
         drawTextLine(cacheCtx, s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 0, baseLine)
         drawTextLine(cacheCtx, s"your kill = ${mySnake.kill}", leftBegin, 1, baseLine)
         drawTextLine(cacheCtx, s"your length = ${mySnake.length} ", leftBegin, 2, baseLine)
-        drawTextLine(cacheCtx, s"fps: ${fps.formatted("%.2f")}", leftBegin, 3, baseLine)
+        drawTextLine(cacheCtx, s"fps: ${fps.formatted("%.2f")} dataps:${dataps.formatted("%.2f")}", leftBegin, 3, baseLine)
         drawTextLine(cacheCtx, s"drawTimeAverage: ${drawTimeAverage}", leftBegin, 4, baseLine)
         drawTextLine(cacheCtx, s"roomId: ${myRoomId}", leftBegin, 5, baseLine)
 
@@ -500,6 +508,8 @@ object NetGameHolder extends js.JSApp {
       drawGameOn()
       playground.insertBefore(p("Game connection was successful!"), playground.firstChild)
       wsSetup = true
+      dataCounterLoop()
+      dataCounterLoopControl = dom.window.setInterval(()=>dataCounterLoop(),Protocol.dataCounterRate)
       canvas.focus()
       canvas.onkeydown = {
         (e: dom.KeyboardEvent) => {
@@ -531,6 +541,7 @@ object NetGameHolder extends js.JSApp {
     gameStream.onmessage = { (event: MessageEvent) =>
       event.data match {
         case blobMsg: Blob =>
+          dataCounter += blobMsg.size
           val fr = new FileReader()
           fr.readAsArrayBuffer(blobMsg)
           fr.onloadend = { _: Event =>
