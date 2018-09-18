@@ -168,7 +168,7 @@ object NetGameHolder extends js.JSApp {
   }
 
   def dataCounterLoop(): Unit = {
-    dataps = dataCounter/10
+    dataps = dataCounter/(Protocol.dataCounterRate/1000)
     dataCounter = 0
   }
 
@@ -508,8 +508,7 @@ object NetGameHolder extends js.JSApp {
       drawGameOn()
       playground.insertBefore(p("Game connection was successful!"), playground.firstChild)
       wsSetup = true
-      dataCounterLoop()
-      dataCounterLoopControl = dom.window.setInterval(()=>dataCounterLoop(),Protocol.dataCounterRate)
+      dom.window.setInterval(()=>dataCounterLoop(),Protocol.dataCounterRate)
       canvas.focus()
       canvas.onkeydown = {
         (e: dom.KeyboardEvent) => {
