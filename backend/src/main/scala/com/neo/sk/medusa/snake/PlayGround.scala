@@ -112,7 +112,7 @@ object PlayGround {
             }
             
           case NetTest(id, createTime) =>
-            log.info(s"Net Test: createTime=$createTime")
+//            log.info(s"Net Test: createTime=$createTime")
             dispatchTo(id, Protocol.NetDelayTest(createTime))
 
           case _ =>

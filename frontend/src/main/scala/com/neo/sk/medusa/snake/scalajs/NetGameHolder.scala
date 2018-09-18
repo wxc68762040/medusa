@@ -47,10 +47,10 @@ object NetGameHolder extends js.JSApp {
   var gameLoopControl = 0 //保存gameLoop的setInterval的ID
   var myProportion = 1.0
   var eatenApples  = Map[Long, List[AppleWithFrame]]()
-  var fpsCounter = 0
-  var fps = 0.0
-  var ping = 0.0
-  var netInfoBasicTime = 0L
+//  var fpsCounter = 0
+//  var fps = 0.0
+//  var ping = 0.0
+//  var netInfoBasicTime = 0L
 
   val grid = new GridOnClient(bounds)
 
@@ -215,7 +215,7 @@ object NetGameHolder extends js.JSApp {
   }
 
   def draw(): Unit = {
-    fpsCounter += 1
+    netInfoHandler.fpsCounter += 1
     if (wsSetup) {
       val data = grid.getGridSyncData
       drawGrid(myId, data)
@@ -422,7 +422,7 @@ object NetGameHolder extends js.JSApp {
         drawTextLine(cacheCtx, s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 0, baseLine)
         drawTextLine(cacheCtx, s"your kill = ${mySnake.kill}", leftBegin, 1, baseLine)
         drawTextLine(cacheCtx, s"your length = ${mySnake.length} ", leftBegin, 2, baseLine)
-        drawTextLine(cacheCtx, s"fps: ${fps.formatted("%.2f")} ping:${ping.formatted("%.2f")}", leftBegin, 3, baseLine)
+        drawTextLine(cacheCtx, s"fps: ${netInfoHandler.fps.formatted("%.2f")} ping:${netInfoHandler.ping.formatted("%.2f")}", leftBegin, 3, baseLine)
         drawTextLine(cacheCtx, s"roomId: $myRoomId", leftBegin, 4, baseLine)
 
       case None =>
@@ -478,6 +478,7 @@ object NetGameHolder extends js.JSApp {
 
   
   val sendBuffer = new MiddleBufferInJs(409600) //sender buffer
+  val netInfoHandler = new NetInfoHandler()
 
   
   def joinGame(name: String): Unit = {
@@ -485,18 +486,22 @@ object NetGameHolder extends js.JSApp {
     val playground = dom.document.getElementById("playground")
     playground.innerHTML = s"Trying to join game as '$name'..."
     val gameStream = new WebSocket(getWebSocketUri(dom.document, name))
-    def refreshNetInfo(): Unit = {
-      fps = fpsCounter / ((System.currentTimeMillis() - netInfoBasicTime) / 1000.0)
-      fpsCounter = 0
-      netInfoBasicTime = System.currentTimeMillis()
-
-      val pingMsg: Protocol.UserAction = NetTest(myId, netInfoBasicTime)
-      pingMsg.fillMiddleBuffer(sendBuffer) //encode msg
-      val ab: ArrayBuffer = sendBuffer.result() //get encoded data.
-      gameStream.send(ab) // send data.
-    }
+//    def refreshNetInfo(): Unit = {
+//      fps = fpsCounter / ((System.currentTimeMillis() - netInfoBasicTime) / 1000.0)
+//      fpsCounter = 0
+//      netInfoBasicTime = System.currentTimeMillis()
+//
+//      val pingMsg: Protocol.UserAction = NetTest(myId, netInfoBasicTime)
+//      pingMsg.fillMiddleBuffer(sendBuffer) //encode msg
+//      val ab: ArrayBuffer = sendBuffer.result() //get encoded data.
+//      gameStream.send(ab) // send data.
+//    }
     gameStream.onopen = { (event0: Event) =>
-      dom.window.setInterval(() => refreshNetInfo(), Protocol.netInfoRate)
+      dom.window.setInterval(() => {
+        val pingMsg = netInfoHandler.refreshNetInfo()
+        gameStream.send(pingMsg)
+      }, Protocol.netInfoRate)
+
       drawGameOn()
       playground.insertBefore(p("Game connection was successful!"), playground.firstChild)
       wsSetup = true
@@ -586,9 +591,9 @@ object NetGameHolder extends js.JSApp {
                   justSynced = true
                 case Protocol.NetDelayTest(createTime) =>
                   val receiveTime = System.currentTimeMillis()
-                  ping = receiveTime - createTime
-                  val m = s"Net Delay Test: createTime=$createTime, receiveTime=$receiveTime, twoWayDelay=${receiveTime - createTime}, ping: $ping"
-                  writeToArea(m)
+                  netInfoHandler.ping = receiveTime - createTime
+//                  val m = s"Net Delay Test: createTime=$createTime, receiveTime=$receiveTime, twoWayDelay=${receiveTime - createTime}, ping: ${netInfoHandler.ping}"
+//                  writeToArea(m)
                 case Protocol.DeadInfo(myName,myLength,myKill) =>
                   deadName=myName
                   deadLength=myLength
