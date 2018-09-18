@@ -67,7 +67,7 @@ trait Grid {
     if(isSynced) {
       frameCount -= 1
     }
-    actionMap -= (frameCount - Protocol.advanceFrame)
+//    actionMap -= (frameCount - Protocol.advanceFrame)
     frameCount += 1
   }
 
