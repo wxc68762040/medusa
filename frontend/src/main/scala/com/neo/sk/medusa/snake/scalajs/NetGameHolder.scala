@@ -519,7 +519,7 @@ object NetGameHolder extends js.JSApp {
         val pingMsg = netInfoHandler.refreshNetInfo()
         gameStream.send(pingMsg)
       }, Protocol.netInfoRate)
-      dom.window.setInterval(() => netInfoHandler.refreshDataInfo(),Protocol.dataCounterRate)
+//      dom.window.setInterval(() => netInfoHandler.refreshDataInfo(),Protocol.dataCounterRate)
       drawGameOn()
       playground.insertBefore(p("Game connection was successful!"), playground.firstChild)
       wsSetup = true

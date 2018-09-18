@@ -32,16 +32,19 @@ class NetInfoHandler {
     fpsCounter = 0
     netInfoBasicTime = System.currentTimeMillis()
 
+    dataps = dataCounter/(Protocol.dataCounterRate/1000)
+    dataCounter = 0.0
+
     val pingMsg: Protocol.UserAction = NetTest(NetGameHolder.myId, netInfoBasicTime)
     pingMsg.fillMiddleBuffer(NetGameHolder.sendBuffer) //encode msg
     val ab: ArrayBuffer = NetGameHolder.sendBuffer.result() //get encoded data.
     ab
   }
 
-  def refreshDataInfo() :Unit = {
-    dataps = dataCounter/(Protocol.dataCounterRate/1000)
-    dataCounter = 0.0
-  }
+//  def refreshDataInfo() :Unit = {
+//    dataps = dataCounter/(Protocol.dataCounterRate/1000)
+//    dataCounter = 0.0
+//  }
 
 
 
