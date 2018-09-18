@@ -21,6 +21,7 @@ class NetInfoHandler {
   var fps = 0.0
   var ping = 0.0
   var netInfoBasicTime = 0L
+  var drawTimeAverage = 0
 
 //  dom.window.setInterval(() => refreshNetInfo(), Protocol.netInfoRate)
 

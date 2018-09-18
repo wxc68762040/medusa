@@ -49,9 +49,9 @@ object NetGameHolder extends js.JSApp {
   var eatenApples  = Map[Long, List[AppleWithFrame]]()
 //  var fpsCounter = 0
 //  var fps = 0.0
-  var drawNum = 0
-  var drawTime = 0l
-  var drawTimeAverage = 0
+//  var drawNum = 0
+//  var drawTime = 0l
+//  var drawTimeAverage = 0
 
   val grid = new GridOnClient(bounds)
 
@@ -222,7 +222,7 @@ object NetGameHolder extends js.JSApp {
       val timeNow = System.currentTimeMillis()
       drawGrid(myId, data)
       val drawOnceTime = System.currentTimeMillis() - timeNow
-      drawTimeAverage = drawOnceTime.toInt
+      netInfoHandler.drawTimeAverage = drawOnceTime.toInt
 //      drawTime += drawOnceTime
 //      drawNum +=1
 //      if(drawNum > 120){
@@ -434,10 +434,9 @@ object NetGameHolder extends js.JSApp {
         drawTextLine(cacheCtx, s"your kill = ${mySnake.kill}", leftBegin, 1, baseLine)
         drawTextLine(cacheCtx, s"your length = ${mySnake.length} ", leftBegin, 2, baseLine)
         drawTextLine(cacheCtx, s"fps: ${netInfoHandler.fps.formatted("%.2f")} ping:${netInfoHandler.ping.formatted("%.2f")}", leftBegin, 3, baseLine)
-        drawTextLine(cacheCtx, s"roomId: $myRoomId", leftBegin, 4, baseLine)
 //        drawTextLine(cacheCtx, s"fps: ${fps.formatted("%.2f")}", leftBegin, 3, baseLine)
-        drawTextLine(cacheCtx, s"drawTimeAverage: ${drawTimeAverage}", leftBegin, 4, baseLine)
-//        drawTextLine(cacheCtx, s"roomId: ${myRoomId}", leftBegin, 5, baseLine)
+        drawTextLine(cacheCtx, s"drawTimeAverage: ${netInfoHandler.drawTimeAverage}", leftBegin, 4, baseLine)
+        drawTextLine(cacheCtx, s"roomId: $myRoomId", leftBegin, 5, baseLine)
 
       case None =>
         if(firstCome) {
