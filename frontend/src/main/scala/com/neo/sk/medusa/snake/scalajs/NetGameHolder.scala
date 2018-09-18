@@ -47,14 +47,11 @@ object NetGameHolder extends js.JSApp {
   var gameLoopControl = 0 //保存gameLoop的setInterval的ID
   var myProportion = 1.0
   var eatenApples  = Map[Long, List[AppleWithFrame]]()
-  var fpsCounter = 0
-  var fps = 0.0
-  var dataCounter = 0.0
-  var dataps = 0.0
-  var dataCounterLoopControl = 0
-  var drawNum = 0
-  var drawTime = 0l
-  var drawTimeAverage = 0
+//  var fpsCounter = 0
+//  var fps = 0.0
+//  var drawNum = 0
+//  var drawTime = 0l
+//  var drawTimeAverage = 0
 
   val grid = new GridOnClient(bounds)
 
@@ -152,8 +149,8 @@ object NetGameHolder extends js.JSApp {
   }
 
   def gameLoop(): Unit = {
-    fps = fpsCounter / ((System.currentTimeMillis() - basicTime) / 1000.0)
-    fpsCounter = 0
+//    fps = fpsCounter / ((System.currentTimeMillis() - basicTime) / 1000.0)
+//    fpsCounter = 0
     basicTime = System.currentTimeMillis()
     if (wsSetup) {
       if (!justSynced) {
@@ -166,12 +163,7 @@ object NetGameHolder extends js.JSApp {
       }
     }
   }
-
-  def dataCounterLoop(): Unit = {
-    dataps = dataCounter/(Protocol.dataCounterRate/1000)
-    dataCounter = 0
-  }
-
+  
   def drawLoop(): Double => Unit = { _ =>
     draw()
     nextAnimation = dom.window.requestAnimationFrame(drawLoop())
@@ -224,13 +216,13 @@ object NetGameHolder extends js.JSApp {
   }
 
   def draw(): Unit = {
-    fpsCounter += 1
+    netInfoHandler.fpsCounter += 1
     if (wsSetup) {
       val data = grid.getGridSyncData
       val timeNow = System.currentTimeMillis()
       drawGrid(myId, data)
       val drawOnceTime = System.currentTimeMillis() - timeNow
-      drawTimeAverage = drawOnceTime.toInt
+      netInfoHandler.drawTimeAverage = drawOnceTime.toInt
 //      drawTime += drawOnceTime
 //      drawNum +=1
 //      if(drawNum > 120){
@@ -441,9 +433,10 @@ object NetGameHolder extends js.JSApp {
         drawTextLine(cacheCtx, s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 0, baseLine)
         drawTextLine(cacheCtx, s"your kill = ${mySnake.kill}", leftBegin, 1, baseLine)
         drawTextLine(cacheCtx, s"your length = ${mySnake.length} ", leftBegin, 2, baseLine)
-        drawTextLine(cacheCtx, s"fps: ${fps.formatted("%.2f")} dataps:${dataps.formatted("%.2f")}", leftBegin, 3, baseLine)
-        drawTextLine(cacheCtx, s"drawTimeAverage: ${drawTimeAverage}", leftBegin, 4, baseLine)
-        drawTextLine(cacheCtx, s"roomId: ${myRoomId}", leftBegin, 5, baseLine)
+        drawTextLine(cacheCtx, s"fps: ${netInfoHandler.fps.formatted("%.2f")} ping:${netInfoHandler.ping.formatted("%.2f")}", leftBegin, 3, baseLine)
+//        drawTextLine(cacheCtx, s"fps: ${fps.formatted("%.2f")}", leftBegin, 3, baseLine)
+        drawTextLine(cacheCtx, s"drawTimeAverage: ${netInfoHandler.drawTimeAverage}", leftBegin, 4, baseLine)
+        drawTextLine(cacheCtx, s"roomId: $myRoomId", leftBegin, 5, baseLine)
 
       case None =>
         if(firstCome) {
@@ -498,17 +491,33 @@ object NetGameHolder extends js.JSApp {
 
   
   val sendBuffer = new MiddleBufferInJs(409600) //sender buffer
-  
+  val netInfoHandler = new NetInfoHandler()
+
+
   def joinGame(name: String): Unit = {
     joinButton.disabled = true
     val playground = dom.document.getElementById("playground")
     playground.innerHTML = s"Trying to join game as '$name'..."
     val gameStream = new WebSocket(getWebSocketUri(dom.document, name))
+//    def refreshNetInfo(): Unit = {
+//      fps = fpsCounter / ((System.currentTimeMillis() - netInfoBasicTime) / 1000.0)
+//      fpsCounter = 0
+//      netInfoBasicTime = System.currentTimeMillis()
+//
+//      val pingMsg: Protocol.UserAction = NetTest(myId, netInfoBasicTime)
+//      pingMsg.fillMiddleBuffer(sendBuffer) //encode msg
+//      val ab: ArrayBuffer = sendBuffer.result() //get encoded data.
+//      gameStream.send(ab) // send data.
+//    }
     gameStream.onopen = { (event0: Event) =>
+      dom.window.setInterval(() => {
+        val pingMsg = netInfoHandler.refreshNetInfo()
+        gameStream.send(pingMsg)
+      }, Protocol.netInfoRate)
+
       drawGameOn()
       playground.insertBefore(p("Game connection was successful!"), playground.firstChild)
       wsSetup = true
-      dom.window.setInterval(()=>dataCounterLoop(),Protocol.dataCounterRate)
       canvas.focus()
       canvas.onkeydown = {
         (e: dom.KeyboardEvent) => {
@@ -540,7 +549,6 @@ object NetGameHolder extends js.JSApp {
     gameStream.onmessage = { (event: MessageEvent) =>
       event.data match {
         case blobMsg: Blob =>
-          dataCounter += blobMsg.size
           val fr = new FileReader()
           fr.readAsArrayBuffer(blobMsg)
           fr.onloadend = { _: Event =>
@@ -596,8 +604,9 @@ object NetGameHolder extends js.JSApp {
                   justSynced = true
                 case Protocol.NetDelayTest(createTime) =>
                   val receiveTime = System.currentTimeMillis()
-                  val m = s"Net Delay Test: createTime=$createTime, receiveTime=$receiveTime, twoWayDelay=${receiveTime - createTime}"
-                  writeToArea(m)
+                  netInfoHandler.ping = receiveTime - createTime
+//                  val m = s"Net Delay Test: createTime=$createTime, receiveTime=$receiveTime, twoWayDelay=${receiveTime - createTime}, ping: ${netInfoHandler.ping}"
+//                  writeToArea(m)
                 case Protocol.DeadInfo(myName,myLength,myKill) =>
                   deadName=myName
                   deadLength=myLength
@@ -643,7 +652,7 @@ object NetGameHolder extends js.JSApp {
   def sync(dataOpt: scala.Option[Protocol.GridDataSync]) = {
     if(dataOpt.nonEmpty) {
       val data = dataOpt.get
-      grid.actionMap = grid.actionMap.filterKeys(_ >= data.frameCount - 1 - advanceFrame)
+//      grid.actionMap = grid.actionMap.filterKeys(_ >= data.frameCount - 1 - advanceFrame)
       val presentFrame = grid.frameCount
       grid.frameCount = data.frameCount
       grid.snakes = data.snakes.map(s => s.id -> s).toMap
