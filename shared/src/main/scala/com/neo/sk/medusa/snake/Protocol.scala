@@ -61,6 +61,8 @@ object Protocol {
   
   val frameRate = 100
 
+  val dataCounterRate = 10000
+
   val square = 4
 
   val fSpeed = 10

@@ -19,6 +19,8 @@ class NetInfoHandler {
 
   var fpsCounter = 0
   var fps = 0.0
+  var dataCounter = 0.0
+  var dataps = 0.0
   var ping = 0.0
   var netInfoBasicTime = 0L
   var drawTimeAverage = 0
@@ -36,6 +38,10 @@ class NetInfoHandler {
     ab
   }
 
+  def refreshDataInfo() :Unit = {
+    dataps = dataCounter/(Protocol.dataCounterRate/1000)
+    dataCounter = 0.0
+  }
 
 
 
