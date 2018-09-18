@@ -70,4 +70,6 @@ object Protocol {
   val advanceFrame = 1 //客户端提前的帧数
   
   val operateDelay = 1 //操作延迟的帧数
+
+  val netInfoRate = 1000
 }
