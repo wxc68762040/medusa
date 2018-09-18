@@ -422,8 +422,8 @@ object NetGameHolder extends js.JSApp {
       var snakeSpeed = snake.speed
       cacheCtx.fillStyle = Color.White.toString()
       cacheCtx.fillText(snake.name, (x - myHead.x ) / myProportion  + centerX- nameLength * 4, (y - myHead.y ) / myProportion + centerY- 15)
-      if (snakeSpeed > fSpeed) {
-        cacheCtx.fillText(snakeSpeed.formatted("%.2f"), (x - myHead.x ) / myProportion  + centerX- nameLength * 4, (y - myHead.y ) / myProportion + centerY - 25)
+      if (snakeSpeed > fSpeed + 1) {
+        cacheCtx.fillText(snakeSpeed.toInt.toString, (x - myHead.x ) / myProportion  + centerX- nameLength * 4, (y - myHead.y ) / myProportion + centerY - 25)
       }
     }
 
