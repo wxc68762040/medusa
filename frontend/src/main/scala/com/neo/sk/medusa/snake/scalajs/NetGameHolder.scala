@@ -389,7 +389,7 @@ object NetGameHolder extends js.JSApp {
         }
         cacheCtx.fillStyle = MyColors.myHeader
         if (id == uid) {
-          cacheCtx.fillRect(x - square + deviationX, y - square + deviationY, snakeWidth * 2, square * 2)
+          cacheCtx.fillRect(x - square + deviationX, y - square + deviationY, square * 2, square * 2)
 //          if (maxId != id) {
 //            mapCtx.globalAlpha = 1
 //            mapCtx.fillStyle = MyColors.myHeader
