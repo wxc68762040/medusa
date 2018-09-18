@@ -61,13 +61,11 @@ object Protocol {
   
   val frameRate = 100
 
-  val dataCounterRate = 10000
-
   val square = 4
 
   val fSpeed = 10
   
-	val foodRate = 0.06 //尸体生成食物的倍率
+	val foodRate = 0.095 //尸体生成食物的倍率
 	
   val advanceFrame = 1 //客户端提前的帧数
   
