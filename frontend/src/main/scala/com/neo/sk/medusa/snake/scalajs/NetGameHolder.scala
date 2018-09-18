@@ -85,7 +85,7 @@ object NetGameHolder extends js.JSApp {
   private[this] val canvas = dom.document.getElementById("GameView").asInstanceOf[Canvas]
   private[this] val bgCanvas = dom.document.getElementById("BGPic").asInstanceOf[Canvas]
   private[this] val mapCanvas = dom.document.getElementById("GameMap").asInstanceOf[Canvas]
-  dom.document.getElementById("GameMap").setAttribute("style",s"position:absolute;z-index:3;left: 0px;top:${windowHight}px")
+  dom.document.getElementById("GameMap").setAttribute("style",s"position:absolute;z-index:3;left: 0px;top:${windowHight + 50}px")
   private[this] val canvasPic = dom.document.getElementById("canvasPic").asInstanceOf[HTMLElement]
   private[this] val bgCtx = bgCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
   private[this] val ctx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
@@ -355,7 +355,9 @@ object NetGameHolder extends js.JSApp {
       cacheCtx.strokeStyle = snake.color
       cacheCtx.shadowBlur= 20
       cacheCtx.shadowColor= snake.color
-      cacheCtx.lineWidth = square * 2
+      //val snakeWidth = square * 2 + snake.length * 0.005
+      val snakeWidth = square * 2
+      cacheCtx.lineWidth = snakeWidth
       cacheCtx.moveTo(joints.head.x + deviationX, joints.head.y + deviationY)
         for(i <- 1 until joints.length) {
 					cacheCtx.lineTo(joints(i).x + deviationX, joints(i).y + deviationY)
@@ -366,12 +368,15 @@ object NetGameHolder extends js.JSApp {
 
       if(snake.id != maxId && snake.id == myId){
         mapCtx.beginPath()
-        val snakeWidth = square + snake.length * 0.05
-        mapCtx.lineWidth = snakeWidth
-        mapCtx.moveTo(joints.head.x * LittleMap.w / Boundary.w, joints.head.y * LittleMap.h / Boundary.h)
+        mapCtx.globalAlpha = 1
+        mapCtx.strokeStyle =Color.White.toString()
+        mapCtx.lineWidth = 2
+        mapCtx.moveTo((joints.head.x * LittleMap.w) / Boundary.w, (joints.head.y * LittleMap.h) / Boundary.h)
         for(i <- 1 until joints.length) {
-          mapCtx.lineTo(joints(i).x * LittleMap.w / Boundary.w, joints(i).y * LittleMap.h / Boundary.h)
+          mapCtx.lineTo((joints(i).x * LittleMap.w) / Boundary.w, (joints(i).y * LittleMap.h) / Boundary.h)
         }
+        mapCtx.stroke()
+        mapCtx.closePath()
       }
 
       // 头部信息
@@ -384,12 +389,12 @@ object NetGameHolder extends js.JSApp {
         }
         cacheCtx.fillStyle = MyColors.myHeader
         if (id == uid) {
-          cacheCtx.fillRect(x - square + deviationX, y - square + deviationY, square * 2, square * 2)
-          if (maxId != id) {
-            mapCtx.globalAlpha = 1
-            mapCtx.fillStyle = MyColors.myHeader
-            mapCtx.fillRect((x * LittleMap.w) / Boundary.w, (y * LittleMap.h) / Boundary.h, 2, 2)
-          }
+          cacheCtx.fillRect(x - square + deviationX, y - square + deviationY, snakeWidth * 2, square * 2)
+//          if (maxId != id) {
+//            mapCtx.globalAlpha = 1
+//            mapCtx.fillStyle = MyColors.myHeader
+//            mapCtx.fillRect((x * LittleMap.w) / Boundary.w - 1, (y * LittleMap.h) / Boundary.h - 1, 2, 2)
+//          }
         } else {
           cacheCtx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 , square * 2)
         }

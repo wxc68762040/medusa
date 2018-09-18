@@ -261,8 +261,8 @@ package object snake {
   }
 
   object LittleMap{
-    val w = 200
-    val h = 200
+    val w = 300
+    val h = 150
   }
 
   object FoodType {
