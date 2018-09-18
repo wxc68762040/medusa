@@ -15,7 +15,7 @@ import org.scalajs.dom.raw.WebSocket
   * Date: 2018/9/17
   * Time: 21:21
   */
-class NetInfoHandler() {
+class NetInfoHandler {
 
   var fpsCounter = 0
   var fps = 0.0
