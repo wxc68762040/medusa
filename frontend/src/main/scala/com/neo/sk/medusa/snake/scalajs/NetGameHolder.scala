@@ -354,9 +354,15 @@ object NetGameHolder extends js.JSApp {
       mapCtx.fillStyle = Color.White.toString()
 
       cacheCtx.beginPath()
-      cacheCtx.strokeStyle = snake.color
-      cacheCtx.shadowBlur= 20
-      cacheCtx.shadowColor= snake.color
+      if(id != myId){
+        cacheCtx.strokeStyle = snake.color
+        cacheCtx.shadowBlur= 20
+        cacheCtx.shadowColor= snake.color
+      }else{
+        cacheCtx.strokeStyle = "rgba(0, 0, 0, 1)"
+        cacheCtx.shadowBlur= 20
+        cacheCtx.shadowColor= "rgba(255, 255, 255, 1)"
+      }
       //val snakeWidth = square * 2 + snake.length * 0.005
       val snakeWidth = square * 2
       cacheCtx.lineWidth = snakeWidth
