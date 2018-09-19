@@ -351,7 +351,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
           if (x.appleType != FoodType.intermediate) {
             grid -= e
             totalScore += x.score
-            newSpeed += 0.3
+            newSpeed += 0.1
             speedOrNot = true
             apples ::= Ap(x.score, x.life, x.appleType, e.x, e.y, x.targetAppleOpt)
           }
