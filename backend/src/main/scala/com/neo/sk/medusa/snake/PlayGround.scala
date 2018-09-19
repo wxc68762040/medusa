@@ -132,7 +132,7 @@ object PlayGround {
               dispatch(Protocol.DeadList(grid.deadSnakeList.map(_.id)),roomId)
               grid.deadSnakeList.foreach{
                 s=>
-                  dispatchTo(s.id,Protocol.DeadInfo(s.name,s.length,s.kill))
+                  dispatchTo(s.id,Protocol.DeadInfo(s.name,s.length,s.kill, s.killer))
               }
             }
             grid.killMap.foreach{
