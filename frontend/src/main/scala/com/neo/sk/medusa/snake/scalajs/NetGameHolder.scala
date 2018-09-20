@@ -420,7 +420,7 @@ object NetGameHolder extends js.JSApp {
       val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
       val nameLength = snake.name.length
       cacheCtx.fillStyle = Color.White.toString()
-      cacheCtx.fillText(snake.name, (x - myHead.x ) / myProportion  + centerX- nameLength * 4, (y - myHead.y ) / myProportion + centerY- 20)
+      cacheCtx.fillText(snake.name, (x - myHead.x ) / myProportion  + centerX- nameLength * 4, (y - myHead.y ) / myProportion + centerY- 30)
     }
 
     cacheCtx.fillStyle = "rgb(250, 250, 250)"

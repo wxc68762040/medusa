@@ -117,11 +117,31 @@ trait Grid {
     feedApple(appleCount, FoodType.normal)
   }
 
+  def randomPoint():Point = {
+    val randomX = random.nextInt(2)
+    val randomY = random.nextInt(2)
+
+    val pointX = randomX match {
+      case 0 =>
+        random.nextInt(100)  + 100
+      case _ =>
+        random.nextInt(100)  + Boundary.w -200
+    }
+    val pointY = randomY match {
+      case 0 =>
+        random.nextInt(100) + 100
+      case _ =>
+        random.nextInt(100) + Boundary.h -200
+    }
+    Point(pointX,pointY)
+  }
+
 
   def randomEmptyPoint(): Point = {
-    var p = Point(random.nextInt(boundary.x - 20 * boundaryWidth) + 10 * boundaryWidth, random.nextInt(boundary.y - 20 * boundaryWidth) + 10 * boundaryWidth)
+
+    var p = randomPoint()
     while (grid.contains(p)) {
-      p = Point(random.nextInt(boundary.x - 20 * boundaryWidth) + 10 * boundaryWidth, random.nextInt(boundary.y - 20 * boundaryWidth) + 10 * boundaryWidth)
+      p = randomPoint()
     }
     p
   }
