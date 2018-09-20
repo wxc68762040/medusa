@@ -119,7 +119,8 @@ class GridOnServer(override val boundary: Point) extends Grid {
       case (Right(s),_) =>
         updatedSnakes ::= s
       case (Left(killerId),j) =>
-        deadSnakeList ::= DeadSnakeInfo(j.id,j.name,j.length,j.kill)
+        val killerName = if (snakes.exists(_._1 == killerId)) snakes(killerId).name else "the wall"
+        deadSnakeList ::= DeadSnakeInfo(j.id,j.name,j.length,j.kill, killerName)
         if(killerId != 0){
           mapKillCounter += killerId -> (mapKillCounter.getOrElse(killerId, 0) + 1)
           killMap += killerId->((j.id,j.name)::killMap.getOrElse(killerId,Nil))
@@ -140,7 +141,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
       val sorted = point._2.sortBy(_.length)
       val winner = sorted.head
       val deads = sorted.tail
-      deadSnakeList :::= deads.map(i=>DeadSnakeInfo(i.id,i.name,i.length,i.kill))
+      deadSnakeList :::= deads.map(i=>DeadSnakeInfo(i.id,i.name,i.length,i.kill, winner.name))
       killMap += winner.id->(killMap.getOrElse(winner.id,Nil):::deads.map(i=>(i.id,i.name)))
       mapKillCounter += winner.id -> (mapKillCounter.getOrElse(winner.id, 0) + deads.length)
       deads.foreach { snake =>
@@ -350,7 +351,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
           if (x.appleType != FoodType.intermediate) {
             grid -= e
             totalScore += x.score
-            newSpeed += 0.3
+            newSpeed += 0.1
             speedOrNot = true
             apples ::= Ap(x.score, x.life, x.appleType, e.x, e.y, x.targetAppleOpt)
           }

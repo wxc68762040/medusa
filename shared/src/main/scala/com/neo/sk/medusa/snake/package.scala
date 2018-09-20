@@ -10,21 +10,26 @@ import scala.collection.immutable.Queue
 package object snake {
 
   sealed trait Spot
-  case class Body(id: Long, color:String) extends Spot
+
+  case class Body(id: Long, color: String) extends Spot
+
   case class Header(id: Long, life: Int) extends Spot
-	case class Apple(score: Int, life: Int, appleType: Int, targetAppleOpt: Option[(Point, Int)] = None) extends Spot //食物类型，0：普通食物，1：死蛇身体，2：中间路径
-	case class Bound() extends Spot
+
+  case class Apple(score: Int, life: Int, appleType: Int, targetAppleOpt: Option[(Point, Int)] = None) extends Spot //食物类型，0：普通食物，1：死蛇身体，2：中间路径
+  case class Bound() extends Spot
 
   case class Score(id: Long, n: String, k: Int, l: Int, t: Option[Long] = None)
-  case class Bd(id: Long, x: Int, y: Int, color:String)
+
+  case class Bd(id: Long, x: Int, y: Int, color: String)
+
   case class Ap(score: Int, life: Int, appleType: Int, x: Int, y: Int, targetAppleOpt: Option[(Point, Int)] = None)
-	
-	case class GridData(
-		frameCount: Long,
-		snakes: List[SnakeInfo],
-		bodyDetails: List[Bd],
-		appleDetails: List[Ap]
-	)
+
+  case class GridData(
+    frameCount: Long,
+    snakes: List[SnakeInfo],
+    bodyDetails: List[Bd],
+    appleDetails: List[Ap]
+  )
 
 
   case class Point(x: Int, y: Int) {
@@ -39,31 +44,31 @@ package object snake {
     def %(other: Point) = Point(x % other.x, y % other.y)
 
     def to(other: Point) = {
-      val (x0, x1) = if(x > other.x) (other.x, x) else (x, other.x)
-      val (y0, y1) = if(y > other.y) (other.y, y) else (y, other.y)
+      val (x0, x1) = if (x > other.x) (other.x, x) else (x, other.x)
+      val (y0, y1) = if (y > other.y) (other.y, y) else (y, other.y)
       val list = (for {
         xs <- x0 to x1
         ys <- y0 to y1
       } yield {
         Point(xs, ys)
       }).toList
-			if(other.y == y) {
-				if(other.x > x) list.sortBy(_.x)
-				else list.sortBy(_.x).reverse
-			} else {
-				if(other.y > y) list.sortBy(_.y)
-				else list.sortBy(_.y).reverse
-			}
+      if (other.y == y) {
+        if (other.x > x) list.sortBy(_.x)
+        else list.sortBy(_.x).reverse
+      } else {
+        if (other.y > y) list.sortBy(_.y)
+        else list.sortBy(_.y).reverse
+      }
     }
 
     def pathTo(other: Point, speedOp: Option[(Long, Long)] = None): Option[Point] = {
       import math._
 
-      val (x0, x1) = if(x > other.x) (other.x, x) else (x, other.x)
-      val (y0, y1) = if(y > other.y) (other.y, y) else (y, other.y)
+      val (x0, x1) = if (x > other.x) (other.x, x) else (x, other.x)
+      val (y0, y1) = if (y > other.y) (other.y, y) else (y, other.y)
 
       val distance = sqrt(pow(x1 - x0, 2) + pow(y1 - y0, 2))
-      val frameDiff = if(speedOp.nonEmpty) Some(speedOp.get._2 - speedOp.get._1) else None
+      val frameDiff = if (speedOp.nonEmpty) Some(speedOp.get._2 - speedOp.get._1) else None
 
       def step(distance: Int) = {
         distance match {
@@ -82,7 +87,7 @@ package object snake {
 
       if (distance <= 16 || (frameDiff.nonEmpty && frameDiff.get > 15)) {
         None
-      } else  {
+      } else {
         val nextX = if (x > other.x) x - step(x - other.x) else x + step(other.x - x)
         val nextY = if (y > other.y) y - step(y - other.y) else y + step(other.y - y)
 
@@ -98,76 +103,77 @@ package object snake {
       Point(xs, ys)
     }).toList
 
-		def zone(rangeX: Int, rangeY: Int) = (for {
-			xs <- x to x + rangeX
-			ys <- y to y + rangeY
-		} yield {
-			Point(xs, ys)
-		}).toList
-		
-		def getDirection(destination: Point) = {
-			if(destination.x == x) {
-				if(destination.y < y) {
-					Point(0, -1)
-				} else if(destination.y > y) {
-					Point(0, 1)
-				} else {
-					Point(0, 0)
-				}
-			} else if(destination.y == y) {
-				if(destination.x < x) {
-					Point(-1, 0)
-				} else if(destination.x > x) {
-					Point(1, 0)
-				} else {
-					Point(0, 0)
-				}
-			} else {
-				Point(0, 0)
-			}
-		}
-	
-		def distance(destination: Point) = {
-			if(destination.x == x) {
-				Math.abs(destination.y - y)
-			} else if(destination.y == y) {
-				Math.abs(destination.x - x)
-			} else {
-				0
-			}
-		}
+    def zone(rangeX: Int, rangeY: Int) = (for {
+      xs <- x to x + rangeX
+      ys <- y to y + rangeY
+    } yield {
+      Point(xs, ys)
+    }).toList
 
-		/**
-			* 获取点对应的前方矩形范围的一个区域，用于碰撞检测。
-			* @param direction 前方所指定的方向
-			* @param squareWide 左右的宽度，指单边
-			* @param length 向前伸出的长度
-			* @return List[Point]
-			*/
+    def getDirection(destination: Point) = {
+      if (destination.x == x) {
+        if (destination.y < y) {
+          Point(0, -1)
+        } else if (destination.y > y) {
+          Point(0, 1)
+        } else {
+          Point(0, 0)
+        }
+      } else if (destination.y == y) {
+        if (destination.x < x) {
+          Point(-1, 0)
+        } else if (destination.x > x) {
+          Point(1, 0)
+        } else {
+          Point(0, 0)
+        }
+      } else {
+        Point(0, 0)
+      }
+    }
+
+    def distance(destination: Point) = {
+      if (destination.x == x) {
+        Math.abs(destination.y - y)
+      } else if (destination.y == y) {
+        Math.abs(destination.x - x)
+      } else {
+        0
+      }
+    }
+
+    /**
+      * 获取点对应的前方矩形范围的一个区域，用于碰撞检测。
+      *
+      * @param direction  前方所指定的方向
+      * @param squareWide 左右的宽度，指单边
+      * @param length     向前伸出的长度
+      * @return List[Point]
+      */
     def frontZone(direction: Point, squareWide: Int, length: Int) = {
       if (direction.x == 0) { //竖直方向
         val (yStart, yEnd) =
-          if(direction.y < 0)
+          if (direction.y < 0)
             (y + (length + squareWide) * direction.y, y - squareWide)
           else
             (y + squareWide, y + (length + squareWide) * direction.y)
 
         (for {
-          xs <- (x - squareWide to x + squareWide).filter(_ != x)
+          xs <- x - squareWide to x + squareWide
           ys <- yStart to yEnd
         } yield {
           Point(xs, ys)
         }).toList
       } else { //横的方向
         val (xStart, xEnd) =
-          if(direction.x < 0)
-            (x + (length + squareWide) * direction.x, x  - squareWide)
+          if (direction.x < 0)
+            (x + (length + squareWide) * direction.x, x - squareWide)
           else
             (x + squareWide, x + (length + squareWide) * direction.x)
 
         (for {
           xs <- xStart to xEnd
-          ys <- (y - squareWide to y + squareWide).filter(_ != y)
+          ys <- y - squareWide to y + squareWide
         } yield {
           Point(xs, ys)
         }).toList
@@ -190,46 +196,47 @@ package object snake {
     lastHeader: Point = Point(20, 20),
     direction: Point = Point(1, 0),
     speed: Double = 10,
-    speedUp : Double = 0.0,
-    freeFrame : Int = 0,   //脱离加速条件的帧数
+    speedUp: Double = 0.0,
+    freeFrame: Int = 0, //脱离加速条件的帧数
     length: Int = 50,
     kill: Int = 0
   )
-	
-	case class SnakeInfo(
-		id: Long,
-		name: String,
-		head: Point,
-		tail: Point,
-		lastHead: Point,
-		color: String,
-		direction: Point = Point(1, 0),
-		joints: Queue[Point] = Queue(),
-		speed: Double = 10.0,
-		freeFrame: Int = 0,
-		length: Int = 50,
-		extend: Int = 50, //需要伸长的量
-		kill: Int = 0
-	) {
-		def getBodies: Map[Point, Spot] = {
-			var bodyMap = Map.empty[Point, Spot]
-			joints.enqueue(head).foldLeft(tail) { (start: Point, end: Point) =>
-				val points = start.to(end)
-				points.foreach { e =>
-					bodyMap += ((e, Body(id, color)))
-				}
-				end
-			}
-			bodyMap
-		}
-	}
+
+  case class SnakeInfo(
+    id: Long,
+    name: String,
+    head: Point,
+    tail: Point,
+    lastHead: Point,
+    color: String,
+    direction: Point = Point(1, 0),
+    joints: Queue[Point] = Queue(),
+    speed: Double = 10.0,
+    freeFrame: Int = 0,
+    length: Int = 100,
+    extend: Int = 100, //需要伸长的量
+    kill: Int = 0
+  ) {
+    def getBodies: Map[Point, Spot] = {
+      var bodyMap = Map.empty[Point, Spot]
+      joints.enqueue(head).foldLeft(tail) { (start: Point, end: Point) =>
+        val points = start.to(end)
+        points.foreach { e =>
+          bodyMap += ((e, Body(id, color)))
+        }
+        end
+      }
+      bodyMap
+    }
+  }
 
   case class DeadSnakeInfo(
-                          id:Long,
-                          name:String,
-                          length:Int,
-                          kill:Int
-                          )
+    id: Long,
+    name: String,
+    length: Int,
+    kill: Int,
+    killer: String
+  )
 
   case class EatFoodInfo(
     snakeId: Long,
@@ -248,19 +255,19 @@ package object snake {
   )
 
 
-  object Boundary{
+  object Boundary {
     val w = 3600
     val h = 1800
   }
 
   val boundaryWidth = 3
 
-  object MyBoundary{
+  object MyBoundary {
     val w = 1500
     val h = 700
   }
 
-  object LittleMap{
+  object LittleMap {
     val w = 300
     val h = 150
   }
@@ -270,9 +277,6 @@ package object snake {
     val deadBody = 1
     val intermediate = 2
   }
-
-
-
 
 
 }

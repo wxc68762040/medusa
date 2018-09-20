@@ -60,6 +60,8 @@ object NetGameHolder extends js.JSApp {
   var justSynced = false
   var myRoomId = 0
 
+  var yourKiller = ""
+
   val watchKeys = Set(
     KeyCode.Space,
     KeyCode.Left,
@@ -352,9 +354,15 @@ object NetGameHolder extends js.JSApp {
       mapCtx.fillStyle = Color.White.toString()
 
       cacheCtx.beginPath()
-      cacheCtx.strokeStyle = snake.color
-      cacheCtx.shadowBlur= 20
-      cacheCtx.shadowColor= snake.color
+      if(id != myId){
+        cacheCtx.strokeStyle = snake.color
+        cacheCtx.shadowBlur= 20
+        cacheCtx.shadowColor= snake.color
+      }else{
+        cacheCtx.strokeStyle = "rgba(0, 0, 0, 1)"
+        cacheCtx.shadowBlur= 20
+        cacheCtx.shadowColor= "rgba(255, 255, 255, 1)"
+      }
       //val snakeWidth = square * 2 + snake.length * 0.005
       val snakeWidth = square * 2
       cacheCtx.lineWidth = snakeWidth
@@ -419,8 +427,12 @@ object NetGameHolder extends js.JSApp {
       val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
       val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
       val nameLength = snake.name.length
+      var snakeSpeed = snake.speed
       cacheCtx.fillStyle = Color.White.toString()
-      cacheCtx.fillText(snake.name, (x - myHead.x ) / myProportion  + centerX- nameLength * 4, (y - myHead.y ) / myProportion + centerY- 30)
+      cacheCtx.fillText(snake.name, (x - myHead.x ) / myProportion  + centerX- nameLength * 4, (y - myHead.y ) / myProportion + centerY- 15)
+      if (snakeSpeed > fSpeed + 1) {
+        cacheCtx.fillText(snakeSpeed.toInt.toString, (x - myHead.x ) / myProportion  + centerX- nameLength * 4, (y - myHead.y ) / myProportion + centerY - 25)
+      }
     }
 
     cacheCtx.fillStyle = "rgb(250, 250, 250)"
@@ -452,6 +464,7 @@ object NetGameHolder extends js.JSApp {
           cacheCtx.fillText(s"Your name   : $deadName", centerX-150, centerY-30)
           cacheCtx.fillText(s"Your length  : $deadLength", centerX-150, centerY)
           cacheCtx.fillText(s"Your kill        : $deadKill", centerX-150, centerY+30)
+          cacheCtx.fillText(s"Killer             : $yourKiller", centerX-150, centerY+60)
           cacheCtx.font = "36px Helvetica"
           cacheCtx.fillText("Ops, Press Space Key To Restart!", centerX - 350,  centerY -150)
           myProportion = 1.0
@@ -567,11 +580,13 @@ object NetGameHolder extends js.JSApp {
             encodedData match {
               case Right(data) => data match {
                 case Protocol.Id(id) => myId = id
-                case Protocol.TextMsg(message) => writeToArea(s"MESSAGE: $message")
+                case Protocol.TextMsg(message) =>
+//                  writeToArea(s"MESSAGE: $message")
                 case Protocol.NewSnakeJoined(id, user, roomId) =>
                   myRoomId = roomId.toInt + 1
-                  writeToArea(s"$user joined!")
-                case Protocol.SnakeLeft(id, user) => writeToArea(s"$user left!")
+//                  writeToArea(s"$user joined!")
+                case Protocol.SnakeLeft(id, user) =>
+//                  writeToArea(s"$user left!")
                 case Protocol.SnakeAction(id, keyCode, frame) =>
                   if(id != myId) {
                     grid.addActionWithFrame(id, keyCode, frame)
@@ -613,15 +628,18 @@ object NetGameHolder extends js.JSApp {
                   netInfoHandler.ping = receiveTime - createTime
 //                  val m = s"Net Delay Test: createTime=$createTime, receiveTime=$receiveTime, twoWayDelay=${receiveTime - createTime}, ping: ${netInfoHandler.ping}"
 //                  writeToArea(m)
-                case Protocol.DeadInfo(myName,myLength,myKill) =>
+                case Protocol.DeadInfo(myName,myLength,myKill, killer) =>
                   deadName=myName
                   deadLength=myLength
                   deadKill=myKill
+                  yourKiller = killer
                 case Protocol.DeadList(deadList) =>
                   deadList.foreach(i=>grid.snakes  -= i)
                 case Protocol.KillList(killList) =>
                   waitingShowKillList :::= killList
                   dom.window.setTimeout(()=>waitingShowKillList = waitingShowKillList.drop(killList.length),2000)
+
+
               }
 
               case Left(e) =>
