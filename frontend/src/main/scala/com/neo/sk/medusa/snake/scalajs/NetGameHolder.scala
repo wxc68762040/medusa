@@ -107,8 +107,14 @@ object NetGameHolder extends js.JSApp {
     mapCanvas.height = mapBoundary.y
 
     joinButton.onclick = { (event: MouseEvent) =>
-      joinGame(nameField.value)
-      event.preventDefault()
+      nameExist.innerHTML = ""
+      if(nameField.value.length > 15){
+          nameExist.innerHTML = "名称不能超过15"
+      }else{
+        joinGame(nameField.value)
+        event.preventDefault()
+      }
+
     }
     nameField.focus()
     nameField.onkeypress = { (event: KeyboardEvent) =>
@@ -392,7 +398,7 @@ object NetGameHolder extends js.JSApp {
       }
 
       // 头部信息
-      if(snake.head.x >= 0 + 2*square && snake.head.y >= 0 + 2*square && snake.head.x <= Boundary.w - 2*square && snake.head.y <= Boundary.h - 2*square) {
+      if(snake.head.x >= 0  && snake.head.y >= 0  && snake.head.x <= Boundary.w  && snake.head.y <= Boundary.h ) {
         if (snake.speed > fSpeed + 1) {
           cacheCtx.shadowBlur = 5
           cacheCtx.shadowColor = "#FFFFFF"
@@ -430,10 +436,11 @@ object NetGameHolder extends js.JSApp {
     snakes.foreach{ snake=>
       val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
       val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
-      val nameLength = snake.name.length
+      val nameLength = if(snake.name.length > 15) 15 else snake.name.length
       var snakeSpeed = snake.speed
       cacheCtx.fillStyle = Color.White.toString()
-      cacheCtx.fillText(snake.name, (x - myHead.x ) / myProportion  + centerX- nameLength * 4, (y - myHead.y ) / myProportion + centerY- 15)
+      val snakeName = if(snake.name.length > 15) snake.name.substring(0,14) else snake.name
+      cacheCtx.fillText(snakeName, (x - myHead.x ) / myProportion  + centerX- nameLength * 4, (y - myHead.y ) / myProportion + centerY- 15)
       if (snakeSpeed > fSpeed + 1) {
         cacheCtx.fillText(snakeSpeed.toInt.toString, (x - myHead.x ) / myProportion  + centerX- nameLength * 4, (y - myHead.y ) / myProportion + centerY - 25)
       }
