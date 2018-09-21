@@ -82,13 +82,17 @@ object NetGameHolder extends js.JSApp {
     val speedUpHeader = "#FFFF37"
   }
 
+  private[this] val nameExist = dom.document.getElementById("nameExist").asInstanceOf[Div]
   private[this] val nameField = dom.document.getElementById("name").asInstanceOf[HTMLInputElement]
   private[this] val joinButton = dom.document.getElementById("join").asInstanceOf[HTMLButtonElement]
+  private[this] val startBg = dom.document.getElementById("startBg")
+  startBg.setAttribute("style",s"position:absolute;;z-index:4;left: 0px; top: 200px;background: rgba(0, 0, 0, 0.8);height:${canvasBoundary.y}px;width:${canvasBoundary.x}px")
   private[this] val canvas = dom.document.getElementById("GameView").asInstanceOf[Canvas]
   private[this] val bgCanvas = dom.document.getElementById("BGPic").asInstanceOf[Canvas]
   private[this] val mapCanvas = dom.document.getElementById("GameMap").asInstanceOf[Canvas]
   dom.document.getElementById("GameMap").setAttribute("style",s"position:absolute;z-index:3;left: 0px;top:${windowHight + 50}px")
   private[this] val canvasPic = dom.document.getElementById("canvasPic").asInstanceOf[HTMLElement]
+  //private[this] val startCtx = startBg.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
   private[this] val bgCtx = bgCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
   private[this] val ctx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
   private[this] val mapCtx = mapCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
@@ -129,8 +133,8 @@ object NetGameHolder extends js.JSApp {
 //    ctx.fillRect(0, 0 ,canvas.width,canvas.height)
     ctx.fillStyle = "rgb(250, 250, 250)"
     if (firstCome) {
-      ctx.font = "36px Helvetica"
-      ctx.fillText("Welcome.", windowWidth/2 - 150,  windowHight/2 -150)
+      //ctx.font = "36px Helvetica"
+      //ctx.fillText("Welcome.", windowWidth/2 - 150,  windowHight/2 -150)
       myProportion = 1.0
     } else {
       ctx.font = "36px Helvetica"
@@ -444,6 +448,7 @@ object NetGameHolder extends js.JSApp {
 
     snakes.find(_.id == uid) match {
       case Some(mySnake) =>
+        startBg.setAttribute("style","display:none")
         firstCome = false
         val baseLine = 1
         cacheCtx.font = "12px Helvetica"
@@ -458,7 +463,7 @@ object NetGameHolder extends js.JSApp {
       case None =>
         if(firstCome) {
           cacheCtx.font = "36px Helvetica"
-          cacheCtx.fillText("Please wait.", centerX - 150,  centerY -150)
+          //cacheCtx.fillText("Please wait.", centerX - 150,  centerY -150)
         } else {
           cacheCtx.font = "24px Helvetica"
           cacheCtx.fillText(s"Your name   : $deadName", centerX-150, centerY-30)
@@ -513,7 +518,7 @@ object NetGameHolder extends js.JSApp {
 
 
   def joinGame(name: String): Unit = {
-    joinButton.disabled = true
+    //joinButton.disabled = true
     val playground = dom.document.getElementById("playground")
     playground.innerHTML = s"Trying to join game as '$name'..."
     val gameStream = new WebSocket(getWebSocketUri(dom.document, name))
@@ -585,6 +590,8 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.NewSnakeJoined(id, user, roomId) =>
                   myRoomId = roomId.toInt + 1
 //                  writeToArea(s"$user joined!")
+                case Protocol.NewSnakeNameExist(id, name, roomId)=>
+                    nameExist.innerHTML = "名字已存在"
                 case Protocol.SnakeLeft(id, user) =>
 //                  writeToArea(s"$user left!")
                 case Protocol.SnakeAction(id, keyCode, frame) =>

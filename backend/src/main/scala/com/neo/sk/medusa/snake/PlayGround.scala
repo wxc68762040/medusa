@@ -56,6 +56,7 @@ object PlayGround {
       override def receive: Receive = {
         case r@Join(id, name, subscriber) =>
           log.info(s"got $r")
+
           val roomId = if(!roomMap.exists(_._2._1 < maxRoomNum)){
             println(roomMap)
             roomNum += 1
@@ -63,20 +64,27 @@ object PlayGround {
           }else{
             roomMap.filter(_._2._1 < maxRoomNum).head._1
           }
-          userMap += (id -> (name,roomId))
-          if(roomMap.contains(roomId)){
-            roomMap += (roomId-> (roomMap.get(roomId).head._1 + 1,roomMap.get(roomId).head._2))
+
+          if(userMap.filter(r=>(r._2._2 == roomId && r._2._1 == name)).isEmpty) {
+            userMap += (id -> (name, roomId))
+            if (roomMap.contains(roomId)) {
+              roomMap += (roomId -> (roomMap.get(roomId).head._1 + 1, roomMap.get(roomId).head._2))
+            } else {
+              val grid = new GridOnServer(bounds)
+              roomMap += (roomId -> (1, grid))
+            }
+
+            context.watch(subscriber)
+            subscribers += (id -> subscriber)
+            roomMap(roomId)._2.addSnake(id, name, roomId)
+            dispatchTo(id, Protocol.Id(id))
+            dispatch(Protocol.NewSnakeJoined(id, name, roomId), roomId)
+            dispatch(roomMap(roomId)._2.getGridSyncData, roomId)
           }else{
-            val grid = new GridOnServer(bounds)
-            roomMap += (roomId -> (1,grid))
-          }
-          println(roomMap)
-          context.watch(subscriber)
-          subscribers += (id -> subscriber)
-          roomMap(roomId)._2.addSnake(id, name,roomId)
-          dispatchTo(id, Protocol.Id(id))
-          dispatch(Protocol.NewSnakeJoined(id, name, roomId),roomId)
-          dispatch(roomMap(roomId)._2.getGridSyncData,roomId)
+            // 重名
+            subscriber ! Protocol.NewSnakeNameExist(id, name, roomId)
+        }
+
           
         case r@Left(id, name) =>
           log.info(s"got $r")
