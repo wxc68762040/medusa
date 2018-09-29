@@ -118,30 +118,34 @@ trait Grid {
   }
 
   def randomPoint():Point = {
-    val randomX = random.nextInt(2)
-    val randomY = random.nextInt(2)
+    val randomArea = random.nextInt(3)
+    val rPoint = randomArea match {
+      case 0 =>
+        Point(random.nextInt(Boundary.w -200)  + 100, random.nextInt(100)  + 100)
+      case 1 =>
+        Point(random.nextInt(100)  + 100, random.nextInt(Boundary.h -200)  + 100)
+      case 2 =>
+        Point(random.nextInt(100)  + Boundary.w -200, random.nextInt(Boundary.h -200)  + 100)
+      case _ =>
+        Point(random.nextInt(Boundary.w -200)  + 100, random.nextInt(100)  + Boundary.h -200)
+    }
 
-    val pointX = randomX match {
-      case 0 =>
-        random.nextInt(100)  + 100
-      case _ =>
-        random.nextInt(100)  + Boundary.w -200
-    }
-    val pointY = randomY match {
-      case 0 =>
-        random.nextInt(100) + 100
-      case _ =>
-        random.nextInt(100) + Boundary.h -200
-    }
-    Point(pointX,pointY)
+    rPoint
   }
 
 
-  def randomEmptyPoint(): Point = {
-
+  def randomHeadEmptyPoint(): Point = {
     var p = randomPoint()
     while (grid.contains(p)) {
       p = randomPoint()
+    }
+    p
+  }
+
+  def randomEmptyPoint(): Point = {
+    var p = Point(random.nextInt(boundary.x - 2 * boundaryWidth) + boundaryWidth, random.nextInt(boundary.y - 2 * boundaryWidth) + boundaryWidth)
+    while (grid.contains(p)) {
+      p = Point(random.nextInt(boundary.x), random.nextInt(boundary.y))
     }
     p
   }
