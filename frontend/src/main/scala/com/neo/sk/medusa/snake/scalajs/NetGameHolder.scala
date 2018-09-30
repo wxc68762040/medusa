@@ -176,7 +176,7 @@ object NetGameHolder extends js.JSApp {
       }
     }
     savedGrid += (grid.frameCount -> grid.getGridSyncData)
-    savedGrid -= (grid.frameCount-6)
+    savedGrid -= (grid.frameCount-Protocol.savingFrame-Protocol.advanceFrame)
   }
 
   def drawLoop(): Double => Unit = { _ =>
@@ -609,17 +609,17 @@ object NetGameHolder extends js.JSApp {
                     grid.addActionWithFrame(id, keyCode, frame)
                   }
                 case Protocol.DistinctSnakeAction(keyCode, frame ,frontFrame) =>
-                  val savedAction=grid.actionMap.get(frontFrame-1)
+                  val savedAction=grid.actionMap.get(frontFrame-Protocol.advanceFrame)
                   if(savedAction.nonEmpty) {
                     val delAction=savedAction.get - myId
-                    val addAction=grid.actionMap.getOrElse(frame-1,Map[Long,Int]())+(myId->keyCode)
-                    grid.actionMap += (frontFrame-1 -> delAction)
-                    grid.actionMap += (frame-1 -> addAction)
-                    var updateCounter=grid.frameCount-frontFrame+1
-                    sync(savedGrid.get(frontFrame-1))
-                    while(updateCounter != 0){
+                    val addAction=grid.actionMap.getOrElse(frame-Protocol.advanceFrame,Map[Long,Int]())+(myId->keyCode)
+                    grid.actionMap += (frontFrame-Protocol.advanceFrame -> delAction)
+                    grid.actionMap += (frame-Protocol.advanceFrame -> addAction)
+                    val updateCounter=grid.frameCount-(frontFrame-Protocol.advanceFrame)
+                    println(updateCounter)
+                    sync(savedGrid.get(frontFrame-Protocol.advanceFrame))
+                    for(_ <- 1 to updateCounter.toInt){
                       update(false)
-                      updateCounter -= 1
                     }
                   }
                 case Protocol.Ranks(current, history) =>

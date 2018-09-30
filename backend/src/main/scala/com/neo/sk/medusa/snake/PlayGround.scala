@@ -114,7 +114,7 @@ object PlayGround {
               if(frame >= grid.frameCount) {
                 grid.addActionWithFrame(id, keyCode, frame)
                 dispatch(Protocol.SnakeAction(id, keyCode, frame),roomId)
-              }else if(frame >= grid.frameCount-4){
+              }else if(frame >= grid.frameCount-Protocol.savingFrame+Protocol.advanceFrame){
                 grid.addActionWithFrame(id, keyCode, grid.frameCount)
                 dispatchDistinct(id,Protocol.DistinctSnakeAction(keyCode, grid.frameCount, frame),Protocol.SnakeAction(id, keyCode, grid.frameCount), roomId)
                 log.info(s"key delay: server: ${grid.frameCount} client: $frame")
