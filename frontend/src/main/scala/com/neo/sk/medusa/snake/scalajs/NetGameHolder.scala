@@ -615,7 +615,7 @@ object NetGameHolder extends js.JSApp {
                     val addAction=grid.actionMap.getOrElse(frame-1,Map())+(myId->keyCode)
                     grid.actionMap += (frontFrame-1 -> delAction)
                     grid.actionMap += (frame-1 -> addAction)
-                    var updateCounter=grid.frameCount-frame+1
+                    var updateCounter=grid.frameCount-frontFrame+1
                     sync(savedGrid.get(frontFrame-1))
                     while(updateCounter != 0){
                       update(false)
