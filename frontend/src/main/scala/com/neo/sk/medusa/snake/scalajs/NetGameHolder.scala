@@ -612,7 +612,7 @@ object NetGameHolder extends js.JSApp {
                   val savedAction=grid.actionMap.get(frontFrame-1)
                   if(savedAction.nonEmpty) {
                     val delAction=savedAction.get - myId
-                    val addAction=grid.actionMap.getOrElse(frame-1,Map())+(myId->keyCode)
+                    val addAction=grid.actionMap.getOrElse(frame-1,Map[Long,Int]())+(myId->keyCode)
                     grid.actionMap += (frontFrame-1 -> delAction)
                     grid.actionMap += (frame-1 -> addAction)
                     var updateCounter=grid.frameCount-frontFrame+1
