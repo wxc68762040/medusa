@@ -121,9 +121,9 @@ class GridOnServer(override val boundary: Point) extends Grid {
       case (Left(killerId),j) =>
         val killerName = if (snakes.exists(_._1 == killerId)) snakes(killerId).name else "the wall"
         deadSnakeList ::= DeadSnakeInfo(j.id,j.name,j.length,j.kill, killerName)
-        if(killerId != 0){
+        if(killerId != 0) {
           mapKillCounter += killerId -> (mapKillCounter.getOrElse(killerId, 0) + 1)
-          killMap += killerId->((j.id,j.name)::killMap.getOrElse(killerId,Nil))
+          killMap += killerId -> ((j.id, j.name) :: killMap.getOrElse(killerId, Nil))
         }
     }
   

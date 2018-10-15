@@ -46,8 +46,6 @@ object PlayGround {
       //(roomId.(userNumber,grid))
       var roomMap = Map.empty[Long,(Int,GridOnServer)]
       
-//      var lostSet = Set[Long]()
-      
       var roomNum = -1
       val maxRoomNum = 30
 
@@ -168,12 +166,6 @@ object PlayGround {
             if (tickCount % 20 == 1) {
               dispatch(Protocol.Ranks(grid.currentRank, grid.historyRankList),roomId)
             }
-//            if(lostSet.nonEmpty) { //指令丢失的玩家，立即同步数据
-//              lostSet.foreach { id =>
-//                dispatchTo(id, grid.getGridSyncData)
-//              }
-//              lostSet = Set[Long]()
-//            }
           }
 
         case r@Terminated(actor) =>
