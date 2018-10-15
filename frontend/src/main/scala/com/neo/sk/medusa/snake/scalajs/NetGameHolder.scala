@@ -72,6 +72,7 @@ object NetGameHolder extends js.JSApp {
   )
 
   var waitingShowKillList=List.empty[(Long,String)]
+  var savedGrid = Map[Long,Protocol.GridDataSync]()
 
   object MyColors {
     val myHeader = "#FFFFFF"
@@ -174,6 +175,8 @@ object NetGameHolder extends js.JSApp {
         justSynced = false
       }
     }
+    savedGrid += (grid.frameCount -> grid.getGridSyncData)
+    savedGrid -= (grid.frameCount-6)
   }
 
   def drawLoop(): Double => Unit = { _ =>
@@ -604,6 +607,20 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.SnakeAction(id, keyCode, frame) =>
                   if(id != myId) {
                     grid.addActionWithFrame(id, keyCode, frame)
+                  }
+                case Protocol.DistinctSnakeAction(keyCode, frame ,frontFrame) =>
+                  val savedAction=grid.actionMap.get(frontFrame-1)
+                  if(savedAction.nonEmpty) {
+                    val delAction=savedAction.get - myId
+                    val addAction=grid.actionMap.getOrElse(frame-1,Map())+(myId->keyCode)
+                    grid.actionMap += (frontFrame-1 -> delAction)
+                    grid.actionMap += (frame-1 -> addAction)
+                    var updateCounter=grid.frameCount-frontFrame+1
+                    sync(savedGrid.get(frontFrame-1))
+                    while(updateCounter != 0){
+                      update(false)
+                      updateCounter -= 1
+                    }
                   }
                 case Protocol.Ranks(current, history) =>
                   currentRank = current
