@@ -73,6 +73,7 @@ object NetGameHolder extends js.JSApp {
 
   var waitingShowKillList=List.empty[(Long,String)]
   var savedGrid = Map[Long,Protocol.GridDataSync]()
+  var updateCounter = 0L
 
   object MyColors {
     val myHeader = "#FFFFFF"
@@ -609,15 +610,20 @@ object NetGameHolder extends js.JSApp {
                     grid.addActionWithFrame(id, keyCode, frame)
                   }
                 case Protocol.DistinctSnakeAction(keyCode, frame ,frontFrame) =>
+//                  println(s"当前前端帧数frameCount:${grid.frameCount}")
+//                  println(s"actionMap保存最大帧数:${grid.actionMap.keySet.max}")
+//                  println(s"savedGrid保存最大帧数:${savedGrid.keySet.max}")
                   val savedAction=grid.actionMap.get(frontFrame-Protocol.advanceFrame)
                   if(savedAction.nonEmpty) {
                     val delAction=savedAction.get - myId
                     val addAction=grid.actionMap.getOrElse(frame-Protocol.advanceFrame,Map[Long,Int]())+(myId->keyCode)
                     grid.actionMap += (frontFrame-Protocol.advanceFrame -> delAction)
                     grid.actionMap += (frame-Protocol.advanceFrame -> addAction)
-                    val updateCounter=grid.frameCount-(frontFrame-Protocol.advanceFrame)
-                    println(updateCounter)
+                    updateCounter = grid.frameCount-(frontFrame-Protocol.advanceFrame)
+//                    println(s"updateCounter更新次数：$updateCounter")
+//                    println(s"传输到后端的frontFrame:$frontFrame")
                     sync(savedGrid.get(frontFrame-Protocol.advanceFrame))
+//                    println(s"sync之后前端帧数frameCount:${grid.frameCount}")
                     for(_ <- 1 to updateCounter.toInt){
                       update(false)
                     }
