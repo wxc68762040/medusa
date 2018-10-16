@@ -4,9 +4,9 @@ import java.awt.event.KeyEvent
 
 import com.neo.sk.medusa.snake.Protocol._
 import com.neo.sk.medusa.snake._
-import com.neo.sk.medusa.utils.MiddleBufferInJs
-import com.neo.sk.medusa.utils.byteObject.decoder
-import com.neo.sk.medusa.utils.byteObject.ByteObject._
+import org.seekloud.byteobject.MiddleBufferInJs
+import org.seekloud.byteobject.decoder
+import org.seekloud.byteobject.ByteObject._
 import org.scalajs.dom
 import org.scalajs.dom.ext.{Color, KeyCode}
 import org.scalajs.dom.html.{Document => _, _}
