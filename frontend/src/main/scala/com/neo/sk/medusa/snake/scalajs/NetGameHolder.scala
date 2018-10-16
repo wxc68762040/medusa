@@ -4,14 +4,13 @@ import java.awt.event.KeyEvent
 
 import com.neo.sk.medusa.snake.Protocol._
 import com.neo.sk.medusa.snake._
-import com.neo.sk.medusa.utils.MiddleBufferInJs
-import com.neo.sk.medusa.utils.byteObject.decoder
-import com.neo.sk.medusa.utils.byteObject.ByteObject._
+import org.seekloud.byteobject.{MiddleBufferInJs, decoder}
+import org.seekloud.byteobject.decoder._
+import org.seekloud.byteobject.ByteObject._
 import org.scalajs.dom
 import org.scalajs.dom.ext.{Color, KeyCode}
 import org.scalajs.dom.html.{Document => _, _}
 import org.scalajs.dom.raw._
-
 import io.circe.generic.auto._
 import io.circe.parser._
 
@@ -72,6 +71,8 @@ object NetGameHolder extends js.JSApp {
   )
 
   var waitingShowKillList=List.empty[(Long,String)]
+  var savedGrid = Map[Long,Protocol.GridDataSync]()
+  var updateCounter = 0L
 
   object MyColors {
     val myHeader = "#FFFFFF"
@@ -174,6 +175,8 @@ object NetGameHolder extends js.JSApp {
         justSynced = false
       }
     }
+    savedGrid += (grid.frameCount -> grid.getGridSyncData)
+    savedGrid -= (grid.frameCount-Protocol.savingFrame-Protocol.advanceFrame)
   }
 
   def drawLoop(): Double => Unit = { _ =>
@@ -604,6 +607,25 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.SnakeAction(id, keyCode, frame) =>
                   if(id != myId) {
                     grid.addActionWithFrame(id, keyCode, frame)
+                  }
+                case Protocol.DistinctSnakeAction(keyCode, frame ,frontFrame) =>
+//                  println(s"当前前端帧数frameCount:${grid.frameCount}")
+//                  println(s"actionMap保存最大帧数:${grid.actionMap.keySet.max}")
+//                  println(s"savedGrid保存最大帧数:${savedGrid.keySet.max}")
+                  val savedAction=grid.actionMap.get(frontFrame-Protocol.advanceFrame)
+                  if(savedAction.nonEmpty) {
+                    val delAction=savedAction.get - myId
+                    val addAction=grid.actionMap.getOrElse(frame-Protocol.advanceFrame,Map[Long,Int]())+(myId->keyCode)
+                    grid.actionMap += (frontFrame-Protocol.advanceFrame -> delAction)
+                    grid.actionMap += (frame-Protocol.advanceFrame -> addAction)
+                    updateCounter = grid.frameCount-(frontFrame-Protocol.advanceFrame)
+//                    println(s"updateCounter更新次数：$updateCounter")
+//                    println(s"传输到后端的frontFrame:$frontFrame")
+                    sync(savedGrid.get(frontFrame-Protocol.advanceFrame))
+//                    println(s"sync之后前端帧数frameCount:${grid.frameCount}")
+                    for(_ <- 1 to updateCounter.toInt){
+                      update(false)
+                    }
                   }
                 case Protocol.Ranks(current, history) =>
                   currentRank = current

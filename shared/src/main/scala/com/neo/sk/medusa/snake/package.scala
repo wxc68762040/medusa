@@ -25,11 +25,11 @@ package object snake {
   case class Ap(score: Int, life: Int, appleType: Int, x: Int, y: Int, targetAppleOpt: Option[(Point, Int)] = None)
 
   case class GridData(
-    frameCount: Long,
-    snakes: List[SnakeInfo],
-    bodyDetails: List[Bd],
-    appleDetails: List[Ap]
-  )
+                       frameCount: Long,
+                       snakes: List[SnakeInfo],
+                       bodyDetails: List[Bd],
+                       appleDetails: List[Ap]
+                     )
 
 
   case class Point(x: Int, y: Int) {
@@ -189,34 +189,34 @@ package object snake {
   }
 
   case class SkDt(
-    id: Long,
-    name: String,
-    color: String,
-    header: Point = Point(20, 20),
-    lastHeader: Point = Point(20, 20),
-    direction: Point = Point(1, 0),
-    speed: Double = 10,
-    speedUp: Double = 0.0,
-    freeFrame: Int = 0, //脱离加速条件的帧数
-    length: Int = 50,
-    kill: Int = 0
-  )
+                   id: Long,
+                   name: String,
+                   color: String,
+                   header: Point = Point(20, 20),
+                   lastHeader: Point = Point(20, 20),
+                   direction: Point = Point(1, 0),
+                   speed: Double = 10,
+                   speedUp: Double = 0.0,
+                   freeFrame: Int = 0, //脱离加速条件的帧数
+                   length: Int = 50,
+                   kill: Int = 0
+                 )
 
   case class SnakeInfo(
-    id: Long,
-    name: String,
-    head: Point,
-    tail: Point,
-    lastHead: Point,
-    color: String,
-    direction: Point = Point(1, 0),
-    joints: Queue[Point] = Queue(),
-    speed: Double = 10.0,
-    freeFrame: Int = 0,
-    length: Int = 100,
-    extend: Int = 100, //需要伸长的量
-    kill: Int = 0
-  ) {
+                        id: Long,
+                        name: String,
+                        head: Point,
+                        tail: Point,
+                        lastHead: Point,
+                        color: String,
+                        direction: Point = Point(1, 0),
+                        joints: Queue[Point] = Queue(),
+                        speed: Double = 10.0,
+                        freeFrame: Int = 0,
+                        length: Int = 100,
+                        extend: Int = 100, //需要伸长的量
+                        kill: Int = 0
+                      ) {
     def getBodies: Map[Point, Spot] = {
       var bodyMap = Map.empty[Point, Spot]
       joints.enqueue(head).foldLeft(tail) { (start: Point, end: Point) =>
@@ -231,28 +231,28 @@ package object snake {
   }
 
   case class DeadSnakeInfo(
-    id: Long,
-    name: String,
-    length: Int,
-    kill: Int,
-    killer: String
-  )
+                            id: Long,
+                            name: String,
+                            length: Int,
+                            kill: Int,
+                            killer: String
+                          )
 
   case class EatFoodInfo(
-    snakeId: Long,
-    apples: List[AppleWithFrame]
-  )
+                          snakeId: Long,
+                          apples: List[AppleWithFrame]
+                        )
 
   case class SpeedUpInfo(
-    snakeId: Long,
-    speedUpOrNot: Boolean,
-    newSpeed: Double
-  )
+                          snakeId: Long,
+                          speedUpOrNot: Boolean,
+                          newSpeed: Double
+                        )
 
   case class AppleWithFrame(
-    frameCount: Long,
-    apple: Ap
-  )
+                             frameCount: Long,
+                             apple: Ap
+                           )
 
 
   object Boundary {

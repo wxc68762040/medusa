@@ -7,7 +7,7 @@ import akka.actor.{Actor, ActorRef, ActorSystem, Props, Terminated}
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import com.neo.sk.medusa.snake.Protocol._
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContext
 import scala.language.postfixOps
@@ -33,7 +33,7 @@ object PlayGround {
 
   val bounds = Point(Boundary.w, Boundary.h)
 
-  val log = LoggerFactory.getLogger(this.getClass)
+  val log: Logger = LoggerFactory.getLogger(this.getClass)
 
 
   def create(system: ActorSystem)(implicit executor: ExecutionContext): PlayGround = {
@@ -45,8 +45,6 @@ object PlayGround {
       var userMap = Map.empty[Long, (String,Long)]
       //(roomId.(userNumber,grid))
       var roomMap = Map.empty[Long,(Int,GridOnServer)]
-      
-      var lostSet = Set[Long]()
       
       var roomNum = -1
       val maxRoomNum = 30
@@ -65,7 +63,7 @@ object PlayGround {
             roomMap.filter(_._2._1 < maxRoomNum).head._1
           }
 
-          if(userMap.filter(r=>(r._2._2 == roomId && r._2._1 == name)).isEmpty) {
+          if(!userMap.exists(r => r._2._2 == roomId && r._2._1 == name)) {
             userMap += (id -> (name, roomId))
             if (roomMap.contains(roomId)) {
               roomMap += (roomId -> (roomMap.get(roomId).head._1 + 1, roomMap.get(roomId).head._2))
@@ -111,12 +109,16 @@ object PlayGround {
             if (keyCode == KeyEvent.VK_SPACE) {
               grid.addSnake(id,userMap.getOrElse(id, ( "Unknown",0))._1,roomId)
             } else {
-              if(frame < grid.frameCount) {
-                lostSet += id
+              if(frame >= grid.frameCount) {
+                grid.addActionWithFrame(id, keyCode, frame)
+                dispatch(Protocol.SnakeAction(id, keyCode, frame),roomId)
+              }else if(frame >= grid.frameCount-Protocol.savingFrame+Protocol.advanceFrame){
+                grid.addActionWithFrame(id, keyCode, grid.frameCount)
+                dispatchDistinct(id,Protocol.DistinctSnakeAction(keyCode, grid.frameCount, frame),Protocol.SnakeAction(id, keyCode, grid.frameCount), roomId)
+                log.info(s"key delay: server: ${grid.frameCount} client: $frame")
+              }else {
                 log.info(s"key loss: server: ${grid.frameCount} client: $frame")
               }
-              grid.addActionWithFrame(id, keyCode, frame)
-              dispatch(Protocol.SnakeAction(id, keyCode, frame),roomId)
             }
             
           case NetTest(id, createTime) =>
@@ -164,12 +166,6 @@ object PlayGround {
             if (tickCount % 20 == 1) {
               dispatch(Protocol.Ranks(grid.currentRank, grid.historyRankList),roomId)
             }
-            if(lostSet.nonEmpty) { //指令丢失的玩家，立即同步数据
-              lostSet.foreach { id =>
-                dispatchTo(id, grid.getGridSyncData)
-              }
-              lostSet = Set[Long]()
-            }
           }
 
         case r@Terminated(actor) =>
@@ -201,6 +197,19 @@ object PlayGround {
       def dispatch(gameOutPut: Protocol.GameMessage, roomId: Long) = {
         val user = userMap.filter(_._2._2 == roomId).keys.toList
         subscribers.foreach { case (id, ref) if user.contains(id) => ref ! gameOutPut case _ =>}
+      }
+
+      def dispatchDistinct(distinctId:Long, distinctGameOutPut:Protocol.GameMessage, gameOutPut: Protocol.GameMessage, roomId: Long): Unit ={
+        val user = userMap.filter(_._2._2 == roomId).keys.toList
+        subscribers.foreach {
+          case (id, ref) if user.contains(id) =>
+            if(id != distinctId){
+              ref ! gameOutPut
+            }else{
+              ref ! distinctGameOutPut
+            }
+          case _ =>
+        }
       }
 
 

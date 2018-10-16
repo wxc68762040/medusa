@@ -1,6 +1,6 @@
 package com.neo.sk.medusa.http
 
-import akka.actor.{ActorRef, ActorSystem}
+import akka.actor.{ActorRef, ActorSystem, Scheduler}
 import akka.http.scaladsl.server.Directives._
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.stream.{Materializer, OverflowStrategy}
@@ -23,6 +23,8 @@ trait HttpService extends SnakeService with ResourceService{
   implicit val materializer: Materializer
 
   implicit val timeout: Timeout
+
+  implicit val scheduler: Scheduler
 
 
 
