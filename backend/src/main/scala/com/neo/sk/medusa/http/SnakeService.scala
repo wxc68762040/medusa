@@ -16,7 +16,7 @@ import org.seekloud.byteobject.ByteObject._
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
-import com.neo.sk.medusa.Boot._
+import com.neo.sk.medusa.Boot.userManager
 import com.neo.sk.medusa.core.UserManager
 import akka.actor.typed.scaladsl.AskPattern._
 import com.neo.sk.utils.CirceSupport._
@@ -29,7 +29,7 @@ import io.circe.generic.auto._
   * Date: 9/1/2016
   * Time: 4:13 PM
   */
-trait SnakeService extends ServiceUtils{
+trait SnakeService extends ServiceUtils {
 
   import io.circe.generic.auto._
   import io.circe.syntax._
@@ -69,48 +69,48 @@ trait SnakeService extends ServiceUtils{
   }
 
 
- /* def webSocketChatFlow(sender: String): Flow[Message, Message, Any] =
-    Flow[Message]
-      .collect {
-        case TextMessage.Strict(msg) =>
-          log.debug(s"msg from webSocket: $msg")
-          TextInfo(-1, msg)
+  /* def webSocketChatFlow(sender: String): Flow[Message, Message, Any] =
+     Flow[Message]
+       .collect {
+         case TextMessage.Strict(msg) =>
+           log.debug(s"msg from webSocket: $msg")
+           TextInfo(-1, msg)
 
-        case BinaryMessage.Strict(bMsg) =>
-          //decode process.
-          val buffer = new MiddleBufferInJvm(bMsg.asByteBuffer)
-          val msg =
-            bytesDecode[UserAction](buffer) match {
-              case Right(v) => v
-              case Left(e) =>
-                println(s"decode error: ${e.message}")
-                TextInfo(-1, "decode error")
-            }
-          msg
-        // unpack incoming WS text messages...
-        // This will lose (ignore) messages not received in one chunk (which is
-        // unlikely because chat messages are small) but absolutely possible
-        // FIXME: We need to handle TextMessage.Streamed as well.
-      }
-      .via(playGround.joinGame(idGenerator.getAndIncrement().toLong, sender)) // ... and route them through the chatFlow ...
-      //      .map { msg => TextMessage.Strict(msg.asJson.noSpaces) // ... pack outgoing messages into WS JSON messages ...
-      //.map { msg => TextMessage.Strict(write(msg)) // ... pack outgoing messages into WS JSON messages ...
-      .map { message =>
-      val sendBuffer = new MiddleBufferInJvm(409600)
-      BinaryMessage.Strict(ByteString(
-        //encoded process
-        message.fillMiddleBuffer(sendBuffer).result()
-      ))
+         case BinaryMessage.Strict(bMsg) =>
+           //decode process.
+           val buffer = new MiddleBufferInJvm(bMsg.asByteBuffer)
+           val msg =
+             bytesDecode[UserAction](buffer) match {
+               case Right(v) => v
+               case Left(e) =>
+                 println(s"decode error: ${e.message}")
+                 TextInfo(-1, "decode error")
+             }
+           msg
+         // unpack incoming WS text messages...
+         // This will lose (ignore) messages not received in one chunk (which is
+         // unlikely because chat messages are small) but absolutely possible
+         // FIXME: We need to handle TextMessage.Streamed as well.
+       }
+       .via(playGround.joinGame(idGenerator.getAndIncrement().toLong, sender)) // ... and route them through the chatFlow ...
+       //      .map { msg => TextMessage.Strict(msg.asJson.noSpaces) // ... pack outgoing messages into WS JSON messages ...
+       //.map { msg => TextMessage.Strict(write(msg)) // ... pack outgoing messages into WS JSON messages ...
+       .map { message =>
+       val sendBuffer = new MiddleBufferInJvm(409600)
+       BinaryMessage.Strict(ByteString(
+         //encoded process
+         message.fillMiddleBuffer(sendBuffer).result()
+       ))
 
-    }.withAttributes(ActorAttributes.supervisionStrategy(decider)) // ... then log any processing errors on stdin
+     }.withAttributes(ActorAttributes.supervisionStrategy(decider)) // ... then log any processing errors on stdin
 
 
-  val decider: Supervision.Decider = {
-    e: Throwable =>
-      e.printStackTrace()
-      println(s"WS stream failed with $e")
-      Supervision.Resume
-  }*/
+   val decider: Supervision.Decider = {
+     e: Throwable =>
+       e.printStackTrace()
+       println(s"WS stream failed with $e")
+       Supervision.Resume
+   }*/
 
 
 }

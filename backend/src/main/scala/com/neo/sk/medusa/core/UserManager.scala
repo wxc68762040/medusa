@@ -10,7 +10,7 @@ import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import org.seekloud.byteobject.ByteObject
 import org.slf4j.LoggerFactory
-
+import scala.collection._
 import scala.language.implicitConversions
 import org.seekloud.byteobject.MiddleBufferInJvm
 import org.seekloud.byteobject.ByteObject._
@@ -19,61 +19,72 @@ import io.circe.generic.auto._
 import io.circe.parser._
 
 import scala.concurrent.duration._
-import com.neo.sk.medusa.Boot._
-import com.neo.sk.medusa.snake.Protocol.{TextInfo, UserAction}
+import com.neo.sk.medusa.snake.Protocol.{GameMessage, TextInfo, UserAction}
 
 object UserManager {
 
-  private val log=LoggerFactory.getLogger(this.getClass)
+  private val log = LoggerFactory.getLogger(this.getClass)
+
   sealed trait Command
-  final case class ChildDead[U](name:String,childRef:ActorRef[U]) extends Command
 
-  final case class GetWebSocketFlow(name:String,replyTo:ActorRef[Flow[Message,Message,Any]]) extends Command
+  final case class ChildDead[U](name: String, childRef: ActorRef[U]) extends Command
 
-  val behaviors:Behavior[Command] ={
+  final case class GetWebSocketFlow(name: String, replyTo: ActorRef[Flow[Message, Message, Any]]) extends Command
+
+  case class NameCheck(name: String, replyTo: ActorRef[Any]) extends Command
+
+  val behaviors: Behavior[Command] = {
     log.debug(s"UserManager start...")
-    Behaviors.setup[Command]{
+    Behaviors.setup[Command] {
       ctx =>
-        Behaviors.withTimers[Command]{
+        Behaviors.withTimers[Command] {
           implicit timer =>
             val idGenerator = new AtomicInteger(1000000)
-            idle(idGenerator)
+            val userMap = mutable.HashMap.empty[String, Long]
+            idle(idGenerator, userMap)
         }
     }
   }
 
-  def idle(idGenerator: AtomicInteger)(implicit timer:TimerScheduler[Command]): Behavior[Command] =
-    Behaviors.receive[Command]{
-      (ctx,msg)=>
+  def idle(idGenerator: AtomicInteger, userMap: mutable.HashMap[String, Long])(implicit timer: TimerScheduler[Command]): Behavior[Command] =
+    Behaviors.receive[Command] {
+      (ctx, msg) =>
         msg match {
-          case GetWebSocketFlow(name,replyTo)=>
-            val userId= idGenerator.getAndIncrement().toLong
-
-            replyTo ! getWebSocketFlow(getUserActor(ctx,userId,name))
+          case NameCheck(name, replyTo) =>
+            if (userMap.get(name).nonEmpty) {
+              replyTo ! "NO"
+            } else {
+              replyTo ! "Yes"
+            }
+            Behaviors.same
+          case GetWebSocketFlow(name, replyTo) =>
+            val userId = idGenerator.getAndIncrement().toLong
+            userMap += (name -> userId)
+            replyTo ! getWebSocketFlow(getUserActor(ctx, userId, name))
 
             Behaviors.same
 
-          case ChildDead(child,childRef)=>
+          case ChildDead(child, childRef) =>
             ctx.unwatch(childRef)
             Behaviors.same
 
-          case x=>
+          case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")
             Behaviors.unhandled
         }
     }
 
 
-  private def getUserActor(ctx: ActorContext[Command],userId:Long,name:String):ActorRef[UserActor.Command] = {
+  private def getUserActor(ctx: ActorContext[Command], userId: Long, name: String): ActorRef[UserActor.Command] = {
     val childName = s"UserActor-$userId"
-    ctx.child(childName).getOrElse{
-      val actor = ctx.spawn(UserActor.create(userId,name),childName)
-      ctx.watchWith(actor,ChildDead(childName,actor))
+    ctx.child(childName).getOrElse {
+      val actor = ctx.spawn(UserActor.create(userId, name), childName)
+      ctx.watchWith(actor, ChildDead(childName, actor))
       actor
     }.upcast[UserActor.Command]
   }
 
-  private def getWebSocketFlow(userActor: ActorRef[UserActor.Command]): Flow[Message,Message,Any] ={
+  private def getWebSocketFlow(userActor: ActorRef[UserActor.Command]): Flow[Message, Message, Any] = {
 
     Flow[Message]
       .collect {
@@ -100,19 +111,21 @@ object UserManager {
       .via(UserActor.flow(userActor)) // ... and route them through the chatFlow ...
       //      .map { msg => TextMessage.Strict(msg.asJson.noSpaces) // ... pack outgoing messages into WS JSON messages ...
       //.map { msg => TextMessage.Strict(write(msg)) // ... pack outgoing messages into WS JSON messages ...
-      .map { message =>
-      val sendBuffer = new MiddleBufferInJvm(409600)
-      BinaryMessage.Strict(ByteString(
-        //encoded process
-        message.fillMiddleBuffer(sendBuffer).result()
-      ))
+      .map {
+      case message: GameMessage =>
+        val sendBuffer = new MiddleBufferInJvm(409600)
+        BinaryMessage.Strict(ByteString(
+          //encoded process
+          message.fillMiddleBuffer(sendBuffer).result()
+        ))
 
-    }.withAttributes(ActorAttributes.supervisionStrategy(decider))    // ... then log any processing errors on stdin
-
-
+      case x =>
+        TextMessage.apply("")
+    }.withAttributes(ActorAttributes.supervisionStrategy(decider)) // ... then log any processing errors on stdin
 
 
   }
+
   val decider: Supervision.Decider = {
     e: Throwable =>
       e.printStackTrace()

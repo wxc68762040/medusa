@@ -11,6 +11,8 @@ object RoomManager {
   private val log=LoggerFactory.getLogger(this.getClass)
   sealed trait Command
 
+  case class JoinGame(userId:Long,name:String) extends Command
+
   val behaviors:Behavior[Command] ={
     log.debug(s"UserManager start...")
     Behaviors.setup[Command]{

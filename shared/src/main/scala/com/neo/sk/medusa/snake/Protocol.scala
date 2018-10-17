@@ -7,10 +7,12 @@ package com.neo.sk.medusa.snake
   */
 object Protocol {
 
-  sealed trait GameMessage
+  sealed trait WsMsgSource
 
-  case object CompleteMsgServer extends GameMessage
-  case class FailMsgServer(ex: Exception) extends GameMessage
+  case object CompleteMsgServer extends WsMsgSource
+  case class FailMsgServer(ex: Exception) extends WsMsgSource
+
+  sealed trait GameMessage extends WsMsgSource
 
   case class GridDataSync(
     frameCount: Long,
