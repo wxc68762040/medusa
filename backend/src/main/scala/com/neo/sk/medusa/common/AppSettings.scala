@@ -19,7 +19,8 @@ object AppSettings {
   val httpInterface = appConfig.getString("http.interface")
   val httpPort = appConfig.getInt("http.port")
 
-
+  val boundW = appConfig.getInt("bounds.w")
+  val bountH = appConfig.getInt("bounds.h")
 
 
 
