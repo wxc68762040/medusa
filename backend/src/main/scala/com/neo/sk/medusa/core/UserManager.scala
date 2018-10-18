@@ -35,24 +35,36 @@ object UserManager {
 
   case class NameCheck(name: String, replyTo: ActorRef[CommonRsp]) extends Command
 
+  case class UserReady(playerId:Long,userActor: ActorRef[UserActor.Command])extends Command
+
   val behaviors: Behavior[Command] = {
     log.debug(s"UserManager start...")
     Behaviors.setup[Command] {
       ctx =>
         Behaviors.withTimers[Command] {
           implicit timer =>
-            idle()
+            val userRoomMap = mutable.HashMap.empty[Long, (Long, String)]
+            idle(userRoomMap)
         }
     }
   }
 
-  def idle()(implicit timer: TimerScheduler[Command]): Behavior[Command] =
+  def idle(userRoomMap:mutable.HashMap[Long, (Long, String)])(implicit timer: TimerScheduler[Command]): Behavior[Command] =
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
           case GetWebSocketFlow(playerId,playerName,roomId, replyTo) =>
-
+            if(userRoomMap.get(playerId).nonEmpty){
+              userRoomMap.update(playerId,(roomId,playerName))
+            }else{
+              userRoomMap.put(playerId,(roomId,playerName))
+            }
             replyTo ! getWebSocketFlow(getUserActor(ctx, playerId, playerName,roomId))
+            Behaviors.same
+
+          case UserReady(playerId,userActor)=>
+            userActor ! UserActor.StartGame(playerId,userRoomMap(playerId)._2,userRoomMap(playerId)._1)
+            userRoomMap.remove(playerId)
             Behaviors.same
 
           case ChildDead(_, childRef) =>
@@ -69,7 +81,7 @@ object UserManager {
   private def getUserActor(ctx: ActorContext[Command], playerId: Long, playerName: String,roomId:Long): ActorRef[UserActor.Command] = {
     val childName = s"UserActor-$playerId"
     ctx.child(childName).getOrElse {
-      val actor = ctx.spawn(UserActor.create(playerId, playerName,roomId), childName)
+      val actor = ctx.spawn(UserActor.create(playerId, playerName), childName)
       ctx.watchWith(actor, ChildDead(childName, actor))
       actor
     }.upcast[UserActor.Command]

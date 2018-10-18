@@ -33,7 +33,7 @@ object UserActor {
 
   case class UserFrontActor(actor: ActorRef[WsMsgSource]) extends Command
 
-  case object StartGame extends Command
+  case class StartGame(playerId:Long,playerName:String,roomId:Long) extends Command
 
   case class JoinRoomSuccess(roomId: Long, roomActor: ActorRef[RoomActor.Command]) extends Command
 
@@ -52,24 +52,24 @@ object UserActor {
   case class DispatchMsg(msg: WsMsgSource) extends Command
 
 
-  def create(playerId: Long, playerName: String, roomId: Long): Behavior[Command] = {
+  def create(playerId: Long, playerName: String): Behavior[Command] = {
     Behaviors.setup[Command] {
       ctx =>
         implicit val stashBuffer: StashBuffer[Command] = StashBuffer[Command](Int.MaxValue)
         Behaviors.withTimers[Command] {
           implicit timer =>
-            switchBehavior(ctx, "init", init(playerId, playerName, roomId), InitTime, TimeOut("init"))
+            switchBehavior(ctx, "init", init(playerId, playerName), InitTime, TimeOut("init"))
         }
     }
   }
 
-  private def init(playerId: Long, playerName: String, roomId: Long)(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]) =
+  private def init(playerId: Long, playerName: String)(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]) =
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
           case UserFrontActor(frontActor) =>
-            ctx.self ! StartGame
-            switchBehavior(ctx, "idle", idle(playerId, playerName, roomId, frontActor))
+            userManager ! UserManager.UserReady(playerId,ctx.self)
+            switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor))
           case TimeOut(m) =>
             log.debug(s"${ctx.self.path} is time out when busy,msg=$m")
             Behaviors.stopped
@@ -79,11 +79,11 @@ object UserActor {
         }
     }
 
-  private def idle(playerId: Long, playerName: String, roomId: Long, frontActor: ActorRef[Protocol.WsMsgSource])(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]) =
+  private def idle(playerId: Long, playerName: String, frontActor: ActorRef[Protocol.WsMsgSource])(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]) =
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
-          case StartGame =>
+          case StartGame(_,_,roomId) =>
             roomManager ! RoomManager.JoinGame(playerId, playerName, roomId, ctx.self)
             Behaviors.same
 

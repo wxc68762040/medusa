@@ -53,12 +53,12 @@ object RoomActor {
     Behaviors.receive[Command]{
       (ctx,msg)=>
         msg match {
-          case t:UserJoin =>
-            log.debug(s"room $roomId got a new player: ${t.userId}")
-            userMap.put(t.userId, t.userActor)
-            grid.addSnake(t.userId, t.name, roomId)
-            dispatchTo(t.userId, UserActor.DispatchMsg(Protocol.Id(t.userId)), userMap )
-            dispatch(UserActor.DispatchMsg(Protocol.NewSnakeJoined(t.userId, t.name, roomId)), userMap)
+          case t:UserJoinGame =>
+            log.debug(s"room $roomId got a new player: ${t.playerId}")
+            userMap.put(t.playerId, t.userActor)
+            grid.addSnake(t.playerId, t.playerName, roomId)
+            dispatchTo(t.playerId, UserActor.DispatchMsg(Protocol.Id(t.playerId)), userMap )
+            dispatch(UserActor.DispatchMsg(Protocol.NewSnakeJoined(t.playerId, t.playerName, roomId)), userMap)
             dispatch(UserActor.DispatchMsg(grid.getGridSyncData), userMap)
 
             Behaviors.same
