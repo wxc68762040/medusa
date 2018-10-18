@@ -22,6 +22,7 @@ object AppSettings {
   val boundW = appConfig.getInt("bounds.w")
   val bountH = appConfig.getInt("bounds.h")
 
-
+  val frameRate = appConfig.getInt("sync.frameRate")
+  val syncDelay = appConfig.getInt("sync.delay")
 
 }
