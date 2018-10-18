@@ -53,10 +53,10 @@ trait SnakeService extends ServiceUtils {
 
 
   val netSnakeRoute: Route = {
-    (pathPrefix("netSnake") & get) {
-      pathEndOrSingleSlash {
-        getFromResource("html/netSnake.html")
-      } ~
+    (pathPrefix("game") & get) {
+        pathEndOrSingleSlash {
+          getFromResource("html/netSnake.html")
+        } ~
         path("join") {
           parameter('name) { name =>
             val flowFuture: Future[Flow[Message, Message, Any]] = userManager ? (UserManager.GetWebSocketFlow(name, _))
