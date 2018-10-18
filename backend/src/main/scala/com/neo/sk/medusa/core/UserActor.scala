@@ -33,7 +33,7 @@ object UserActor {
 
   case class UserFrontActor(actor: ActorRef[WsMsgSource]) extends Command
 
-  case class StartGame(playerId:Long,playerName:String,roomId:Long) extends Command
+  case class StartGame(playerId: Long, playerName: String, roomId: Long) extends Command
 
   case class JoinRoomSuccess(roomId: Long, roomActor: ActorRef[RoomActor.Command]) extends Command
 
@@ -68,7 +68,7 @@ object UserActor {
       (ctx, msg) =>
         msg match {
           case UserFrontActor(frontActor) =>
-            userManager ! UserManager.UserReady(playerId,ctx.self)
+            userManager ! UserManager.UserReady(playerId, ctx.self)
             switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor))
           case TimeOut(m) =>
             log.debug(s"${ctx.self.path} is time out when busy,msg=$m")
@@ -83,7 +83,7 @@ object UserActor {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
-          case StartGame(_,_,roomId) =>
+          case StartGame(_, _, roomId) =>
             roomManager ! RoomManager.JoinGame(playerId, playerName, roomId, ctx.self)
             Behaviors.same
 

@@ -20,7 +20,8 @@ object RoomManager {
 
   case class JoinGame(playerId: Long, playerName: String, roomId: Long, userActor: ActorRef[UserActor.Command]) extends Command
 
-  case class UserLeft(playerId:Long,roomId:Long)extends Command
+  case class UserLeft(playerId: Long, roomId: Long) extends Command
+
   val behaviors: Behavior[Command] = {
     log.debug(s"UserManager start...")
     Behaviors.setup[Command] {
@@ -66,7 +67,7 @@ object RoomManager {
                 //房间已存在
                 if (roomNumMap(roomId) >= maxUserNum) {
                   //房间已满
-                  userActor ! UserActor.JoinRoomFailure(roomId,100001,s"room $roomId has been full!")
+                  userActor ! UserActor.JoinRoomFailure(roomId, 100001, s"room $roomId has been full!")
                 } else {
                   //房间未满
                   roomNumMap.update(roomId, roomNumMap(roomId) + 1)
@@ -75,13 +76,13 @@ object RoomManager {
                 }
               } else {
                 //房间不存在
-                userActor ! UserActor.JoinRoomFailure(roomId,100002,s"room$roomId  doesn't exist!")
+                userActor ! UserActor.JoinRoomFailure(roomId, 100002, s"room$roomId  doesn't exist!")
               }
             }
 
             Behaviors.same
 
-          case UserLeft(playerId,roomId)=>
+          case UserLeft(playerId, roomId) =>
 
 
             Behaviors.same

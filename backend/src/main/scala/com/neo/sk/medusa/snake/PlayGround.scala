@@ -74,7 +74,7 @@ object PlayGround {
 
             context.watch(subscriber)
             subscribers += (id -> subscriber)
-            roomMap(roomId)._2.addSnake(id, name, roomId)
+            roomMap(roomId)._2.addSnake(id, name)
             dispatchTo(id, Protocol.Id(id))
             dispatch(Protocol.NewSnakeJoined(id, name, roomId), roomId)
             dispatch(roomMap(roomId)._2.getGridSyncData, roomId)
@@ -107,7 +107,7 @@ object PlayGround {
 //            dispatch(Protocol.TextMsg(s"Aha! $id click [$keyCode],"),roomId) //just for test
             val grid = roomMap(roomId)._2
             if (keyCode == KeyEvent.VK_SPACE) {
-              grid.addSnake(id,userMap.getOrElse(id, ( "Unknown",0))._1,roomId)
+              grid.addSnake(id,userMap.getOrElse(id, ( "Unknown",0))._1)
             } else {
               if(frame >= grid.frameCount) {
                 grid.addActionWithFrame(id, keyCode, frame)
