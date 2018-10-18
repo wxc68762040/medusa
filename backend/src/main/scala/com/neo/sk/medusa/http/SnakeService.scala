@@ -53,10 +53,10 @@ trait SnakeService extends ServiceUtils {
 
 
   val netSnakeRoute: Route = {
-    (pathPrefix("netSnake") & get) {
-      pathEndOrSingleSlash {
-        getFromResource("html/netSnake.html")
-      } ~
+    (pathPrefix("game") & get) {
+        pathEndOrSingleSlash {
+          getFromResource("html/netSnake.html")
+        } ~
         path("join") {
           parameter('playerId.as[Long],'playerName.as[String],'roomId.as[Long],'accessCode.as[String]) {
             (playerId,playerName,roomId,accessCode) =>

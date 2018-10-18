@@ -17,6 +17,7 @@ import io.circe.parser._
 import scala.scalajs.js
 import scala.scalajs.js.typedarray.ArrayBuffer
 import scala.util.Random
+import scala.util.matching.Regex
 
 /**
   * User: Taoz
@@ -24,8 +25,6 @@ import scala.util.Random
   * Time: 12:45 PM
   */
 object NetGameHolder extends js.JSApp {
-
-
   val bounds = Point(Boundary.w, Boundary.h)
   val canvasUnit = 7
   val canvasBoundary = Point(dom.document.documentElement.clientWidth,dom.document.documentElement.clientHeight)
@@ -84,8 +83,8 @@ object NetGameHolder extends js.JSApp {
   }
 
   private[this] val nameExist = dom.document.getElementById("nameExist").asInstanceOf[Div]
-  private[this] val nameField = dom.document.getElementById("name").asInstanceOf[HTMLInputElement]
-  private[this] val joinButton = dom.document.getElementById("join").asInstanceOf[HTMLButtonElement]
+//  private[this] val nameField = dom.document.getElementById("name").asInstanceOf[HTMLInputElement]
+//  private[this] val joinButton = dom.document.getElementById("join").asInstanceOf[HTMLButtonElement]
   private[this] val startBg = dom.document.getElementById("startBg")
   startBg.setAttribute("style",s"position:absolute;;z-index:4;left: 0px; top: 200px;background: rgba(0, 0, 0, 0.8);height:${canvasBoundary.y}px;width:${canvasBoundary.x}px")
   private[this] val canvas = dom.document.getElementById("GameView").asInstanceOf[Canvas]
@@ -106,24 +105,17 @@ object NetGameHolder extends js.JSApp {
 
     mapCanvas.width = mapBoundary.x
     mapCanvas.height = mapBoundary.y
-
-    joinButton.onclick = { (event: MouseEvent) =>
-      nameExist.innerHTML = ""
-      if(nameField.value.length > 15){
-          nameExist.innerHTML = "名称不能超过15"
-      }else{
-        joinGame(nameField.value)
-        event.preventDefault()
-      }
-
+    val hash = dom.window.location.hash.drop(1)
+    val info = hash.split("\\?")
+    val path = info(0) match {
+      case "playGame" => "join"
+      case "watchGame" => ""
+      case "watchRecord" => ""
+      case _ => ""
     }
-    nameField.focus()
-    nameField.onkeypress = { (event: KeyboardEvent) =>
-      if (event.keyCode == 13) {
-        joinButton.click()
-        event.preventDefault()
-      }
-    }
+    println(path)
+    println(info(1))
+    joinGame(path, info(1))
     dom.window.requestAnimationFrame(drawLoop())
   }
 
@@ -527,11 +519,11 @@ object NetGameHolder extends js.JSApp {
   val netInfoHandler = new NetInfoHandler()
 
 
-  def joinGame(name: String): Unit = {
+  def joinGame(path:String, playerInfo:String): Unit = {
     //joinButton.disabled = true
     val playground = dom.document.getElementById("playground")
-    playground.innerHTML = s"Trying to join game as '$name'..."
-    val gameStream = new WebSocket(getWebSocketUri(dom.document, name))
+    playground.innerHTML = s"Trying to join game ."
+    val gameStream = new WebSocket(getWebSocketUri(dom.document, path, playerInfo))
 //    def refreshNetInfo(): Unit = {
 //      fps = fpsCounter / ((System.currentTimeMillis() - netInfoBasicTime) / 1000.0)
 //      fpsCounter = 0
@@ -574,9 +566,7 @@ object NetGameHolder extends js.JSApp {
     gameStream.onerror = { (event: ErrorEvent) =>
       drawGameOff()
       playground.insertBefore(p(s"Failed: code: ${event.colno}"), playground.firstChild)
-      joinButton.disabled = false
       wsSetup = false
-      nameField.focus()
     }
 
     gameStream.onmessage = { (event: MessageEvent) =>
@@ -689,18 +679,18 @@ object NetGameHolder extends js.JSApp {
     gameStream.onclose = { (event: Event) =>
       drawGameOff()
       playground.insertBefore(p("Connection to game lost. You can try to rejoin manually."), playground.firstChild)
-      joinButton.disabled = false
       wsSetup = false
-      nameField.focus()
     }
 
     def writeToArea(text: String): Unit =
       playground.insertBefore(p(text), playground.firstChild)
   }
 
-  def getWebSocketUri(document: Document, nameOfChatParticipant: String): String = {
+  def getWebSocketUri(document: Document, path: String, playerInfo:String): String = {
+    val tmpPlayer = playerInfo.split("&")
+    val player = if(tmpPlayer.length == 4) playerInfo else playerInfo + "&roomId=-1"
     val wsProtocol = if (dom.document.location.protocol == "https:") "wss" else "ws"
-    s"$wsProtocol://${dom.document.location.host}/medusa/netSnake/join?name=$nameOfChatParticipant"
+    s"$wsProtocol://${dom.document.location.host}/medusa/netSnake/$path?" + player
   }
 
   def p(msg: String) = {
