@@ -68,7 +68,7 @@ object Protocol {
   case class NetDelayTest(createTime: Long) extends GameMessage
 
   case class JoinRoomSuccess(playerId:Long,roomId:Long)extends GameMessage
-  case class JoinRoomFailure(playerId:Long,roomId:Long,msg:String)extends GameMessage
+  case class JoinRoomFailure(playerId:Long,roomId:Long,errorCode:Int,msg:String)extends GameMessage
 
 
   sealed trait UserAction
