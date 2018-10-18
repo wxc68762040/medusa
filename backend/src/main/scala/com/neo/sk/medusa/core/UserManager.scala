@@ -10,6 +10,7 @@ import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import org.seekloud.byteobject.ByteObject
 import org.slf4j.LoggerFactory
+
 import scala.collection._
 import scala.language.implicitConversions
 import org.seekloud.byteobject.MiddleBufferInJvm
@@ -19,7 +20,8 @@ import io.circe.generic.auto._
 import io.circe.parser._
 
 import scala.concurrent.duration._
-import com.neo.sk.medusa.snake.Protocol.{GameMessage, TextInfo, UserAction}
+import com.neo.sk.medusa.snake.Protocol._
+import net.sf.ehcache.transaction.xa.commands.Command
 
 object UserManager {
 
@@ -29,9 +31,9 @@ object UserManager {
 
   final case class ChildDead[U](name: String, childRef: ActorRef[U]) extends Command
 
-  final case class GetWebSocketFlow(name: String, replyTo: ActorRef[Flow[Message, Message, Any]]) extends Command
+  final case class GetWebSocketFlow(playerId:Long,playerName: String,roomId:Long, replyTo: ActorRef[Flow[Message, Message, Any]]) extends Command
 
-  case class NameCheck(name: String, replyTo: ActorRef[Any]) extends Command
+  case class NameCheck(name: String, replyTo: ActorRef[CommonRsp]) extends Command
 
   val behaviors: Behavior[Command] = {
     log.debug(s"UserManager start...")
@@ -39,29 +41,19 @@ object UserManager {
       ctx =>
         Behaviors.withTimers[Command] {
           implicit timer =>
-            val idGenerator = new AtomicInteger(1000000)
             val userMap = mutable.HashMap.empty[String, Long]
-            idle(idGenerator, userMap)
+            idle()
         }
     }
   }
 
-  def idle(idGenerator: AtomicInteger, userMap: mutable.HashMap[String, Long])(implicit timer: TimerScheduler[Command]): Behavior[Command] =
+  def idle()(implicit timer: TimerScheduler[Command]): Behavior[Command] =
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
-          case NameCheck(name, replyTo) =>
-            if (userMap.get(name).nonEmpty) {
-              replyTo ! "NO"
-            } else {
-              replyTo ! "Yes"
-            }
-            Behaviors.same
-          case GetWebSocketFlow(name, replyTo) =>
-            val userId = idGenerator.getAndIncrement().toLong
-            userMap += (name -> userId)
-            replyTo ! getWebSocketFlow(getUserActor(ctx, userId, name))
+          case GetWebSocketFlow(playerId,playerName,roomId, replyTo) =>
 
+            replyTo ! getWebSocketFlow(getUserActor(ctx, playerId, playerName,roomId))
             Behaviors.same
 
           case ChildDead(child, childRef) =>
@@ -75,10 +67,10 @@ object UserManager {
     }
 
 
-  private def getUserActor(ctx: ActorContext[Command], userId: Long, name: String): ActorRef[UserActor.Command] = {
-    val childName = s"UserActor-$userId"
+  private def getUserActor(ctx: ActorContext[Command], playerId: Long, playerName: String,roomId:Long): ActorRef[UserActor.Command] = {
+    val childName = s"UserActor-$playerId"
     ctx.child(childName).getOrElse {
-      val actor = ctx.spawn(UserActor.create(userId, name), childName)
+      val actor = ctx.spawn(UserActor.create(playerId, playerName,roomId), childName)
       ctx.watchWith(actor, ChildDead(childName, actor))
       actor
     }.upcast[UserActor.Command]
