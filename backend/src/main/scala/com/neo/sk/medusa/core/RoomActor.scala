@@ -24,7 +24,7 @@ object RoomActor {
 
   case class Key(id: Long, keyCode: Int, frame: Long) extends Command
 
-  private case class NetTest(id: Long, createTime: Long) extends Command
+  case class NetTest(id: Long, createTime: Long) extends Command
 
   private case object Sync extends Command
 
