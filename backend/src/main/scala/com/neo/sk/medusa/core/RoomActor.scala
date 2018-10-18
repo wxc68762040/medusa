@@ -10,7 +10,7 @@ object RoomActor {
   private val log=LoggerFactory.getLogger(this.getClass)
   sealed trait Command
 
-  def create(): Behavior[Command] = {
+  def create(roomId:Long): Behavior[Command] = {
     Behaviors.setup[Command] {
       ctx =>
         implicit val stashBuffer: StashBuffer[Command] = StashBuffer[Command](Int.MaxValue)

@@ -12,7 +12,9 @@ import com.neo.sk.medusa.Boot.roomManager
 import akka.stream.typed.scaladsl.{ActorSink, ActorSource}
 import com.neo.sk.medusa.snake.Protocol
 import io.circe.Decoder
+import net.sf.ehcache.transaction.xa.commands.Command
 import org.slf4j.LoggerFactory
+
 import scala.concurrent.duration._
 
 
@@ -28,9 +30,13 @@ object UserActor {
 
   final case class FailureMessage(ex: Throwable) extends Command
 
-  case class UserFrontActor(actor: ActorRef[GameMessage]) extends Command
+  case class UserFrontActor(actor: ActorRef[WsMsgSource]) extends Command
 
   case object StartGame extends Command
+
+  case class JoinRoomSuccess(roomId:Long, roomActor: ActorRef[RoomActor.Command])extends Command
+
+  case class RoomFull(roomId:Long) extends Command
 
   private case class Key(id: Long, keyCode: Int, frame: Long) extends Command
 
@@ -42,25 +48,27 @@ object UserActor {
 
   case class TimeOut(msg:String) extends Command
 
+  case class DispatchMsg(msg:WsMsgSource) extends Command
 
-  def create(userId: Long, name: String): Behavior[Command] = {
+
+  def create(playerId: Long, playerName: String, roomId:Long): Behavior[Command] = {
     Behaviors.setup[Command] {
       ctx =>
         implicit val stashBuffer: StashBuffer[Command] = StashBuffer[Command](Int.MaxValue)
         Behaviors.withTimers[Command] {
           implicit timer =>
-            switchBehavior(ctx,"init",init(userId,name),InitTime,TimeOut("init"))
+            switchBehavior(ctx,"init",init(playerId,playerName,roomId),InitTime,TimeOut("init"))
         }
     }
   }
 
-  private def init(userId: Long, name: String)(implicit timer: TimerScheduler[Command], stashBuffer:StashBuffer[Command])=
+  private def init(playerId: Long, playerName: String,roomId:Long)(implicit timer: TimerScheduler[Command], stashBuffer:StashBuffer[Command])=
     Behaviors.receive[Command]{
       (ctx,msg)=>
         msg match {
           case UserFrontActor(frontActor)=>
             ctx.self ! StartGame
-            switchBehavior(ctx,"idle",idle(userId,name,frontActor))
+            switchBehavior(ctx,"idle",idle(playerId,playerName,roomId,frontActor))
           case TimeOut(m)=>
             log.debug(s"${ctx.self.path} is time out when busy,msg=$m")
             Behaviors.stopped
@@ -70,12 +78,26 @@ object UserActor {
         }
     }
 
-  private def idle(userId: Long, name: String, frontActor:ActorRef[Protocol.GameMessage])(implicit timer: TimerScheduler[Command], stashBuffer:StashBuffer[Command]) =
+  private def idle(playerId: Long, playerName: String, roomId:Long ,frontActor:ActorRef[Protocol.WsMsgSource])(implicit timer: TimerScheduler[Command], stashBuffer:StashBuffer[Command]) =
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
           case StartGame=>
-            roomManager ! RoomManager.JoinGame(userId,name)
+            roomManager ! RoomManager.JoinGame(playerId,playerName,roomId,ctx.self)
+            Behaviors.same
+
+          case JoinRoomSuccess(rId,roomActor)=>
+
+            roomActor
+
+            frontActor ! Protocol.JoinRoomSuccess(playerId,rId)
+
+            switchBehavior(ctx,"play",play(playerId,playerName,rId,frontActor,roomActor))
+
+          case RoomFull(rId)=>
+
+            frontActor ! JoinRoomFailure(playerId,rId,"room is full")
+
             Behaviors.same
 
           case x =>
@@ -83,6 +105,40 @@ object UserActor {
             Behaviors.unhandled
         }
 
+    }
+
+  private def play(playerId: Long, playerName: String, roomId:Long ,
+                   frontActor:ActorRef[Protocol.WsMsgSource],
+                   roomActor: ActorRef[RoomActor.Command])
+                  (implicit timer: TimerScheduler[Command], stashBuffer:StashBuffer[Command])=
+    Behaviors.receive[Command]{
+      (ctx,msg)=>
+        msg match {
+
+          case Key(id, keyCode, frame)=>
+
+            Behaviors.same
+
+          case NetTest(id, createTime)=>
+
+            Behaviors.same
+
+          case TextInfo(id, info)=>
+
+            Behaviors.same
+
+          case DispatchMsg(m)=>
+
+            frontActor ! m
+            Behaviors.same
+
+          case UnKnowAction=>
+
+            Behaviors.same
+          case x=>
+            log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")
+            Behaviors.unhandled
+        }
     }
 
   private[this] def switchBehavior(ctx: ActorContext[Command],

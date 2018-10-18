@@ -67,6 +67,9 @@ object Protocol {
 
   case class NetDelayTest(createTime: Long) extends GameMessage
 
+  case class JoinRoomSuccess(playerId:Long,roomId:Long)extends GameMessage
+  case class JoinRoomFailure(playerId:Long,roomId:Long,msg:String)extends GameMessage
+
 
   sealed trait UserAction
 
@@ -75,6 +78,22 @@ object Protocol {
   case class NetTest(id: Long, createTime: Long) extends UserAction
 
   case class TextInfo(id: Long, info: String) extends UserAction
+
+
+ sealed trait CommonRsp {
+    val errCode: Int
+    val msg: String
+  }
+
+  final case class ErrorRsp(
+                             errCode: Int,
+                             msg: String
+                           ) extends CommonRsp
+
+  final case class SuccessRsp(
+                               errCode: Int = 0,
+                               msg: String = "ok"
+                             ) extends CommonRsp
 
 
   val frameRate = 100
