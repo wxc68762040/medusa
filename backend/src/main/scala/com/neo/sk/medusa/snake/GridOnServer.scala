@@ -22,7 +22,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
   override def info(msg: String): Unit = log.info(msg)
 
 
-  private[this] var waitingJoin = Map.empty[Long, (String, Long)]
+  private[this] var waitingJoin = Map.empty[Long, String]
   private[this] var feededApples: List[Ap] = Nil
   private[this] var deadBodies: List[Ap] = Nil
   private [this] var eatenApples = Map.empty[Long, List[AppleWithFrame]]
@@ -35,7 +35,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
   private[this] var historyRankThreshold = if (historyRankList.isEmpty) -1 else historyRankList.map(_.l).min
 
-  def addSnake(id: Long, name: String, roomId: Long) = waitingJoin += (id -> (name, roomId))
+  def addSnake(id: Long, name: String) = waitingJoin += (id -> name)
 
   def randomColor() = {
     val a = random.nextInt(7)
@@ -56,14 +56,14 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
 
   private[this] def genWaitingSnake() = {
-    waitingJoin.filterNot(kv => snakes.contains(kv._1)).foreach { case (id, (name, roomId)) =>
+    waitingJoin.filterNot(kv => snakes.contains(kv._1)).foreach { case (id, name) =>
       val color = randomColor()
       val head = randomHeadEmptyPoint()
       val direction = getSafeDirection(head)
       grid += head -> Body(id, color)
       snakes += id -> SnakeInfo(id, name, head, head, head, color, direction)
     }
-    waitingJoin = Map.empty[Long, (String, Long)]
+    waitingJoin = Map.empty[Long, String]
   }
 
   implicit val scoreOrdering = new Ordering[Score] {
