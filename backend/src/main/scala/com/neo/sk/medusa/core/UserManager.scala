@@ -41,7 +41,6 @@ object UserManager {
       ctx =>
         Behaviors.withTimers[Command] {
           implicit timer =>
-            val userMap = mutable.HashMap.empty[String, Long]
             idle()
         }
     }
@@ -56,7 +55,7 @@ object UserManager {
             replyTo ! getWebSocketFlow(getUserActor(ctx, playerId, playerName,roomId))
             Behaviors.same
 
-          case ChildDead(child, childRef) =>
+          case ChildDead(_, childRef) =>
             ctx.unwatch(childRef)
             Behaviors.same
 

@@ -8,7 +8,7 @@ import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import com.neo.sk.medusa.snake.Protocol._
-import com.neo.sk.medusa.Boot.roomManager
+import com.neo.sk.medusa.Boot.{roomManager, userManager}
 import akka.stream.typed.scaladsl.{ActorSink, ActorSource}
 import com.neo.sk.medusa.snake.Protocol
 import io.circe.Decoder
@@ -22,6 +22,7 @@ object UserActor {
   private val log = LoggerFactory.getLogger(this.getClass)
 
   private final val InitTime = Some(5.minutes)
+
   private final case object BehaviorChangeKey
 
   sealed trait Command
@@ -34,10 +35,9 @@ object UserActor {
 
   case object StartGame extends Command
 
-  case class JoinRoomSuccess(roomId:Long, roomActor: ActorRef[RoomActor.Command])extends Command
-  case class JoinRoomFailure(roomId:Long,errorCode:Int ,msg:String)extends Command
+  case class JoinRoomSuccess(roomId: Long, roomActor: ActorRef[RoomActor.Command]) extends Command
 
-  case class RoomFull(roomId:Long) extends Command
+  case class JoinRoomFailure(roomId: Long, errorCode: Int, msg: String) extends Command
 
   private case class Key(id: Long, keyCode: Int, frame: Long) extends Command
 
@@ -47,59 +47,61 @@ object UserActor {
 
   private case object UnKnowAction extends Command
 
-  case class TimeOut(msg:String) extends Command
+  case class TimeOut(msg: String) extends Command
 
-  case class DispatchMsg(msg:WsMsgSource) extends Command
+  case class DispatchMsg(msg: WsMsgSource) extends Command
 
 
-  def create(playerId: Long, playerName: String, roomId:Long): Behavior[Command] = {
+  def create(playerId: Long, playerName: String, roomId: Long): Behavior[Command] = {
     Behaviors.setup[Command] {
       ctx =>
         implicit val stashBuffer: StashBuffer[Command] = StashBuffer[Command](Int.MaxValue)
         Behaviors.withTimers[Command] {
           implicit timer =>
-            switchBehavior(ctx,"init",init(playerId,playerName,roomId),InitTime,TimeOut("init"))
+            switchBehavior(ctx, "init", init(playerId, playerName, roomId), InitTime, TimeOut("init"))
         }
     }
   }
 
-  private def init(playerId: Long, playerName: String,roomId:Long)(implicit timer: TimerScheduler[Command], stashBuffer:StashBuffer[Command])=
-    Behaviors.receive[Command]{
-      (ctx,msg)=>
+  private def init(playerId: Long, playerName: String, roomId: Long)(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]) =
+    Behaviors.receive[Command] {
+      (ctx, msg) =>
         msg match {
-          case UserFrontActor(frontActor)=>
+          case UserFrontActor(frontActor) =>
             ctx.self ! StartGame
-            switchBehavior(ctx,"idle",idle(playerId,playerName,roomId,frontActor))
-          case TimeOut(m)=>
+            switchBehavior(ctx, "idle", idle(playerId, playerName, roomId, frontActor))
+          case TimeOut(m) =>
             log.debug(s"${ctx.self.path} is time out when busy,msg=$m")
             Behaviors.stopped
-          case x=>
+          case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")
             Behaviors.unhandled
         }
     }
 
-  private def idle(playerId: Long, playerName: String, roomId:Long ,frontActor:ActorRef[Protocol.WsMsgSource])(implicit timer: TimerScheduler[Command], stashBuffer:StashBuffer[Command]) =
+  private def idle(playerId: Long, playerName: String, roomId: Long, frontActor: ActorRef[Protocol.WsMsgSource])(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]) =
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
-          case StartGame=>
-            roomManager ! RoomManager.JoinGame(playerId,playerName,roomId,ctx.self)
+          case StartGame =>
+            roomManager ! RoomManager.JoinGame(playerId, playerName, roomId, ctx.self)
             Behaviors.same
 
-          case JoinRoomSuccess(rId,roomActor)=>
+          case JoinRoomSuccess(rId, roomActor) =>
 
-            roomActor
+            roomActor ! RoomActor.UserJoinGame(playerId, playerName, ctx.self)
 
-            frontActor ! Protocol.JoinRoomSuccess(playerId,rId)
+            frontActor ! Protocol.JoinRoomSuccess(playerId, rId)
 
-            switchBehavior(ctx,"play",play(playerId,playerName,rId,frontActor,roomActor))
+            switchBehavior(ctx, "play", play(playerId, playerName, rId, frontActor, roomActor))
 
-          case JoinRoomFailure(rId,errorCode,reason)=>
+          case JoinRoomFailure(rId, errorCode, reason) =>
 
-            frontActor !Protocol.JoinRoomFailure(playerId,rId,errorCode,reason)
+            frontActor ! Protocol.JoinRoomFailure(playerId, rId, errorCode, reason)
 
-            Behaviors.same
+            userManager ! UserManager.ChildDead(s"UserActor-$playerId", ctx.self)
+
+            Behaviors.stopped
 
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")
@@ -108,35 +110,35 @@ object UserActor {
 
     }
 
-  private def play(playerId: Long, playerName: String, roomId:Long ,
-                   frontActor:ActorRef[Protocol.WsMsgSource],
+  private def play(playerId: Long, playerName: String, roomId: Long,
+                   frontActor: ActorRef[Protocol.WsMsgSource],
                    roomActor: ActorRef[RoomActor.Command])
-                  (implicit timer: TimerScheduler[Command], stashBuffer:StashBuffer[Command])=
-    Behaviors.receive[Command]{
-      (ctx,msg)=>
+                  (implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]) =
+    Behaviors.receive[Command] {
+      (ctx, msg) =>
         msg match {
 
-          case Key(id, keyCode, frame)=>
+          case Key(id, keyCode, frame) =>
 
             Behaviors.same
 
-          case NetTest(id, createTime)=>
+          case NetTest(id, createTime) =>
 
             Behaviors.same
 
-          case TextInfo(id, info)=>
+          case TextInfo(id, info) =>
 
             Behaviors.same
 
-          case DispatchMsg(m)=>
+          case DispatchMsg(m) =>
 
             frontActor ! m
             Behaviors.same
 
-          case UnKnowAction=>
+          case UnKnowAction =>
 
             Behaviors.same
-          case x=>
+          case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")
             Behaviors.unhandled
         }
@@ -146,12 +148,12 @@ object UserActor {
                                    behaviorName: String,
                                    behavior: Behavior[Command],
                                    durationOpt: Option[FiniteDuration] = None,
-                                   timeOut: TimeOut  = TimeOut("busy time error"))
-                                  (implicit timer:TimerScheduler[Command],stashBuffer: StashBuffer[Command]) = {
+                                   timeOut: TimeOut = TimeOut("busy time error"))
+                                  (implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]) = {
     log.debug(s"${ctx.self.path} becomes $behaviorName behavior.")
     timer.cancel(BehaviorChangeKey)
-    durationOpt.foreach(duration=>timer.startSingleTimer(BehaviorChangeKey,timeOut,duration))
-    stashBuffer.unstashAll(ctx,behavior)
+    durationOpt.foreach(duration => timer.startSingleTimer(BehaviorChangeKey, timeOut, duration))
+    stashBuffer.unstashAll(ctx, behavior)
   }
 
 

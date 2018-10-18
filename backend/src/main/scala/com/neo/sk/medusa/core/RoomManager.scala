@@ -20,6 +20,7 @@ object RoomManager {
 
   case class JoinGame(playerId: Long, playerName: String, roomId: Long, userActor: ActorRef[UserActor.Command]) extends Command
 
+  case class UserLeft(playerId:Long,roomId:Long)extends Command
   val behaviors: Behavior[Command] = {
     log.debug(s"UserManager start...")
     Behaviors.setup[Command] {
@@ -44,6 +45,7 @@ object RoomManager {
       (ctx, msg) =>
         msg match {
           case JoinGame(playerId, playerName, roomId, userActor) =>
+            //分配房间 启动相应actor
             if (roomId == -1) {
               //未指定房间
               if (roomNumMap.exists(_._2 < maxUserNum)) {
@@ -79,10 +81,14 @@ object RoomManager {
 
             Behaviors.same
 
-          case ChildDead(child, childRef) =>
-            ctx.unwatch(childRef)
+          case UserLeft(playerId,roomId)=>
+
+
             Behaviors.same
 
+          case ChildDead(_, childRef) =>
+            ctx.unwatch(childRef)
+            Behaviors.same
 
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")
