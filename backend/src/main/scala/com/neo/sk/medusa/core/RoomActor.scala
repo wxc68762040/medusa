@@ -18,9 +18,9 @@ object RoomActor {
 
   sealed trait Command
 
-  case class UserJoin(userId:Long, userActor:ActorRef[UserActor.Command], name:String) extends Command
-
   case class UserDead(userId:Long, name:String) extends Command
+
+  case class UserJoinGame(playerId:Long,playerName:String,userActor: ActorRef[UserActor.Command])extends Command
 
   case class Key(id: Long, keyCode: Int, frame: Long) extends Command
 
@@ -36,7 +36,7 @@ object RoomActor {
 
   private case object  TimerKey4SyncLoop
 
-  case class UserJoinGame(playerId:Long,playerName:String,userActor: ActorRef[UserActor.Command])extends Command
+
 
   def create(roomId:Long): Behavior[Command] = {
     Behaviors.setup[Command] {
@@ -52,15 +52,15 @@ object RoomActor {
 
   private def idle(roomId:Long, tickCount:Long,
     userMap:mutable.HashMap[Long, (ActorRef[UserActor.Command], String)], grid:GridOnServer)
-    (implicit timer: TimerScheduler[RoomActor.Command]):Behavior[Command]={
-    Behaviors.receive[Command]{
-      (ctx,msg)=>
+    (implicit timer: TimerScheduler[RoomActor.Command]):Behavior[Command]= {
+    Behaviors.receive[Command] {
+      (ctx, msg) =>
         msg match {
-          case t:UserJoinGame =>
+          case t: UserJoinGame =>
             log.debug(s"room $roomId got a new player: ${t.playerId}")
             userMap.put(t.playerId, (t.userActor, t.playerName))
             grid.addSnake(t.playerId, t.playerName, roomId)
-            dispatchTo(t.playerId, UserActor.DispatchMsg(Protocol.Id(t.playerId)), userMap )
+            dispatchTo(t.playerId, UserActor.DispatchMsg(Protocol.Id(t.playerId)), userMap)
             dispatch(UserActor.DispatchMsg(Protocol.NewSnakeJoined(t.playerId, t.playerName, roomId)), userMap)
             dispatch(UserActor.DispatchMsg(grid.getGridSyncData), userMap)
 
@@ -150,7 +150,7 @@ object RoomActor {
         }
 
     }
-
+  }
     def dispatchTo(id: Long, gameOutPut: UserActor.DispatchMsg, userMap:mutable.HashMap[Long, (ActorRef[UserActor.Command], String)]): Unit = {
       userMap.get(id).foreach { t => t._1 ! gameOutPut }
     }
@@ -159,17 +159,16 @@ object RoomActor {
       userMap.values.foreach { t => t._1 ! gameOutPut }
     }
 
-    def dispatchDistinct(distinctId:Long, distinctGameOutPut:UserActor.DispatchMsg, gameOutPut: UserActor.DispatchMsg, userMap:mutable.HashMap[Long, (ActorRef[UserActor.Command], String)]): Unit ={
+    def dispatchDistinct(distinctId:Long, distinctGameOutPut:UserActor.DispatchMsg, gameOutPut: UserActor.DispatchMsg, userMap:mutable.HashMap[Long, (ActorRef[UserActor.Command], String)]): Unit = {
       userMap.foreach {
         case (id, t) =>
-          if(id != distinctId){
+          if (id != distinctId) {
             t._1 ! gameOutPut
-          }else{
+          } else {
             t._1 ! distinctGameOutPut
           }
         case _ =>
       }
     }
-  }
 
 }

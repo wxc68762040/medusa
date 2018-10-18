@@ -37,7 +37,7 @@ object UserManager {
 
   case class UserReady(playerId:Long,userActor: ActorRef[UserActor.Command])extends Command
 
-  val behaviors: Behavior[Command] = {
+  def behaviors(): Behavior[Command] = {
     log.debug(s"UserManager start...")
     Behaviors.setup[Command] {
       ctx =>
@@ -52,6 +52,7 @@ object UserManager {
   def idle(userRoomMap:mutable.HashMap[Long, (Long, String)])(implicit timer: TimerScheduler[Command]): Behavior[Command] =
     Behaviors.receive[Command] {
       (ctx, msg) =>
+        println("=============================")
         msg match {
           case GetWebSocketFlow(playerId,playerName,roomId, replyTo) =>
             if(userRoomMap.get(playerId).nonEmpty){
