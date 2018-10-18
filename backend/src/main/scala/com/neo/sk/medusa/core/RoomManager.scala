@@ -64,7 +64,7 @@ object RoomManager {
                 //房间已存在
                 if (roomNumMap(roomId) >= maxUserNum) {
                   //房间已满
-                  userActor ! UserActor.RoomFull(roomId)
+                  userActor ! UserActor.JoinRoomFailure(roomId,100001,s"room $roomId has been full!")
                 } else {
                   //房间未满
                   roomNumMap.update(roomId, roomNumMap(roomId) + 1)
@@ -72,12 +72,8 @@ object RoomManager {
                   userActor ! UserActor.JoinRoomSuccess(roomId, getRoomActor(ctx, roomId))
                 }
               } else {
-                //房间不存在创建房间
-                val idGenerator = new AtomicInteger(1000000)
-                val newRoomId = idGenerator.getAndIncrement().toLong
-                roomNumMap.put(newRoomId, 1)
-                userRoomMap.put(playerId, (newRoomId, playerName))
-                userActor ! UserActor.JoinRoomSuccess(newRoomId, getRoomActor(ctx, newRoomId))
+                //房间不存在
+                userActor ! UserActor.JoinRoomFailure(roomId,100002,s"room$roomId  doesn't exist!")
               }
             }
 

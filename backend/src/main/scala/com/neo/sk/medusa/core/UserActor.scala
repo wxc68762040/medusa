@@ -35,6 +35,7 @@ object UserActor {
   case object StartGame extends Command
 
   case class JoinRoomSuccess(roomId:Long, roomActor: ActorRef[RoomActor.Command])extends Command
+  case class JoinRoomFailure(roomId:Long,errorCode:Int ,msg:String)extends Command
 
   case class RoomFull(roomId:Long) extends Command
 
@@ -94,9 +95,9 @@ object UserActor {
 
             switchBehavior(ctx,"play",play(playerId,playerName,rId,frontActor,roomActor))
 
-          case RoomFull(rId)=>
+          case JoinRoomFailure(rId,errorCode,reason)=>
 
-            frontActor ! JoinRoomFailure(playerId,rId,"room is full")
+            frontActor !Protocol.JoinRoomFailure(playerId,rId,errorCode,reason)
 
             Behaviors.same
 
