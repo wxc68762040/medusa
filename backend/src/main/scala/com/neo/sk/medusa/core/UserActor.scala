@@ -1,6 +1,8 @@
 package com.neo.sk.medusa.core
 
 
+import java.awt.event.KeyEvent
+
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors, StashBuffer, TimerScheduler}
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.http.scaladsl.model.ws.Message
@@ -43,9 +45,13 @@ object UserActor {
 
   private case class NetTest(id: Long, createTime: Long) extends Command
 
-  private case class TextInfo(id: Long, info: String) extends Command
+  private case object RestartGame extends Command
 
-  private case object UnKnowAction extends Command
+  private case object UserLeft extends Command
+
+  private case object UserDeadTimerKey extends Command
+
+  private case class UnKnowAction(unknownMsg: UserAction) extends Command
 
   case class TimeOut(msg: String) extends Command
 
@@ -79,7 +85,7 @@ object UserActor {
         }
     }
 
-  private def idle(playerId: Long, playerName: String, frontActor: ActorRef[Protocol.WsMsgSource])(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]) =
+  private def idle(playerId: Long, playerName: String, frontActor: ActorRef[Protocol.WsMsgSource])(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
@@ -109,40 +115,58 @@ object UserActor {
         }
 
     }
+  }
+
 
   private def play(playerId: Long, playerName: String, roomId: Long,
                    frontActor: ActorRef[Protocol.WsMsgSource],
                    roomActor: ActorRef[RoomActor.Command])
-                  (implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]) =
+                  (implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]):Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
 
           case Key(id, keyCode, frame) =>
-
+            roomActor ! RoomActor.Key(id, keyCode, frame)
             Behaviors.same
 
           case NetTest(id, createTime) =>
-
-            Behaviors.same
-
-          case TextInfo(id, info) =>
-
+            roomActor ! RoomActor.NetTest(id, createTime)
             Behaviors.same
 
           case DispatchMsg(m) =>
+            m match {
+              case t:Protocol.SnakeLeft=>
+                //如果死亡十分钟后无操作 则杀死userActor
+                timer.startSingleTimer(UserDeadTimerKey,UserLeft,10.minutes)
+                frontActor ! t
+              case x=>
+                frontActor ! x
+            }
 
-            frontActor ! m
             Behaviors.same
 
-          case UnKnowAction =>
+          case RestartGame =>
+            //重新开始游戏
+            timer.cancel(UserDeadTimerKey)
+            ctx.self ! StartGame(playerId, playerName, roomId)
 
+            switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor))
+
+          case UserLeft =>
+            roomManager ! RoomManager.UserLeftRoom(playerId,roomId)
+            Behaviors.stopped
+
+          case UnKnowAction(unknownMsg) =>
+            log.debug(s"${ctx.self.path} receive an UnKnowAction when idle:$unknownMsg")
             Behaviors.same
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")
             Behaviors.unhandled
         }
     }
+  }
+
 
   private[this] def switchBehavior(ctx: ActorContext[Command],
                                    behaviorName: String,
@@ -162,13 +186,16 @@ object UserActor {
       Flow[UserAction]
         .map {
           case Protocol.Key(id, keyCode, frame) =>
-            Key(id, keyCode, frame)
+            if (keyCode == KeyEvent.VK_SPACE) {
+              RestartGame
+            } else {
+              Key(id, keyCode, frame)
+            }
+
           case Protocol.NetTest(id, createTime) =>
             NetTest(id, createTime)
-          case Protocol.TextInfo(id, info) =>
-            TextInfo(id, info)
-          case _ =>
-            UnKnowAction
+          case x =>
+            UnKnowAction(x)
         }
         .to(sink(userActor))
 

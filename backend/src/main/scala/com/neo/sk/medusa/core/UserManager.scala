@@ -1,7 +1,5 @@
 package com.neo.sk.medusa.core
 
-import java.util.concurrent.atomic.AtomicInteger
-
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors, TimerScheduler}
 import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage}
@@ -36,7 +34,7 @@ object UserManager {
   case class UserReady(playerId: Long, userActor: ActorRef[UserActor.Command]) extends Command
 
   val behaviors: Behavior[Command] = {
-    log.debug(s"UserManager start...")
+    log.info(s"UserManager start...")
     Behaviors.setup[Command] {
       ctx =>
         Behaviors.withTimers[Command] {
@@ -65,7 +63,8 @@ object UserManager {
             userRoomMap.remove(playerId)
             Behaviors.same
 
-          case ChildDead(_, childRef) =>
+          case ChildDead(name, childRef) =>
+            log.info(s"Child${childRef.path}----$name is dead")
             ctx.unwatch(childRef)
             Behaviors.same
 

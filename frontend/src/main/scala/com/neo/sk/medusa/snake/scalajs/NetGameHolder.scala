@@ -690,7 +690,7 @@ object NetGameHolder extends js.JSApp {
     val tmpPlayer = playerInfo.split("&")
     val player = if(tmpPlayer.length == 4) playerInfo else playerInfo + "&roomId=-1"
     val wsProtocol = if (dom.document.location.protocol == "https:") "wss" else "ws"
-    s"$wsProtocol://${dom.document.location.host}/medusa/netSnake/$path?" + player
+    s"$wsProtocol://${dom.document.location.host}/medusa/game/$path?" + player
   }
 
   def p(msg: String) = {

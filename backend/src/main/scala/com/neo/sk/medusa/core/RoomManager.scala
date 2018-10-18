@@ -20,10 +20,10 @@ object RoomManager {
 
   case class JoinGame(playerId: Long, playerName: String, roomId: Long, userActor: ActorRef[UserActor.Command]) extends Command
 
-  case class UserLeft(playerId: Long, roomId: Long) extends Command
+  case class UserLeftRoom(playerId: Long, roomId: Long) extends Command
 
   val behaviors: Behavior[Command] = {
-    log.debug(s"UserManager start...")
+    log.info(s"RoomManager start...")
     Behaviors.setup[Command] {
       ctx =>
         Behaviors.withTimers[Command] {
@@ -82,12 +82,21 @@ object RoomManager {
 
             Behaviors.same
 
-          case UserLeft(playerId, roomId) =>
+          case UserLeftRoom(playerId, roomId) =>
+            if(userRoomMap.get(playerId).nonEmpty){
+              if(roomNumMap(roomId)-1<=0){
+                getRoomActor(ctx,roomId) ! RoomActor.KillRoom
+              }else{
+                roomNumMap.update(roomId,roomNumMap(roomId)-1)
+              }
+              userRoomMap.remove(playerId)
+            }
 
 
             Behaviors.same
 
-          case ChildDead(_, childRef) =>
+          case ChildDead(name, childRef) =>
+            log.info(s"Child${childRef.path}----$name is dead")
             ctx.unwatch(childRef)
             Behaviors.same
 
