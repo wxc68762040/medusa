@@ -9,7 +9,6 @@ import akka.http.scaladsl.server.Route
 import akka.stream.scaladsl.Flow
 import akka.stream.{ActorAttributes, Materializer, Supervision}
 import akka.util.{ByteString, Timeout}
-import com.neo.sk.medusa.snake.PlayGround
 import com.neo.sk.medusa.snake.Protocol._
 import org.seekloud.byteobject.MiddleBufferInJvm
 import org.seekloud.byteobject.ByteObject._
@@ -45,7 +44,7 @@ trait SnakeService extends ServiceUtils {
 
   implicit val scheduler: Scheduler
 
-  lazy val playGround = PlayGround.create(system)
+ // lazy val playGround = PlayGround.create(system)
 
   val idGenerator = new AtomicInteger(1000000)
 
@@ -58,9 +57,9 @@ trait SnakeService extends ServiceUtils {
           getFromResource("html/netSnake.html")
         } ~
         path("join") {
-          parameter('playerId.as[Long],'playerName.as[String],'roomId.as[Long],'accessCode.as[String]) {
+          parameter('playerId.as[Long],'playerName.as[String],'roomId.as[Long].?,'accessCode.as[String]) {
             (playerId,playerName,roomId,accessCode) =>
-            val flowFuture: Future[Flow[Message, Message, Any]] = userManager ? (UserManager.GetWebSocketFlow(playerId,playerName,roomId, _))
+            val flowFuture: Future[Flow[Message, Message, Any]] = userManager ? (UserManager.GetWebSocketFlow(playerId,playerName,roomId.getOrElse(-1), _))
             dealFutureResult(
               flowFuture.map(r => handleWebSocketMessages(r))
             )

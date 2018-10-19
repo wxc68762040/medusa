@@ -2,6 +2,8 @@ package com.neo.sk.medusa.snake
 
 import java.awt.event.KeyEvent
 
+import akka.actor.typed.ActorRef
+import com.neo.sk.medusa.core.RoomActor
 import com.neo.sk.medusa.snake.Protocol.{fSpeed, square}
 import org.slf4j.LoggerFactory
 
@@ -12,7 +14,7 @@ import scala.util.Random
   * Date: 9/3/2016
   * Time: 9:55 PM
   */
-class GridOnServer(override val boundary: Point) extends Grid {
+class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Command]) extends Grid {
 
 
   private[this] val log = LoggerFactory.getLogger(this.getClass)

@@ -121,9 +121,10 @@ object UserActor {
   private def play(playerId: Long, playerName: String, roomId: Long,
                    frontActor: ActorRef[Protocol.WsMsgSource],
                    roomActor: ActorRef[RoomActor.Command])
-                  (implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]):Behavior[Command] = {
+                  (implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
+
         msg match {
 
           case Key(id, keyCode, frame) =>
@@ -136,25 +137,22 @@ object UserActor {
 
           case DispatchMsg(m) =>
             m match {
-              case t:Protocol.SnakeLeft=>
+              case t: Protocol.SnakeLeft =>
                 //如果死亡十分钟后无操作 则杀死userActor
-                timer.startSingleTimer(UserDeadTimerKey,UserLeft,10.minutes)
+                log.info("user dead")
+                timer.startSingleTimer(UserDeadTimerKey, UserLeft, 10.minutes)
                 frontActor ! t
-              case x=>
+                switchBehavior(ctx, "wait", wait(playerId, playerName, roomId, frontActor))
+              case x =>
                 frontActor ! x
+                Behaviors.same
             }
 
+          case RestartGame =>
             Behaviors.same
 
-          case RestartGame =>
-            //重新开始游戏
-            timer.cancel(UserDeadTimerKey)
-            ctx.self ! StartGame(playerId, playerName, roomId)
-
-            switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor))
-
           case UserLeft =>
-            roomManager ! RoomManager.UserLeftRoom(playerId,roomId)
+            roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
             Behaviors.stopped
 
           case UnKnowAction(unknownMsg) =>
@@ -166,6 +164,32 @@ object UserActor {
         }
     }
   }
+
+  private def wait(playerId: Long, playerName: String, roomId: Long,
+                   frontActor: ActorRef[Protocol.WsMsgSource])
+                  (implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] =
+    Behaviors.receive[Command] {
+      (ctx, msg) =>
+        msg match {
+
+          case RestartGame =>
+            //重新开始游戏
+            log.info("restart")
+            timer.cancel(UserDeadTimerKey)
+            ctx.self ! StartGame(playerId, playerName, roomId)
+            switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor))
+
+          case UserLeft =>
+            roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
+            Behaviors.stopped
+
+          case x =>
+            log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")
+            Behaviors.unhandled
+        }
+
+
+    }
 
 
   private[this] def switchBehavior(ctx: ActorContext[Command],
