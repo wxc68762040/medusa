@@ -1,6 +1,6 @@
 package com.neo.sk.medusa
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, Scheduler}
 import akka.actor.typed.ActorRef
 import akka.event.{Logging, LoggingAdapter}
 import akka.http.scaladsl.Http
@@ -29,9 +29,9 @@ object Boot extends HttpService {
   override implicit val system = ActorSystem("medusa", config)
   // the executor should not be the default dispatcher.
   override implicit val executor = system.dispatchers.lookup("akka.actor.my-blocking-dispatcher")
-  override implicit val materializer = ActorMaterializer()
+  override implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-  override implicit val scheduler = system.scheduler
+  override implicit val scheduler: Scheduler = system.scheduler
 
   override val timeout = Timeout(20 seconds) // for actor asks
 

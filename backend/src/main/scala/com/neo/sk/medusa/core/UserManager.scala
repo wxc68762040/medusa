@@ -35,7 +35,7 @@ object UserManager {
 
   case class UserReady(playerId: Long, userActor: ActorRef[UserActor.Command]) extends Command
 
-  def behaviors(): Behavior[Command] = {
+  val behaviors: Behavior[Command] = {
     log.debug(s"UserManager start...")
     Behaviors.setup[Command] {
       ctx =>

@@ -18,6 +18,8 @@ object RoomActor {
 
   sealed trait Command
 
+  case class UserJoin(userId: Long, userActor: ActorRef[UserActor.Command], name: String) extends Command
+
   case class UserDead(userId: Long, name: String) extends Command
 
   case class Key(id: Long, keyCode: Int, frame: Long) extends Command
@@ -72,13 +74,6 @@ object RoomActor {
             Behaviors.same
 
           case t: Key =>
-            if (t.keyCode == KeyEvent.VK_SPACE) {
-              if (userMap.get(t.id).isEmpty) {
-                grid.addSnake(t.id, "unknown")
-              } else {
-                grid.addSnake(t.id, userMap(t.id)._2)
-              }
-            } else {
               if (t.frame >= grid.frameCount) {
                 grid.addActionWithFrame(t.id, t.keyCode, t.frame)
                 dispatch(UserActor.DispatchMsg(Protocol.SnakeAction(t.id, t.keyCode, t.frame)), userMap)
@@ -90,7 +85,6 @@ object RoomActor {
               } else {
                 log.info(s"key loss: server: ${grid.frameCount} client: ${t.frame}")
               }
-            }
             Behaviors.same
 
           case BeginSync =>
