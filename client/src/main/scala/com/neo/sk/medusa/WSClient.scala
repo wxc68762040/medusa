@@ -61,7 +61,7 @@ object WSClient {
 		}
 	}
 	
-	def getSink(actor: ActorRef[GameController.GameCommand], id: Long, name: String): Sink[GameMessage, NotUsed] =
+	def getSink(actor: ActorRef[GameController.GameCommand], id: Long, name: String): akka.stream.typed.scaladsl.ActorSink[GameMessage, NotUsed] =
 		Sink.actorRef[GameMessage](actor, Left(id, name))
 	
 	def getWebSocketUri(nameOfChatParticipant: String): String = {
