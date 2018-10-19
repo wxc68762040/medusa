@@ -1,7 +1,5 @@
 package com.neo.sk.medusa.http
 
-import java.util.concurrent.atomic.AtomicInteger
-
 import akka.actor.{ActorSystem, Scheduler}
 import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage}
 import akka.http.scaladsl.server.Directives._
@@ -9,19 +7,17 @@ import akka.http.scaladsl.server.Route
 import akka.stream.scaladsl.Flow
 import akka.stream.{ActorAttributes, Materializer, Supervision}
 import akka.util.{ByteString, Timeout}
-import com.neo.sk.medusa.snake.PlayGround
-import com.neo.sk.medusa.snake.Protocol._
-import org.seekloud.byteobject.MiddleBufferInJvm
-import org.seekloud.byteobject.ByteObject._
 import org.slf4j.LoggerFactory
-
 import scala.concurrent.{ExecutionContextExecutor, Future}
-import com.neo.sk.medusa.Boot.userManager
+import com.neo.sk.medusa.Boot.{userManager, executor, timeout, scheduler}
 import com.neo.sk.medusa.core.UserManager
 import akka.actor.typed.scaladsl.AskPattern._
 import com.neo.sk.utils.CirceSupport._
 import com.neo.sk.utils.ServiceUtils
 import io.circe.generic.auto._
+import io.circe.generic.auto._
+import io.circe.syntax._
+import io.circe._
 
 
 /**
@@ -31,23 +27,9 @@ import io.circe.generic.auto._
   */
 trait LinkService extends ServiceUtils {
 
-  import io.circe.generic.auto._
-  import io.circe.syntax._
-  import io.circe._
-
   implicit val system: ActorSystem
 
-  implicit def executor: ExecutionContextExecutor
-
   implicit val materializer: Materializer
-
-  implicit val timeout: Timeout
-
-  implicit val scheduler: Scheduler
-
-  lazy val playGround = PlayGround.create(system)
-
-  val idGenerator = new AtomicInteger(1000000)
 
   private[this] val log = LoggerFactory.getLogger("SnakeService")
 
@@ -76,7 +58,7 @@ trait LinkService extends ServiceUtils {
     }
   }
 
-  private val linkRoute = (pathPrefix("game") & get) {
+  val linkRoute = (pathPrefix("game") & get) {
     pathEndOrSingleSlash {
       getFromResource("html/netSnake.html")
     } ~ playGameRoute ~ watchGameRoute ~ watchRecordRoute
