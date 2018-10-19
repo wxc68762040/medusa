@@ -59,7 +59,7 @@ trait Api4PlayInfo extends ServiceUtils{
   }
 
   private val getRoomList = (path("getRoomList") & get) {
-    val roomList: Future[RoomManager.GetRoomListRsp] = roomManager ? (RoomManager.GetRoomListReq(_))
+    val roomList: Future[RoomManager.GetRoomListRsp] = roomManager ? (r=>RoomManager.GetRoomListReq(r))
     dealFutureResult(
       roomList.map { rsp =>
         complete(GetRoomListRsp(RoomList(rsp.roomList)))

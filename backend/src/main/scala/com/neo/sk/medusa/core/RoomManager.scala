@@ -8,6 +8,7 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors, TimerScheduler}
 import com.neo.sk.medusa.core.UserManager.ChildDead
 import net.sf.ehcache.transaction.xa.commands.Command
 import org.slf4j.LoggerFactory
+import scala.concurrent.duration._
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -23,6 +24,10 @@ object RoomManager {
   case class JoinGame(playerId: String, playerName: String, roomId: Long, userActor: ActorRef[UserActor.Command]) extends Command
 
   case class UserLeftRoom(playerId: String, roomId: Long) extends Command
+
+  case class RoomEmptyTimerKey(roomId:Long)extends Command
+
+  case class RoomEmptyKill(roomId:Long)extends Command
 
   case class GetRoomIdByPlayerId(playerId: String, replyTo:ActorRef[RoomIdRsp]) extends Command //接口请求 给平台roomid，记得之后改成String
 
@@ -65,6 +70,7 @@ object RoomManager {
               //未指定房间
               if (roomNumMap.exists(_._2 < maxUserNum)) {
                 val randomRoomId = roomNumMap.filter(_._2 < maxUserNum).head._1
+                timer.cancel(RoomEmptyTimerKey(randomRoomId))
                 roomNumMap.update(randomRoomId, roomNumMap(randomRoomId) + 1)
                 userRoomMap.put(playerId, (randomRoomId, playerName))
                 userActor ! UserActor.JoinRoomSuccess(randomRoomId, getRoomActor(ctx, randomRoomId))
@@ -84,6 +90,7 @@ object RoomManager {
                   userActor ! UserActor.JoinRoomFailure(roomId, 100001, s"room $roomId has been full!")
                 } else {
                   //房间未满
+                  timer.cancel(RoomEmptyTimerKey(roomId))
                   roomNumMap.update(roomId, roomNumMap(roomId) + 1)
                   userRoomMap.put(playerId, (roomId, playerName))
                   userActor ! UserActor.JoinRoomSuccess(roomId, getRoomActor(ctx, roomId))
@@ -99,14 +106,17 @@ object RoomManager {
           case UserLeftRoom(playerId, roomId) =>
             if(userRoomMap.get(playerId).nonEmpty){
               if(roomNumMap(roomId)-1<=0){
-                getRoomActor(ctx,roomId) ! RoomActor.KillRoom
+                timer.startSingleTimer(RoomEmptyTimerKey(roomId),RoomEmptyKill(roomId),5.minutes)
               }else{
                 roomNumMap.update(roomId,roomNumMap(roomId)-1)
               }
               userRoomMap.remove(playerId)
             }
 
+            Behaviors.same
 
+          case RoomEmptyKill(roomId)=>
+            getRoomActor(ctx,roomId) ! RoomActor.KillRoom
             Behaviors.same
 
           case ChildDead(name, childRef) =>

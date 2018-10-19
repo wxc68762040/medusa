@@ -65,7 +65,8 @@ object UserManager {
             userRoomMap.remove(playerId)
             Behaviors.same
 
-          case ChildDead(_, childRef) =>
+          case ChildDead(name, childRef) =>
+            log.info(s"UserActor $name is dead ")
             ctx.unwatch(childRef)
             Behaviors.same
 

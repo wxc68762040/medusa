@@ -171,6 +171,11 @@ object UserActor {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
+          case t:Key=>
+            Behaviors.same
+
+          case t:NetTest =>
+            Behaviors.same
 
           case RestartGame =>
             //重新开始游戏
@@ -187,7 +192,6 @@ object UserActor {
             log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")
             Behaviors.unhandled
         }
-
 
     }
 
@@ -241,7 +245,7 @@ object UserActor {
 
   private def sink(actor: ActorRef[Command]) = ActorSink.actorRef[Command](
     ref = actor,
-    onCompleteMessage = CompleteMessage,
+    onCompleteMessage = UserLeft,
     onFailureMessage = FailureMessage
   )
 

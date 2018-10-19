@@ -4,11 +4,15 @@ import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{Behaviors, StashBuffer, TimerScheduler}
 import org.slf4j.LoggerFactory
 import com.neo.sk.medusa.snake.GridOnServer
+
 import concurrent.duration._
 import scala.collection.mutable.ListBuffer
 import com.neo.sk.medusa.common.AppSettings._
 import com.neo.sk.medusa.snake._
 import java.awt.event.KeyEvent
+
+import net.sf.ehcache.transaction.xa.commands.Command
+
 import scala.collection.mutable
 
 object RoomActor {
@@ -21,7 +25,9 @@ object RoomActor {
 
   case class UserJoinGame(playerId: String, playerName: String, userActor: ActorRef[UserActor.Command]) extends Command
 
-  case class UserDead(userId: String, name: String) extends Command
+  case class UserDead(userId: String,deadInfo: DeadInfo) extends Command
+
+  case class DeadInfo(name: String, length: Int, kill: Int, killer: String)
 
   case class Key(id: String, keyCode: Int, frame: Long) extends Command
 
@@ -67,9 +73,10 @@ object RoomActor {
             Behaviors.same
 
           case t: UserDead =>
-            log.debug(s"room $roomId lost a player ${t.userId}")
+            log.info(s"room $roomId lost a player ${t.userId}")
             grid.removeSnake(t.userId)
-            dispatch(UserActor.DispatchMsg(Protocol.SnakeLeft(t.userId, t.name)), userMap)
+            dispatchTo(t.userId, UserActor.DispatchMsg(Protocol.DeadInfo(t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killer)), userMap)
+            dispatch(UserActor.DispatchMsg(Protocol.SnakeLeft(t.userId, t.deadInfo.name)), userMap)
             userMap.remove(t.userId)
             Behaviors.same
 
@@ -100,10 +107,6 @@ object RoomActor {
             grid.resetFoodData()
             if (grid.deadSnakeList.nonEmpty) {
               dispatch(UserActor.DispatchMsg(Protocol.DeadList(grid.deadSnakeList.map(_.id))), userMap)
-              grid.deadSnakeList.foreach {
-                s =>
-                  dispatchTo(s.id, UserActor.DispatchMsg(Protocol.DeadInfo(s.name, s.length, s.kill, s.killer)), userMap)
-              }
             }
             grid.killMap.foreach {
               g =>

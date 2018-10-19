@@ -4,6 +4,7 @@ import java.awt.event.KeyEvent
 
 import akka.actor.typed.ActorRef
 import com.neo.sk.medusa.core.RoomActor
+import com.neo.sk.medusa.core.RoomActor.DeadInfo
 import com.neo.sk.medusa.snake.Protocol.{fSpeed, square}
 import org.slf4j.LoggerFactory
 
@@ -125,6 +126,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
       case (Right(s),_) =>
         updatedSnakes ::= s
       case (Left(killerId),j) =>
+        // fixme 击杀信息发给roomActor
         val killerName = if (snakes.exists(_._1 == killerId)) snakes(killerId).name else "the wall"
         deadSnakeList ::= DeadSnakeInfo(j.id,j.name,j.length,j.kill, killerName)
         if(killerId != "0") {
@@ -147,6 +149,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
       val sorted = point._2.sortBy(_.length)
       val winner = sorted.head
       val deads = sorted.tail
+      // fixme 死亡
       deadSnakeList :::= deads.map(i=>DeadSnakeInfo(i.id,i.name,i.length,i.kill, winner.name))
       killMap += winner.id->(killMap.getOrElse(winner.id,Nil):::deads.map(i=>(i.id,i.name)))
       mapKillCounter += winner.id -> (mapKillCounter.getOrElse(winner.id, 0) + deads.length)
@@ -247,8 +250,12 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
       feedApple(appleCount, FoodType.deadBody, Some(snake.id))
       grid.get(dead.head) match {
         case Some(x: Body) =>
+          // snake dead
+          roomActor ! RoomActor.UserDead(snake.id,DeadInfo(snake.name,snake.length,snake.kill,x.id))
           Left(x.id)
         case _ =>
+          //snake hit wall
+          roomActor ! RoomActor.UserDead(snake.id,DeadInfo(snake.name,snake.length,snake.kill,"0"))
           Left("0") //撞墙的情况
       }
     } else {
