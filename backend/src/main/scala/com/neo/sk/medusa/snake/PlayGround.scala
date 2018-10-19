@@ -4,6 +4,7 @@ import java.awt.event.KeyEvent
 
 import akka.NotUsed
 import akka.actor.{Actor, ActorRef, ActorSystem, Props, Terminated}
+import akka.actor.typed.scaladsl.ActorContext
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import com.neo.sk.medusa.snake.Protocol._
@@ -104,7 +105,7 @@ object PlayGround {
 
         case userAction: UserAction => userAction match {
           case r@Key(id, keyCode, frame) =>
-//            log.info(s"got $r")
+            log.info(s"got $r")
             val roomId = userMap(id)._2
 //            dispatch(Protocol.TextMsg(s"Aha! $id click [$keyCode],"),roomId) //just for test
             val grid = roomMap(roomId)._2
@@ -170,6 +171,11 @@ object PlayGround {
               }
               lostSet = Set[Long]()
             }
+            log.info("feedApple info: "+feedApples)
+            log.info("eatApple info: "+eatenApples)
+            log.info("speed up info: "+speedUpInfo)
+            log.info("Sync data info: "+grid.getGridData.snakes)
+
           }
 
         case r@Terminated(actor) =>

@@ -16,6 +16,9 @@ object Protocol {
     timestamp: Long
   ) extends GameMessage
 
+
+
+
   case class FeedApples(
     aLs: List[Ap]
   ) extends GameMessage

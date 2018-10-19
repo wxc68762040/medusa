@@ -428,7 +428,10 @@ class GridOnServer(override val boundary: Point) extends Grid {
     eatenApples = Map.empty
     speedUpInfo = Nil
   }
-  
+
+
+
+
   override def countBody(): Unit = {
     val bodies = snakes.values.map(e => e.getBodies)
       .fold(Map.empty[Point, Spot]) { (a: Map[Point, Spot], b: Map[Point, Spot]) =>
