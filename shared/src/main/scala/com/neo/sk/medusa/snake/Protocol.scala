@@ -41,43 +41,43 @@ object Protocol {
   ) extends GameMessage
 
   case class DeadList(
-    deadList: List[Long]
+    deadList: List[String]
   ) extends GameMessage
 
   case class KillList(
-    killList: List[(Long, String)]
+    killList: List[(String, String)]
   ) extends GameMessage
 
 
   case class TextMsg(msg: String) extends GameMessage
 
-  case class Id(id: Long) extends GameMessage
+  case class Id(id: String) extends GameMessage
 
   case class NewSnakeNameExist(id: Long, name:String, roomId: Long) extends GameMessage
 
-  case class NewSnakeJoined(id: Long, name: String, roomId: Long) extends GameMessage
+  case class NewSnakeJoined(id: String, name: String, roomId: Long) extends GameMessage
 
   case class DistinctSnakeAction(keyCode: Int, frame: Long, frontFrame: Long) extends GameMessage
 
-  case class SnakeAction(id: Long, keyCode: Int, frame: Long) extends GameMessage
+  case class SnakeAction(id: String, keyCode: Int, frame: Long) extends GameMessage
 
-  case class SnakeLeft(id: Long, name: String) extends GameMessage
+  case class SnakeLeft(id: String, name: String) extends GameMessage
 
   case class Ranks(currentRank: List[Score], historyRank: List[Score]) extends GameMessage
 
   case class NetDelayTest(createTime: Long) extends GameMessage
 
-  case class JoinRoomSuccess(playerId:Long,roomId:Long)extends GameMessage
-  case class JoinRoomFailure(playerId:Long,roomId:Long,errorCode:Int,msg:String)extends GameMessage
+  case class JoinRoomSuccess(playerId:String,roomId:Long)extends GameMessage
+  case class JoinRoomFailure(playerId:String,roomId:Long,errorCode:Int,msg:String)extends GameMessage
 
 
   sealed trait UserAction
 
-  case class Key(id: Long, keyCode: Int, frame: Long) extends UserAction
+  case class Key(id: String, keyCode: Int, frame: Long) extends UserAction
 
-  case class NetTest(id: Long, createTime: Long) extends UserAction
+  case class NetTest(id: String, createTime: Long) extends UserAction
 
-  case class TextInfo(id: Long, info: String) extends UserAction
+  case class TextInfo(id: String, info: String) extends UserAction
 
 
  sealed trait CommonRsp {

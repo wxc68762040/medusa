@@ -8,6 +8,7 @@ import com.neo.sk.medusa.snake.Protocol.{fSpeed, square}
 import org.slf4j.LoggerFactory
 
 import scala.util.Random
+import scala.util.matching.Regex
 
 /**
   * User: Taoz
@@ -24,20 +25,20 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
   override def info(msg: String): Unit = log.info(msg)
 
 
-  private[this] var waitingJoin = Map.empty[Long, String]
+  private[this] var waitingJoin = Map.empty[String, String]
   private[this] var feededApples: List[Ap] = Nil
   private[this] var deadBodies: List[Ap] = Nil
-  private [this] var eatenApples = Map.empty[Long, List[AppleWithFrame]]
+  private [this] var eatenApples = Map.empty[String, List[AppleWithFrame]]
   private [this] var speedUpInfo = List.empty[SpeedUpInfo]
 
 
   var currentRank = List.empty[Score]
-  private[this] var historyRankMap = Map.empty[Long, Score]
+  private[this] var historyRankMap = Map.empty[String, Score]
   var historyRankList = historyRankMap.values.toList.sortBy(_.l).reverse
 
   private[this] var historyRankThreshold = if (historyRankList.isEmpty) -1 else historyRankList.map(_.l).min
 
-  def addSnake(id: Long, name: String) = waitingJoin += (id -> name)
+  def addSnake(id: String, name: String) = waitingJoin += (id -> name)
 
   def randomColor() = {
     val a = random.nextInt(7)
@@ -65,7 +66,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
       grid += head -> Body(id, color)
       snakes += id -> SnakeInfo(id, name, head, head, head, color, direction)
     }
-    waitingJoin = Map.empty[Long, String]
+    waitingJoin = Map.empty[String, String]
   }
 
   implicit val scoreOrdering = new Ordering[Score] {
@@ -75,7 +76,10 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
         r = y.k - x.k
       }
       if (r == 0) {
-        r = (x.id - y.id).toInt
+        val h = new Regex("[0-9]*")
+        val a = h.findFirstIn(x.id)
+        val b = h.findFirstIn(y.id)
+        r = (a.get.toLong - b.get.toLong).toInt
       }
       r
     }
@@ -111,11 +115,11 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
 
   override def updateSnakes() = {
   
-    var mapKillCounter = Map.empty[Long, Int]
+    var mapKillCounter = Map.empty[String, Int]
     var updatedSnakes = List.empty[SnakeInfo]
     deadSnakeList = Nil
     killMap = Map()
-    val acts = actionMap.getOrElse(frameCount, Map.empty[Long, Int])
+    val acts = actionMap.getOrElse(frameCount, Map.empty[String, Int])
   
     snakes.values.map(i=>(updateASnake(i, acts),i)).foreach {
       case (Right(s),_) =>
@@ -123,7 +127,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
       case (Left(killerId),j) =>
         val killerName = if (snakes.exists(_._1 == killerId)) snakes(killerId).name else "the wall"
         deadSnakeList ::= DeadSnakeInfo(j.id,j.name,j.length,j.kill, killerName)
-        if(killerId != 0) {
+        if(killerId != "0") {
           mapKillCounter += killerId -> (mapKillCounter.getOrElse(killerId, 0) + 1)
           killMap += killerId -> ((j.id, j.name) :: killMap.getOrElse(killerId, Nil))
         }
@@ -163,7 +167,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
     snakes = newSnakes.map(s => (s.id, s)).toMap
   }
   
-  override def updateASnake(snake: SnakeInfo, actMap: Map[Long, Int]): Either[Long, SnakeInfo] = {
+  override def updateASnake(snake: SnakeInfo, actMap: Map[String, Int]): Either[String, SnakeInfo] = {
     val keyCode = actMap.get(snake.id)
     val newDirection = {
       val keyDirection = keyCode match {
@@ -245,7 +249,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
         case Some(x: Body) =>
           Left(x.id)
         case _ =>
-          Left(0L) //撞墙的情况
+          Left("0") //撞墙的情况
       }
     } else {
       Right(snake.copy(head = newHead, tail = newTail, lastHead = oldHead, direction = newDirection,
@@ -253,7 +257,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
     }
   }
   
-  override def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[Long] = None) = {
+  override def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[String] = None) = {
     if (appleType == FoodType.normal) {
 
       def appleDecrease = {
@@ -342,7 +346,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
 
   }
 
-  override def eatFood(snakeId: Long, newHead: Point, newSpeedInit: Double, speedOrNotInit: Boolean): Option[(Int, Double, Boolean)] = {
+  override def eatFood(snakeId: String, newHead: Point, newSpeedInit: Double, speedOrNotInit: Boolean): Option[(Int, Double, Boolean)] = {
     var totalScore = 0
     var newSpeed = newSpeedInit
     var speedOrNot = speedOrNotInit
@@ -420,7 +424,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
 
   def getFeededApple: List[Ap] = feededApples ::: deadBodies
 
-  def getEatenApples: Map[Long, List[AppleWithFrame]] = eatenApples
+  def getEatenApples: Map[String, List[AppleWithFrame]] = eatenApples
 
   def getSpeedUpInfo: List[SpeedUpInfo] = speedUpInfo
 

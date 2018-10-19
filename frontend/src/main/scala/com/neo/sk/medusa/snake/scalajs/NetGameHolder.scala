@@ -36,7 +36,7 @@ object NetGameHolder extends js.JSApp {
   var syncData: scala.Option[Protocol.GridDataSync] = None
   var currentRank = List.empty[Score]
   var historyRank = List.empty[Score]
-  var myId = -1l
+  var myId = ""
   var deadName = ""
   var deadLength=0
   var deadKill=0
@@ -44,7 +44,7 @@ object NetGameHolder extends js.JSApp {
   var nextAnimation = 0.0 //保存requestAnimationFrame的ID
   var gameLoopControl = 0 //保存gameLoop的setInterval的ID
   var myProportion = 1.0
-  var eatenApples  = Map[Long, List[AppleWithFrame]]()
+  var eatenApples  = Map[String, List[AppleWithFrame]]()
 //  var fpsCounter = 0
 //  var fps = 0.0
 //  var drawNum = 0
@@ -69,7 +69,7 @@ object NetGameHolder extends js.JSApp {
     KeyCode.F2
   )
 
-  var waitingShowKillList=List.empty[(Long,String)]
+  var waitingShowKillList=List.empty[(String,String)]
   var savedGrid = Map[Long,Protocol.GridDataSync]()
   var updateCounter = 0L
 
@@ -238,7 +238,7 @@ object NetGameHolder extends js.JSApp {
     ctx.fillText(str, x, (lineNum + lineBegin - 1) * textLineHeight)
   }
 
-  def drawGrid(uid: Long, data: GridDataSync): Unit = {
+  def drawGrid(uid: String, data: GridDataSync): Unit = {
 
     val cacheCanvas = dom.document.createElement("canvas").asInstanceOf[Canvas]
     val cacheCtx = cacheCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
@@ -597,7 +597,7 @@ object NetGameHolder extends js.JSApp {
                   val savedAction=grid.actionMap.get(frontFrame-Protocol.advanceFrame)
                   if(savedAction.nonEmpty) {
                     val delAction=savedAction.get - myId
-                    val addAction=grid.actionMap.getOrElse(frame-Protocol.advanceFrame,Map[Long,Int]())+(myId->keyCode)
+                    val addAction=grid.actionMap.getOrElse(frame-Protocol.advanceFrame,Map[String,Int]())+(myId->keyCode)
                     grid.actionMap += (frontFrame-Protocol.advanceFrame -> delAction)
                     grid.actionMap += (frame-Protocol.advanceFrame -> addAction)
                     updateCounter = grid.frameCount-(frontFrame-Protocol.advanceFrame)
@@ -679,7 +679,7 @@ object NetGameHolder extends js.JSApp {
   }
   def getWebSocketUri(document: Document, path: String, playerInfo:String): String = {
     val wsProtocol = if (dom.document.location.protocol == "https:") "wss" else "ws"
-    s"$wsProtocol://${dom.document.location.host}/medusa/netSnake/$path?" + playerInfo
+    s"$wsProtocol://${dom.document.location.host}/medusa/game/$path?" + playerInfo
   }
 
   def p(msg: String) = {

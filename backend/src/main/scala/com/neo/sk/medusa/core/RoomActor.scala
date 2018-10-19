@@ -19,13 +19,13 @@ object RoomActor {
 
   sealed trait Command
 
-  case class UserJoinGame(playerId: Long, playerName: String, userActor: ActorRef[UserActor.Command]) extends Command
+  case class UserJoinGame(playerId: String, playerName: String, userActor: ActorRef[UserActor.Command]) extends Command
 
-  case class UserDead(userId: Long, name: String) extends Command
+  case class UserDead(userId: String, name: String) extends Command
 
-  case class Key(id: Long, keyCode: Int, frame: Long) extends Command
+  case class Key(id: String, keyCode: Int, frame: Long) extends Command
 
-  case class NetTest(id: Long, createTime: Long) extends Command
+  case class NetTest(id: String, createTime: Long) extends Command
 
   case object KillRoom extends Command
 
@@ -45,13 +45,13 @@ object RoomActor {
         Behaviors.withTimers[Command] {
           implicit timer =>
             timer.startSingleTimer(TimerKey4SyncBegin, BeginSync, syncDelay.seconds)
-            idle(roomId, 0, mutable.HashMap[Long, (ActorRef[UserActor.Command], String)](),new GridOnServer(bound, ctx.self) )
+            idle(roomId, 0, mutable.HashMap[String, (ActorRef[UserActor.Command], String)](),new GridOnServer(bound, ctx.self) )
         }
     }
   }
 
   private def idle(roomId: Long, tickCount: Long,
-                   userMap: mutable.HashMap[Long, (ActorRef[UserActor.Command], String)], grid: GridOnServer)
+                   userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String)], grid: GridOnServer)
                   (implicit timer: TimerScheduler[RoomActor.Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
@@ -146,15 +146,15 @@ object RoomActor {
 
   }
 
-  def dispatchTo(id: Long, gameOutPut: UserActor.DispatchMsg, userMap: mutable.HashMap[Long, (ActorRef[UserActor.Command], String)]): Unit = {
+  def dispatchTo(id: String, gameOutPut: UserActor.DispatchMsg, userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String)]): Unit = {
     userMap.get(id).foreach { t => t._1 ! gameOutPut }
   }
 
-  def dispatch(gameOutPut: UserActor.DispatchMsg, userMap: mutable.HashMap[Long, (ActorRef[UserActor.Command], String)]) = {
+  def dispatch(gameOutPut: UserActor.DispatchMsg, userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String)]) = {
     userMap.values.foreach { t => t._1 ! gameOutPut }
   }
 
-  def dispatchDistinct(distinctId: Long, distinctGameOutPut: UserActor.DispatchMsg, gameOutPut: UserActor.DispatchMsg, userMap: mutable.HashMap[Long, (ActorRef[UserActor.Command], String)]): Unit = {
+  def dispatchDistinct(distinctId: String, distinctGameOutPut: UserActor.DispatchMsg, gameOutPut: UserActor.DispatchMsg, userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String)]): Unit = {
     userMap.foreach {
       case (id, t) =>
         if (id != distinctId) {

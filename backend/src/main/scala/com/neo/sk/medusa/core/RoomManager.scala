@@ -20,11 +20,11 @@ object RoomManager {
 
   final case class ChildDead[U](name: String, childRef: ActorRef[U]) extends Command
 
-  case class JoinGame(playerId: Long, playerName: String, roomId: Long, userActor: ActorRef[UserActor.Command]) extends Command
+  case class JoinGame(playerId: String, playerName: String, roomId: Long, userActor: ActorRef[UserActor.Command]) extends Command
 
-  case class UserLeftRoom(playerId: Long, roomId: Long) extends Command
+  case class UserLeftRoom(playerId: String, roomId: Long) extends Command
 
-  case class GetRoomIdByPlayerId(playerId: Long, replyTo:ActorRef[RoomIdRsp]) extends Command //接口请求 给平台roomid，记得之后改成String
+  case class GetRoomIdByPlayerId(playerId: String, replyTo:ActorRef[RoomIdRsp]) extends Command //接口请求 给平台roomid，记得之后改成String
 
   case class RoomIdRsp(roomId:Long)
 
@@ -46,7 +46,7 @@ object RoomManager {
             //roomId->userNum
             val roomNumMap = mutable.HashMap.empty[Long, Int]
             //userId->(roomId,userName)
-            val userRoomMap = mutable.HashMap.empty[Long, (Long, String)]
+            val userRoomMap = mutable.HashMap.empty[String, (Long, String)]
             idle(maxUserNum, roomNumMap, userRoomMap)
         }
     }
@@ -54,7 +54,7 @@ object RoomManager {
 
   private def idle(maxUserNum: Int,
                    roomNumMap: mutable.HashMap[Long, Int],
-                   userRoomMap: mutable.HashMap[Long, (Long, String)])
+                   userRoomMap: mutable.HashMap[String, (Long, String)])
                   (implicit timer: TimerScheduler[Command]) =
     Behaviors.receive[Command] {
       (ctx, msg) =>

@@ -35,7 +35,8 @@ trait LinkService extends ServiceUtils {
 
 
   private val playGameRoute = path("playGame") {
-    parameter('playerId.as[Long], 'playerName.as[String], 'roomId.as[Long].?, 'accessCode.as[String]) {
+    parameter('playerId.as[String], 'playerName.as[String], 'roomId.as[Long].?, 'accessCode.as[String]) {
+      println("======")
       (playerId, playerName, roomId, accessCode) =>
         val flowFuture: Future[Flow[Message, Message, Any]] = userManager ? (UserManager.GetWebSocketFlow(playerId, playerName, roomId.getOrElse(-1), _))
         dealFutureResult(

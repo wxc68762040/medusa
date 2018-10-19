@@ -35,15 +35,15 @@ object UserActor {
 
   case class UserFrontActor(actor: ActorRef[WsMsgSource]) extends Command
 
-  case class StartGame(playerId: Long, playerName: String, roomId: Long) extends Command
+  case class StartGame(playerId: String, playerName: String, roomId: Long) extends Command
 
   case class JoinRoomSuccess(roomId: Long, roomActor: ActorRef[RoomActor.Command]) extends Command
 
   case class JoinRoomFailure(roomId: Long, errorCode: Int, msg: String) extends Command
 
-  private case class Key(id: Long, keyCode: Int, frame: Long) extends Command
+  private case class Key(id: String, keyCode: Int, frame: Long) extends Command
 
-  private case class NetTest(id: Long, createTime: Long) extends Command
+  private case class NetTest(id: String, createTime: Long) extends Command
 
   private case object RestartGame extends Command
 
@@ -58,7 +58,7 @@ object UserActor {
   case class DispatchMsg(msg: WsMsgSource) extends Command
 
 
-  def create(playerId: Long, playerName: String): Behavior[Command] = {
+  def create(playerId: String, playerName: String): Behavior[Command] = {
     Behaviors.setup[Command] {
       ctx =>
         implicit val stashBuffer: StashBuffer[Command] = StashBuffer[Command](Int.MaxValue)
@@ -69,7 +69,7 @@ object UserActor {
     }
   }
 
-  private def init(playerId: Long, playerName: String)(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]) =
+  private def init(playerId: String, playerName: String)(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]) =
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
@@ -85,7 +85,7 @@ object UserActor {
         }
     }
 
-  private def idle(playerId: Long, playerName: String, frontActor: ActorRef[Protocol.WsMsgSource])(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
+  private def idle(playerId: String, playerName: String, frontActor: ActorRef[Protocol.WsMsgSource])(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
@@ -118,7 +118,7 @@ object UserActor {
   }
 
 
-  private def play(playerId: Long, playerName: String, roomId: Long,
+  private def play(playerId: String, playerName: String, roomId: Long,
                    frontActor: ActorRef[Protocol.WsMsgSource],
                    roomActor: ActorRef[RoomActor.Command])
                   (implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
@@ -165,7 +165,7 @@ object UserActor {
     }
   }
 
-  private def wait(playerId: Long, playerName: String, roomId: Long,
+  private def wait(playerId: String, playerName: String, roomId: Long,
                    frontActor: ActorRef[Protocol.WsMsgSource])
                   (implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] =
     Behaviors.receive[Command] {

@@ -31,9 +31,9 @@ object UserManager {
 
   final case class ChildDead[U](name: String, childRef: ActorRef[U]) extends Command
 
-  final case class GetWebSocketFlow(playerId: Long, playerName: String, roomId: Long, replyTo: ActorRef[Flow[Message, Message, Any]]) extends Command
+  final case class GetWebSocketFlow(playerId: String, playerName: String, roomId: Long, replyTo: ActorRef[Flow[Message, Message, Any]]) extends Command
 
-  case class UserReady(playerId: Long, userActor: ActorRef[UserActor.Command]) extends Command
+  case class UserReady(playerId: String, userActor: ActorRef[UserActor.Command]) extends Command
 
   val behaviors: Behavior[Command] = {
     log.debug(s"UserManager start...")
@@ -41,13 +41,13 @@ object UserManager {
       ctx =>
         Behaviors.withTimers[Command] {
           implicit timer =>
-            val userRoomMap = mutable.HashMap.empty[Long, (Long, String)]
+            val userRoomMap = mutable.HashMap.empty[String, (Long, String)]
             idle(userRoomMap)
         }
     }
   }
 
-  def idle(userRoomMap: mutable.HashMap[Long, (Long, String)])(implicit timer: TimerScheduler[Command]): Behavior[Command] =
+  def idle(userRoomMap: mutable.HashMap[String, (Long, String)])(implicit timer: TimerScheduler[Command]): Behavior[Command] =
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
@@ -76,7 +76,7 @@ object UserManager {
     }
 
 
-  private def getUserActor(ctx: ActorContext[Command], playerId: Long, playerName: String, roomId: Long): ActorRef[UserActor.Command] = {
+  private def getUserActor(ctx: ActorContext[Command], playerId: String, playerName: String, roomId: Long): ActorRef[UserActor.Command] = {
     val childName = s"UserActor-$playerId"
     ctx.child(childName).getOrElse {
       val actor = ctx.spawn(UserActor.create(playerId, playerName), childName)
@@ -91,7 +91,7 @@ object UserManager {
       .collect {
         case TextMessage.Strict(msg) =>
           log.debug(s"msg from webSocket: $msg")
-          TextInfo(-1, msg)
+          TextInfo("-1", msg)
 
         case BinaryMessage.Strict(bMsg) =>
           //decode process.
@@ -101,7 +101,7 @@ object UserManager {
               case Right(v) => v
               case Left(e) =>
                 println(s"decode error: ${e.message}")
-                TextInfo(-1, "decode error")
+                TextInfo("-1", "decode error")
             }
           msg
         // unpack incoming WS text messages...

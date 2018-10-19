@@ -11,16 +11,16 @@ package object snake {
 
   sealed trait Spot
 
-  case class Body(id: Long, color: String) extends Spot
+  case class Body(id: String, color: String) extends Spot
 
-  case class Header(id: Long, life: Int) extends Spot
+  case class Header(id: String, life: Int) extends Spot
 
   case class Apple(score: Int, life: Int, appleType: Int, targetAppleOpt: Option[(Point, Int)] = None) extends Spot //食物类型，0：普通食物，1：死蛇身体，2：中间路径
   case class Bound() extends Spot
 
-  case class Score(id: Long, n: String, k: Int, l: Int, t: Option[Long] = None)
+  case class Score(id: String, n: String, k: Int, l: Int, t: Option[Long] = None)
 
-  case class Bd(id: Long, x: Int, y: Int, color: String)
+  case class Bd(id: String, x: Int, y: Int, color: String)
 
   case class Ap(score: Int, life: Int, appleType: Int, x: Int, y: Int, targetAppleOpt: Option[(Point, Int)] = None)
 
@@ -203,7 +203,7 @@ package object snake {
                  )
 
   case class SnakeInfo(
-                        id: Long,
+                        id: String,
                         name: String,
                         head: Point,
                         tail: Point,
@@ -231,7 +231,7 @@ package object snake {
   }
 
   case class DeadSnakeInfo(
-                            id: Long,
+                            id: String,
                             name: String,
                             length: Int,
                             kill: Int,
@@ -239,12 +239,12 @@ package object snake {
                           )
 
   case class EatFoodInfo(
-                          snakeId: Long,
+                          snakeId: String,
                           apples: List[AppleWithFrame]
                         )
 
   case class SpeedUpInfo(
-                          snakeId: Long,
+                          snakeId: String,
                           speedUpOrNot: Boolean,
                           newSpeed: Double
                         )
