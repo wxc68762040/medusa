@@ -30,6 +30,13 @@ lazy val shared = (crossProject(JSPlatform, JVMPlatform).crossType(CrossType.Pur
 lazy val sharedJvm = shared.jvm
 lazy val sharedJs = shared.js
 
+//client
+lazy val client = (project in file("client"))
+  .settings(name := "client")
+  .settings(commonSettings: _*)
+  .settings(libraryDependencies ++= Dependencies.backendDependencies)
+  .dependsOn(sharedJvm)
+
 // Scala-Js frontend
 lazy val frontend = (project in file("frontend"))
   .enablePlugins(ScalaJSPlugin)
