@@ -1,7 +1,5 @@
 package com.neo.sk.medusa.snake
-
 import java.awt.event.KeyEvent
-
 import akka.NotUsed
 import akka.actor.{Actor, ActorRef, ActorSystem, Props, Terminated}
 import akka.stream.OverflowStrategy

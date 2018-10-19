@@ -18,8 +18,6 @@ object RoomActor {
 
   sealed trait Command
 
-  case class UserJoin(userId: Long, userActor: ActorRef[UserActor.Command], name: String) extends Command
-
   case class UserDead(userId: Long, name: String) extends Command
 
   case class Key(id: Long, keyCode: Int, frame: Long) extends Command

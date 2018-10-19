@@ -50,7 +50,6 @@ object UserManager {
   def idle(userRoomMap: mutable.HashMap[Long, (Long, String)])(implicit timer: TimerScheduler[Command]): Behavior[Command] =
     Behaviors.receive[Command] {
       (ctx, msg) =>
-        println("=============================")
         msg match {
           case GetWebSocketFlow(playerId, playerName, roomId, replyTo) =>
             if (userRoomMap.get(playerId).nonEmpty) {

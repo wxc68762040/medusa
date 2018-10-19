@@ -7,7 +7,6 @@ import io.circe.parser.decode
 import io.circe.syntax._
 import com.neo.sk.utils.SecureUtil.PostEnvelope
 import com.neo.sk.medusa.Boot.executor
-
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
@@ -25,8 +24,10 @@ object AuthUtils extends HttpUtil {
   case class TokenRsp(data:TokenMassage, errCode:Int, msg:String)
 
   def getToken() = {
-
-    val postData = GetTokenInfo(gameId, gsKey).asJson.noSpaces
+    val data = GetTokenInfo(gameId, gsKey).asJson.noSpaces
+    val sn = appId + System.currentTimeMillis()
+    val (timestamp, noce, signature) = SecureUtil.generateSignatureParameters(List(appId, sn, data), secureKey)
+    val postData = PostEnvelope(appId,sn,timestamp,noce,data,signature).asJson.noSpaces
     val url = "http://esheep/api/gameServer/gsKey2Token"
     postJsonRequestSend("post",url,Nil,postData).map{
       case Right(jsonStr) =>
@@ -48,15 +49,16 @@ object AuthUtils extends HttpUtil {
     }
   }
 
-
   case class VerifyInfo(gameId:Long, accessCode:String)
-  case class PlayerInfo(playerId:Long, nickname:String)
+  case class PlayerInfo(playerId:String, nickname:String)
   case class Wrap(playerInfo:PlayerInfo)
   case class VerifyRsp(data:Wrap,errCode:Int, msg:String)
 
   def verifyAccessCode(accessCode:String){
-
-    val postData = VerifyInfo(gameId, accessCode).asJson.noSpaces
+    val data = VerifyInfo(gameId, accessCode).asJson.noSpaces
+    val sn = appId + System.currentTimeMillis()
+    val (timestamp, noce, signature) = SecureUtil.generateSignatureParameters(List(appId, sn, data), secureKey)
+    val postData = PostEnvelope(appId,sn,timestamp,noce,data,signature).asJson.noSpaces
     val url = "/esheep/api/gameServer/verifyAccessCode?token=lkasdjlaksjdl2389"
     postJsonRequestSend("post",url,Nil,postData).map{
       case Right(jsonStr) =>
