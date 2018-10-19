@@ -37,7 +37,7 @@ object Boot extends HttpService {
 
   val log: LoggingAdapter = Logging(system, getClass)
 //  val delayer = system.spawn(Delayer.start, "Delayer")
-  val userManager = system.spawn(UserManager.behaviors(),"UserManager")
+  val userManager = system.spawn(UserManager.behaviors,"UserManager")
   val roomManager = system.spawn(RoomManager.behaviors,"RoomManager")
 
   def main(args: Array[String]) {
