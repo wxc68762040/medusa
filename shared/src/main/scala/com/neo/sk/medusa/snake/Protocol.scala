@@ -55,6 +55,8 @@ object Protocol {
 
   case class NewSnakeJoined(id: Long, name: String, roomId: Long) extends GameMessage
 
+  case class DistinctSnakeAction(keyCode: Int, frame: Long, frontFrame: Long) extends GameMessage
+
   case class SnakeAction(id: Long, keyCode: Int, frame: Long) extends GameMessage
 
   case class SnakeLeft(id: Long, name: String) extends GameMessage
@@ -82,6 +84,8 @@ object Protocol {
   val foodRate = 0.067 //尸体生成食物的倍率
 
   val advanceFrame = 1 //客户端提前的帧数
+
+  val savingFrame = 5 //保存的帧数
 
   val operateDelay = 1 //操作延迟的帧数
 

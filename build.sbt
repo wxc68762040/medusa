@@ -57,9 +57,9 @@ lazy val frontend = (project in file("frontend"))
       "io.suzaku" %%% "diode" % "1.1.2",
       //"com.lihaoyi" %%% "upickle" % "0.6.6",
       "com.lihaoyi" %%% "scalatags" % "0.6.5",
+      "org.seekloud" %%% "byteobject" % "0.1.2"
       //"org.scala-js" %%% "scalajs-java-time" % scalaJsJavaTime
       //"com.lihaoyi" %%% "utest" % "0.3.0" % "test"
-      "org.seekloud" %%% "byteobject" % "0.1.2"
     )
   )
   .dependsOn(sharedJs)
