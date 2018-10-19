@@ -115,7 +115,7 @@ object RoomManager {
             Behaviors.same
 
           case GetRoomIdByPlayerId(playerId,sender) =>
-            val roomId = userRoomMap.getOrElse(playerId,(-1, "unknown"))._1
+            val roomId = userRoomMap.getOrElse(playerId,(-1l, "unknown"))._1
             sender ! RoomIdRsp(roomId)
             Behaviors.same
 

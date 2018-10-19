@@ -14,6 +14,7 @@ import scala.collection.mutable
 object RoomActor {
 
   private val log = LoggerFactory.getLogger(this.getClass)
+
   private val bound = Point(boundW, bountH)
 
   sealed trait Command
@@ -44,7 +45,7 @@ object RoomActor {
         Behaviors.withTimers[Command] {
           implicit timer =>
             timer.startSingleTimer(TimerKey4SyncBegin, BeginSync, syncDelay.seconds)
-            idle(roomId, 0, mutable.HashMap[Long, (ActorRef[UserActor.Command], String)](), new GridOnServer(bound))
+            idle(roomId, 0, mutable.HashMap[Long, (ActorRef[UserActor.Command], String)](),new GridOnServer(bound, ctx.self) )
         }
     }
   }
