@@ -44,9 +44,7 @@ object RoomActor {
         Behaviors.withTimers[Command] {
           implicit timer =>
             timer.startSingleTimer(TimerKey4SyncBegin, BeginSync, syncDelay.seconds)
-            val userMap =mutable.HashMap[Long, (ActorRef[UserActor.Command], String)]()
-            val grid =new GridOnServer(bound,ctx.self)
-            idle(roomId, 0, userMap, grid)
+            idle(roomId, 0, mutable.HashMap[Long, (ActorRef[UserActor.Command], String)](), new GridOnServer(bound))
         }
     }
   }

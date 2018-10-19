@@ -2,6 +2,7 @@ package com.neo.sk.medusa.core
 
 import java.util.concurrent.atomic.AtomicInteger
 
+import com.neo.sk.medusa.protocol.PlayInfoProtocol.PlayerInfo
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors, TimerScheduler}
 import com.neo.sk.medusa.core.UserManager.ChildDead
@@ -9,6 +10,7 @@ import net.sf.ehcache.transaction.xa.commands.Command
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 object RoomManager {
 
@@ -21,6 +23,18 @@ object RoomManager {
   case class JoinGame(playerId: Long, playerName: String, roomId: Long, userActor: ActorRef[UserActor.Command]) extends Command
 
   case class UserLeftRoom(playerId: Long, roomId: Long) extends Command
+
+  case class GetRoomIdByPlayerId(playerId: Long, replyTo:ActorRef[RoomIdRsp]) extends Command //接口请求 给平台roomid，记得之后改成String
+
+  case class RoomIdRsp(roomId:Long)
+
+  case class GetPlayerListReq(roomId:Long, replyTo:ActorRef[GetPlayerListRsp]) extends Command
+
+  case class GetPlayerListRsp(playerList:List[PlayerInfo])
+
+  case class GetRoomListReq(replyTo:ActorRef[GetRoomListRsp]) extends Command
+
+  case class GetRoomListRsp(roomList:List[Long])
 
   val behaviors: Behavior[Command] = {
     log.info(s"RoomManager start...")
@@ -98,6 +112,26 @@ object RoomManager {
           case ChildDead(name, childRef) =>
             log.info(s"Child${childRef.path}----$name is dead")
             ctx.unwatch(childRef)
+            Behaviors.same
+
+          case GetRoomIdByPlayerId(playerId,sender) =>
+            val roomId = userRoomMap.getOrElse(playerId,(-1, "unknown"))._1
+            sender ! RoomIdRsp(roomId)
+            Behaviors.same
+
+          case GetRoomListReq(sender) =>
+            val roomList = roomNumMap.keys.toList
+            sender ! GetRoomListRsp(roomList)
+            Behaviors.same
+
+          case GetPlayerListReq(roomId, sender) =>
+            val tmpPlayerList = ListBuffer[PlayerInfo]()
+            userRoomMap.keys.foreach{ key =>
+              if(userRoomMap(key)._1 == roomId){
+                tmpPlayerList.append(PlayerInfo(key, userRoomMap(key)._2))
+              }
+            }
+            sender ! GetPlayerListRsp(tmpPlayerList.toList)
             Behaviors.same
 
           case x =>

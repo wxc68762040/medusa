@@ -107,15 +107,7 @@ object NetGameHolder extends js.JSApp {
     mapCanvas.height = mapBoundary.y
     val hash = dom.window.location.hash.drop(1)
     val info = hash.split("\\?")
-    val path = info(0) match {
-      case "playGame" => "join"
-      case "watchGame" => ""
-      case "watchRecord" => ""
-      case _ => ""
-    }
-    println(path)
-    println(info(1))
-    joinGame(path, info(1))
+    joinGame(info(0), info(1))
     dom.window.requestAnimationFrame(drawLoop())
   }
 
@@ -685,10 +677,9 @@ object NetGameHolder extends js.JSApp {
     def writeToArea(text: String): Unit =
       playground.insertBefore(p(text), playground.firstChild)
   }
-
   def getWebSocketUri(document: Document, path: String, playerInfo:String): String = {
     val wsProtocol = if (dom.document.location.protocol == "https:") "wss" else "ws"
-    s"$wsProtocol://${dom.document.location.host}/medusa/game/$path?" + playerInfo
+    s"$wsProtocol://${dom.document.location.host}/medusa/netSnake/$path?" + playerInfo
   }
 
   def p(msg: String) = {

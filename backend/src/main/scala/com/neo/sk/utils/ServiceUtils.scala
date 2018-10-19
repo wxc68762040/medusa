@@ -12,9 +12,10 @@ import io.circe.parser.decode
 import io.circe.Error
 import io.circe.Decoder
 import org.slf4j.LoggerFactory
-
+import com.neo.sk.medusa.protocol.CommonErrorCode._
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
+import com.neo.sk.utils.SecureUtil._
 
 /**
   * User: Taoz
@@ -22,6 +23,8 @@ import scala.util.{Failure, Success}
   * Time: 7:57 PM
   */
 object ServiceUtils {
+
+  val authCheck = true
   private val log = LoggerFactory.getLogger("com.neo.sk.gypsy.http.ServiceUtils")
   case class CommonRsp(errCode: Int = 0, msg: String = "ok")
   final val SignatureError = CommonRsp(1000001, "signature error.")
@@ -54,6 +57,65 @@ trait ServiceUtils extends CirceSupport {
     case Failure(e) =>
       e.printStackTrace()
       complete("error")
+  }
+
+  def ensureAuth(
+    appClientId: String,
+    timestamp: String,
+    nonce: String,
+    sn: String,
+    data: List[String],
+    signature: String
+  )(f: => Future[server.Route]): server.Route = {
+    val p = {
+      val paramList = List(appClientId.toString, timestamp, nonce, sn) ::: data
+      if (timestamp.toLong + 120000 < System.currentTimeMillis()) {
+        Future.successful(complete(requestTimeOut))
+      } else if (checkSignature(paramList, signature, AppSettings.esheepSecureKey)) {
+        f
+      } else {
+        Future.successful(complete(signatureError))
+      }
+    }
+    dealFutureResult(p)
+  }
+
+  def ensurePostEnvelope(e: PostEnvelope)(f: => Future[server.Route]) = {
+    ensureAuth(e.appId, e.timestamp, e.nonce, e.sn, List(e.data), e.signature)(f)
+  }
+
+//  private def getSecureKey(appId: String) = AppSettings.appSecureMap.get(appId)
+
+  def dealPostReq[A](f: A => Future[server.Route])(implicit decoder: Decoder[A]): server.Route = {
+    entity(as[Either[Error, PostEnvelope]]) {
+      case Right(envelope) =>
+        if(authCheck) {
+          ensurePostEnvelope(envelope) {
+            decode[A](envelope.data) match {
+              case Right(req) =>
+                f(req)
+
+              case Left(e) =>
+                log.error(s"json parse detail type,data=${envelope.data} error: $e")
+                Future.successful(complete(parseJsonError))
+            }
+          }
+        } else {
+          dealFutureResult {
+            decode[A](envelope.data) match {
+              case Right(req) =>
+                f(req)
+              case Left(e) =>
+                log.error(s"json parse detail type,data=${envelope.data} error: $e")
+                Future.successful(complete(parseJsonError))
+            }
+          }
+        }
+
+      case Left(e) =>
+        log.error(s"json parse PostEnvelope error: $e")
+        complete(parseJsonError)
+    }
   }
 
 }
