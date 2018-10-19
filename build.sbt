@@ -54,7 +54,8 @@ lazy val frontend = (project in file("frontend"))
       "org.scala-js" %%% "scalajs-dom" % "0.9.2",
       "io.suzaku" %%% "diode" % "1.1.2",
       //"com.lihaoyi" %%% "upickle" % "0.6.6",
-      "com.lihaoyi" %%% "scalatags" % "0.6.5"
+      "com.lihaoyi" %%% "scalatags" % "0.6.5",
+      "org.seekloud" %%% "byteobject" % "0.1.2"
       //"org.scala-js" %%% "scalajs-java-time" % scalaJsJavaTime
       //"com.lihaoyi" %%% "utest" % "0.3.0" % "test"
     )
