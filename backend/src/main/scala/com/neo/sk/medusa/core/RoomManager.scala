@@ -9,7 +9,7 @@ import com.neo.sk.medusa.core.UserManager.ChildDead
 import net.sf.ehcache.transaction.xa.commands.Command
 import org.slf4j.LoggerFactory
 import scala.concurrent.duration._
-
+import com.neo.sk.medusa.Boot.watchManager
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -28,6 +28,8 @@ object RoomManager {
   case class RoomEmptyTimerKey(roomId:Long)extends Command
 
   case class RoomEmptyKill(roomId:Long)extends Command
+
+  case class GetPlayerByRoomId(playerId:String, roomId:Long, watcherId:String, watcherRef:ActorRef[WatcherActor.Command]) extends Command
 
   case class GetRoomIdByPlayerId(playerId: String, replyTo:ActorRef[RoomIdRsp]) extends Command //接口请求 给平台roomid，记得之后改成String
 
@@ -143,7 +145,25 @@ object RoomManager {
             }
             sender ! GetPlayerListRsp(tmpPlayerList.toList)
             Behaviors.same
-
+          case t:GetPlayerByRoomId =>
+            val playerId = {
+              if(t.playerId == ""){
+                val tmpPlayerList = ListBuffer[String]()
+                userRoomMap.keys.foreach{
+                  key =>
+                    if(userRoomMap(key)._1 == t.roomId)
+                      tmpPlayerList.append(key)
+                }
+                val a = tmpPlayerList(scala.util.Random.nextInt(tmpPlayerList.length))
+                println(a)
+                a
+              }else{
+                t.playerId
+              }
+            }
+            watchManager ! WatcherManager.GetPlayerWatchedRsp(t.watcherId, playerId)
+            getRoomActor(ctx, t.roomId) ! RoomActor.YourUserIsWatched(playerId, t.watcherRef, t.watcherId)
+            Behaviors.same
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")
             Behaviors.unhandled

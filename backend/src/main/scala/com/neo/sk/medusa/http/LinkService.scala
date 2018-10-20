@@ -9,8 +9,8 @@ import akka.stream.{ActorAttributes, Materializer, Supervision}
 import akka.util.{ByteString, Timeout}
 import org.slf4j.LoggerFactory
 import scala.concurrent.{ExecutionContextExecutor, Future}
-import com.neo.sk.medusa.Boot.{userManager, executor, timeout, scheduler}
-import com.neo.sk.medusa.core.UserManager
+import com.neo.sk.medusa.Boot.{userManager, watchManager,  executor, timeout, scheduler}
+import com.neo.sk.medusa.core.{UserManager, WatcherManager}
 import akka.actor.typed.scaladsl.AskPattern._
 import com.neo.sk.utils.CirceSupport._
 import com.neo.sk.utils.ServiceUtils
@@ -45,9 +45,12 @@ trait LinkService extends ServiceUtils {
   }
 
   private val watchGameRoute = path("watchGame"){
-    parameter('roomId.as[Long], 'playerId.as[String].?){
-      (roomId, playerId)=>
-        complete()
+    parameter('roomId.as[Long], 'playerId.as[String].?, 'accessCode.as[String]){
+      (roomId, playerId, accessCode)=>
+        val flowFuture: Future[Flow[Message, Message, Any]] = watchManager ? (WatcherManager.GetWebSocketFlow("ooo", playerId.getOrElse(""), roomId, _))
+        dealFutureResult(
+          flowFuture.map(r => handleWebSocketMessages(r))
+        )
     }
   }
 

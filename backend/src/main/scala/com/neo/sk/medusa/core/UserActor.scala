@@ -17,6 +17,7 @@ import io.circe.Decoder
 import net.sf.ehcache.transaction.xa.commands.Command
 import org.slf4j.LoggerFactory
 
+import scala.collection.mutable
 import scala.concurrent.duration._
 
 
@@ -55,8 +56,11 @@ object UserActor {
 
   case class TimeOut(msg: String) extends Command
 
+  case class YouAreWatched(watcherId:String, watcherRef: ActorRef[WatcherActor.Command]) extends Command
+
   case class DispatchMsg(msg: WsMsgSource) extends Command
 
+  case class YouAreUnwatched(watcherId: String) extends Command
 
   def create(playerId: String, playerName: String): Behavior[Command] = {
     Behaviors.setup[Command] {
@@ -99,7 +103,7 @@ object UserActor {
 
             frontActor ! Protocol.JoinRoomSuccess(playerId, rId)
 
-            switchBehavior(ctx, "play", play(playerId, playerName, rId, frontActor, roomActor))
+            switchBehavior(ctx, "play", play(playerId, playerName, rId, frontActor, roomActor, mutable.HashMap[String, ActorRef[WatcherActor.Command]]()))
 
           case JoinRoomFailure(rId, errorCode, reason) =>
 
@@ -120,7 +124,8 @@ object UserActor {
 
   private def play(playerId: String, playerName: String, roomId: Long,
                    frontActor: ActorRef[Protocol.WsMsgSource],
-                   roomActor: ActorRef[RoomActor.Command])
+                   roomActor: ActorRef[RoomActor.Command],
+                   watcherMap: mutable.HashMap[String, ActorRef[WatcherActor.Command]])
                   (implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
@@ -136,6 +141,7 @@ object UserActor {
             Behaviors.same
 
           case DispatchMsg(m) =>
+            watcherMap.values.foreach(t => t ! WatcherActor.TransInfo(m))
             m match {
               case t: Protocol.SnakeLeft =>
                 //如果死亡十分钟后无操作 则杀死userActor
@@ -155,9 +161,18 @@ object UserActor {
             roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
             Behaviors.stopped
 
+          case t:YouAreWatched =>
+            watcherMap.put(t.watcherId, t.watcherRef)
+            Behaviors.same
+
+          case t: YouAreUnwatched =>
+            watcherMap.remove(t.watcherId)
+            Behaviors.same
+
           case UnKnowAction(unknownMsg) =>
             log.debug(s"${ctx.self.path} receive an UnKnowAction when idle:$unknownMsg")
             Behaviors.same
+
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")
             Behaviors.unhandled

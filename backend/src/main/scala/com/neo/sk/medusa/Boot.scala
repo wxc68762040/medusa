@@ -8,7 +8,7 @@ import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import com.neo.sk.medusa.http.HttpService
 import akka.actor.typed.scaladsl.adapter._
-import com.neo.sk.medusa.core.{RoomManager, UserManager}
+import com.neo.sk.medusa.core.{RoomManager, UserManager, WatcherManager}
 import com.neo.sk.medusa.snake.Delayer
 import com.neo.sk.medusa.snake.Delayer.{Hello, Start}
 import com.neo.sk.utils.CirceSupport
@@ -39,7 +39,7 @@ object Boot extends HttpService {
 //  val delayer = system.spawn(Delayer.start, "Delayer")
   val userManager = system.spawn(UserManager.behaviors,"UserManager")
   val roomManager = system.spawn(RoomManager.behaviors,"RoomManager")
-
+  val watchManager = system.spawn(WatcherManager.behaviors, "WatchManager")
   def main(args: Array[String]) {
     log.info("Starting.")
     Http().bindAndHandle(routes, httpInterface, httpPort)

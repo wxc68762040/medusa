@@ -10,6 +10,8 @@ import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import org.seekloud.byteobject.ByteObject
 import org.slf4j.LoggerFactory
+import com.neo.sk.medusa.Boot.{roomManager, userManager}
+import com.neo.sk.medusa.core.UserManager.YourUserUnwatched
 
 import scala.collection._
 import scala.language.implicitConversions
@@ -22,8 +24,12 @@ import io.circe.parser._
 import scala.concurrent.duration._
 import com.neo.sk.medusa.snake.Protocol._
 import net.sf.ehcache.transaction.xa.commands.Command
-
-object UserManager {
+/**
+  * User: yuwei
+  * Date: 2018/10/20
+  * Time: 13:11
+  */
+object WatcherManager {
 
   private val log = LoggerFactory.getLogger(this.getClass)
 
@@ -31,11 +37,11 @@ object UserManager {
 
   final case class ChildDead[U](name: String, childRef: ActorRef[U]) extends Command
 
-  final case class GetWebSocketFlow(playerId: String, playerName: String, roomId: Long, replyTo: ActorRef[Flow[Message, Message, Any]]) extends Command
+  final case class GetWebSocketFlow(watcherId:String, playerId: String, roomId: Long, replyTo: ActorRef[Flow[Message, Message, Any]]) extends Command
 
-  case class YourUserUnwatched(playerId: String, watcherId: String) extends Command
+  case class GetPlayerWatchedRsp(watcherId:String, playerId:String) extends Command
 
-  case class UserReady(playerId: String, userActor: ActorRef[UserActor.Command]) extends Command
+  case class WatcherGone(watcherId:String) extends Command
 
   val behaviors: Behavior[Command] = {
     log.debug(s"UserManager start...")
@@ -43,32 +49,30 @@ object UserManager {
       ctx =>
         Behaviors.withTimers[Command] {
           implicit timer =>
-            val userRoomMap = mutable.HashMap.empty[String, (Long, String)]
-            idle(userRoomMap)
+            val watcherMap = mutable.HashMap.empty[String, String]//watcher, player
+            idle(watcherMap)
         }
     }
   }
 
-  def idle(userRoomMap: mutable.HashMap[String, (Long, String)])(implicit timer: TimerScheduler[Command]): Behavior[Command] =
+  def idle(watcherMap: mutable.HashMap[String, String])(implicit timer: TimerScheduler[Command]): Behavior[Command] =
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
-          case GetWebSocketFlow(playerId, playerName, roomId, replyTo) =>
-            if (userRoomMap.get(playerId).nonEmpty) {
-              userRoomMap.update(playerId, (roomId, playerName))
-            } else {
-              userRoomMap.put(playerId, (roomId, playerName))
-            }
-            replyTo ! getWebSocketFlow(getUserActor(ctx, playerId, playerName, roomId))
+          case t: GetWebSocketFlow =>
+            val watcher = getWatcherActor(ctx, t.watcherId)
+            t.replyTo ! getWebSocketFlow(watcher)
+            roomManager ! RoomManager.GetPlayerByRoomId(t.playerId, t.roomId, t.watcherId, watcher)
             Behaviors.same
 
-          case UserReady(playerId, userActor) =>
-            userActor ! UserActor.StartGame(playerId, userRoomMap(playerId)._2, userRoomMap(playerId)._1)
-            userRoomMap.remove(playerId)
+          case t: GetPlayerWatchedRsp =>
+            watcherMap.put(t.watcherId, t.playerId)
             Behaviors.same
 
-          case t: YourUserUnwatched =>
-            getUserActor(ctx, t.playerId, "", 1) ! UserActor.YouAreUnwatched(t.watcherId)
+          case t: WatcherGone =>
+            val playerWatched = watcherMap(t.watcherId)
+            userManager ! YourUserUnwatched(playerWatched, t.watcherId)
+            watcherMap.remove(t.watcherId)
             Behaviors.same
 
           case ChildDead(name, childRef) =>
@@ -83,16 +87,16 @@ object UserManager {
     }
 
 
-  private def getUserActor(ctx: ActorContext[Command], playerId: String, playerName: String, roomId: Long): ActorRef[UserActor.Command] = {
-    val childName = s"UserActor-$playerId"
+  private def getWatcherActor(ctx: ActorContext[Command], watcherId: String): ActorRef[WatcherActor.Command] = {
+    val childName = s"WatcherActor-$watcherId"
     ctx.child(childName).getOrElse {
-      val actor = ctx.spawn(UserActor.create(playerId, playerName), childName)
+      val actor = ctx.spawn(WatcherActor.create(watcherId), childName)
       ctx.watchWith(actor, ChildDead(childName, actor))
       actor
-    }.upcast[UserActor.Command]
+    }.upcast[WatcherActor.Command]
   }
 
-  private def getWebSocketFlow(userActor: ActorRef[UserActor.Command]): Flow[Message, Message, Any] = {
+  private def getWebSocketFlow(watcherActor: ActorRef[WatcherActor.Command]): Flow[Message, Message, Any] = {
     Flow[Message]
       .collect {
         case TextMessage.Strict(msg) =>
@@ -110,12 +114,9 @@ object UserManager {
                 TextInfo("-1", "decode error")
             }
           msg
-        // unpack incoming WS text messages...
-        // This will lose (ignore) messages not received in one chunk (which is
-        // unlikely because chat messages are small) but absolutely possible
-        // FIXME: We need to handle TextMessage.Streamed as well.
+
       }
-      .via(UserActor.flow(userActor)) // ... and route them through the chatFlow ...
+      .via(WatcherActor.flow(watcherActor)) // ... and route them through the chatFlow ...
       //      .map { msg => TextMessage.Strict(msg.asJson.noSpaces) // ... pack outgoing messages into WS JSON messages ...
       //.map { msg => TextMessage.Strict(write(msg)) // ... pack outgoing messages into WS JSON messages ...
       .map {
@@ -140,3 +141,4 @@ object UserManager {
 
 
 }
+

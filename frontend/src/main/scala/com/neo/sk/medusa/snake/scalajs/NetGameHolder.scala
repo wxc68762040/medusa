@@ -25,6 +25,8 @@ import scala.util.matching.Regex
   * Time: 12:45 PM
   */
 object NetGameHolder extends js.JSApp {
+
+  var state = ""
   val bounds = Point(Boundary.w, Boundary.h)
   val canvasUnit = 7
   val canvasBoundary = Point(dom.document.documentElement.clientWidth,dom.document.documentElement.clientHeight)
@@ -108,6 +110,7 @@ object NetGameHolder extends js.JSApp {
     val hash = dom.window.location.hash.drop(1)
     val info = hash.split("\\?")
     joinGame(info(0), info(1))
+    state = info(0)
     dom.window.requestAnimationFrame(drawLoop())
   }
 
@@ -535,20 +538,22 @@ object NetGameHolder extends js.JSApp {
       drawGameOn()
       playground.insertBefore(p("Game connection was successful!"), playground.firstChild)
       wsSetup = true
-      canvas.focus()
-      canvas.onkeydown = {
-        (e: dom.KeyboardEvent) => {
-          if (watchKeys.contains(e.keyCode)) {
-            e.preventDefault()
-            val msg: Protocol.UserAction = if (e.keyCode == KeyCode.F2) {
-              NetTest(myId, System.currentTimeMillis())
-            } else {
-              grid.addActionWithFrame(myId, e.keyCode, grid.frameCount + operateDelay)
-              Key(myId, e.keyCode, grid.frameCount + advanceFrame + operateDelay) //客户端自己的行为提前帧
+      if(state == "playGame") {
+        canvas.focus()
+        canvas.onkeydown = {
+          (e: dom.KeyboardEvent) => {
+            if (watchKeys.contains(e.keyCode)) {
+              e.preventDefault()
+              val msg: Protocol.UserAction = if (e.keyCode == KeyCode.F2) {
+                NetTest(myId, System.currentTimeMillis())
+              } else {
+                grid.addActionWithFrame(myId, e.keyCode, grid.frameCount + operateDelay)
+                Key(myId, e.keyCode, grid.frameCount + advanceFrame + operateDelay) //客户端自己的行为提前帧
+              }
+              msg.fillMiddleBuffer(sendBuffer) //encode msg
+              val ab: ArrayBuffer = sendBuffer.result() //get encoded data.
+              gameStream.send(ab) // send data.
             }
-            msg.fillMiddleBuffer(sendBuffer) //encode msg
-            val ab: ArrayBuffer = sendBuffer.result() //get encoded data.
-            gameStream.send(ab) // send data.
           }
         }
       }

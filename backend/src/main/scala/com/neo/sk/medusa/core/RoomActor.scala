@@ -11,6 +11,7 @@ import com.neo.sk.medusa.common.AppSettings._
 import com.neo.sk.medusa.snake._
 import java.awt.event.KeyEvent
 
+import com.neo.sk.medusa.snake.Protocol.WsMsgSource
 import net.sf.ehcache.transaction.xa.commands.Command
 
 import scala.collection.mutable
@@ -22,6 +23,8 @@ object RoomActor {
   private val bound = Point(boundW, bountH)
 
   sealed trait Command
+
+  case class YourUserIsWatched(playerId:String, watcherRef:ActorRef[WatcherActor.Command], watcherId:String) extends Command
 
   case class UserJoinGame(playerId: String, playerName: String, userActor: ActorRef[UserActor.Command]) extends Command
 
@@ -138,7 +141,10 @@ object RoomActor {
           case KillRoom =>
             Behaviors.stopped
 
-
+          case t: YourUserIsWatched =>
+            userMap.get(t.playerId).foreach(a => a._1 ! UserActor.YouAreWatched(t.watcherId, t.watcherRef))
+            t.watcherRef ! WatcherActor.TransInfo(Protocol.Id(t.playerId).asInstanceOf[WsMsgSource])
+            Behaviors.same
           case x =>
             log.warn(s"got unknown msg: $x")
             Behaviors.same
