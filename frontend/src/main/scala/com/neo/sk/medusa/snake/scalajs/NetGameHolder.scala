@@ -2,9 +2,6 @@ package com.neo.sk.medusa.snake.scalajs
 
 import com.neo.sk.medusa.snake.Protocol._
 import com.neo.sk.medusa.snake._
-import com.neo.sk.medusa.utils.MiddleBufferInJs
-import com.neo.sk.medusa.utils.byteObject.ByteObject._
-import com.neo.sk.medusa.utils.byteObject.decoder
 import org.scalajs.dom
 import org.scalajs.dom.ext.{Color, KeyCode}
 import org.scalajs.dom.html.{Document => _, _}
