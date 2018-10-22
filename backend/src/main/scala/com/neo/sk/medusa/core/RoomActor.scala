@@ -24,6 +24,8 @@ object RoomActor {
 
   sealed trait Command
 
+  case class UserLeft(playerId:String) extends Command
+
   case class YourUserIsWatched(playerId:String, watcherRef:ActorRef[WatcherActor.Command], watcherId:String) extends Command
 
   case class UserJoinGame(playerId: String, playerName: String, userActor: ActorRef[UserActor.Command]) extends Command
@@ -99,6 +101,11 @@ object RoomActor {
 
           case BeginSync =>
             timer.startPeriodicTimer(TimerKey4SyncLoop, Sync, frameRate.millis)
+            Behaviors.same
+
+          case t:UserLeft =>
+            grid.removeSnake(t.playerId)
+            userMap.remove(t.playerId)
             Behaviors.same
 
           case Sync =>

@@ -159,6 +159,7 @@ object UserActor {
 
           case UserLeft =>
             roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
+            roomActor ! RoomActor.UserLeft(playerId)
             Behaviors.stopped
 
           case t:YouAreWatched =>
