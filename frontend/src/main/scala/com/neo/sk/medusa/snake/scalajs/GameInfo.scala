@@ -35,7 +35,7 @@ object GameInfo {
   }
 
   def clearInfo(ctx: dom.CanvasRenderingContext2D)={
-    ctx.clearRect(0,0,gameInfo.w,gameInfo.h)
+    ctx.clearRect(0,0,canvasBoundary.x,canvasBoundary.y)
   }
 
 
@@ -45,8 +45,8 @@ object GameInfo {
     val infoCacheCanvas = dom.document.getElementById("GameInfo").asInstanceOf[Canvas]
     val infoCacheCtx = infoCacheCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
-    infoCacheCanvas.width = gameInfo.w
-    infoCacheCanvas.height = gameInfo.h
+    infoCacheCanvas.width = canvasBoundary.x
+    infoCacheCanvas.height = canvasBoundary.y
 
     clearInfo(infoCacheCtx)
 
@@ -82,8 +82,7 @@ object GameInfo {
         infoCacheCtx.fillText(s"Your length  : $deadLength", centerX - 150, centerY)
         infoCacheCtx.fillText(s"Your kill        : $deadKill", centerX - 150, centerY + 30)
         infoCacheCtx.fillText(s"Killer             : $yourKiller", centerX - 150, centerY + 60)
-        infoCacheCtx.font = "36px Helvet" +
-                            "ica"
+        infoCacheCtx.font = "36px Helvetica"
         infoCacheCtx.fillText("Ops, Press Space Key To Restart!", centerX - 350, centerY - 150)
         myProportion = 1.0
       }

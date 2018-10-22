@@ -257,6 +257,7 @@ object NetGameHolder extends js.JSApp {
             val middleDataInJs = new MiddleBufferInJs(buf) //put data into MiddleBuffer
             val encodedData: Either[decoder.DecoderFailure, Protocol.GameMessage] =
               bytesDecode[Protocol.GameMessage](middleDataInJs) // get encoded data.
+            GameView.canvas.focus()
             encodedData match {
               case Right(data) => data match {
                 case Protocol.Id(id) => myId = id

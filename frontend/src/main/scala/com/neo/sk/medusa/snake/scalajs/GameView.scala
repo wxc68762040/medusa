@@ -20,7 +20,7 @@ object GameView  {
 
   val canvasUnit = 7
 
-  var myProportion = 1.0
+ // var myProportion = 1.0
 
   val canvas = dom.document.getElementById("GameView").asInstanceOf[Canvas]
   private[this] val canvasPic = dom.document.getElementById("canvasPic").asInstanceOf[HTMLElement]
@@ -45,9 +45,10 @@ object GameView  {
     if (firstCome) {
       myProportion = 1.0
     } else {
-      //lostCtx.drawImage(lostPic,0,0,lostCanvas.width,lostCanvas.height)
+
       ctx.font = "36px Helvetica"
       ctx.fillText("Ops, connection lost.", windowWidth / 2 - 250, windowHight / 2 - 200)
+
       myProportion = 1.0
     }
   }
