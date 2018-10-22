@@ -42,7 +42,8 @@ object GameRecorder {
   private[this] def switchBehavior(ctx: ActorContext[Command],
                                    behaviorName: String, behavior: Behavior[Command], durationOpt: Option[FiniteDuration] = None,timeOut: TimeOut  = TimeOut("busy time error"))
                                   (implicit stashBuffer: StashBuffer[Command],
-                                   timer:TimerScheduler[Command]) = {
+                                   timer:TimerScheduler[Command],
+                                   middleBuffer: MiddleBufferInJvm) = {
     log.debug(s"${ctx.self.path} becomes $behaviorName behavior.")
     timer.cancel(BehaviorChangeKey)
     durationOpt.foreach(timer.startSingleTimer(BehaviorChangeKey,timeOut,_))
@@ -69,33 +70,31 @@ object GameRecorder {
     timer:TimerScheduler[Command],
     middleBuffer: MiddleBufferInJvm
   ): Behavior[Command] = {
-    import gameRecordData._
-    val middleBuffer = new MiddleBufferInJvm(8*1024)
-
+   // val middleBuffer = new MiddleBufferInJvm(8*1024)
     Behaviors.receive{ (ctx,msg) =>
       msg match {
         case t:GameRecord =>
-          gameRecordBuffer = t :: gameRecordBuffer
-          if(gameRecordBuffer.size > maxFrame_PreSnapShot){
-            val rs = gameRecordBuffer.reverse
+          gameRecordData.gameRecordBuffer = t :: gameRecordData.gameRecordBuffer
+          if(gameRecordData.gameRecordBuffer.size > maxFrame_PreSnapShot){
+            val rs = gameRecordData.gameRecordBuffer.reverse
             rs.headOption.foreach{ e =>
-              recorder.writeFrame(e.event._1.fillMiddleBuffer(middleBuffer).result(),e.event._2.map(_.fillMiddleBuffer(middleBuffer).result()))
+              gameRecordData.recorder.writeFrame(e.event._1.fillMiddleBuffer(middleBuffer).result(),e.event._2.map(_.fillMiddleBuffer(middleBuffer).result()))
               rs.tail.foreach{e =>
                 if(e.event._1.nonEmpty){
-                  recorder.writeFrame(e.event._1.fillMiddleBuffer(middleBuffer).result())
+                  gameRecordData.recorder.writeFrame(e.event._1.fillMiddleBuffer(middleBuffer).result())
                 }else{
-                  recorder.writeEmptyFrame()
+                  gameRecordData.recorder.writeEmptyFrame()
                 }
               }
             }
-            fileRecordNum += rs.size
-            if(fileRecordNum > maxFrame_PreFile){
-              recorder.finish()
-              log.info(s"${ctx.self.path} has save game data to file=${fileName}_$fileIndex")
-              val newRecorder = gameRecordInitPart(fileName,fileIndex + 1, System.currentTimeMillis(), initStateOpt)
+            gameRecordData.fileRecordNum += rs.size
+            if(gameRecordData.fileRecordNum > maxFrame_PreFile){
+              gameRecordData.recorder.finish()
+              log.info(s"${ctx.self.path} has save game data to file=${gameRecordData.fileName}_${gameRecordData.fileIndex}")
+              val newRecorder = gameRecordInitPart(gameRecordData.fileName,gameRecordData.fileIndex + 1, System.currentTimeMillis(), gameRecordData.initStateOpt)
               gameRecordMainPart(gameRecordData.copy(fileIndex = gameRecordData.fileIndex + 1, recorder = newRecorder, gameRecordBuffer = List[GameRecord](),fileRecordNum = 0))
             }else{
-              gameRecordBuffer = List[GameRecord]()
+              gameRecordData.gameRecordBuffer = List[GameRecord]()
               Behaviors.same
             }
           }else{

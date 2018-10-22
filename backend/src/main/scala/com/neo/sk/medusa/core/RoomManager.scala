@@ -21,7 +21,7 @@ object RoomManager {
 
   final case class ChildDead[U](name: String, childRef: ActorRef[U]) extends Command
 
-  case class JoinGame(playerId: String, playerName: String, roomId: Long, userActor: ActorRef[UserActor.Command]) extends Command
+  case class JoinGame(playerId: String, playerName: String, roomId: Long,isNewJoin:Boolean, userActor: ActorRef[UserActor.Command]) extends Command
 
   case class UserLeftRoom(playerId: String, roomId: Long) extends Command
 
@@ -66,14 +66,17 @@ object RoomManager {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
-          case JoinGame(playerId, playerName, roomId, userActor) =>
+          case JoinGame(playerId, playerName, roomId, isNewJoin,userActor) =>
             //分配房间 启动相应actor
             if (roomId == -1) {
               //未指定房间
               if (roomNumMap.exists(_._2 < maxUserNum)) {
                 val randomRoomId = roomNumMap.filter(_._2 < maxUserNum).head._1
                 timer.cancel(RoomEmptyTimerKey(randomRoomId))
-                roomNumMap.update(randomRoomId, roomNumMap(randomRoomId) + 1)
+                //新加入游戏的 roomNum加一 否则不变
+                if(isNewJoin){
+                  roomNumMap.update(randomRoomId, roomNumMap(randomRoomId) + 1)
+                }
                 userRoomMap.put(playerId, (randomRoomId, playerName))
                 userActor ! UserActor.JoinRoomSuccess(randomRoomId, getRoomActor(ctx, randomRoomId))
               } else {
@@ -93,7 +96,7 @@ object RoomManager {
                 } else {
                   //房间未满
                   timer.cancel(RoomEmptyTimerKey(roomId))
-                  roomNumMap.update(roomId, roomNumMap(roomId) + 1)
+                  if(isNewJoin) roomNumMap.update(roomId, roomNumMap(roomId) + 1)
                   userRoomMap.put(playerId, (roomId, playerName))
                   userActor ! UserActor.JoinRoomSuccess(roomId, getRoomActor(ctx, roomId))
                 }
@@ -108,8 +111,11 @@ object RoomManager {
           case UserLeftRoom(playerId, roomId) =>
             if(userRoomMap.get(playerId).nonEmpty){
               if(roomNumMap(roomId)-1<=0){
-                timer.startSingleTimer(RoomEmptyTimerKey(roomId),RoomEmptyKill(roomId),5.minutes)
+                log.info(s"room empty")
+                roomNumMap.update(roomId,roomNumMap(roomId)-1)
+                timer.startSingleTimer(RoomEmptyTimerKey(roomId),RoomEmptyKill(roomId),1.minutes)
               }else{
+                log.info(s"room not empty  Num ${roomNumMap(roomId)-1}")
                 roomNumMap.update(roomId,roomNumMap(roomId)-1)
               }
               userRoomMap.remove(playerId)

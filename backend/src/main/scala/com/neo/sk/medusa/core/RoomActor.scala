@@ -52,6 +52,7 @@ object RoomActor {
   def create(roomId: Long): Behavior[Command] = {
     Behaviors.setup[Command] {
       ctx =>
+        log.info(s"roomActor ${ctx.self.path} start.....")
         implicit val stashBuffer: StashBuffer[Command] = StashBuffer[Command](Int.MaxValue)
         Behaviors.withTimers[Command] {
           implicit timer =>
@@ -78,7 +79,7 @@ object RoomActor {
             Behaviors.same
 
           case t: UserDead =>
-            log.info(s"room $roomId lost a player ${t.userId}")
+            //log.info(s"room $roomId lost a player ${t.userId}")
             grid.removeSnake(t.userId)
             dispatchTo(t.userId, UserActor.DispatchMsg(Protocol.DeadInfo(t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killer)), userMap)
             dispatch(UserActor.DispatchMsg(Protocol.SnakeLeft(t.userId, t.deadInfo.name)), userMap)
@@ -105,7 +106,9 @@ object RoomActor {
 
           case t:UserLeft =>
             grid.removeSnake(t.playerId)
+            val userName=userMap(t.playerId)._2
             userMap.remove(t.playerId)
+            dispatch(UserActor.DispatchMsg(Protocol.SnakeLeft(t.playerId,userName)),userMap)
             Behaviors.same
 
           case Sync =>
@@ -167,7 +170,7 @@ object RoomActor {
     userMap.get(id).foreach { t => t._1 ! gameOutPut }
   }
 
-  def dispatch(gameOutPut: UserActor.DispatchMsg, userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String)]) = {
+  def dispatch(gameOutPut: UserActor.Command, userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String)]) = {
     userMap.values.foreach { t => t._1 ! gameOutPut }
   }
 
