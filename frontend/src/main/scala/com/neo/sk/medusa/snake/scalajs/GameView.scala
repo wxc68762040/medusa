@@ -53,7 +53,7 @@ object GameView  {
     }
   }
 
-  def drawGrid(uid: Long ,data: GridDataSync): Unit = {
+  def drawGrid(uid: String ,data: GridDataSync): Unit = {
     val cacheCanvas = dom.document.createElement("canvas").asInstanceOf[Canvas]
     val cacheCtx = cacheCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
     cacheCanvas.width = canvasBoundary.x

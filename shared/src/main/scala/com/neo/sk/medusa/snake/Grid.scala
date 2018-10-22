@@ -34,12 +34,12 @@ trait Grid {
 
   var frameCount = 0l
   var grid = Map[Point, Spot]()
-  var snakes = Map.empty[Long, SnakeInfo]
+  var snakes = Map.empty[String, SnakeInfo]
   var actionMap = Map.empty[Long, Map[Long, Int]]
   var deadSnakeList = List.empty[DeadSnakeInfo]
   var killMap = Map.empty[Long, List[(Long,String)]]
 
-  def removeSnake(id: Long): Option[SnakeInfo] = {
+  def removeSnake(id: String): Option[SnakeInfo] = {
     val r = snakes.get(id)
     if (r.isDefined) {
       snakes -= id
@@ -48,11 +48,11 @@ trait Grid {
   }
 
 
-  def addAction(id: Long, keyCode: Int) = {
+  def addAction(id: String, keyCode: Int) = {
     addActionWithFrame(id, keyCode, frameCount)
   }
 
-  def addActionWithFrame(id: Long, keyCode: Int, frame: Long) = {
+  def addActionWithFrame(id: String, keyCode: Int, frame: Long) = {
     val map = actionMap.getOrElse(frame, Map.empty)
     val tmp = map + (id -> keyCode)
     actionMap += (frame -> tmp)

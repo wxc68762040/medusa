@@ -40,7 +40,7 @@ object GameInfo {
 
 
 
-  def drawInfo(uid: Long, data: GridDataSync): Unit = {
+  def drawInfo(uid: String, data: GridDataSync): Unit = {
 
     val infoCacheCanvas = dom.document.getElementById("GameInfo").asInstanceOf[Canvas]
     val infoCacheCtx = infoCacheCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]

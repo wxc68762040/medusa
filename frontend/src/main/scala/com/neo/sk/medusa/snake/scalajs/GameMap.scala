@@ -22,7 +22,7 @@ object GameMap {
   private[this] val mapCtx = mapCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
   dom.document.getElementById("GameMap").setAttribute("style",s"position:absolute;z-index:3;left: 0px;top:${NetGameHolder.windowHight + 50}px")
 
-  def drawLittleMap(uid : Long, data:GridDataSync):Unit ={
+  def drawLittleMap(uid : String, data:GridDataSync):Unit ={
     GameInfo.setStartBgOff()
 
     val period = (System.currentTimeMillis() - NetGameHolder.basicTime-2).toInt
