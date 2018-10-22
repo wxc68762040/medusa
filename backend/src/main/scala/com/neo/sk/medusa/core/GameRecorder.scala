@@ -1,21 +1,16 @@
-package com.neo.sk.medusa
+package com.neo.sk.medusa.core
+
 import java.io.File
 
 import akka.actor.typed.Behavior
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.{ActorContext, StashBuffer, TimerScheduler}
-import akka.util.ByteString
-import com.neo.sk.medusa.snake.{Ap, Point, Protocol, SnakeInfo}
+import akka.actor.typed.scaladsl.{ActorContext, Behaviors, StashBuffer, TimerScheduler}
+import com.neo.sk.medusa.snake.Protocol
 import org.seekloud.byteobject.MiddleBufferInJvm
 import org.seekloud.essf.io.FrameOutputStream
 import org.slf4j.LoggerFactory
 
-import scala.collection.immutable.Queue
-import scala.language.implicitConversions
 import scala.concurrent.duration._
-
-
-
+import scala.language.implicitConversions
 
 
 object GameRecorder {
@@ -57,19 +52,23 @@ object GameRecorder {
   def create(fileName:String, gameInformation: Long, initStateOpt:Option[Protocol.GridDataSync] = None):Behavior[Command] = {
     Behaviors.setup{ ctx =>
       log.info(s"${ctx.self.path} is starting..")
-      implicit val stashBuffer = StashBuffer[Command](Int.MaxValue)
-      implicit val middleBuffer = new MiddleBufferInJvm(10 * 4096)
+      implicit val stashBuffer: StashBuffer[Command] = StashBuffer[Command](Int.MaxValue)
+      implicit val middleBuffer: MiddleBufferInJvm = new MiddleBufferInJvm(10 * 4096)
       Behaviors.withTimers[Command] { implicit timer =>
-        val fileRecorder = gameRecord_initPart(fileName,0,gameInformation,initStateOpt)
+        val fileRecorder = gameRecordInitPart(fileName,0,gameInformation,initStateOpt)
         val gameRecordBuffer:List[GameRecord] = List[GameRecord]()
         val data = GameRecorderData(fileName,0,gameInformation,initStateOpt,fileRecorder,gameRecordBuffer)
-        switchBehavior(ctx,"work",gameRecord_mainPart(data))
+        switchBehavior(ctx,"work",gameRecordMainPart(data))
       }
     }
   }
 
 
-  private def gameRecord_mainPart(gameRecordData: GameRecorderData): Behavior[Command] = {
+  private def gameRecordMainPart(gameRecordData: GameRecorderData)(
+    implicit stashBuffer:StashBuffer[Command],
+    timer:TimerScheduler[Command],
+    middleBuffer: MiddleBufferInJvm
+  ): Behavior[Command] = {
     import gameRecordData._
     val middleBuffer = new MiddleBufferInJvm(8*1024)
 
@@ -93,8 +92,8 @@ object GameRecorder {
             if(fileRecordNum > maxFrame_PreFile){
               recorder.finish()
               log.info(s"${ctx.self.path} has save game data to file=${fileName}_$fileIndex")
-              val newRecorder = gameRecord_initPart(fileName,fileIndex + 1, System.currentTimeMillis(), initStateOpt)
-              gameRecord_mainPart(gameRecordData.copy(fileIndex = gameRecordData.fileIndex + 1, recorder = newRecorder, gameRecordBuffer = List[GameRecord](),fileRecordNum = 0))
+              val newRecorder = gameRecordInitPart(fileName,fileIndex + 1, System.currentTimeMillis(), initStateOpt)
+              gameRecordMainPart(gameRecordData.copy(fileIndex = gameRecordData.fileIndex + 1, recorder = newRecorder, gameRecordBuffer = List[GameRecord](),fileRecordNum = 0))
             }else{
               gameRecordBuffer = List[GameRecord]()
               Behaviors.same
@@ -112,7 +111,7 @@ object GameRecorder {
     }
   }
 
-  private def gameRecord_initPart(fileName:String,index:Int,startTime:Long,initGameState:Option[Protocol.GridDataSync]=None)
+  private def gameRecordInitPart(fileName:String,index:Int,startTime:Long,initGameState:Option[Protocol.GridDataSync]=None)
                             :FrameOutputStream ={
     val path = "D:\\DevelopmentTools\\IDEA_gitProject\\medusa1\\backend\\src\\main\\gameRecord\\"
     val dir = new File(path)
