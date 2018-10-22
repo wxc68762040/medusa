@@ -272,6 +272,11 @@ package object snake {
     val h = 150
   }
 
+  object gameInfo{
+    val w = 1500
+    val h = 700
+  }
+
   object FoodType {
     val normal = 0
     val deadBody = 1

@@ -8,45 +8,46 @@ import org.scalajs.dom.ext.Color
 import org.scalajs.dom.html.{Document => _, _}
 import org.scalajs.dom.raw._
 
+
+
 /**
   * User: gaohan
   * Date: 2018/10/12
   * Time: 下午3:43
-  * 主界面游戏画图
+  * 游戏操作界面
   */
-object mainGame  {
+object GameView  {
 
-  val bounds = Point(Boundary.w, Boundary.h)
   val canvasUnit = 7
-  val canvasBoundary = Point(dom.document.documentElement.clientWidth,dom.document.documentElement.clientHeight)
-  var basicTime = 0L
-  var myProportion = 1.0
-  var myId = -1l
-  val windowWidth = dom.document.documentElement.clientWidth
-  val windowHight = dom.document.documentElement.clientHeight
-  val centerX = windowWidth/2
-  val centerY = windowHight/2
 
+  var myProportion = 1.0
+
+  val canvas = dom.document.getElementById("GameView").asInstanceOf[Canvas]
   private[this] val canvasPic = dom.document.getElementById("canvasPic").asInstanceOf[HTMLElement]
-  private[this] val canvas = dom.document.getElementById("GameView").asInstanceOf[Canvas]
   private[this] val ctx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
-  private[this] val mapCanvas = dom.document.getElementById("GameMap").asInstanceOf[Canvas]
-  dom.document.getElementById("GameMap").setAttribute("style",s"position:absolute;z-index:3;left: 0px;top:${windowHight + 50}px")
 
   def drawGameOn(): Unit = {
     ctx.drawImage(canvasPic,0,0,canvas.width,canvas.height)
 
-    //    mapCtx.drawImage(canvasPic,0,0,mapCanvas.width,mapCanvas.height)
   }
 
   def drawGameOff(): Unit = {
     ctx.drawImage(canvasPic, 0, 0, canvas.width, canvas.height)
     ctx.fillStyle = "rgb(250, 250, 250)"
+
+//    val lostCanvas = dom.document.getElementById("GameLost").asInstanceOf[Canvas]
+//    val lostPic = dom.document.getElementById("lostPic").asInstanceOf[HTMLElement]
+//    val lostCtx = lostCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
+
+//    lostCanvas.width = canvasBoundary.x
+//    lostCanvas.height = canvasBoundary.y
+
     if (firstCome) {
       myProportion = 1.0
     } else {
+      //lostCtx.drawImage(lostPic,0,0,lostCanvas.width,lostCanvas.height)
       ctx.font = "36px Helvetica"
-      ctx.fillText("Ops, connection lost.", windowWidth / 2 - 250, windowHight / 2 - 150)
+      ctx.fillText("Ops, connection lost.", windowWidth / 2 - 250, windowHight / 2 - 200)
       myProportion = 1.0
     }
   }
@@ -72,17 +73,20 @@ object mainGame  {
 
     val proportion = if (snakes.exists(_.id == uid)){
       val length = snakes.filter(_.id == uid).head .length
-      val p = 0.005 *length +0.975
+      val p = 0.0005 *length +0.975
       if (p < 1.5) p else 1.5
     }else {
       1.0
     }
+
 
     if (myProportion < proportion){
       myProportion += 0.01
     }
     // 蛇头的移动实际上是画布的移动，蛇头始终出现在屏幕的中间，
 
+    val centerX = windowWidth/2
+    val centerY = windowHight/2
     val myHead = if(snakes.exists(_.id == uid)) snakes.filter(_.id == uid).head.head + mySubFrameRevise else Point(centerX,centerY) //蛇头的绝对坐标
     val deviationX = centerX - myHead.x //中心点与蛇头的偏差
     val deviationY = centerY - myHead.y
@@ -109,16 +113,16 @@ object mainGame  {
 
     snakes.foreach{ snake=>
       val id = snake.id
-      val x = snake.head.x + snake.direction.x *snake.speed *period / Protocol.frameRate
+      val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
       val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
 
-      var step = snake.speed.toInt * period / Protocol.frameRate - snake.extend
+      var step = (snake.speed * period / Protocol.frameRate - snake.extend).toInt
       var tail = snake.tail
       var joints = snake.joints.enqueue(Point(x.toInt,y.toInt))//通过在旧序列上添加元素创造一个新的队列
       while (step >0){//尾巴在移动到下一个节点前就要停止
         val distance = tail.distance(joints.dequeue._1)
         if (distance >= step ){
-          val target = tail + tail.getDirection(joints.dequeue._1)
+          val target = tail + tail.getDirection(joints.dequeue._1)*step
           tail = target
           step = -1
         }else{ //尾巴在移动到下一个节点后还需要继续移动
@@ -129,12 +133,6 @@ object mainGame  {
       }
 
       joints = joints.reverse.enqueue(tail)
-
-//      val maxLength = if(snakes.nonEmpty) snakes.sortBy(r=>(r.length,r.id)).reverse.head.head else Point(0,0)
-//      val maxId = if(snakes.nonEmpty) snakes.sortBy(r=>(r.length,r.id)).reverse.head.id else 0L
-//
-//      var me = snakes.filter( _.id== myId).head
-//      var max = snakes.filter(_.id == maxId).head
 
       cacheCtx.beginPath()
       if(id != myId){
@@ -150,6 +148,7 @@ object mainGame  {
       cacheCtx.lineWidth = snakeWidth
       cacheCtx.moveTo(joints.head.x + deviationX, joints.head.y + deviationY)
       for(i <- 1 until joints.length) {
+//        println("joints:" + joints(i).x, joints(i).y)
         cacheCtx.lineTo(joints(i).x + deviationX, joints(i).y + deviationY)
       }
 
@@ -175,7 +174,7 @@ object mainGame  {
         }
 
       }
-      //名称信息
+
       val nameLength = if(snake.name.length > 15) 15 else snake.name.length
       var snakeSpeed = snake.speed
       cacheCtx.fillStyle = Color.White.toString()
@@ -186,19 +185,21 @@ object mainGame  {
       }
     }
 
-    cacheCtx.fillStyle = "rgb(250, 250, 250)"
-    cacheCtx.textAlign = "left"
-    cacheCtx.textBaseline = "top"
 
     //画边界
     cacheCtx.fillStyle = MyColors.boundaryColor
     cacheCtx.shadowBlur = 5
-    cacheCtx.shadowColor = "#FFFFFF"
+    cacheCtx.shadowColor= "#FFFFFF"
     cacheCtx.fillRect(0 + deviationX, 0 + deviationY, Boundary.w, boundaryWidth)
     cacheCtx.fillRect(0 + deviationX, 0 + deviationY, boundaryWidth, Boundary.h)
     cacheCtx.fillRect(0+ deviationX, Boundary.h + deviationY, Boundary.w, boundaryWidth)
     cacheCtx.fillRect(Boundary.w + deviationX, 0 + deviationY, boundaryWidth, Boundary.h)
     cacheCtx.restore()
+
+
+    cacheCtx.fillStyle = "rgb(250, 250, 250)"
+    cacheCtx.textAlign = "left"
+    cacheCtx.textBaseline = "top"
 
     ctx.font = "10px Verdana"
     ctx.fillStyle = "#012d2d"
@@ -206,5 +207,4 @@ object mainGame  {
     ctx.drawImage(cacheCanvas,0,0)
 
   }
-
 }
