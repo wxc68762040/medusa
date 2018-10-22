@@ -38,7 +38,7 @@ object NetGameHolder extends js.JSApp {
   var nextAnimation = 0.0 //保存requestAnimationFrame的ID
   var gameLoopControl = 0 //保存gameLoop的setInterval的ID
   var myProportion = 1.0
-  var eatenApples  = Map[Long, List[AppleWithFrame]]()
+  var eatenApples  = Map[String, List[AppleWithFrame]]()
 
 
   val grid = new GridOnClient(bounds)
@@ -280,7 +280,7 @@ object NetGameHolder extends js.JSApp {
                   val savedAction=grid.actionMap.get(frontFrame-Protocol.advanceFrame)
                   if(savedAction.nonEmpty) {
                     val delAction=savedAction.get - myId
-                    val addAction=grid.actionMap.getOrElse(frame-Protocol.advanceFrame,Map[Long,Int]())+(myId->keyCode)
+                    val addAction=grid.actionMap.getOrElse(frame-Protocol.advanceFrame,Map[String,Int]())+(myId->keyCode)
                     grid.actionMap += (frontFrame-Protocol.advanceFrame -> delAction)
                     grid.actionMap += (frame-Protocol.advanceFrame -> addAction)
                     updateCounter = grid.frameCount-(frontFrame-Protocol.advanceFrame)

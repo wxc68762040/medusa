@@ -35,9 +35,9 @@ trait Grid {
   var frameCount = 0l
   var grid = Map[Point, Spot]()
   var snakes = Map.empty[String, SnakeInfo]
-  var actionMap = Map.empty[Long, Map[Long, Int]]
+  var actionMap = Map.empty[Long, Map[String, Int]]
   var deadSnakeList = List.empty[DeadSnakeInfo]
-  var killMap = Map.empty[Long, List[(Long,String)]]
+  var killMap = Map.empty[Long, List[(String,String)]]
 
   def removeSnake(id: String): Option[SnakeInfo] = {
     val r = snakes.get(id)
