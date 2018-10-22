@@ -147,7 +147,7 @@ object UserActor {
                 //如果死亡十分钟后无操作 则杀死userActor
                 //fixme
                 if(t.id==playerId){
-                  timer.startSingleTimer(UserDeadTimerKey, UserLeft, 1.minutes)
+                  timer.startSingleTimer(UserDeadTimerKey, UserLeft, 10.minutes)
                   frontActor ! t
                   switchBehavior(ctx, "wait", wait(playerId, playerName, roomId, frontActor))
                 }else{
