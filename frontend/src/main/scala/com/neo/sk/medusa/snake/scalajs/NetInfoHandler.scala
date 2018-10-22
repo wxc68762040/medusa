@@ -5,9 +5,7 @@ import com.neo.sk.medusa.snake.Protocol.NetTest
 import org.scalajs.dom
 
 import scala.scalajs.js.typedarray.ArrayBuffer
-import com.neo.sk.medusa.utils.MiddleBufferInJs
-import com.neo.sk.medusa.utils.byteObject.decoder
-import com.neo.sk.medusa.utils.byteObject.ByteObject._
+import org.seekloud.byteobject.ByteObject._
 import org.scalajs.dom.raw.WebSocket
 
 /**

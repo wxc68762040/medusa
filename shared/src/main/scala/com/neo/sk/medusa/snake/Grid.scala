@@ -33,13 +33,13 @@ trait Grid {
   val freeFrameTime = 40
 
   var frameCount = 0l
-  var grid = Map[Point, Spot]()
-  var snakes = Map.empty[Long, SnakeInfo]
-  var actionMap = Map.empty[Long, Map[Long, Int]]
+  var grid: Map[Point, Spot] = Map[Point, Spot]()
+  var snakes = Map.empty[String, SnakeInfo]
+  var actionMap = Map.empty[Long, Map[String, Int]]
   var deadSnakeList = List.empty[DeadSnakeInfo]
-  var killMap = Map.empty[Long, List[(Long,String)]]
+  var killMap = Map.empty[String, List[(String,String)]]
 
-  def removeSnake(id: Long): Option[SnakeInfo] = {
+  def removeSnake(id: String): Option[SnakeInfo] = {
     val r = snakes.get(id)
     if (r.isDefined) {
       snakes -= id
@@ -48,11 +48,11 @@ trait Grid {
   }
 
 
-  def addAction(id: Long, keyCode: Int) = {
+  def addAction(id: String, keyCode: Int) = {
     addActionWithFrame(id, keyCode, frameCount)
   }
 
-  def addActionWithFrame(id: Long, keyCode: Int, frame: Long) = {
+  def addActionWithFrame(id: String, keyCode: Int, frame: Long) = {
     val map = actionMap.getOrElse(frame, Map.empty)
     val tmp = map + (id -> keyCode)
     actionMap += (frame -> tmp)
@@ -67,15 +67,15 @@ trait Grid {
     if(isSynced) {
       frameCount -= 1
     }
-//    actionMap -= (frameCount - Protocol.advanceFrame)
+    actionMap -= (frameCount - Protocol.savingFrame)
     frameCount += 1
   }
 
   def countBody(): Unit
   
-  def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[Long] = None): Unit
+  def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[String] = None): Unit
 
-  def eatFood(snakeId: Long, newHead: Point, newSpeedInit: Double, speedOrNotInit: Boolean): Option[(Int, Double, Boolean)]
+  def eatFood(snakeId: String, newHead: Point, newSpeedInit: Double, speedOrNotInit: Boolean): Option[(Int, Double, Boolean)]
 
   def speedUp(snake: SnakeInfo, newDirection: Point): Option[(Boolean, Double)]
 
@@ -160,7 +160,7 @@ trait Grid {
   
   def updateSnakes():Unit
 
-  def updateASnake(snake: SnakeInfo, actMap: Map[Long, Int]): Either[Long, SnakeInfo]
+  def updateASnake(snake: SnakeInfo, actMap: Map[String, Int]): Either[String, SnakeInfo]
   
   def getGridData = {
     var bodyDetails: List[Bd] = Nil
