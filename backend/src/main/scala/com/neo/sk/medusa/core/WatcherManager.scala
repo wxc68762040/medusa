@@ -60,6 +60,10 @@ object WatcherManager {
       (ctx, msg) =>
         msg match {
           case t: GetWebSocketFlow =>
+            if(watcherMap.get(t.watcherId).nonEmpty){ //观看者切换房间以及用户进行观看
+              ctx.self ! WatcherGone(t.watcherId)
+              getWatcherActor(ctx, t.watcherId) ! WatcherActor.KillSelf
+            }
             val watcher = getWatcherActor(ctx, t.watcherId)
             t.replyTo ! getWebSocketFlow(watcher)
             watcherMap.put(t.watcherId,("", t.roomId))

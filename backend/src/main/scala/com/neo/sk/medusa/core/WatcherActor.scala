@@ -35,6 +35,8 @@ object WatcherActor {
 
   case class UserFrontActor(actor: ActorRef[WsMsgSource]) extends Command
 
+  case object KillSelf extends Command
+
   private case class Key(id: String, keyCode: Int, frame: Long) extends Command
 
   private case class NetTest(id: String, createTime: Long) extends Command
@@ -98,6 +100,9 @@ object WatcherActor {
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when idle:$x}")
             Behaviors.unhandled
+
+          case KillSelf =>
+            Behaviors.stopped
         }
     }
   }
