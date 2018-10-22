@@ -97,12 +97,13 @@ object WatcherActor {
           case t: NetTest =>
             Behaviors.same
 
+          case KillSelf =>
+            Behaviors.stopped
+
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when idle:$x}")
             Behaviors.unhandled
 
-          case KillSelf =>
-            Behaviors.stopped
         }
     }
   }

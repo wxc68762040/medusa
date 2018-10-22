@@ -1,4 +1,4 @@
-package com.neo.sk.medusa.Dao
+package com.neo.sk.medusa.models
 
 // AUTO-GENERATED Slick data model
 /** Stand-alone Slick data model for immediate use */
