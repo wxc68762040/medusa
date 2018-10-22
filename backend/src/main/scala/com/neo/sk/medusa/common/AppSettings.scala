@@ -19,8 +19,16 @@ object AppSettings {
   val httpInterface = appConfig.getString("http.interface")
   val httpPort = appConfig.getInt("http.port")
 
+  val boundW = appConfig.getInt("bounds.w")
+  val bountH = appConfig.getInt("bounds.h")
 
+  val frameRate = appConfig.getInt("sync.frameRate")
+  val syncDelay = appConfig.getInt("sync.delay")
 
-
+  val appId = appConfig.getString("gameInfo.AppId")
+  val secureKey = appConfig.getString("gameInfo.SecureKey")
+  val gsKey = appConfig.getString("gameInfo.gsKey")
+  val gameId = appConfig.getLong("gameInfo.gameId")
+  val esheepSecureKey = ""
 
 }

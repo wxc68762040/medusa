@@ -10,8 +10,8 @@ import akka.stream.{ActorAttributes, Materializer, Supervision}
 import akka.util.{ByteString, Timeout}
 import com.neo.sk.medusa.snake.PlayGround
 import com.neo.sk.medusa.snake.Protocol._
-import org.seekloud.byteobject.MiddleBufferInJvm
-import org.seekloud.byteobject.ByteObject._
+import com.neo.sk.utils.MiddleBufferInJvm
+import com.neo.sk.utils.byteObject.ByteObject._
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContextExecutor

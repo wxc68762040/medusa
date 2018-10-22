@@ -21,7 +21,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
   
   override def updateSnakes() = {
     var updatedSnakes = List.empty[SnakeInfo]
-    val acts = actionMap.getOrElse(frameCount, Map.empty[Long, Int])
+    val acts = actionMap.getOrElse(frameCount, Map.empty[String, Int])
     snakes.values.map(updateASnake(_, acts)).foreach {
       case Right(s) =>
         updatedSnakes ::= s
@@ -30,7 +30,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
     snakes = updatedSnakes.map(s => (s.id, s)).toMap
   }
   
-  override def updateASnake(snake: SnakeInfo, actMap: Map[Long, Int]): Either[Long, SnakeInfo] = {
+  override def updateASnake(snake: SnakeInfo, actMap: Map[String, Int]): Either[String, SnakeInfo] = {
     val keyCode = actMap.get(snake.id)
     val newDirection = {
       val keyDirection = keyCode match {
@@ -98,9 +98,9 @@ class GridOnClient(override val boundary: Point) extends Grid {
       joints = newJoints, speed = newSpeed, freeFrame = newFreeFrame, length = len, extend = newExtend))
   }
   
-  override def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[Long] = None): Unit = {} //do nothing.
+  override def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[String] = None): Unit = {} //do nothing.
 
-  override def eatFood(snakeId: Long, newHead: Point, newSpeedInit: Double, speedOrNotInit: Boolean): Option[(Int, Double, Boolean)] = None
+  override def eatFood(snakeId: String, newHead: Point, newSpeedInit: Double, speedOrNotInit: Boolean): Option[(Int, Double, Boolean)] = None
 
   override def speedUp(snake: SnakeInfo, newDirection: Point): Option[(Boolean, Double)] = None
   
