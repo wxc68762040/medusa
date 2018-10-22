@@ -10,6 +10,8 @@ import org.scalajs.dom.raw._
 import scala.scalajs.js
 import scala.scalajs.js.typedarray.ArrayBuffer
 import org.seekloud.byteobject.ByteObject._
+import org.seekloud.byteobject.{MiddleBufferInJs, decoder}
+import org.seekloud.byteobject.decoder._
 
 
 
@@ -59,7 +61,7 @@ object NetGameHolder extends js.JSApp {
     KeyCode.F2
   )
 
-  var waitingShowKillList=List.empty[(Long,String)]
+  var waitingShowKillList=List.empty[(String,String)]
   var savedGrid = Map[Long,Protocol.GridDataSync]()
   var updateCounter = 0L
 

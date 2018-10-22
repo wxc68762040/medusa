@@ -37,7 +37,7 @@ trait Grid {
   var snakes = Map.empty[String, SnakeInfo]
   var actionMap = Map.empty[Long, Map[String, Int]]
   var deadSnakeList = List.empty[DeadSnakeInfo]
-  var killMap = Map.empty[Long, List[(String,String)]]
+  var killMap = Map.empty[String, List[(String,String)]]
 
   def removeSnake(id: String): Option[SnakeInfo] = {
     val r = snakes.get(id)
@@ -73,9 +73,9 @@ trait Grid {
 
   def countBody(): Unit
   
-  def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[Long] = None): Unit
+  def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[String] = None): Unit
 
-  def eatFood(snakeId: Long, newHead: Point, newSpeedInit: Double, speedOrNotInit: Boolean): Option[(Int, Double, Boolean)]
+  def eatFood(snakeId: String, newHead: Point, newSpeedInit: Double, speedOrNotInit: Boolean): Option[(Int, Double, Boolean)]
 
   def speedUp(snake: SnakeInfo, newDirection: Point): Option[(Boolean, Double)]
 
@@ -160,7 +160,7 @@ trait Grid {
   
   def updateSnakes():Unit
 
-  def updateASnake(snake: SnakeInfo, actMap: Map[Long, Int]): Either[Long, SnakeInfo]
+  def updateASnake(snake: SnakeInfo, actMap: Map[String, Int]): Either[String, SnakeInfo]
   
   def getGridData = {
     var bodyDetails: List[Bd] = Nil
