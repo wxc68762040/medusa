@@ -152,6 +152,7 @@ object RoomActor {
             userMap.get(t.playerId).foreach(a => a._1 ! UserActor.YouAreWatched(t.watcherId, t.watcherRef))
             t.watcherRef ! WatcherActor.TransInfo(Protocol.Id(t.playerId).asInstanceOf[WsMsgSource])
             Behaviors.same
+
           case x =>
             log.warn(s"got unknown msg: $x")
             Behaviors.same

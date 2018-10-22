@@ -49,28 +49,29 @@ object WatcherManager {
       ctx =>
         Behaviors.withTimers[Command] {
           implicit timer =>
-            val watcherMap = mutable.HashMap.empty[String, String]//watcher, player
+            val watcherMap = mutable.HashMap.empty[String, (String, Long)]//watcher, player
             idle(watcherMap)
         }
     }
   }
 
-  def idle(watcherMap: mutable.HashMap[String, String])(implicit timer: TimerScheduler[Command]): Behavior[Command] =
+  def idle(watcherMap: mutable.HashMap[String, (String, Long)])(implicit timer: TimerScheduler[Command]): Behavior[Command] =
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
           case t: GetWebSocketFlow =>
             val watcher = getWatcherActor(ctx, t.watcherId)
             t.replyTo ! getWebSocketFlow(watcher)
+            watcherMap.put(t.watcherId,("", t.roomId))
             roomManager ! RoomManager.GetPlayerByRoomId(t.playerId, t.roomId, t.watcherId, watcher)
             Behaviors.same
 
           case t: GetPlayerWatchedRsp =>
-            watcherMap.put(t.watcherId, t.playerId)
+            watcherMap.update(t.watcherId, (t.playerId, watcherMap(t.watcherId)._2))
             Behaviors.same
 
           case t: WatcherGone =>
-            val playerWatched = watcherMap(t.watcherId)
+            val playerWatched = watcherMap(t.watcherId)._1
             userManager ! YourUserUnwatched(playerWatched, t.watcherId)
             watcherMap.remove(t.watcherId)
             Behaviors.same
