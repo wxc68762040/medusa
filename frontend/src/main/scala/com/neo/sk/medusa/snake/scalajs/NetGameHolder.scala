@@ -9,7 +9,7 @@ import org.scalajs.dom.raw._
 
 import scala.scalajs.js
 import scala.scalajs.js.typedarray.ArrayBuffer
-
+import org.seekloud.byteobject.ByteObject._
 
 
 
