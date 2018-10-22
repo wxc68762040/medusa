@@ -9,7 +9,7 @@ object Dependencies {
 
 
 
-
+  val slickPgV = "0.16.1"
   val slickV = "3.2.3"
   val akkaV = "2.5.13"
   val akkaHttpV = "10.1.3"
@@ -41,7 +41,10 @@ object Dependencies {
     "io.circe" %% "circe-generic" % circeVersion,
     "io.circe" %% "circe-parser" % circeVersion
   )
-
+  val slickPg = Seq(
+    "com.github.tminglei" %% "slick-pg" % slickPgV,
+    "com.github.tminglei" %% "slick-pg_circe-json" % slickPgV
+  )
   val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.0.6"
   val slick = "com.typesafe.slick" %% "slick" % "3.2.1"
   val slickCodeGen = "com.typesafe.slick" %% "slick-codegen" % "3.2.1"
@@ -64,6 +67,7 @@ object Dependencies {
     Dependencies.akkaSeq ++
     Dependencies.akkaHttpSeq ++
     Dependencies.circeSeq ++
+    Dependencies.slickPg ++
     Seq(
       Dependencies.scalaXml,
       Dependencies.slick,

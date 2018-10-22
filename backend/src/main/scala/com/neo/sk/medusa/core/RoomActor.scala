@@ -24,6 +24,8 @@ object RoomActor {
 
   sealed trait Command
 
+  case class UserLeft(playerId:String) extends Command
+
   case class YourUserIsWatched(playerId:String, watcherRef:ActorRef[WatcherActor.Command], watcherId:String) extends Command
 
   case class UserJoinGame(playerId: String, playerName: String, userActor: ActorRef[UserActor.Command]) extends Command
@@ -101,6 +103,11 @@ object RoomActor {
             timer.startPeriodicTimer(TimerKey4SyncLoop, Sync, frameRate.millis)
             Behaviors.same
 
+          case t:UserLeft =>
+            grid.removeSnake(t.playerId)
+            userMap.remove(t.playerId)
+            Behaviors.same
+
           case Sync =>
             val newTick = tickCount + 1
             grid.update(false)
@@ -145,6 +152,7 @@ object RoomActor {
             userMap.get(t.playerId).foreach(a => a._1 ! UserActor.YouAreWatched(t.watcherId, t.watcherRef))
             t.watcherRef ! WatcherActor.TransInfo(Protocol.Id(t.playerId).asInstanceOf[WsMsgSource])
             Behaviors.same
+
           case x =>
             log.warn(s"got unknown msg: $x")
             Behaviors.same
