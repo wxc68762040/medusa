@@ -113,7 +113,7 @@ object RoomManager {
               if(roomNumMap(roomId)-1<=0){
                 log.info(s"room empty")
                 roomNumMap.update(roomId,roomNumMap(roomId)-1)
-                timer.startSingleTimer(RoomEmptyTimerKey(roomId),RoomEmptyKill(roomId),1.minutes)
+                timer.startSingleTimer(RoomEmptyTimerKey(roomId),RoomEmptyKill(roomId),5.minutes)
               }else{
                 log.info(s"room not empty  Num ${roomNumMap(roomId)-1}")
                 roomNumMap.update(roomId,roomNumMap(roomId)-1)
