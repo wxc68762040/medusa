@@ -155,7 +155,6 @@ object RoomManager {
                       tmpPlayerList.append(key)
                 }
                 val a = tmpPlayerList(scala.util.Random.nextInt(tmpPlayerList.length))
-                println(a)
                 a
               }else{
                 t.playerId
