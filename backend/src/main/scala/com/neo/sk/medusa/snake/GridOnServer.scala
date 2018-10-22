@@ -441,7 +441,10 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
     eatenApples = Map.empty
     speedUpInfo = Nil
   }
-  
+
+
+
+
   override def countBody(): Unit = {
     val bodies = snakes.values.map(e => e.getBodies)
       .fold(Map.empty[Point, Spot]) { (a: Map[Point, Spot], b: Map[Point, Spot]) =>

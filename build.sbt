@@ -1,4 +1,6 @@
 import sbt.Keys._
+import sbtcrossproject.{crossProject, CrossType}
+import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 
 name := "medusa"
 
