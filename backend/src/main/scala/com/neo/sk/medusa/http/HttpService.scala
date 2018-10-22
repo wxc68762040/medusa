@@ -46,33 +46,5 @@ trait HttpService extends
 
 
 
-  def tmp = {
-    val out = Source.empty
-    val in = Sink.ignore
-    Flow.fromSinkAndSource(in, out)
-  }
-
-
-  def tmp2 = {
-
-    val sink = Sink.ignore
-    def chatFlow(sender: String): Flow[String, String, Any] = {
-      val in =
-        Flow[String]
-          .to(sink)
-
-      // The counter-part which is a source that will create a target ActorRef per
-      // materialization where the chatActor will send its messages to.
-      // This source will only buffer one element and will fail if the client doesn't read
-      // messages fast enough.
-      val chatActor: ActorRef = null
-      val out =
-        Source.actorRef[String](1, OverflowStrategy.fail)
-          .mapMaterializedValue(actor => chatActor ! "NewParticipant(sender, _)")
-
-      Flow.fromSinkAndSource(in, out)
-    }
-  }
-
 
 }

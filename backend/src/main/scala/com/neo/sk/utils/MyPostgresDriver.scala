@@ -48,3 +48,4 @@ trait MyPostgresDriver extends ExPostgresProfile
 }
 
 object MyPostgresDriver extends MyPostgresDriver
+

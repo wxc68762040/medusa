@@ -8,6 +8,7 @@ import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import com.neo.sk.medusa.http.HttpService
 import akka.actor.typed.scaladsl.adapter._
+import akka.dispatch.MessageDispatcher
 import com.neo.sk.medusa.core.{RoomManager, UserManager, WatcherManager}
 import com.neo.sk.medusa.snake.Delayer
 import com.neo.sk.medusa.snake.Delayer.{Hello, Start}
@@ -26,20 +27,20 @@ object Boot extends HttpService {
   import com.neo.sk.medusa.common.AppSettings._
 
 
-  override implicit val system = ActorSystem("medusa", config)
+  override implicit val system: ActorSystem = ActorSystem("medusa", config)
   // the executor should not be the default dispatcher.
-  override implicit val executor = system.dispatchers.lookup("akka.actor.my-blocking-dispatcher")
+  override implicit val executor: MessageDispatcher = system.dispatchers.lookup("akka.actor.my-blocking-dispatcher")
   override implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   override implicit val scheduler: Scheduler = system.scheduler
 
-  override implicit val timeout = Timeout(20 seconds) // for actor asks
+  override implicit val timeout: Timeout = Timeout(20 seconds) // for actor asks
 
   val log: LoggingAdapter = Logging(system, getClass)
 //  val delayer = system.spawn(Delayer.start, "Delayer")
-  val userManager = system.spawn(UserManager.behaviors,"UserManager")
-  val roomManager = system.spawn(RoomManager.behaviors,"RoomManager")
-  val watchManager = system.spawn(WatcherManager.behaviors, "WatchManager")
+  val userManager: ActorRef[UserManager.Command] = system.spawn(UserManager.behaviors,"UserManager")
+  val roomManager: ActorRef[RoomManager.Command] = system.spawn(RoomManager.behaviors,"RoomManager")
+  val watchManager: ActorRef[WatcherManager.Command] = system.spawn(WatcherManager.behaviors, "WatchManager")
   def main(args: Array[String]) {
     log.info("Starting.")
     Http().bindAndHandle(routes, httpInterface, httpPort)
