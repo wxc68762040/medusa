@@ -6,6 +6,8 @@ import org.scalajs.dom
 import org.scalajs.dom.ext.{Color, KeyCode}
 import org.scalajs.dom.html.{Document => _, _}
 import org.scalajs.dom.raw._
+import io.circe.generic.auto._
+import io.circe.parser._
 
 import scala.scalajs.js
 import scala.scalajs.js.typedarray.ArrayBuffer
@@ -24,10 +26,10 @@ import org.seekloud.byteobject.decoder._
   */
 object NetGameHolder extends js.JSApp {
 
+  var state = ""
   val bounds = Point(Boundary.w, Boundary.h)
   val windowWidth = dom.document.documentElement.clientWidth
   val windowHight = dom.document.documentElement.clientHeight
-  var state = ""
   val canvasBoundary = Point(dom.document.documentElement.clientWidth,dom.document.documentElement.clientHeight)
 
   var syncData: scala.Option[Protocol.GridDataSync] = None
@@ -48,7 +50,7 @@ object NetGameHolder extends js.JSApp {
   var firstCome = true
   var wsSetup = false
   var justSynced = false
-  var myRoomId = 0
+  var myRoomId = -1l
 
   var yourKiller = ""
 
@@ -85,25 +87,12 @@ object NetGameHolder extends js.JSApp {
     GameView.canvas.width = canvasBoundary.x
     GameView.canvas.height = canvasBoundary.y
 
-   // GameInfo.setStartBg()
+    GameInfo.setStartBg()
 
-//    joinButton.onclick = { (event: MouseEvent) =>
-//      nameExist.innerHTML = ""
-//      if(nameField.value.length > 15){
-//          nameExist.innerHTML = "名称不能超过15"
-//      }else{
-//        joinGame(nameField.value)
-//        event.preventDefault() //若事件可以取消，则取消，不停止进一步的传播
-//      }
-//
-//    }
-//    nameField.focus()
-//    nameField.onkeypress = { (event: KeyboardEvent) =>
-//      if (event.keyCode == 13) {
-//        joinButton.click()
-//        event.preventDefault()
-//      }
-//    }
+    val hash = dom.window.location.hash.drop(1)
+    val info = hash.split("\\?")
+    joinGame(info(0), info(1))
+    state = info(0)
     dom.window.requestAnimationFrame(drawLoop())
   }
 
@@ -200,11 +189,11 @@ object NetGameHolder extends js.JSApp {
   val netInfoHandler = new NetInfoHandler()
 
 
-  def joinGame(name: String): Unit = {
+  def joinGame(path:String, playerInfo:String): Unit = {
     //joinButton.disabled = true
     val playground = dom.document.getElementById("playground")
-    playground.innerHTML = s"Trying to join game as '$name'..."
-    val gameStream = new WebSocket(getWebSocketUri(dom.document, name))
+    playground.innerHTML = s"Trying to join game ."
+    val gameStream = new WebSocket(getWebSocketUri(dom.document, path, playerInfo))
 
     gameStream.onopen = { (event0: Event) =>
       dom.window.setInterval(() => {
@@ -261,6 +250,9 @@ object NetGameHolder extends js.JSApp {
             GameView.canvas.focus()
             encodedData match {
               case Right(data) => data match {
+                case Protocol.JoinRoomSuccess(id,roomId)=>
+                  myId = id
+                  myRoomId = roomId
                 case Protocol.Id(id) => myId = id
                 case Protocol.TextMsg(message) =>
                 //                  writeToArea(s"MESSAGE: $message")
@@ -364,10 +356,9 @@ object NetGameHolder extends js.JSApp {
     def writeToArea(text: String): Unit =
       playground.insertBefore(p(text), playground.firstChild)
   }
-
-  def getWebSocketUri(document: Document, nameOfChatParticipant: String): String = {
+  def getWebSocketUri(document: Document, path: String, playerInfo:String): String = {
     val wsProtocol = if (dom.document.location.protocol == "https:") "wss" else "ws"
-    s"$wsProtocol://${dom.document.location.host}/medusa/netSnake/join?name=$nameOfChatParticipant"
+    s"$wsProtocol://${dom.document.location.host}/medusa/game/$path?" + playerInfo
   }
 
   def p(msg: String) = {
