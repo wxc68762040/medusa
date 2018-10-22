@@ -1,6 +1,6 @@
 package com.neo.sk.medusa.http
 
-import akka.actor.{ActorRef, ActorSystem}
+import akka.actor.{ActorRef, ActorSystem, Scheduler}
 import akka.http.scaladsl.server.Directives._
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.stream.{Materializer, OverflowStrategy}
@@ -13,7 +13,10 @@ import scala.concurrent.ExecutionContextExecutor
   * Date: 8/26/2016
   * Time: 10:27 PM
   */
-trait HttpService extends SnakeService with ResourceService{
+trait HttpService extends
+  LinkService with
+  ResourceService with
+  Api4PlayInfo{
 
 
   implicit val system: ActorSystem
@@ -23,6 +26,8 @@ trait HttpService extends SnakeService with ResourceService{
   implicit val materializer: Materializer
 
   implicit val timeout: Timeout
+
+  implicit val scheduler: Scheduler
 
 
 
@@ -35,9 +40,7 @@ trait HttpService extends SnakeService with ResourceService{
 
   val routes =
     pathPrefix("medusa") {
-      snakeRoute ~
-      netSnakeRoute ~
-      resourceRoutes
+      snakeRoute ~ resourceRoutes ~ linkRoute ~ playInfoRoute
     }
 
 
