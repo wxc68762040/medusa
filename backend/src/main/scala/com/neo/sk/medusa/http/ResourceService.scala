@@ -1,6 +1,6 @@
 package com.neo.sk.medusa.http
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, Scheduler}
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.headers.CacheDirectives.{`max-age`, public}
 import akka.http.scaladsl.model.headers.`Cache-Control`
@@ -26,6 +26,8 @@ trait ResourceService {
   implicit val executor: ExecutionContextExecutor
 
   implicit val materializer: Materializer
+
+  implicit val scheduler: Scheduler
 
   val log: LoggingAdapter
 

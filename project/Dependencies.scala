@@ -9,7 +9,7 @@ object Dependencies {
 
 
 
-
+  val slickPgV = "0.16.1"
   val slickV = "3.2.3"
   val akkaV = "2.5.13"
   val akkaHttpV = "10.1.3"
@@ -27,7 +27,8 @@ object Dependencies {
     "com.typesafe.akka" %% "akka-actor" % akkaV withSources (),
     "com.typesafe.akka" %% "akka-actor-typed" % akkaV withSources (),
     "com.typesafe.akka" %% "akka-slf4j" % akkaV,
-    "com.typesafe.akka" %% "akka-stream" % akkaV
+    "com.typesafe.akka" %% "akka-stream" % akkaV,
+    "com.typesafe.akka" %% "akka-stream-typed" % akkaV
   )
 
   val akkaHttpSeq = Seq(
@@ -40,7 +41,10 @@ object Dependencies {
     "io.circe" %% "circe-generic" % circeVersion,
     "io.circe" %% "circe-parser" % circeVersion
   )
-
+  val slickPg = Seq(
+    "com.github.tminglei" %% "slick-pg" % slickPgV,
+    "com.github.tminglei" %% "slick-pg_circe-json" % slickPgV
+  )
   val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.0.6"
   val slick = "com.typesafe.slick" %% "slick" % "3.2.1"
   val slickCodeGen = "com.typesafe.slick" %% "slick-codegen" % "3.2.1"
@@ -55,6 +59,7 @@ object Dependencies {
   val postgresql = "org.postgresql" % "postgresql" % "9.4.1208"
   val asynchttpclient = "org.asynchttpclient" % "async-http-client" % "2.0.32"
   val ehcache = "net.sf.ehcache" % "ehcache" % "2.10.4"
+  val byteobject = "org.seekloud" %% "byteobject" % "0.1.2"
 
 
 
@@ -62,6 +67,7 @@ object Dependencies {
     Dependencies.akkaSeq ++
     Dependencies.akkaHttpSeq ++
     Dependencies.circeSeq ++
+    Dependencies.slickPg ++
     Seq(
       Dependencies.scalaXml,
       Dependencies.slick,
@@ -75,7 +81,8 @@ object Dependencies {
       Dependencies.codec,
       Dependencies.postgresql,
       Dependencies.asynchttpclient,
-      Dependencies.ehcache
+      Dependencies.ehcache,
+      Dependencies.byteobject
      // "com.lihaoyi" %% "upickle" % "0.6.6"
     )
 

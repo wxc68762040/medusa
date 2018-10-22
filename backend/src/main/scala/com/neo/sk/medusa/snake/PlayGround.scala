@@ -118,13 +118,14 @@ object PlayGround {
               grid.addActionWithFrame(id, keyCode, frame)
               dispatch(Protocol.SnakeAction(id, keyCode, frame),roomId)
             }
-
+            
           case NetTest(id, createTime) =>
 //            log.info(s"Net Test: createTime=$createTime")
             dispatchTo(id, Protocol.NetDelayTest(createTime))
 
           case _ =>
         }
+        
         case Sync =>
           tickCount += 1
           roomMap.foreach{ room=>
