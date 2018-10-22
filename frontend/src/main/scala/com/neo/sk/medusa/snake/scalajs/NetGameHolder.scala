@@ -4,20 +4,20 @@ import java.awt.event.KeyEvent
 
 import com.neo.sk.medusa.snake.Protocol._
 import com.neo.sk.medusa.snake._
-import com.neo.sk.medusa.utils.MiddleBufferInJs
-import com.neo.sk.medusa.utils.byteObject.decoder
-import com.neo.sk.medusa.utils.byteObject.ByteObject._
+import org.seekloud.byteobject.{MiddleBufferInJs, decoder}
+import org.seekloud.byteobject.decoder._
+import org.seekloud.byteobject.ByteObject._
 import org.scalajs.dom
 import org.scalajs.dom.ext.{Color, KeyCode}
 import org.scalajs.dom.html.{Document => _, _}
 import org.scalajs.dom.raw._
-
 import io.circe.generic.auto._
 import io.circe.parser._
 
 import scala.scalajs.js
 import scala.scalajs.js.typedarray.ArrayBuffer
 import scala.util.Random
+import scala.util.matching.Regex
 
 /**
   * User: Taoz
@@ -26,7 +26,7 @@ import scala.util.Random
   */
 object NetGameHolder extends js.JSApp {
 
-
+  var state = ""
   val bounds = Point(Boundary.w, Boundary.h)
   val canvasUnit = 7
   val canvasBoundary = Point(dom.document.documentElement.clientWidth,dom.document.documentElement.clientHeight)
@@ -38,7 +38,7 @@ object NetGameHolder extends js.JSApp {
   var syncData: scala.Option[Protocol.GridDataSync] = None
   var currentRank = List.empty[Score]
   var historyRank = List.empty[Score]
-  var myId = -1l
+  var myId = ""
   var deadName = ""
   var deadLength=0
   var deadKill=0
@@ -46,7 +46,7 @@ object NetGameHolder extends js.JSApp {
   var nextAnimation = 0.0 //保存requestAnimationFrame的ID
   var gameLoopControl = 0 //保存gameLoop的setInterval的ID
   var myProportion = 1.0
-  var eatenApples  = Map[Long, List[AppleWithFrame]]()
+  var eatenApples  = Map[String, List[AppleWithFrame]]()
 //  var fpsCounter = 0
 //  var fps = 0.0
 //  var drawNum = 0
@@ -71,7 +71,9 @@ object NetGameHolder extends js.JSApp {
     KeyCode.F2
   )
 
-  var waitingShowKillList=List.empty[(Long,String)]
+  var waitingShowKillList=List.empty[(String,String)]
+  var savedGrid = Map[Long,Protocol.GridDataSync]()
+  var updateCounter = 0L
 
   object MyColors {
     val myHeader = "#FFFFFF"
@@ -83,8 +85,8 @@ object NetGameHolder extends js.JSApp {
   }
 
   private[this] val nameExist = dom.document.getElementById("nameExist").asInstanceOf[Div]
-  private[this] val nameField = dom.document.getElementById("name").asInstanceOf[HTMLInputElement]
-  private[this] val joinButton = dom.document.getElementById("join").asInstanceOf[HTMLButtonElement]
+//  private[this] val nameField = dom.document.getElementById("name").asInstanceOf[HTMLInputElement]
+//  private[this] val joinButton = dom.document.getElementById("join").asInstanceOf[HTMLButtonElement]
   private[this] val startBg = dom.document.getElementById("startBg")
   startBg.setAttribute("style",s"position:absolute;;z-index:4;left: 0px; top: 200px;background: rgba(0, 0, 0, 0.8);height:${canvasBoundary.y}px;width:${canvasBoundary.x}px")
   private[this] val canvas = dom.document.getElementById("GameView").asInstanceOf[Canvas]
@@ -105,24 +107,10 @@ object NetGameHolder extends js.JSApp {
 
     mapCanvas.width = mapBoundary.x
     mapCanvas.height = mapBoundary.y
-
-    joinButton.onclick = { (event: MouseEvent) =>
-      nameExist.innerHTML = ""
-      if(nameField.value.length > 15){
-          nameExist.innerHTML = "名称不能超过15"
-      }else{
-        joinGame(nameField.value)
-        event.preventDefault()
-      }
-
-    }
-    nameField.focus()
-    nameField.onkeypress = { (event: KeyboardEvent) =>
-      if (event.keyCode == 13) {
-        joinButton.click()
-        event.preventDefault()
-      }
-    }
+    val hash = dom.window.location.hash.drop(1)
+    val info = hash.split("\\?")
+    joinGame(info(0), info(1))
+    state = info(0)
     dom.window.requestAnimationFrame(drawLoop())
   }
 
@@ -174,6 +162,8 @@ object NetGameHolder extends js.JSApp {
         justSynced = false
       }
     }
+    savedGrid += (grid.frameCount -> grid.getGridSyncData)
+    savedGrid -= (grid.frameCount-Protocol.savingFrame-Protocol.advanceFrame)
   }
 
   def drawLoop(): Double => Unit = { _ =>
@@ -251,7 +241,7 @@ object NetGameHolder extends js.JSApp {
     ctx.fillText(str, x, (lineNum + lineBegin - 1) * textLineHeight)
   }
 
-  def drawGrid(uid: Long, data: GridDataSync): Unit = {
+  def drawGrid(uid: String, data: GridDataSync): Unit = {
 
     val cacheCanvas = dom.document.createElement("canvas").asInstanceOf[Canvas]
     val cacheCtx = cacheCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
@@ -524,11 +514,11 @@ object NetGameHolder extends js.JSApp {
   val netInfoHandler = new NetInfoHandler()
 
 
-  def joinGame(name: String): Unit = {
+  def joinGame(path:String, playerInfo:String): Unit = {
     //joinButton.disabled = true
     val playground = dom.document.getElementById("playground")
-    playground.innerHTML = s"Trying to join game as '$name'..."
-    val gameStream = new WebSocket(getWebSocketUri(dom.document, name))
+    playground.innerHTML = s"Trying to join game ."
+    val gameStream = new WebSocket(getWebSocketUri(dom.document, path, playerInfo))
 //    def refreshNetInfo(): Unit = {
 //      fps = fpsCounter / ((System.currentTimeMillis() - netInfoBasicTime) / 1000.0)
 //      fpsCounter = 0
@@ -548,20 +538,22 @@ object NetGameHolder extends js.JSApp {
       drawGameOn()
       playground.insertBefore(p("Game connection was successful!"), playground.firstChild)
       wsSetup = true
-      canvas.focus()
-      canvas.onkeydown = {
-        (e: dom.KeyboardEvent) => {
-          if (watchKeys.contains(e.keyCode)) {
-            e.preventDefault()
-            val msg: Protocol.UserAction = if (e.keyCode == KeyCode.F2) {
-              NetTest(myId, System.currentTimeMillis())
-            } else {
-              grid.addActionWithFrame(myId, e.keyCode, grid.frameCount + operateDelay)
-              Key(myId, e.keyCode, grid.frameCount + advanceFrame + operateDelay) //客户端自己的行为提前帧
+      if(state == "playGame") {
+        canvas.focus()
+        canvas.onkeydown = {
+          (e: dom.KeyboardEvent) => {
+            if (watchKeys.contains(e.keyCode)) {
+              e.preventDefault()
+              val msg: Protocol.UserAction = if (e.keyCode == KeyCode.F2) {
+                NetTest(myId, System.currentTimeMillis())
+              } else {
+                grid.addActionWithFrame(myId, e.keyCode, grid.frameCount + operateDelay)
+                Key(myId, e.keyCode, grid.frameCount + advanceFrame + operateDelay) //客户端自己的行为提前帧
+              }
+              msg.fillMiddleBuffer(sendBuffer) //encode msg
+              val ab: ArrayBuffer = sendBuffer.result() //get encoded data.
+              gameStream.send(ab) // send data.
             }
-            msg.fillMiddleBuffer(sendBuffer) //encode msg
-            val ab: ArrayBuffer = sendBuffer.result() //get encoded data.
-            gameStream.send(ab) // send data.
           }
         }
       }
@@ -571,9 +563,7 @@ object NetGameHolder extends js.JSApp {
     gameStream.onerror = { (event: ErrorEvent) =>
       drawGameOff()
       playground.insertBefore(p(s"Failed: code: ${event.colno}"), playground.firstChild)
-      joinButton.disabled = false
       wsSetup = false
-      nameField.focus()
     }
 
     gameStream.onmessage = { (event: MessageEvent) =>
@@ -604,6 +594,25 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.SnakeAction(id, keyCode, frame) =>
                   if(id != myId) {
                     grid.addActionWithFrame(id, keyCode, frame)
+                  }
+                case Protocol.DistinctSnakeAction(keyCode, frame ,frontFrame) =>
+//                  println(s"当前前端帧数frameCount:${grid.frameCount}")
+//                  println(s"actionMap保存最大帧数:${grid.actionMap.keySet.max}")
+//                  println(s"savedGrid保存最大帧数:${savedGrid.keySet.max}")
+                  val savedAction=grid.actionMap.get(frontFrame-Protocol.advanceFrame)
+                  if(savedAction.nonEmpty) {
+                    val delAction=savedAction.get - myId
+                    val addAction=grid.actionMap.getOrElse(frame-Protocol.advanceFrame,Map[String,Int]())+(myId->keyCode)
+                    grid.actionMap += (frontFrame-Protocol.advanceFrame -> delAction)
+                    grid.actionMap += (frame-Protocol.advanceFrame -> addAction)
+                    updateCounter = grid.frameCount-(frontFrame-Protocol.advanceFrame)
+//                    println(s"updateCounter更新次数：$updateCounter")
+//                    println(s"传输到后端的frontFrame:$frontFrame")
+                    sync(savedGrid.get(frontFrame-Protocol.advanceFrame))
+//                    println(s"sync之后前端帧数frameCount:${grid.frameCount}")
+                    for(_ <- 1 to updateCounter.toInt){
+                      update(false)
+                    }
                   }
                 case Protocol.Ranks(current, history) =>
                   currentRank = current
@@ -667,18 +676,15 @@ object NetGameHolder extends js.JSApp {
     gameStream.onclose = { (event: Event) =>
       drawGameOff()
       playground.insertBefore(p("Connection to game lost. You can try to rejoin manually."), playground.firstChild)
-      joinButton.disabled = false
       wsSetup = false
-      nameField.focus()
     }
 
     def writeToArea(text: String): Unit =
       playground.insertBefore(p(text), playground.firstChild)
   }
-
-  def getWebSocketUri(document: Document, nameOfChatParticipant: String): String = {
+  def getWebSocketUri(document: Document, path: String, playerInfo:String): String = {
     val wsProtocol = if (dom.document.location.protocol == "https:") "wss" else "ws"
-    s"$wsProtocol://${dom.document.location.host}/medusa/netSnake/join?name=$nameOfChatParticipant"
+    s"$wsProtocol://${dom.document.location.host}/medusa/game/$path?" + playerInfo
   }
 
   def p(msg: String) = {
