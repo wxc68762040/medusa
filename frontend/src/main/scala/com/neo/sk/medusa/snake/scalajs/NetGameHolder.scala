@@ -74,9 +74,9 @@ object NetGameHolder extends js.JSApp {
     val speedUpHeader = "#FFFF37"
   }
 
-  private[this] val nameExist = dom.document.getElementById("nameExist").asInstanceOf[Div]
-  private[this] val nameField = dom.document.getElementById("name").asInstanceOf[HTMLInputElement]
-  private[this] val joinButton = dom.document.getElementById("join").asInstanceOf[HTMLButtonElement]
+//  private[this] val nameExist = dom.document.getElementById("nameExist").asInstanceOf[Div]
+//  private[this] val nameField = dom.document.getElementById("name").asInstanceOf[HTMLInputElement]
+ // private[this] val joinButton = dom.document.getElementById("join").asInstanceOf[HTMLButtonElement]
 
 
   @scala.scalajs.js.annotation.JSExport
@@ -85,25 +85,25 @@ object NetGameHolder extends js.JSApp {
     GameView.canvas.width = canvasBoundary.x
     GameView.canvas.height = canvasBoundary.y
 
-    GameInfo.setStartBg()
+   // GameInfo.setStartBg()
 
-    joinButton.onclick = { (event: MouseEvent) =>
-      nameExist.innerHTML = ""
-      if(nameField.value.length > 15){
-          nameExist.innerHTML = "名称不能超过15"
-      }else{
-        joinGame(nameField.value)
-        event.preventDefault() //若事件可以取消，则取消，不停止进一步的传播
-      }
-
-    }
-    nameField.focus()
-    nameField.onkeypress = { (event: KeyboardEvent) =>
-      if (event.keyCode == 13) {
-        joinButton.click()
-        event.preventDefault()
-      }
-    }
+//    joinButton.onclick = { (event: MouseEvent) =>
+//      nameExist.innerHTML = ""
+//      if(nameField.value.length > 15){
+//          nameExist.innerHTML = "名称不能超过15"
+//      }else{
+//        joinGame(nameField.value)
+//        event.preventDefault() //若事件可以取消，则取消，不停止进一步的传播
+//      }
+//
+//    }
+//    nameField.focus()
+//    nameField.onkeypress = { (event: KeyboardEvent) =>
+//      if (event.keyCode == 13) {
+//        joinButton.click()
+//        event.preventDefault()
+//      }
+//    }
     dom.window.requestAnimationFrame(drawLoop())
   }
 
@@ -240,9 +240,9 @@ object NetGameHolder extends js.JSApp {
     gameStream.onerror = { (event: ErrorEvent) =>
       GameView.drawGameOff()
       playground.insertBefore(p(s"Failed: code: ${event.colno}"), playground.firstChild)
-      joinButton.disabled = false
+      //joinButton.disabled = false
       wsSetup = false
-      nameField.focus()
+//      nameField.focus()
     }
 
     gameStream.onmessage = { (event: MessageEvent) =>
@@ -268,7 +268,7 @@ object NetGameHolder extends js.JSApp {
                   myRoomId = roomId.toInt + 1
                 //                  writeToArea(s"$user joined!")
                 case Protocol.NewSnakeNameExist(id, name, roomId)=>
-                  nameExist.innerHTML = "名字已存在"
+//                  nameExist.innerHTML = "名字已存在"
                 case Protocol.SnakeLeft(id, user) =>
                 //                  writeToArea(s"$user left!")
                 case Protocol.SnakeAction(id, keyCode, frame) =>
@@ -356,9 +356,9 @@ object NetGameHolder extends js.JSApp {
     gameStream.onclose = { (event: Event) =>
       GameView.drawGameOff()
       playground.insertBefore(p("Connection to game lost. You can try to rejoin manually."), playground.firstChild)
-      joinButton.disabled = false
+      //joinButton.disabled = false
       wsSetup = false
-      nameField.focus()
+//      nameField.focus()
     }
 
     def writeToArea(text: String): Unit =
