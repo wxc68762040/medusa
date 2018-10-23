@@ -10,7 +10,7 @@ import Protocol.{FailMsgServer, WsMsgSource}
 	*/
 object GameController {
 	
-	def running(id: String, name: String): Behavior[WsMsgSource] = {
+	def running(): Behavior[WsMsgSource] = {
 		Behaviors.receive[WsMsgSource] { (ctx, msg) =>
 			msg match {
 				case Protocol.NetDelayTest(time) =>
