@@ -30,6 +30,7 @@ object AppSettings {
   val gsKey = appConfig.getString("gameInfo.gsKey")
   val gameId = appConfig.getLong("gameInfo.gameId")
   val esheepSecureKey = ""
+  val recordPath = appConfig.getString("recordPath")
 
   val slickConfig = config.getConfig("slick.db")
   val slickUrl = slickConfig.getString("url")
