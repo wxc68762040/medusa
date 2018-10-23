@@ -1,17 +1,26 @@
 package com.neo.sk.medusa
 
 import akka.NotUsed
+import akka.actor.ActorSystem
 import akka.actor.typed._
 import akka.actor.typed.scaladsl.{Behaviors, TimerScheduler}
+import akka.stream.typed.scaladsl._
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.ws._
 import akka.actor.typed.scaladsl.adapter._
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.ws.WebSocketRequest
-import akka.stream.OverflowStrategy
-import akka.stream.scaladsl.{Keep, Sink, Source}
-import com.neo.sk.medusa.snake.Protocol.GameMessage
-
-import scala.concurrent.Future
+import akka.stream.{Materializer, OverflowStrategy}
+import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
+import akka.stream.typed.scaladsl.ActorSink
+import akka.util.ByteString
+import com.neo.sk.medusa.snake.Protocol._
+import org.seekloud.byteobject.MiddleBufferInJvm
+import org.seekloud.byteobject.ByteObject._
+import org.slf4j.LoggerFactory
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContextExecutor, Future}
 
 /**
 	* Created by wangxicheng on 2018/10/19.
@@ -20,53 +29,98 @@ import scala.concurrent.Future
 object WSClient {
 	
 	sealed trait WsCommand
-	case class ConnectGame(id: Long, name: String) extends WsCommand
+	case class ConnectGame(id: String, name: String, accessCode: String) extends WsCommand
 	
-	private def create(): Behavior[WsCommand] = {
+	private val log = LoggerFactory.getLogger("WSClient")
+	private val logPrefix = "WSClient"
+	
+	def create(_system: ActorSystem, _materializer: Materializer, _executor: ExecutionContextExecutor): Behavior[WsCommand] = {
 		Behaviors.setup[WsCommand] { ctx =>
-			val id = System.currentTimeMillis()
-			val name = "name" + System.currentTimeMillis().toString
-			val gameController = ctx.spawn(GameController.running(id, name), "gameController")
-			ctx.self ! ConnectGame(id, name)
-			working(gameController)
+			Behaviors.withTimers { timer =>
+				val id = System.currentTimeMillis().toString
+				val name = "name" + System.currentTimeMillis().toString
+				val accessCode = "jgfkldpwer"
+				val gameController = ctx.spawn(GameController.running(id, name), "gameController")
+				ctx.self ! ConnectGame(id, name, accessCode)
+				working(gameController)(timer, _system, _materializer, _executor)
+			}
 		}
 	}
 	
-	private def working(gameController: ActorRef[GameController.GameCommand]): Behavior[WsCommand] = {
+	private def working(gameController: ActorRef[WsMsgSource])
+										 (implicit timer: TimerScheduler[WsCommand],
+											system: ActorSystem,
+											materializer: Materializer,
+											executor: ExecutionContextExecutor): Behavior[WsCommand] = {
 		Behaviors.receive[WsCommand] { (ctx, msg) =>
 			msg match {
-				case ConnectGame(id, name) =>
-					val url = getWebSocketUri(name)
+				case ConnectGame(id, name, accessCode) =>
+					val url = getWebSocketUri(id, name, accessCode)
+					println("now trying web socket")
 					val webSocketFlow = Http().webSocketClientFlow(WebSocketRequest(url))
-					val ((stream, response), closed) =
-						Source.actorRef(1, OverflowStrategy.fail)
+					val source = getSource
+					val sink = getSink(gameController)
+					val ((stream, response), _) =
+						source
 				  	.viaMat(webSocketFlow)(Keep.both)
-				  	.toMat(getSink(gameController, id, name))(Keep.both)
+				  	.toMat(sink)(Keep.both)
 				  	.run()
 					
-					Behaviors.same
 					val connected = response.flatMap { upgrade =>
 						if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
+							ctx.schedule(10.seconds, stream, NetTest(id, System.currentTimeMillis()))
 							Future.successful(s"$logPrefix connect success.")
 						} else {
 							throw new RuntimeException(s"WSClient connection failed: ${upgrade.response.status}")
 						}
 					} //链接建立时
 					connected.onComplete(i => log.info(i.toString))
-					closed.onComplete { i =>
-						log.error(s"$logPrefix connect to akso closed! try again 1 minutes later")
-						context.system.scheduler.scheduleOnce(1.minute, self, Connect2Akso)
-					} //链接断开时
+//					closed.onComplete { i =>
+//						log.error(s"$logPrefix connection closed!")
+//					} //链接断开时
+					Behaviors.same
 			}
 		}
 	}
 	
-	def getSink(actor: ActorRef[GameController.GameCommand], id: Long, name: String): akka.stream.typed.scaladsl.ActorSink[GameMessage, NotUsed] =
-		Sink.actorRef[GameMessage](actor, Left(id, name))
+	def getSink(actor: ActorRef[WsMsgSource]) =
+		Flow[Message].collect {
+			case TextMessage.Strict(msg) =>
+				log.debug(s"msg from webSocket: $msg")
+				TextMsg(msg)
+				
+			case BinaryMessage.Strict(bMsg) =>
+				//decode process.
+				val buffer = new MiddleBufferInJvm(bMsg.asByteBuffer)
+				val msg =
+					bytesDecode[GameMessage](buffer) match {
+						case Right(v) => v
+						case Left(e) =>
+							println(s"decode error: ${e.message}")
+							TextMsg("decode error")
+					}
+				msg
+		}.to(ActorSink.actorRef[WsMsgSource](actor, CompleteMsgServer, FailMsgServer))
 	
-	def getWebSocketUri(nameOfChatParticipant: String): String = {
+	def getSource = ActorSource.actorRef[WsSendMsg](
+		completionMatcher = {
+			case WsSendComplete =>
+		}, failureMatcher = {
+			case WsSendFailed(ex) ⇒ ex
+		},
+		bufferSize = 8,
+		overflowStrategy = OverflowStrategy.fail
+	).collect {
+		case message: UserAction =>
+			val sendBuffer = new MiddleBufferInJvm(409600)
+			BinaryMessage.Strict(ByteString(
+				message.fillMiddleBuffer(sendBuffer).result()
+			))
+	}
+	
+	def getWebSocketUri(playerId: String, playerName: String, accessCode: String): String = {
 		val wsProtocol = "ws"
 		val host ="localhost:30372"
-		s"$wsProtocol://$host/medusa/netSnake/join?name=$nameOfChatParticipant"
+		s"$wsProtocol://$host/medusa/playGameClient?playerId=$playerId&playerName=$playerName&accessCode=$accessCode"
 	}
 }

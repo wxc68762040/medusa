@@ -9,9 +9,6 @@ import akka.util.Timeout
 import com.neo.sk.medusa.http.HttpService
 import akka.actor.typed.scaladsl.adapter._
 import com.neo.sk.medusa.core.{RoomManager, UserManager}
-import com.neo.sk.medusa.snake.Delayer
-import com.neo.sk.medusa.snake.Delayer.{Hello, Start}
-import com.neo.sk.utils.CirceSupport
 
 import scala.language.postfixOps
 
