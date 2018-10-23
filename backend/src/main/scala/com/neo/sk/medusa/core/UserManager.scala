@@ -8,20 +8,14 @@ import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage}
 import akka.stream.{ActorAttributes, Supervision}
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
-import org.seekloud.byteobject.ByteObject
 import org.slf4j.LoggerFactory
 
 import scala.collection._
 import scala.language.implicitConversions
 import org.seekloud.byteobject.MiddleBufferInJvm
 import org.seekloud.byteobject.ByteObject._
-import io.circe.{Decoder, Encoder}
 import io.circe.generic.auto._
-import io.circe.parser._
-
-import scala.concurrent.duration._
 import com.neo.sk.medusa.snake.Protocol._
-import net.sf.ehcache.transaction.xa.commands.Command
 
 object UserManager {
 
@@ -38,7 +32,7 @@ object UserManager {
   case class UserReady(playerId: String, userActor: ActorRef[UserActor.Command]) extends Command
 
   val behaviors: Behavior[Command] = {
-    log.debug(s"UserManager start...")
+    log.info(s"UserManager start...")
     Behaviors.setup[Command] {
       ctx =>
         Behaviors.withTimers[Command] {
@@ -116,9 +110,7 @@ object UserManager {
         // FIXME: We need to handle TextMessage.Streamed as well.
       }
       .via(UserActor.flow(userActor)) // ... and route them through the chatFlow ...
-      //      .map { msg => TextMessage.Strict(msg.asJson.noSpaces) // ... pack outgoing messages into WS JSON messages ...
-      //.map { msg => TextMessage.Strict(write(msg)) // ... pack outgoing messages into WS JSON messages ...
-      .map {
+      .map { //... pack outgoing messages into WS JSON messages ...
       case message: GameMessage =>
         val sendBuffer = new MiddleBufferInJvm(409600)
         BinaryMessage.Strict(ByteString(

@@ -10,7 +10,7 @@ object Protocol {
   sealed trait WsMsgSource
 
   case object CompleteMsgServer extends WsMsgSource
-  case class FailMsgServer(ex: Exception) extends WsMsgSource
+  case class FailMsgServer(ex: Throwable) extends WsMsgSource
 
   sealed trait GameMessage extends WsMsgSource
 
@@ -76,7 +76,11 @@ object Protocol {
   case class JoinRoomFailure(playerId:String,roomId:Long,errorCode:Int,msg:String)extends GameMessage
 
 
-  sealed trait UserAction
+  sealed trait WsSendMsg
+  case object WsSendComplete extends WsSendMsg
+  case class WsSendFailed(ex: Throwable) extends WsSendMsg
+  
+  sealed trait UserAction extends WsSendMsg
 
   case class Key(id: String, keyCode: Int, frame: Long) extends UserAction
 

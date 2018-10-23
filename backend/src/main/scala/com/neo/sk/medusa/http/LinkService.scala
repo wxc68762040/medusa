@@ -15,7 +15,6 @@ import akka.actor.typed.scaladsl.AskPattern._
 import com.neo.sk.utils.CirceSupport._
 import com.neo.sk.utils.ServiceUtils
 import io.circe.generic.auto._
-import io.circe.generic.auto._
 import io.circe.syntax._
 import io.circe._
 
@@ -43,6 +42,18 @@ trait LinkService extends ServiceUtils {
         )
     }
   }
+  
+  private val playGameClientRoute = path("playGameClient") {
+    parameter('playerId.as[String], 'playerName.as[String], 'roomId.as[Long].?, 'accessCode.as[String]) {
+      (playerId, playerName, roomId, accessCode) =>
+        extractUpgradeToWebSocket { upgrade =>
+          val flowFuture: Future[Flow[Message, Message, Any]] = userManager ? (UserManager.GetWebSocketFlow(playerId, playerName, roomId.getOrElse(-1), _))
+          dealFutureResult(
+            flowFuture.map(r => complete(upgrade.handleMessages(r)))
+          )
+        }
+    }
+  }
 
   private val watchGameRoute = path("watchGame"){
     parameter('roomId.as[Long], 'playerId.as[String].?, 'accessCode.as[String]){
@@ -61,7 +72,7 @@ trait LinkService extends ServiceUtils {
     }
   }
 
-  val linkRoute = (pathPrefix("game") & get) {
+  val linkRoute = playGameClientRoute ~ (pathPrefix("game") & get) {
     pathEndOrSingleSlash {
       getFromResource("html/netSnake.html")
     } ~ playGameRoute ~ watchGameRoute ~ watchRecordRoute

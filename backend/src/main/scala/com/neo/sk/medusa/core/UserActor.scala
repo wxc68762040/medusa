@@ -12,6 +12,7 @@ import akka.stream.scaladsl.{Flow, Sink, Source}
 import com.neo.sk.medusa.snake.Protocol._
 import com.neo.sk.medusa.Boot.{roomManager, userManager}
 import akka.stream.typed.scaladsl.{ActorSink, ActorSource}
+import com.neo.sk.medusa.core.RoomActor.UserLeft
 import com.neo.sk.medusa.snake.Protocol
 import io.circe.Decoder
 import net.sf.ehcache.transaction.xa.commands.Command
@@ -36,7 +37,7 @@ object UserActor {
 
   case class UserFrontActor(actor: ActorRef[WsMsgSource]) extends Command
 
-  case class StartGame(playerId: String, playerName: String, roomId: Long) extends Command
+  case class StartGame(playerId: String, playerName: String, roomId: Long,isNewUser:Boolean=true) extends Command
 
   case class JoinRoomSuccess(roomId: Long, roomActor: ActorRef[RoomActor.Command]) extends Command
 
@@ -65,6 +66,7 @@ object UserActor {
   def create(playerId: String, playerName: String): Behavior[Command] = {
     Behaviors.setup[Command] {
       ctx =>
+        log.info(s"userActor ${ctx.self.path} start .....")
         implicit val stashBuffer: StashBuffer[Command] = StashBuffer[Command](Int.MaxValue)
         Behaviors.withTimers[Command] {
           implicit timer =>
@@ -84,7 +86,7 @@ object UserActor {
             log.debug(s"${ctx.self.path} is time out when busy,msg=$m")
             Behaviors.stopped
           case x =>
-            log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")
+            log.error(s"${ctx.self.path} receive an unknown msg when init:$x")
             Behaviors.unhandled
         }
     }
@@ -93,8 +95,8 @@ object UserActor {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
-          case StartGame(_, _, roomId) =>
-            roomManager ! RoomManager.JoinGame(playerId, playerName, roomId, ctx.self)
+          case StartGame(_, _, roomId,isNewUser) =>
+            roomManager ! RoomManager.JoinGame(playerId, playerName, roomId, isNewUser,ctx.self)
             Behaviors.same
 
           case JoinRoomSuccess(rId, roomActor) =>
@@ -108,8 +110,6 @@ object UserActor {
           case JoinRoomFailure(rId, errorCode, reason) =>
 
             frontActor ! Protocol.JoinRoomFailure(playerId, rId, errorCode, reason)
-
-            userManager ! UserManager.ChildDead(s"UserActor-$playerId", ctx.self)
 
             Behaviors.stopped
 
@@ -145,10 +145,15 @@ object UserActor {
             m match {
               case t: Protocol.SnakeLeft =>
                 //如果死亡十分钟后无操作 则杀死userActor
-                log.info("user dead")
-                timer.startSingleTimer(UserDeadTimerKey, UserLeft, 10.minutes)
-                frontActor ! t
-                switchBehavior(ctx, "wait", wait(playerId, playerName, roomId, frontActor))
+                //fixme
+                if(t.id==playerId){
+                  timer.startSingleTimer(UserDeadTimerKey, UserLeft, 10.minutes)
+                  frontActor ! t
+                  switchBehavior(ctx, "wait", wait(playerId, playerName, roomId, frontActor))
+                }else{
+                  frontActor ! t
+                  Behaviors.same
+                }
               case x =>
                 frontActor ! x
                 Behaviors.same
@@ -171,11 +176,11 @@ object UserActor {
             Behaviors.same
 
           case UnKnowAction(unknownMsg) =>
-            log.debug(s"${ctx.self.path} receive an UnKnowAction when idle:$unknownMsg")
+            log.debug(s"${ctx.self.path} receive an UnKnowAction when play:$unknownMsg")
             Behaviors.same
 
           case x =>
-            log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")
+            log.error(s"${ctx.self.path} receive an unknown msg when play:$x")
             Behaviors.unhandled
         }
     }
@@ -195,9 +200,8 @@ object UserActor {
 
           case RestartGame =>
             //重新开始游戏
-            log.info("restart")
             timer.cancel(UserDeadTimerKey)
-            ctx.self ! StartGame(playerId, playerName, roomId)
+            ctx.self ! StartGame(playerId, playerName, roomId,isNewUser = false)
             switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor))
 
           case UserLeft =>
@@ -205,7 +209,7 @@ object UserActor {
             Behaviors.stopped
 
           case x =>
-            log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")
+            log.error(s"${ctx.self.path} receive an unknown msg when wait:$x")
             Behaviors.unhandled
         }
 

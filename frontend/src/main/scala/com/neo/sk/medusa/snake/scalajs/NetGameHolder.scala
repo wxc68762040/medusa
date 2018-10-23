@@ -262,7 +262,8 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.NewSnakeNameExist(id, name, roomId)=>
 //                  nameExist.innerHTML = "名字已存在"
                 case Protocol.SnakeLeft(id, user) =>
-                //                  writeToArea(s"$user left!")
+                  grid.removeSnake(id)
+//                  writeToArea(s"$user left!")
                 case Protocol.SnakeAction(id, keyCode, frame) =>
                   if(id != myId) {
                     grid.addActionWithFrame(id, keyCode, frame)

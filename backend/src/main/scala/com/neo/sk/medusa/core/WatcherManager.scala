@@ -44,7 +44,7 @@ object WatcherManager {
   case class WatcherGone(watcherId:String) extends Command
 
   val behaviors: Behavior[Command] = {
-    log.debug(s"UserManager start...")
+    log.debug(s"WatchManager start...")
     Behaviors.setup[Command] {
       ctx =>
         Behaviors.withTimers[Command] {
