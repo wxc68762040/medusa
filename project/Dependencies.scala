@@ -16,7 +16,7 @@ object Dependencies {
   val scalaXmlV = "1.1.0"
   val circeVersion = "0.9.3"
 
-  val scalaJsDomV = "0.9.2"
+  val scalaJsDomV = "0.9.6"
 
 
   val scalaTagsV = "0.6.5"
