@@ -30,7 +30,7 @@ trait LinkService extends ServiceUtils {
 
   implicit val materializer: Materializer
 
-  private[this] val log = LoggerFactory.getLogger("SnakeService")
+  private[this] val log = LoggerFactory.getLogger("LinkService")
 
 
   private val playGameRoute = path("playGame") {

@@ -66,6 +66,8 @@ object Protocol {
 
   case class SnakeLeft(id: String, name: String) extends GameMessage
 
+  //case class DistinctSnakeAction(keyCode: Int, frame: Long, frontFrame: Long) extends GameMessage
+
   case class Ranks(currentRank: List[Score], historyRank: List[Score]) extends GameMessage
 
   case class NetDelayTest(createTime: Long) extends GameMessage
@@ -116,6 +118,8 @@ object Protocol {
   val savingFrame = 5 //保存的帧数
 
   val operateDelay = 1 //操作延迟的帧数
+
+  //val savingFrame = 5 //保存的帧数
 
   val netInfoRate = 1000
 }
