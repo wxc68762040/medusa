@@ -12,10 +12,12 @@
   <br>
 
 
-  <canvas id="BGPic" tabindex="0"  style="position:absolute;;z-index:2;left: 0px; top: 200px;"></canvas>
-  <canvas id="GameMap" tabindex="2" style="position:absolute;z-index:3;left: 0px; top: 750px;"></canvas>
-  <canvas id="GameView" tabindex="1"  style="position:absolute;;z-index:1;left: 0px; top: 200px;"></canvas>
-  <div id="startBg"  tabindex="4" style="position:absolute;;z-index:4;left: 0px; top: 200px;background: rgba(0, 0, 0, 0.9)">
+  <canvas id="BGPic" tabindex="0"  style="position:absolute;z-index:2;left: 0px; top: 200px;"></canvas>
+  <canvas id="GameLost" tabindex="5" style="position: absolute;z-index:6;left: 0px; top:200px;"></canvas>
+  <canvas id="GameMap" tabindex="3" style="position:absolute;z-index:3;left: 0px; top: 750px;"></canvas>
+  <canvas id="GameInfo" tabindex="2" style="position:absolute;z-index:4;left: 0px; top:200px;"></canvas>
+  <canvas id="GameView" tabindex="1"  style="position:absolute;z-index:1;left: 0px; top: 200px;"></canvas>
+  <div id="startBg"  tabindex="4" style="position:absolute;z-index: 5;left: 0px; top: 200px;background: rgba(0, 0, 0, 0.9)">
 
     <form action="#" style=" width: 300px;margin: 200px auto;">
       <div id="nameExist" style="font-size: larger;height: 50px;width: 300px;color: red;text-align: center"> </div>
@@ -24,6 +26,7 @@
     </form>
   </div>
   <img id="canvasPic" src="/medusa/static/img/bg2.png" style="width: 0px;">
+  <img id="lostPic" src="/medusa/static/img/bg2.png" style="width: 0px;">
   <img id="maxPic" src="/medusa/static/img/champion.png" style="width: 0px;">
 
 

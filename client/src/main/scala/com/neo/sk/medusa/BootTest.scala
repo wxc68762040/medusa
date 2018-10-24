@@ -1,10 +1,20 @@
 package com.neo.sk.medusa
 
+import javafx.application.{Application, Platform}
+import javafx.event.ActionEvent
+import javafx.scene.{Group, Scene}
+import javafx.scene.control.Button
+import javafx.stage.Stage
+
 import akka.actor.{ActorSystem, Scheduler}
 import akka.stream.ActorMaterializer
-import com.neo.sk.medusa.AppSettings._
+import com.neo.sk.medusa.common.AppSettings._
 import akka.actor.typed.scaladsl.adapter._
 import akka.http.scaladsl.Http
+import com.neo.sk.medusa.actor.{GameController, WSClient}
+import com.neo.sk.medusa.common.StageContext
+import com.neo.sk.medusa.scene.LoginScene
+import com.neo.sk.medusa.snake.{Boundary, Point}
 
 import scala.util.{Failure, Success}
 
@@ -19,7 +29,26 @@ object BootTest {
 	implicit val materializer: ActorMaterializer = ActorMaterializer()
 	implicit val scheduler: Scheduler = system.scheduler
 	
-	def main(args: Array[String]) {
-		val wsClient = system.spawn(WSClient.create(system, materializer, executor), "WSClient")
+	val bounds = Point(Boundary.w, Boundary.h)
+	val grid = new GridOnClient(bounds)
+	val gameController = system.spawn(GameController.create(grid), "gameController")
+	val wsClient = system.spawn(WSClient.create(gameController, system, materializer, executor), "WSClient")
+	
+	def addToPlatform(fun: => Unit) = {
+		Platform.runLater(() => fun)
 	}
+	
+}
+
+class BootTest extends javafx.application.Application {
+	
+	import BootTest._
+	override def start(mainStage: Stage): Unit = {
+		val context = new StageContext(mainStage)
+		val loginScene = new LoginScene(wsClient)
+		
+		context.switchScene(loginScene.scene, "Login")
+		
+	}
+	
 }

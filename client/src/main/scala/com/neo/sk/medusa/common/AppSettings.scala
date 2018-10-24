@@ -1,4 +1,4 @@
-package com.neo.sk.medusa
+package com.neo.sk.medusa.common
 
 import com.typesafe.config.ConfigFactory
 import org.slf4j.LoggerFactory

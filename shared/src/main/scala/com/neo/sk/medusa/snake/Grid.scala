@@ -33,7 +33,7 @@ trait Grid {
   val freeFrameTime = 40
 
   var frameCount = 0l
-  var grid: Map[Point, Spot] = Map[Point, Spot]()
+  var grid = Map[Point, Spot]()
   var snakes = Map.empty[String, SnakeInfo]
   var actionMap = Map.empty[Long, Map[String, Int]]
   var deadSnakeList = List.empty[DeadSnakeInfo]
@@ -67,7 +67,7 @@ trait Grid {
     if(isSynced) {
       frameCount -= 1
     }
-    actionMap -= (frameCount - Protocol.savingFrame)
+//    actionMap -= (frameCount - Protocol.advanceFrame)
     frameCount += 1
   }
 
