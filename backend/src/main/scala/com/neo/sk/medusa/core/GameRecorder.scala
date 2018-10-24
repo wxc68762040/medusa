@@ -26,6 +26,9 @@ import scala.util.{Failure, Success}
 object GameRecorder {
 
   private final val log = LoggerFactory.getLogger(this.getClass)
+  private final val InitTime = Some(5.minutes)
+  private final val saveTime = 1.minutes
+  private final val maxRecordNum = 100
 
   sealed trait Command
 
@@ -65,12 +68,6 @@ object GameRecorder {
   final case object SaveDataKey
 
   final case object Save extends Command
-
-  private final val InitTime = Some(5.minutes)
-  private final val saveTime = 30.minutes
-  private final val maxRecordNum = 100
-  private final val maxFrame_PreFile = 36000
-  private final val maxFrame_PreSnapShot = 1000
 
   private final case object BehaviorChangeKey
 

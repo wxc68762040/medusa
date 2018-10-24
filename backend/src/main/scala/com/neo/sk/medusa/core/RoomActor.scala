@@ -118,46 +118,54 @@ object RoomActor {
           case t:UserLeft =>
             grid.removeSnake(t.playerId)
             val userName=userMap(t.playerId)._2
-            userMap.remove(t.playerId)
             dispatch(UserActor.DispatchMsg(Protocol.SnakeLeft(t.playerId,userName)),userMap)
-//            if(isRecord){
-//              getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserLeftRoom(t.playerId, u, grid.frameCount)
-//            }
-            Behaviors.same
-
+            if(isRecord) {
+              getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserLeftRoom(t.playerId, userMap(t.playerId)._2, grid.frameCount)
+            }
+            userMap.remove(t.playerId)
             Behaviors.same
 
           case Sync =>
             val newTick = tickCount + 1
             grid.update(false)
+            val eventList = ListBuffer[Protocol.WsMsgSource]()
             val feedApples = grid.getFeededApple
             val eatenApples = grid.getEatenApples
             val speedUpInfo = grid.getSpeedUpInfo
             grid.resetFoodData()
             if (grid.deadSnakeList.nonEmpty) {
+              eventList.append(Protocol.DeadList(grid.deadSnakeList.map(_.id)))
               dispatch(UserActor.DispatchMsg(Protocol.DeadList(grid.deadSnakeList.map(_.id))), userMap)
             }
             grid.killMap.foreach {
               g =>
+                eventList.append(Protocol.KillList(g._2))
                 dispatchTo(g._1, UserActor.DispatchMsg(Protocol.KillList(g._2)), userMap)
             }
             if (tickCount % 20 == 5) {
               val GridSyncData = grid.getGridSyncData
+              eventList.append(GridSyncData)
               dispatch(UserActor.DispatchMsg(GridSyncData), userMap)
             } else {
               if (feedApples.nonEmpty) {
+                eventList.append(Protocol.FeedApples(feedApples))
                 dispatch(UserActor.DispatchMsg(Protocol.FeedApples(feedApples)), userMap)
               }
               if (eatenApples.nonEmpty) {
-                dispatch(UserActor.DispatchMsg(Protocol.EatApples(eatenApples.map(r => EatFoodInfo(r._1, r._2)).toList)), userMap)
+                val tmp = Protocol.EatApples(eatenApples.map(r => EatFoodInfo(r._1, r._2)).toList)
+                eventList.append(tmp)
+                dispatch(UserActor.DispatchMsg(tmp), userMap)
               }
               if (speedUpInfo.nonEmpty) {
+                eventList.append(Protocol.SpeedUp(speedUpInfo))
                 dispatch(UserActor.DispatchMsg(Protocol.SpeedUp(speedUpInfo)), userMap)
               }
             }
             if (tickCount % 20 == 1) {
+              eventList.append(Protocol.Ranks(grid.currentRank, grid.historyRankList))
               dispatch(UserActor.DispatchMsg(Protocol.Ranks(grid.currentRank, grid.historyRankList)), userMap)
             }
+            getGameRecorder(ctx, grid, roomId) ! GameRecorder.GameRecord(eventList.toList, Some(grid.getGridSyncData))
             idle(roomId, newTick, userMap, grid)
 
           case NetTest(id, createTime) =>
