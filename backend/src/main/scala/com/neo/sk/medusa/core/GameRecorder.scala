@@ -10,6 +10,7 @@ import com.neo.sk.medusa.snake.Protocol
 import scala.concurrent.duration._
 import scala.language.implicitConversions
 import com.neo.sk.medusa.common.Constants
+import com.neo.sk.utils.CountUtils
 import com.neo.sk.medusa.common.AppSettings.recordPath
 import com.neo.sk.utils.ESSFSupport
 import org.seekloud.byteobject.ByteObject._
@@ -26,7 +27,7 @@ object GameRecorder {
 
   private final val log = LoggerFactory.getLogger(this.getClass)
   private final val InitTime = Some(5.minutes)
-  private final val saveTime = 1.minutes
+  private final val saveTime = 60.seconds
   private final val maxRecordNum = 100
 
   sealed trait Command
@@ -99,7 +100,8 @@ object GameRecorder {
       implicit val stashBuffer: StashBuffer[Command] = StashBuffer[Command](Int.MaxValue)
       implicit val middleBuffer: MiddleBufferInJvm = new MiddleBufferInJvm(10 * 4096)
       Behaviors.withTimers[Command] { implicit timer =>
-        val fileRecorder = initFileRecorder(fileName, 0, gameInformation, initStateOpt)
+        val index = CountUtils.getId()
+        val fileRecorder = initFileRecorder(fileName, index, gameInformation, initStateOpt)
         val gameRecordBuffer: List[GameRecord] = List[GameRecord]()
         timer.startSingleTimer(SaveDataKey, Save, saveTime)
         val data = GameRecorderData(roomId, fileName, 0, System.currentTimeMillis(), initStateOpt, fileRecorder, gameRecordBuffer)
@@ -134,7 +136,10 @@ object GameRecorder {
           }
 
           val newStartFrame = if(startFrame == -1l){
-            t.event._2.get.asInstanceOf[Protocol.GridDataSync].frameCount
+            t.event._2.get match {
+              case grid: Protocol.GridDataSync =>
+                grid.frameCount
+            }
           }else startFrame
 
           if (data.gameRecordBuffer.size > maxRecordNum) {
@@ -160,12 +165,12 @@ object GameRecorder {
           log.info(s"${ctx.self.path} work get msg save")
           timer.startSingleTimer(SaveDataKey, Save, saveTime)
           ctx.self ! SaveData(0)
-          switchBehavior(ctx, "save", save(data, essfMap, userAllMap, userMap, startFrame, endFrame))
+          switchBehavior(ctx, "save", save(data, essfMap, userMap, userAllMap, startFrame, endFrame))
 
         case RoomClose =>
           log.info(s"${ctx.self.path} work get msg save, room close")
           ctx.self ! SaveData(1)
-          switchBehavior(ctx, "save", save(data, essfMap, userAllMap, userMap, startFrame, endFrame))
+          switchBehavior(ctx, "save", save(data, essfMap, userMap, userAllMap, startFrame, endFrame))
 
 
         case unknow =>
@@ -185,7 +190,7 @@ object GameRecorder {
 
         case SaveData(f) =>
 
-          log.info(s"${ctx.self.path} save get msg saveData")
+          println(s"${ctx.self.path} save get msg saveData")
           val mapInfo = essfMap.map{
             essf=>
               if(essf._2.leftF == -1L){
@@ -201,6 +206,7 @@ object GameRecorder {
           val recordInfo = rRecords(data.fileIndex, data.startTime, System.currentTimeMillis(), data.roomId, userAllMap.size, endFrame - startFrame)
           GameRecordDao.insertGameRecord(recordInfo).onComplete{
             case Success(recordId) =>
+              log.info(s"insert game record successful:$recordId")
               val list = ListBuffer[rRecordsUserMap]()
               userAllMap.foreach{
                 userRecord =>
@@ -209,10 +215,11 @@ object GameRecorder {
               }
               UserRecordDao.insertPlayerList(list.toList).onComplete {
                 case Success(_) =>
-                  log.info(s"insert user record success")
+                  log.info(s"insert user record success, total:${list.length}")
                   if (f == 0) {
                     ctx.self ! SwitchBehavior("initRecorder", initRecorder(data.roomId, data.fileName, data.fileIndex, userMap))
                   } else {
+                    log.info(s"------------${ctx.self.path} stopped")
                     Behaviors.stopped
                   }
                 case Failure(e) =>
@@ -253,13 +260,13 @@ object GameRecorder {
     Behaviors.receive{(ctx,msg) =>
       msg match {
         case t:GameRecord =>
-          log.info(s"${ctx.self.path} init get msg gameRecord")
+          log.info(s"${ctx.self.path} initState get msg gameRecord")
           val startF = t.event._2.get match {
             case grid : Protocol.GridDataSync =>
               grid.frameCount
           }
           val newInitStateOpt =t.event._2
-          val newCount = Constants.getId()
+          val newCount = CountUtils.getId()
           val newRecorder = ESSFSupport.initFileRecorder(fileName, newCount, "", newInitStateOpt)
           val newGameRecorderData = GameRecorderData(roomId, fileName, newCount, System.currentTimeMillis(), newInitStateOpt, newRecorder, gameRecordBuffer = List[GameRecord]())
           val newEssfMap = mutable.HashMap.empty[EssfMapKey, EssfMapJoinLeftInfo]

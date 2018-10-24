@@ -24,7 +24,7 @@ object ESSFSupport {
     * 存储
     * @author hongruying on 2018/8/14
     * */
-  def initFileRecorder(fileName:String,index:Int,gameInformation: String,
+  def initFileRecorder(fileName:String,index:Long,gameInformation: String,
     initStateOpt:Option[Protocol.WsMsgSource] = None)
     (implicit middleBuffer: MiddleBufferInJvm):FrameOutputStream = {
     val dir = new File(AppSettings.recordPath)

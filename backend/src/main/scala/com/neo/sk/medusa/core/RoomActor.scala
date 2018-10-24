@@ -75,7 +75,7 @@ object RoomActor {
       (ctx, msg) =>
         msg match {
           case t: UserJoinGame =>
-            log.debug(s"room $roomId got a new player: ${t.playerId}")
+            log.info(s"room $roomId got a new player: ${t.playerId}")
             userMap.put(t.playerId, (t.userActor, t.playerName))
             grid.addSnake(t.playerId, t.playerName)
             dispatchTo(t.playerId, UserActor.DispatchMsg(Protocol.Id(t.playerId)), userMap)
@@ -165,7 +165,9 @@ object RoomActor {
               eventList.append(Protocol.Ranks(grid.currentRank, grid.historyRankList))
               dispatch(UserActor.DispatchMsg(Protocol.Ranks(grid.currentRank, grid.historyRankList)), userMap)
             }
-            getGameRecorder(ctx, grid, roomId) ! GameRecorder.GameRecord(eventList.toList, Some(grid.getGridSyncData))
+            if(isRecord) {
+              getGameRecorder(ctx, grid, roomId) ! GameRecorder.GameRecord(eventList.toList, Some(grid.getGridSyncData))
+            }
             idle(roomId, newTick, userMap, grid)
 
           case NetTest(id, createTime) =>
@@ -173,6 +175,9 @@ object RoomActor {
             Behaviors.same
 
           case KillRoom =>
+            if(isRecord){
+              getGameRecorder(ctx, grid, roomId) ! GameRecorder.RoomClose
+            }
             Behaviors.stopped
 
           case t: YourUserIsWatched =>
@@ -213,7 +218,7 @@ object RoomActor {
     val childName = s"gameRecorder" + roomId
     ctx.child(childName).getOrElse{
       val curTime = System.currentTimeMillis()
-      val fileName = s"tankGame_${curTime}"
+      val fileName = "medusa"
       val gameInformation = ""
       val initStateOpt = Some(grid.getGridSyncData)
       val actor = ctx.spawn(GameRecorder.create(fileName,gameInformation,initStateOpt,roomId),childName)

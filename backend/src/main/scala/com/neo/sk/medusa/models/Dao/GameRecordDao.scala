@@ -10,7 +10,12 @@ import com.neo.sk.medusa.Boot.executor
   * Time: 11:54
   */
 object GameRecordDao {
+
   def insertGameRecord(record: rRecords) = {
     db.run( tRecords.returning(tRecords.map(_.recordsId)) += record)
+  }
+
+  def getMaxId() = {
+    db.run(tRecords.map(_.recordsId).max.result)
   }
 }
