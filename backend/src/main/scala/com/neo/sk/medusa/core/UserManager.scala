@@ -40,7 +40,7 @@ object UserManager {
   val behaviors: Behavior[Command] = {
     log.info(s"UserManager start...")
     Behaviors.setup[Command] {
-      ctx =>
+      _ =>
         Behaviors.withTimers[Command] {
           implicit timer =>
             val userRoomMap = mutable.HashMap.empty[String, (Long, String)]
@@ -126,7 +126,7 @@ object UserManager {
           message.fillMiddleBuffer(sendBuffer).result()
         ))
 
-      case x =>
+      case _ =>
         TextMessage.apply("")
     }.withAttributes(ActorAttributes.supervisionStrategy(decider)) // ... then log any processing errors on stdin
   }

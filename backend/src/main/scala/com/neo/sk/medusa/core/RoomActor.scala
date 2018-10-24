@@ -66,7 +66,7 @@ object RoomActor {
                    userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String)], grid: GridOnServer)
                   (implicit timer: TimerScheduler[RoomActor.Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
-      (ctx, msg) =>
+      (_, msg) =>
         msg match {
           case t: UserJoinGame =>
             log.debug(s"room $roomId got a new player: ${t.playerId}")
@@ -170,7 +170,7 @@ object RoomActor {
     userMap.get(id).foreach { t => t._1 ! gameOutPut }
   }
 
-  def dispatch(gameOutPut: UserActor.Command, userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String)]) = {
+  def dispatch(gameOutPut: UserActor.Command, userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String)]): Unit = {
     userMap.values.foreach { t => t._1 ! gameOutPut }
   }
 

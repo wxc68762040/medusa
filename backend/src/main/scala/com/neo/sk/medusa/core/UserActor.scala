@@ -192,10 +192,10 @@ object UserActor {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
-          case t:Key=>
+          case _:Key=>
             Behaviors.same
 
-          case t:NetTest =>
+          case _:NetTest =>
             Behaviors.same
 
           case RestartGame =>
