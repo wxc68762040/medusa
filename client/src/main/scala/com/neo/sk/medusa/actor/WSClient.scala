@@ -1,24 +1,20 @@
-package com.neo.sk.medusa
+package com.neo.sk.medusa.actor
 
-import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.actor.typed._
 import akka.actor.typed.scaladsl.{Behaviors, TimerScheduler}
-import akka.stream.typed.scaladsl._
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.ws._
-import akka.actor.typed.scaladsl.adapter._
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.ws.WebSocketRequest
+import akka.http.scaladsl.model.ws.{WebSocketRequest, _}
+import akka.stream.scaladsl.{Flow, Keep}
+import akka.stream.typed.scaladsl.{ActorSink, _}
 import akka.stream.{Materializer, OverflowStrategy}
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
-import akka.stream.typed.scaladsl.ActorSink
 import akka.util.ByteString
 import com.neo.sk.medusa.snake.Protocol._
-import org.seekloud.byteobject.MiddleBufferInJvm
 import org.seekloud.byteobject.ByteObject._
+import org.seekloud.byteobject.MiddleBufferInJvm
 import org.slf4j.LoggerFactory
+
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
@@ -34,14 +30,9 @@ object WSClient {
 	private val log = LoggerFactory.getLogger("WSClient")
 	private val logPrefix = "WSClient"
 	
-	def create(_system: ActorSystem, _materializer: Materializer, _executor: ExecutionContextExecutor): Behavior[WsCommand] = {
+	def create(gameController: ActorRef[WsMsgSource], _system: ActorSystem, _materializer: Materializer, _executor: ExecutionContextExecutor): Behavior[WsCommand] = {
 		Behaviors.setup[WsCommand] { ctx =>
 			Behaviors.withTimers { timer =>
-				val id = System.currentTimeMillis().toString
-				val name = "name" + System.currentTimeMillis().toString
-				val accessCode = "jgfkldpwer"
-				val gameController = ctx.spawn(GameController.running(id, name), "gameController")
-				ctx.self ! ConnectGame(id, name, accessCode)
 				working(gameController)(timer, _system, _materializer, _executor)
 			}
 		}

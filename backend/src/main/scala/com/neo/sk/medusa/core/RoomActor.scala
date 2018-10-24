@@ -1,16 +1,16 @@
 package com.neo.sk.medusa.core
 
-import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{Behaviors, StashBuffer, TimerScheduler}
 import org.slf4j.LoggerFactory
 import com.neo.sk.medusa.snake.GridOnServer
-
+import akka.actor.typed.{ActorRef, Behavior}
+import akka.actor.typed.scaladsl.{ActorContext, Behaviors, TimerScheduler}
 import concurrent.duration._
 import scala.collection.mutable.ListBuffer
 import com.neo.sk.medusa.common.AppSettings._
 import com.neo.sk.medusa.snake._
 import java.awt.event.KeyEvent
-
+import com.neo.sk.medusa.core.RoomManager.Command
 import com.neo.sk.medusa.snake.Protocol.WsMsgSource
 import net.sf.ehcache.transaction.xa.commands.Command
 
@@ -48,6 +48,8 @@ object RoomActor {
 
   private case object TimerKey4SyncLoop
 
+  final case class ChildDead[U](name: String, childRef: ActorRef[U]) extends Command
+
 
   def create(roomId: Long): Behavior[Command] = {
     Behaviors.setup[Command] {
@@ -57,7 +59,11 @@ object RoomActor {
         Behaviors.withTimers[Command] {
           implicit timer =>
             timer.startSingleTimer(TimerKey4SyncBegin, BeginSync, syncDelay.seconds)
-            idle(roomId, 0, mutable.HashMap[String, (ActorRef[UserActor.Command], String)](),new GridOnServer(bound, ctx.self) )
+            val grid = new GridOnServer(bound, ctx.self)
+            if(isRecord){
+              getGameRecorder(ctx, grid, roomId)
+            }
+            idle(roomId, 0, mutable.HashMap[String, (ActorRef[UserActor.Command], String)](), grid)
         }
     }
   }
@@ -75,7 +81,9 @@ object RoomActor {
             dispatchTo(t.playerId, UserActor.DispatchMsg(Protocol.Id(t.playerId)), userMap)
             dispatch(UserActor.DispatchMsg(Protocol.NewSnakeJoined(t.playerId, t.playerName, roomId)), userMap)
             dispatch(UserActor.DispatchMsg(grid.getGridSyncData), userMap)
-
+            if(isRecord){
+              getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserJoinRoom(t.playerId, t.playerName, grid.frameCount)
+            }
             Behaviors.same
 
           case t: UserDead =>
@@ -84,6 +92,9 @@ object RoomActor {
             dispatchTo(t.userId, UserActor.DispatchMsg(Protocol.DeadInfo(t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killer)), userMap)
             dispatch(UserActor.DispatchMsg(Protocol.SnakeLeft(t.userId, t.deadInfo.name)), userMap)
             userMap.remove(t.userId)
+            if(isRecord){
+              getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserLeftRoom(t.userId, t.deadInfo.name, grid.frameCount)
+            }
             Behaviors.same
 
           case t: Key =>
@@ -109,6 +120,11 @@ object RoomActor {
             val userName=userMap(t.playerId)._2
             userMap.remove(t.playerId)
             dispatch(UserActor.DispatchMsg(Protocol.SnakeLeft(t.playerId,userName)),userMap)
+//            if(isRecord){
+//              getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserLeftRoom(t.playerId, u, grid.frameCount)
+//            }
+            Behaviors.same
+
             Behaviors.same
 
           case Sync =>
@@ -183,6 +199,19 @@ object RoomActor {
           t._1 ! distinctGameOutPut
         }
     }
+  }
+
+  private def getGameRecorder(ctx: ActorContext[Command],grid:GridOnServer,roomId:Long):ActorRef[GameRecorder.Command] = {
+    val childName = s"gameRecorder" + roomId
+    ctx.child(childName).getOrElse{
+      val curTime = System.currentTimeMillis()
+      val fileName = s"tankGame_${curTime}"
+      val gameInformation = ""
+      val initStateOpt = Some(grid.getGridSyncData)
+      val actor = ctx.spawn(GameRecorder.create(fileName,gameInformation,initStateOpt,roomId),childName)
+      ctx.watchWith(actor,ChildDead(childName,actor))
+      actor
+    }.upcast[GameRecorder.Command]
   }
 
 }

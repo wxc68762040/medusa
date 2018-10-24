@@ -53,7 +53,7 @@ object GameView  {
     }
   }
 
-  def drawGrid(uid: String ,data: GridDataSync): Unit = {
+  def drawGrid(uid: String, data: GridDataSync): Unit = {
     val cacheCanvas = dom.document.createElement("canvas").asInstanceOf[Canvas]
     val cacheCtx = cacheCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
     cacheCanvas.width = canvasBoundary.x
@@ -112,7 +112,7 @@ object GameView  {
     cacheCtx.fillStyle = MyColors.otherHeader
 
 
-    snakes.foreach{ snake=>
+    snakes.foreach { snake=>
       val id = snake.id
       val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
       val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
@@ -120,13 +120,13 @@ object GameView  {
       var step = (snake.speed * period / Protocol.frameRate - snake.extend).toInt
       var tail = snake.tail
       var joints = snake.joints.enqueue(Point(x.toInt,y.toInt))//通过在旧序列上添加元素创造一个新的队列
-      while (step >0){//尾巴在移动到下一个节点前就要停止
+      while (step > 0){//尾巴在移动到下一个节点前就要停止
         val distance = tail.distance(joints.dequeue._1)
-        if (distance >= step ){
-          val target = tail + tail.getDirection(joints.dequeue._1)*step
+        if (distance >= step){
+          val target = tail + tail.getDirection(joints.dequeue._1) * step
           tail = target
           step = -1
-        }else{ //尾巴在移动到下一个节点后还需要继续移动
+        } else { //尾巴在移动到下一个节点后还需要继续移动
           step -= distance
           tail = joints.dequeue._1
           joints = joints.dequeue._2
@@ -140,7 +140,7 @@ object GameView  {
         cacheCtx.strokeStyle = snake.color
         cacheCtx.shadowBlur = 20
         cacheCtx.shadowColor = snake.color
-      }else {
+      } else {
         cacheCtx.strokeStyle = "rgba(0,0,0,1)"
         cacheCtx.shadowBlur = 20
         cacheCtx.shadowColor = "rgba(255,255,255,1)"

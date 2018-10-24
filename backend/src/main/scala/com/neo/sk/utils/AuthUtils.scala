@@ -54,7 +54,7 @@ object AuthUtils extends HttpUtil {
   case class Wrap(playerInfo:PlayerInfo)
   case class VerifyRsp(data:Wrap,errCode:Int, msg:String)
 
-  def verifyAccessCode(accessCode:String){
+  def verifyAccessCode(accessCode:String):Future[Either[String,Wrap]]= {
     val data = VerifyInfo(gameId, accessCode).asJson.noSpaces
     val sn = appId + System.currentTimeMillis()
     val (timestamp, noce, signature) = SecureUtil.generateSignatureParameters(List(appId, sn, data), secureKey)
@@ -62,7 +62,7 @@ object AuthUtils extends HttpUtil {
     val url = "/esheep/api/gameServer/verifyAccessCode?token=lkasdjlaksjdl2389"
     postJsonRequestSend("post",url,Nil,postData).map{
       case Right(jsonStr) =>
-        decode[TokenRsp](jsonStr) match {
+        decode[VerifyRsp](jsonStr) match {
           case Right(rsp) =>
             if(rsp.errCode == 0){
               Right(rsp.data)
@@ -79,6 +79,5 @@ object AuthUtils extends HttpUtil {
         Left(error.getMessage)
     }
   }
-
 
 }
