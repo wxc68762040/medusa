@@ -10,7 +10,7 @@ object Protocol {
   sealed trait WsMsgSource
 
   case object CompleteMsgServer extends WsMsgSource
-  case class FailMsgServer(ex: Exception) extends WsMsgSource
+  case class FailMsgServer(ex: Throwable) extends WsMsgSource
 
   sealed trait GameMessage extends WsMsgSource
 
@@ -66,6 +66,8 @@ object Protocol {
 
   case class SnakeLeft(id: String, name: String) extends GameMessage
 
+  //case class DistinctSnakeAction(keyCode: Int, frame: Long, frontFrame: Long) extends GameMessage
+
   case class Ranks(currentRank: List[Score], historyRank: List[Score]) extends GameMessage
 
   case class NetDelayTest(createTime: Long) extends GameMessage
@@ -74,7 +76,11 @@ object Protocol {
   case class JoinRoomFailure(playerId:String,roomId:Long,errorCode:Int,msg:String)extends GameMessage
 
 
-  sealed trait UserAction
+  sealed trait WsSendMsg
+  case object WsSendComplete extends WsSendMsg
+  case class WsSendFailed(ex: Throwable) extends WsSendMsg
+  
+  sealed trait UserAction extends WsSendMsg
 
   case class Key(id: String, keyCode: Int, frame: Long) extends UserAction
 
@@ -112,6 +118,8 @@ object Protocol {
   val savingFrame = 5 //保存的帧数
 
   val operateDelay = 1 //操作延迟的帧数
+
+  //val savingFrame = 5 //保存的帧数
 
   val netInfoRate = 1000
 }

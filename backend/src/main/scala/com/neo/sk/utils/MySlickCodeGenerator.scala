@@ -69,8 +69,7 @@ object MySlickCodeGenerator {
 
   def main(args: Array[String]) {
     //    genDefaultTables()
-    val dbDriver = com.neo.sk.utils.MyPostgresDriver
-
+//    val dbDriver = com.neo.sk.utils.MyPostgresDriver
     genCustomTables(dbDriver)
 
     println(s"Tables.scala generated in $outputFolder")
