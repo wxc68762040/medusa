@@ -34,14 +34,9 @@ object WSClient {
 	private val log = LoggerFactory.getLogger("WSClient")
 	private val logPrefix = "WSClient"
 	
-	def create(_system: ActorSystem, _materializer: Materializer, _executor: ExecutionContextExecutor): Behavior[WsCommand] = {
+	def create(gameController: ActorRef[WsMsgSource], _system: ActorSystem, _materializer: Materializer, _executor: ExecutionContextExecutor): Behavior[WsCommand] = {
 		Behaviors.setup[WsCommand] { ctx =>
 			Behaviors.withTimers { timer =>
-				val id = System.currentTimeMillis().toString
-				val name = "name" + System.currentTimeMillis().toString
-				val accessCode = "jgfkldpwer"
-				val gameController = ctx.spawn(GameController.running(id, name), "gameController")
-				ctx.self ! ConnectGame(id, name, accessCode)
 				working(gameController)(timer, _system, _materializer, _executor)
 			}
 		}

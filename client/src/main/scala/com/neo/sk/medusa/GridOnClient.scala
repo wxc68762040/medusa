@@ -2,7 +2,7 @@ package com.neo.sk.medusa
 
 import java.awt.event.KeyEvent
 
-import com.neo.sk.medusa.snake.{Grid, Point, SnakeInfo}
+import com.neo.sk.medusa.snake._
 
 /**
   * User: Taoz
@@ -16,6 +16,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
   override def info(msg: String): Unit = println(msg)
   
   override def update(isSynced: Boolean): Unit = {
+		moveEatenApple()
     super.update(isSynced: Boolean)
   }
   
@@ -107,4 +108,95 @@ class GridOnClient(override val boundary: Point) extends Grid {
   override def countBody(): Unit = None
   
   var init: Boolean = false
+	var justSynced: Boolean = false
+	var myId = ""
+	
+	var deadName = ""
+	var deadLength = 0
+	var deadKill = 0
+	var yourKiller = ""
+	
+	
+	var eatenApples  = Map[String, List[AppleWithFrame]]()
+	var savedGrid = Map[Long,Protocol.GridDataSync]()
+	var syncData: scala.Option[Protocol.GridDataSync] = None
+	var waitingShowKillList=List.empty[(String,String)]
+	
+	
+	def sync(dataOpt: scala.Option[Protocol.GridDataSync]) = {
+		if (dataOpt.nonEmpty) {
+			val data = dataOpt.get
+			//      grid.actionMap = grid.actionMap.filterKeys(_ >= data.frameCount - 1 - advanceFrame)
+			val presentFrame = frameCount
+			frameCount = data.frameCount
+			snakes = data.snakes.map(s => s.id -> s).toMap
+			grid = grid.filter { case (_, spot) =>
+				spot match {
+					case Apple(_, life, _, _) if life >= 0 => true
+					case _ => false
+				}
+			}
+			if (data.frameCount <= presentFrame) {
+				for (_ <- presentFrame to data.frameCount) {
+					update(false)
+				}
+			}
+			val mySnakeOpt = snakes.find(_._1 == myId)
+			if (mySnakeOpt.nonEmpty) {
+				var mySnake = mySnakeOpt.get._2
+				for (i <- Protocol.advanceFrame to 1 by -1) {
+					updateASnake(mySnake, actionMap.getOrElse(data.frameCount - i, Map.empty)) match {
+						case Right(snake) =>
+							mySnake = snake
+						case Left(_) =>
+					}
+				}
+				snakes += ((mySnake.id, mySnake))
+			}
+			val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
+			val gridMap = appleMap
+			grid = gridMap
+		}
+	}
+	
+	def moveEatenApple(): Unit = {
+		val invalidApple = Ap(0, 0, 0, 0, 0)
+		eatenApples = eatenApples.filterNot { apple => !snakes.exists(_._2.id == apple._1) }
+		
+		eatenApples.foreach { info =>
+			val snakeOpt = snakes.get(info._1)
+			if (snakeOpt.isDefined) {
+				val snake = snakeOpt.get
+				val applesOpt = eatenApples.get(info._1)
+				var apples = List.empty[AppleWithFrame]
+				if (applesOpt.isDefined) {
+					apples = applesOpt.get
+					if (apples.nonEmpty) {
+						apples = apples.map { apple =>
+							grid -= Point(apple.apple.x, apple.apple.y)
+							if (apple.apple.appleType != FoodType.intermediate) {
+								val newLength = snake.length + apple.apple.score
+								val newExtend = snake.extend + apple.apple.score
+								val newSnakeInfo = snake.copy(length = newLength, extend = newExtend)
+								snakes += (snake.id -> newSnakeInfo)
+							}
+							val nextLocOpt = Point(apple.apple.x, apple.apple.y).pathTo(snake.head, Some(apple.frameCount, frameCount))
+							if (nextLocOpt.nonEmpty) {
+								val nextLoc = nextLocOpt.get
+								grid.get(nextLoc) match {
+									case Some(Body(_, _)) => AppleWithFrame(apple.frameCount, invalidApple)
+									case _ =>
+										val nextApple = Apple(apple.apple.score, apple.apple.life, FoodType.intermediate)
+										grid += (nextLoc -> nextApple)
+										AppleWithFrame(apple.frameCount, Ap(apple.apple.score, apple.apple.life, FoodType.intermediate, nextLoc.x, nextLoc.y))
+								}
+							} else AppleWithFrame(apple.frameCount, invalidApple)
+						}.filterNot(a => a.apple == invalidApple)
+						eatenApples += (snake.id -> apples)
+					}
+				}
+			}
+		}
+	}
+	
 }
