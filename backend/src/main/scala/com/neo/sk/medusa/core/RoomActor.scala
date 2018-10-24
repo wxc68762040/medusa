@@ -128,7 +128,7 @@ object RoomActor {
           case Sync =>
             val newTick = tickCount + 1
             grid.update(false)
-            val eventList = ListBuffer[Protocol.WsMsgSource]()
+            val eventList = ListBuffer[Protocol.GameMessage]()
             val feedApples = grid.getFeededApple
             val eatenApples = grid.getEatenApples
             val speedUpInfo = grid.getSpeedUpInfo

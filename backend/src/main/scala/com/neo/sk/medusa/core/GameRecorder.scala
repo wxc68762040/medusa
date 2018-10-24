@@ -1,7 +1,5 @@
 package com.neo.sk.medusa.core
 
-import java.io.File
-
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors, StashBuffer, TimerScheduler}
 import com.neo.sk.medusa.snake.Protocol
@@ -9,7 +7,6 @@ import org.seekloud.byteobject.MiddleBufferInJvm
 import org.seekloud.essf.io.FrameOutputStream
 import org.slf4j.LoggerFactory
 import com.neo.sk.medusa.snake.Protocol
-
 import scala.concurrent.duration._
 import scala.language.implicitConversions
 import com.neo.sk.medusa.common.Constants
@@ -24,6 +21,8 @@ import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success}
 
 object GameRecorder {
+  import org.seekloud.byteobject.ByteObject._
+  import com.neo.sk.utils.ESSFSupport.initFileRecorder
 
   private final val log = LoggerFactory.getLogger(this.getClass)
   private final val InitTime = Some(5.minutes)
@@ -32,14 +31,14 @@ object GameRecorder {
 
   sealed trait Command
 
-  final case class GameRecord(event: (List[Protocol.WsMsgSource], Option[Protocol.GridDataSync])) extends Command //behavior and state(snapshot)
+  final case class GameRecord(event: (List[Protocol.GameMessage], Option[Protocol.GameMessage])) extends Command
 
   final case class GameRecorderData(
     roomId: Long,
     fileName: String,
     fileIndex: Long,
     startTime: Long,
-    initStateOpt: Option[Protocol.GridDataSync],
+    initStateOpt: Option[Protocol.WsMsgSource],
     recorder: FrameOutputStream,
     var gameRecordBuffer: List[GameRecord],
     var fileRecordNum: Int = 0
@@ -85,8 +84,9 @@ object GameRecorder {
   private[this] def switchBehavior(ctx: ActorContext[Command],
     behaviorName: String, behavior: Behavior[Command], durationOpt: Option[FiniteDuration] = None, timeOut: TimeOut = TimeOut("busy time error"))
     (implicit stashBuffer: StashBuffer[Command],
-      timer: TimerScheduler[Command],
-      middleBuffer: MiddleBufferInJvm) = {
+      timer: TimerScheduler[Command]
+//      middleBuffer: MiddleBufferInJvm
+    ) = {
     log.debug(s"${ctx.self.path} becomes $behaviorName behavior.")
     timer.cancel(BehaviorChangeKey)
     durationOpt.foreach(timer.startSingleTimer(BehaviorChangeKey, timeOut, _))
@@ -99,7 +99,7 @@ object GameRecorder {
       implicit val stashBuffer: StashBuffer[Command] = StashBuffer[Command](Int.MaxValue)
       implicit val middleBuffer: MiddleBufferInJvm = new MiddleBufferInJvm(10 * 4096)
       Behaviors.withTimers[Command] { implicit timer =>
-        val fileRecorder = ESSFSupport.initFileRecorder(fileName, 0, gameInformation, initStateOpt)
+        val fileRecorder = initFileRecorder(fileName, 0, gameInformation, initStateOpt)
         val gameRecordBuffer: List[GameRecord] = List[GameRecord]()
         timer.startSingleTimer(SaveDataKey, Save, saveTime)
         val data = GameRecorderData(roomId, fileName, 0, System.currentTimeMillis(), initStateOpt, fileRecorder, gameRecordBuffer)
@@ -134,7 +134,7 @@ object GameRecorder {
           }
 
           val newStartFrame = if(startFrame == -1l){
-            t.event._2.get.frameCount
+            t.event._2.get.asInstanceOf[Protocol.GridDataSync].frameCount
           }else startFrame
 
           if (data.gameRecordBuffer.size > maxRecordNum) {
@@ -281,8 +281,8 @@ object GameRecorder {
 
   private def busy()(
     implicit stashBuffer:StashBuffer[Command],
-    timer:TimerScheduler[Command],
-    middleBuffer:MiddleBufferInJvm
+    timer:TimerScheduler[Command]
+//    middleBuffer:MiddleBufferInJvm
   ): Behavior[Command] =
     Behaviors.receive[Command] { (ctx, msg) =>
       msg match {
