@@ -1,9 +1,10 @@
-package com.neo.sk.medusa
+package com.neo.sk.medusa.actor
 
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
+import com.neo.sk.medusa.GridOnClient
+import com.neo.sk.medusa.snake.Protocol.{FailMsgServer, WsMsgSource}
 import com.neo.sk.medusa.snake.{Apple, Point, Protocol}
-import Protocol.{FailMsgServer, WsMsgSource}
 import org.slf4j.LoggerFactory
 
 /**
