@@ -162,21 +162,21 @@ trait Grid {
 
   def updateASnake(snake: SnakeInfo, actMap: Map[String, Int]): Either[String, SnakeInfo]
   
-  def getGridData = {
-    var bodyDetails: List[Bd] = Nil
-    var appleDetails: List[Ap] = Nil
-    grid.foreach {
-      case (p, Body(id, color)) => bodyDetails ::= Bd(id, p.x, p.y, color)
-      case (p, Apple(score, life, appleType, targetAppleOpt)) => appleDetails ::= Ap(score, life, appleType, p.x, p.y, targetAppleOpt)
-      case _ =>
-    }
-    GridData(
-      frameCount,
-      snakes.values.toList,
-      bodyDetails,
-      appleDetails
-    )
-  }
+//  def getGridData = {
+//    var bodyDetails: List[Bd] = Nil
+//    var appleDetails: List[Ap] = Nil
+//    grid.foreach {
+//      case (p, Body(id, color)) => bodyDetails ::= Bd(id, p.x, p.y, color)
+//      case (p, Apple(score, life, appleType, targetAppleOpt)) => appleDetails ::= Ap(score, life, appleType, p.x, p.y, targetAppleOpt)
+//      case _ =>
+//    }
+//    GridData(
+//      frameCount,
+//      snakes.values.toList,
+//      bodyDetails,
+//      appleDetails
+//    )
+//  }
   
   def getGridSyncData = {
     var appleDetails: List[Ap] = Nil

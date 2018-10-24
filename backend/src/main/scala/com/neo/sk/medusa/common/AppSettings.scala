@@ -30,7 +30,8 @@ object AppSettings {
   val gsKey = appConfig.getString("gameInfo.gsKey")
   val gameId = appConfig.getLong("gameInfo.gameId")
   val esheepSecureKey = ""
-  val recordPath = appConfig.getString("recordPath")
+  val recordPath = appConfig.getString("record.recordPath")
+  val isRecord = appConfig.getBoolean("record.isRecord")
 
   val slickConfig = config.getConfig("slick.db")
   val slickUrl = slickConfig.getString("url")
@@ -40,5 +41,6 @@ object AppSettings {
   val slickConnectTimeout = slickConfig.getInt("connectTimeout")
   val slickIdleTimeout = slickConfig.getInt("idleTimeout")
   val slickMaxLifetime = slickConfig.getInt("maxLifetime")
+
 
 }
