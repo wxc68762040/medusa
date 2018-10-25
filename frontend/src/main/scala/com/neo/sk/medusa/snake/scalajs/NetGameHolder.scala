@@ -89,10 +89,8 @@ object NetGameHolder extends js.JSApp {
 
     GameInfo.setStartBg()
 
-    val hash = dom.window.location.hash.drop(1)
-    val info = hash.split("\\?")
-    joinGame(info(0), info(1))
-    state = info(0)
+    state = dom.window.location.pathname.replace("medusa","").drop(1)
+    joinGame(state, dom.window.location.search)
     dom.window.requestAnimationFrame(drawLoop())
   }
 
@@ -189,11 +187,11 @@ object NetGameHolder extends js.JSApp {
   val netInfoHandler = new NetInfoHandler()
 
 
-  def joinGame(path:String, playerInfo:String): Unit = {
+  def joinGame(path:String, parameters:String): Unit = {
     //joinButton.disabled = true
     val playground = dom.document.getElementById("playground")
     playground.innerHTML = s"Trying to join game ."
-    val gameStream = new WebSocket(getWebSocketUri(dom.document, path, playerInfo))
+    val gameStream = new WebSocket(getWebSocketUri(dom.document, path, parameters))
 
     gameStream.onopen = { (event0: Event) =>
       dom.window.setInterval(() => {
@@ -204,7 +202,7 @@ object NetGameHolder extends js.JSApp {
       GameView.drawGameOn()
       playground.insertBefore(p("Game connection was successful!"), playground.firstChild)
       wsSetup = true
-      if(state == "playGame") {
+      if(state.contains("playGame")) {
         GameView.canvas.focus()
         GameView.canvas.onkeydown = {
           (e: dom.KeyboardEvent) => {
@@ -357,9 +355,9 @@ object NetGameHolder extends js.JSApp {
     def writeToArea(text: String): Unit =
       playground.insertBefore(p(text), playground.firstChild)
   }
-  def getWebSocketUri(document: Document, path: String, playerInfo:String): String = {
+  def getWebSocketUri(document: Document, path: String, parameters:String): String = {
     val wsProtocol = if (dom.document.location.protocol == "https:") "wss" else "ws"
-    s"$wsProtocol://${dom.document.location.host}/medusa/game/$path?" + playerInfo
+    s"$wsProtocol://${dom.document.location.host}/medusa/link$path" + parameters
   }
 
   def p(msg: String) = {
