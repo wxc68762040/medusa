@@ -8,14 +8,15 @@ import javafx.scene.layout.{GridPane, Pane}
 import javafx.scene.paint.{Color, Paint}
 
 import akka.actor.typed.ActorRef
-import com.neo.sk.medusa.BootTest.wsClient
 import com.neo.sk.medusa.actor.WSClient
 import com.neo.sk.medusa.actor.WSClient.ConnectGame
+import com.neo.sk.medusa.common.StageContext
+import com.neo.sk.medusa.controller.{GameController, GridOnClient}
 
 /**
 	* Created by wangxicheng on 2018/10/24.
 	*/
-class LoginScene(wsClient: ActorRef[WSClient.WsCommand]) {
+class LoginScene(wsClient: ActorRef[WSClient.WsCommand], stageCtx: StageContext) {
 	
 	val width = 500
 	val height = 500
