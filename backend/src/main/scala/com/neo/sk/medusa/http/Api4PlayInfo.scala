@@ -5,12 +5,9 @@ import akka.actor.{ActorSystem, Scheduler}
 import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.stream.scaladsl.Flow
 import akka.stream.{ActorAttributes, Materializer, Supervision}
-import akka.util.{ByteString, Timeout}
 import org.slf4j.LoggerFactory
-
-import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.concurrent.Future
 import com.neo.sk.medusa.Boot.{executor, roomManager, scheduler, timeout}
 import com.neo.sk.medusa.core.UserManager
 import akka.actor.typed.scaladsl.AskPattern._

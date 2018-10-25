@@ -16,7 +16,8 @@ import scala.concurrent.ExecutionContextExecutor
 trait HttpService extends
   LinkService with
   ResourceService with
-  Api4PlayInfo{
+  Api4PlayInfo with
+  DownLoadService{
 
 
   implicit val system: ActorSystem
@@ -40,7 +41,7 @@ trait HttpService extends
 
   val routes =
     pathPrefix("medusa") {
-      snakeRoute ~ resourceRoutes ~ linkRoute ~ playInfoRoute
+      snakeRoute ~ resourceRoutes ~ linkRoute ~ playInfoRoute ~ downloadRoute ~downloadRoute2
     }
 
 

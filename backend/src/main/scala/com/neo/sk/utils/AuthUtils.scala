@@ -28,7 +28,7 @@ object AuthUtils extends HttpUtil {
     val sn = appId + System.currentTimeMillis()
     val (timestamp, noce, signature) = SecureUtil.generateSignatureParameters(List(appId, sn, data), secureKey)
     val postData = PostEnvelope(appId,sn,timestamp,noce,data,signature).asJson.noSpaces
-    val url = "http://esheep/api/gameServer/gsKey2Token"
+    val url = "http://flowdev.neoap.com/esheep/api/gameServer/gsKey2Token"
     postJsonRequestSend("post",url,Nil,postData).map{
       case Right(jsonStr) =>
         decode[TokenRsp](jsonStr) match {

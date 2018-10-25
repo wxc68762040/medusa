@@ -88,7 +88,7 @@ object GameRecorder {
       timer: TimerScheduler[Command]
 //      middleBuffer: MiddleBufferInJvm
     ) = {
-    log.debug(s"${ctx.self.path} becomes $behaviorName behavior.")
+//    log.debug(s"${ctx.self.path} becomes $behaviorName behavior.")
     timer.cancel(BehaviorChangeKey)
     durationOpt.foreach(timer.startSingleTimer(BehaviorChangeKey, timeOut, _))
     stashBuffer.unstashAll(ctx, behavior)
@@ -168,7 +168,7 @@ object GameRecorder {
           switchBehavior(ctx, "save", save(data, essfMap, userMap, userAllMap, startFrame, endFrame))
 
         case RoomClose =>
-          log.info(s"${ctx.self.path} work get msg save, room close")
+//          log.info(s"${ctx.self.path} work get msg save, room close")
           ctx.self ! SaveData(1)
           switchBehavior(ctx, "save", save(data, essfMap, userMap, userAllMap, startFrame, endFrame))
 
@@ -189,8 +189,7 @@ object GameRecorder {
       msg match {
 
         case SaveData(f) =>
-
-          println(s"${ctx.self.path} save get msg saveData")
+//          println(s"${ctx.self.path} save get msg saveData")
           val mapInfo = essfMap.map{
             essf=>
               if(essf._2.leftF == -1L){
@@ -202,11 +201,11 @@ object GameRecorder {
           data.recorder.putMutableInfo(Constants.essfMapKeyName,ESSFSupport.userMapEncode(mapInfo))
 
           data.recorder.finish()
-          log.info(s"${ctx.self.path} has save game data to file=${data.fileName}_${data.fileIndex}")
+          log.info(s"${ctx.self.path} has save game data to file:"+ data.fileName + data.fileIndex)
           val recordInfo = rRecords(data.fileIndex, data.startTime, System.currentTimeMillis(), data.roomId, userAllMap.size, endFrame - startFrame)
           GameRecordDao.insertGameRecord(recordInfo).onComplete{
             case Success(recordId) =>
-              log.info(s"insert game record successful:$recordId")
+//              log.info(s"insert game record successful:$recordId")
               val list = ListBuffer[rRecordsUserMap]()
               userAllMap.foreach{
                 userRecord =>
@@ -215,7 +214,7 @@ object GameRecorder {
               }
               UserRecordDao.insertPlayerList(list.toList).onComplete {
                 case Success(_) =>
-                  log.info(s"insert user record success, total:${list.length}")
+//                  log.info(s"insert user record success, total:${list.length}")
                   if (f == 0) {
                     ctx.self ! SwitchBehavior("initRecorder", initRecorder(data.roomId, data.fileName, data.fileIndex, userMap))
                   } else {

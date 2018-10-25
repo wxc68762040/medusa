@@ -31,7 +31,7 @@ object ESSFSupport {
     if(!dir.exists()){
       dir.mkdir()
     }
-    val file = AppSettings.recordPath + fileName + s"_$index"
+    val file = AppSettings.recordPath + fileName + index
     val name = "medusa"
     val version = "0.1"
     val gameInformationBytes = gameInformation.fillMiddleBuffer(middleBuffer).result()
