@@ -1,5 +1,8 @@
 package com.neo.sk.medusa.controller
 
+import javafx.animation.{KeyFrame, Timeline}
+import javafx.util.Duration
+
 import akka.actor.typed.ActorRef
 import akka.actor.typed.scaladsl.AskPattern._
 import com.neo.sk.medusa.ClientBoot
@@ -37,5 +40,11 @@ class GameController(id: String,
 		}
 	}
 	
-	
+	def startGameLoop() = {
+		val timeline = new Timeline()
+		val keyFrame = new KeyFrame(Duration.millis(16), { _ =>
+			println(11)
+		})
+		timeline.getKeyFrames.add(keyFrame)
+	}
 }
