@@ -11,6 +11,10 @@ import org.slf4j.LoggerFactory
 	* Created by wangxicheng on 2018/10/19.
 	*/
 object GameController {
+
+	val myId = ""
+	var basicTime = 0l
+	var myPorportion = 1.0
 	
 	private[this] val log = LoggerFactory.getLogger(this.getClass)
 	

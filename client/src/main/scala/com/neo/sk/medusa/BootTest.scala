@@ -13,7 +13,7 @@ import akka.actor.typed.scaladsl.adapter._
 import akka.http.scaladsl.Http
 import com.neo.sk.medusa.actor.{GameController, WSClient}
 import com.neo.sk.medusa.common.StageContext
-import com.neo.sk.medusa.scene.LoginScene
+import com.neo.sk.medusa.scene.{LoginScene,GameViewScene}
 import com.neo.sk.medusa.snake.{Boundary, Point}
 
 import scala.util.{Failure, Success}
@@ -46,8 +46,16 @@ class BootTest extends javafx.application.Application {
 	override def start(mainStage: Stage): Unit = {
 		val context = new StageContext(mainStage)
 		val loginScene = new LoginScene(wsClient)
+
+		val gameViewScene = new GameViewScene(grid)
+
+
+		//mainStage.setMaximized(true)
 		
 		context.switchScene(loginScene.scene, "Login")
+		context.switchScene(gameViewScene.GameViewScene,"Medusa")
+
+
 		
 	}
 	
