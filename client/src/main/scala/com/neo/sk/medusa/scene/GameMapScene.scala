@@ -15,7 +15,7 @@ import com.neo.sk.medusa.snake.Protocol.{GridDataSync, _}
 import com.neo.sk.medusa.snake._
 import javafx.scene.paint.Color
 
-import  com.neo.sk.medusa.actor.GameController._
+import com.neo.sk.medusa.controller.GameController._
 
 /**
   * User: gaohan

@@ -13,6 +13,14 @@ import com.neo.sk.medusa.snake.{Boundary, Point, Protocol}
 /**
 	* Created by wangxicheng on 2018/10/25.
 	*/
+object GameController {
+	val bounds = Point(Boundary.w, Boundary.h)
+	val grid = new GridOnClient(bounds)
+	val myId = ""
+	var basicTime = 0l
+	var myPorportion = 1.0
+}
+
 class GameController(id: String,
 										 name: String,
 										 accessCode: String,
@@ -20,8 +28,7 @@ class GameController(id: String,
 										 gameScene: GameScene,
 										 wsClient: ActorRef[Protocol.WsSendMsg]) {
 	
-	val bounds = Point(Boundary.w, Boundary.h)
-	val grid = new GridOnClient(bounds)
+	import GameController._
 	
 	def connectToGameServer = {
 		ClientBoot.addToPlatform {
