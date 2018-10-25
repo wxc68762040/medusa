@@ -69,7 +69,8 @@ object WSClient {
 					val connected = response.flatMap { upgrade =>
 						if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
 							ctx.schedule(10.seconds, stream, NetTest(id, System.currentTimeMillis()))
-							val gameController = new GameController(id, name, accessCode, stageCtx, stream)
+							val gameScene = new GameScene()
+							val gameController = new GameController(id, name, accessCode, stageCtx, gameScene, stream)
 							gameController.connectToGameServer
 							Future.successful(s"$logPrefix connect success.")
 						} else {
