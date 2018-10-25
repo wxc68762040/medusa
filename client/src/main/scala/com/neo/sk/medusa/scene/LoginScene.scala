@@ -40,8 +40,8 @@ class LoginScene(wsClient: ActorRef[WSClient.WsCommand], stageCtx: StageContext)
 		wsClient ! ConnectGame(id, name, accessCode)
 	})
 	
-	def drawScanUrl(scanUrl: String) = {
-	
-	}
+//	def drawScanUrl(scanUrl: String) = {
+//
+//	}
 	
 }
