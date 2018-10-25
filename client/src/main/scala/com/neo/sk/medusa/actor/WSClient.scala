@@ -69,8 +69,7 @@ object WSClient {
 					val connected = response.flatMap { upgrade =>
 						if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
 							ctx.schedule(10.seconds, stream, NetTest(id, System.currentTimeMillis()))
-							val gameScene = new GameScene()
-							val gameController = new GameController(id, name, accessCode, stageCtx, gameScene, stream)
+							val gameController = new GameController(id, name, accessCode, stageCtx, stream)
 							gameController.connectToGameServer
 							Future.successful(s"$logPrefix connect success.")
 						} else {
@@ -124,6 +123,6 @@ object WSClient {
 	def getWebSocketUri(playerId: String, playerName: String, accessCode: String): String = {
 		val wsProtocol = "ws"
 		val host ="localhost:30372"
-		s"$wsProtocol://$host/medusa/playGameClient?playerId=$playerId&playerName=$playerName&accessCode=$accessCode"
+		s"$wsProtocol://$host/medusa/link/playGameClient?playerId=$playerId&playerName=$playerName&accessCode=$accessCode"
 	}
 }

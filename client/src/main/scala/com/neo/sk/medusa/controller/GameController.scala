@@ -25,15 +25,16 @@ class GameController(id: String,
 										 name: String,
 										 accessCode: String,
 										 stageCtx: StageContext,
-										 gameScene: GameScene,
 										 wsClient: ActorRef[Protocol.WsSendMsg]) {
 	
 	import GameController._
 	
 	def connectToGameServer = {
 		ClientBoot.addToPlatform {
+      val gameScene = new GameScene()
 			stageCtx.switchScene(gameScene.scene, "Gaming")
 			gameMessageReceiver ! GridInitial(grid)
+
 		}
 	}
 	
