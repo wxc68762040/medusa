@@ -15,6 +15,8 @@ import com.neo.sk.medusa.actor.{GameMessageReceiver, WSClient}
 import com.neo.sk.medusa.common.StageContext
 import com.neo.sk.medusa.scene.{GameScene, GameViewScene, LoginScene}
 import com.neo.sk.medusa.controller.{GridOnClient, LoginController}
+import com.neo.sk.medusa.scene.{LoginScene,GameViewCanvas,GameScene}
+import com.neo.sk.medusa.controller.GridOnClient
 import com.neo.sk.medusa.snake.{Boundary, Point}
 
 import scala.util.{Failure, Success}

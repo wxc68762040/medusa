@@ -124,6 +124,6 @@ object WSClient {
 	def getWebSocketUri(playerId: String, playerName: String, accessCode: String): String = {
 		val wsProtocol = "ws"
 		val host ="localhost:30372"
-		s"$wsProtocol://$host/medusa/playGameClient?playerId=$playerId&playerName=$playerName&accessCode=$accessCode"
+		s"$wsProtocol://$host/medusa/link/playGameClient?playerId=$playerId&playerName=$playerName&accessCode=$accessCode"
 	}
 }
