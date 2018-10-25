@@ -72,7 +72,7 @@ object RoomActor {
                    userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String)], grid: GridOnServer)
                   (implicit timer: TimerScheduler[RoomActor.Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
-      (_, msg) =>
+      (ctx, msg) =>
         msg match {
           case t: UserJoinGame =>
             log.debug(s"room $roomId got a new player: ${t.playerId}")
@@ -205,7 +205,7 @@ object RoomActor {
     val childName = s"gameRecorder" + roomId
     ctx.child(childName).getOrElse{
       val curTime = System.currentTimeMillis()
-      val fileName = s"tankGame_${curTime}"
+      val fileName = s"medusa_$curTime"
       val gameInformation = ""
       val initStateOpt = Some(grid.getGridSyncData)
       val actor = ctx.spawn(GameRecorder.create(fileName,gameInformation,initStateOpt,roomId),childName)

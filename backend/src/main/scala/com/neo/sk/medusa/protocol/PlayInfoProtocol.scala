@@ -13,7 +13,7 @@ object PlayInfoProtocol {
   }
 
   //room
-  case class GetRoomIdReq(playId:String) //之后记得改
+  case class GetRoomIdReq(playerId:String) //之后记得改
 
   case class RoomInfo(roomId:Long)
 

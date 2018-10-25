@@ -67,7 +67,7 @@ trait LinkService extends ServiceUtils {
   }
 
   private val watchRecordRoute = path("watchRecord"){
-    parameter('recordId.as[Long], 'playerId.as[String], 'watchPlayerId.as[Long], 'frame.as[Long]){
+    parameter('recordId.as[Long], 'playerId.as[String], 'watchPlayerId.as[String], 'frame.as[Long]){
       (recordId, playerId, watchPlayerId, frame) =>
         complete()
     }
