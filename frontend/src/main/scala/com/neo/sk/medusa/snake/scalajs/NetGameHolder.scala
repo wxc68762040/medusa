@@ -126,38 +126,38 @@ object NetGameHolder extends js.JSApp {
     eatenApples = eatenApples.filterNot{ apple => !grid.snakes.exists(_._2.id == apple._1)}
 
     eatenApples.foreach { info =>
-        val snakeOpt = grid.snakes.get(info._1)
-        if (snakeOpt.isDefined) {
-          val snake = snakeOpt.get
-          val applesOpt = eatenApples.get(info._1)
-          var apples = List.empty[AppleWithFrame]
-          if (applesOpt.isDefined) {
-            apples = applesOpt.get
-            if (apples.nonEmpty) {
-              apples = apples.map { apple =>
-                grid.grid -= Point(apple.apple.x, apple.apple.y)
-                if (apple.apple.appleType != FoodType.intermediate) {
-                  val newLength = snake.length + apple.apple.score
-                  val newExtend = snake.extend + apple.apple.score
-                  val newSnakeInfo = snake.copy(length = newLength, extend = newExtend)
-                  grid.snakes += (snake.id -> newSnakeInfo)
+      val snakeOpt = grid.snakes.get(info._1)
+      if (snakeOpt.isDefined) {
+        val snake = snakeOpt.get
+        val applesOpt = eatenApples.get(info._1)
+        var apples = List.empty[AppleWithFrame]
+        if (applesOpt.isDefined) {
+          apples = applesOpt.get
+          if (apples.nonEmpty) {
+            apples = apples.map { apple =>
+              grid.grid -= Point(apple.apple.x, apple.apple.y)
+              if (apple.apple.appleType != FoodType.intermediate) {
+                val newLength = snake.length + apple.apple.score
+                val newExtend = snake.extend + apple.apple.score
+                val newSnakeInfo = snake.copy(length = newLength, extend = newExtend)
+                grid.snakes += (snake.id -> newSnakeInfo)
+              }
+              val nextLocOpt = Point(apple.apple.x, apple.apple.y).pathTo(snake.head, Some(apple.frameCount, grid.frameCount))
+              if (nextLocOpt.nonEmpty) {
+                val nextLoc = nextLocOpt.get
+                grid.grid.get(nextLoc) match {
+                  case Some(Body(_, _)) => AppleWithFrame(apple.frameCount, invalidApple)
+                  case _ =>
+                    val nextApple = Apple(apple.apple.score, apple.apple.life, FoodType.intermediate)
+                    grid.grid += (nextLoc -> nextApple)
+                    AppleWithFrame(apple.frameCount, Ap(apple.apple.score, apple.apple.life, FoodType.intermediate, nextLoc.x, nextLoc.y))
                 }
-                val nextLocOpt = Point(apple.apple.x, apple.apple.y).pathTo(snake.head, Some(apple.frameCount, grid.frameCount))
-                if (nextLocOpt.nonEmpty) {
-                  val nextLoc = nextLocOpt.get
-                  grid.grid.get(nextLoc) match {
-                    case Some(Body(_, _)) => AppleWithFrame(apple.frameCount, invalidApple)
-                    case _ =>
-                      val nextApple = Apple(apple.apple.score, apple.apple.life, FoodType.intermediate)
-                      grid.grid += (nextLoc -> nextApple)
-                      AppleWithFrame(apple.frameCount, Ap(apple.apple.score, apple.apple.life, FoodType.intermediate, nextLoc.x, nextLoc.y))
-                  }
-                } else AppleWithFrame(apple.frameCount, invalidApple)
-              }.filterNot(a => a.apple == invalidApple)
-              eatenApples += (snake.id -> apples)
-            }
+              } else AppleWithFrame(apple.frameCount, invalidApple)
+            }.filterNot(a => a.apple == invalidApple)
+            eatenApples += (snake.id -> apples)
           }
         }
+      }
     }
 
   }
@@ -267,9 +267,9 @@ object NetGameHolder extends js.JSApp {
                     grid.addActionWithFrame(id, keyCode, frame)
                   }
                 case Protocol.DistinctSnakeAction(keyCode, frame ,frontFrame) =>
-                  //                  println(s"当前前端帧数frameCount:${grid.frameCount}")
-                  //                  println(s"actionMap保存最大帧数:${grid.actionMap.keySet.max}")
-                  //                  println(s"savedGrid保存最大帧数:${savedGrid.keySet.max}")
+//                  println(s"当前前端帧数frameCount:${grid.frameCount}")
+//                  println(s"actionMap保存最大帧数:${grid.actionMap.keySet.max}")
+//                  println(s"savedGrid保存最大帧数:${savedGrid.keySet.max}")
                   val savedAction=grid.actionMap.get(frontFrame-Protocol.advanceFrame)
                   if(savedAction.nonEmpty) {
                     val delAction=savedAction.get - myId
@@ -277,10 +277,10 @@ object NetGameHolder extends js.JSApp {
                     grid.actionMap += (frontFrame-Protocol.advanceFrame -> delAction)
                     grid.actionMap += (frame-Protocol.advanceFrame -> addAction)
                     updateCounter = grid.frameCount-(frontFrame-Protocol.advanceFrame)
-                    //                    println(s"updateCounter更新次数：$updateCounter")
-                    //                    println(s"传输到后端的frontFrame:$frontFrame")
+//                    println(s"updateCounter更新次数：$updateCounter")
+//                    println(s"传输到后端的frontFrame:$frontFrame")
                     sync(savedGrid.get(frontFrame-Protocol.advanceFrame))
-                    //                    println(s"sync之后前端帧数frameCount:${grid.frameCount}")
+//                    println(s"sync之后前端帧数frameCount:${grid.frameCount}")
                     for(_ <- 1 to updateCounter.toInt){
                       update(false)
                     }
@@ -320,8 +320,8 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.NetDelayTest(createTime) =>
                   val receiveTime = System.currentTimeMillis()
                   netInfoHandler.ping = receiveTime - createTime
-                //                  val m = s"Net Delay Test: createTime=$createTime, receiveTime=$receiveTime, twoWayDelay=${receiveTime - createTime}, ping: ${netInfoHandler.ping}"
-                //                  writeToArea(m)
+//                  val m = s"Net Delay Test: createTime=$createTime, receiveTime=$receiveTime, twoWayDelay=${receiveTime - createTime}, ping: ${netInfoHandler.ping}"
+//                  writeToArea(m)
                 case Protocol.DeadInfo(myName, myLength, myKill, killer) =>
                   deadName = myName
                   deadLength = myLength
