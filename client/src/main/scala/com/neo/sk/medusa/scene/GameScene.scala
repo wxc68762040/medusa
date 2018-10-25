@@ -28,6 +28,10 @@ class GameScene() {
   val infoCanvas = new Canvas(infoWidth, infoHeight)
 
 	val scene = new Scene(group)
+
+	val windowWidth = scene.getWidth
+	val windowHeight = scene.getHeight
+
 	group.getChildren.add(mapCanvas)
 	group.getChildren.add(viewCanvas)
 	group.getChildren.add(infoCanvas)
