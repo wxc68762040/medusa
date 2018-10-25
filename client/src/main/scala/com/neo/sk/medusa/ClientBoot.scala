@@ -1,9 +1,6 @@
 package com.neo.sk.medusa
 
 import javafx.application.{Application, Platform}
-import javafx.event.ActionEvent
-import javafx.scene.{Group, Scene}
-import javafx.scene.control.Button
 import javafx.stage.Stage
 
 import akka.actor.{ActorSystem, Scheduler}
@@ -13,11 +10,8 @@ import akka.actor.typed.scaladsl.adapter._
 import akka.http.scaladsl.Http
 import com.neo.sk.medusa.actor.{GameMessageReceiver, WSClient}
 import com.neo.sk.medusa.common.StageContext
-import com.neo.sk.medusa.scene.{GameScene, GameViewScene, LoginScene}
 import com.neo.sk.medusa.controller.{GridOnClient, LoginController}
-import com.neo.sk.medusa.scene.{LoginScene,GameViewCanvas,GameScene}
-import com.neo.sk.medusa.controller.GridOnClient
-import com.neo.sk.medusa.snake.{Boundary, Point}
+import com.neo.sk.medusa.scene.{LoginScene, GameViewCanvas, GameScene}
 
 import scala.util.{Failure, Success}
 
@@ -51,14 +45,11 @@ class ClientBoot extends javafx.application.Application {
 		loginController.showScene()
 //		val gameViewScene = new GameViewScene(grid)
 
-
-		//mainStage.setMaximized(true)
-		
+//		mainStage.setMaximized(true)
 		
 //		context.switchScene(gameViewScene.GameViewScene,"Medusa")
 
-
-		
+	
 	}
 	
 }
