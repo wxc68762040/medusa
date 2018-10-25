@@ -33,17 +33,20 @@ trait HttpService extends
 
 
   val snakeRoute = {
-    (path("snake") & get) {
-      getFromResource("html/mySnake.html")
+    (path("playGame") & get) {
+      getFromResource("html/netSnake.html")
+    } ~ (path("watchGame") & get){
+      getFromResource("html/netSnake.html")
+    } ~ (path("watchRecord") & get){
+      getFromResource("html/netSnake.html")
     }
   }
 
 
   val routes =
-    pathPrefix("medusa") {
-      snakeRoute ~ resourceRoutes ~ linkRoute ~ playInfoRoute ~ downloadRoute ~downloadRoute2
+    (pathPrefix("medusa") & get) {
+       snakeRoute ~ resourceRoutes  ~ linkRoute ~ playInfoRoute ~ downloadRoute ~ downloadRoute2
     }
-
 
 
 
