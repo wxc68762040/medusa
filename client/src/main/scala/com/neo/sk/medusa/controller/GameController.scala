@@ -75,14 +75,13 @@ class GameController(id: String,
 		basicTime = System.currentTimeMillis()
 		val animationTimer = new AnimationTimer() {
 			override def handle(now: Long): Unit = {
-				gameScene.draw(myId, grid.getGridSyncData)
+				gameScene.draw(grid.myId, grid.getGridSyncData)
 			}
 		}
 		val timeline = new Timeline()
 		timeline.setCycleCount(Animation.INDEFINITE)
 		val keyFrame = new KeyFrame(Duration.millis(100), { _ =>
 			logicLoop()
-			println(grid.snakes.filter(_._1 == myId).map(_._2.head))
 		})
 		timeline.getKeyFrames.add(keyFrame)
 		animationTimer.start()
@@ -107,11 +106,11 @@ class GameController(id: String,
 		override def onKeyPressed(key: KeyCode): Unit = {
 			if (watchKeys.contains(key)) {
 				val msg: Protocol.UserAction = if (key == KeyCode.F2) {
-					NetTest(myId, System.currentTimeMillis())
+					NetTest(grid.myId, System.currentTimeMillis())
 				} else {
 					grid.addActionWithFrame(grid.myId, keyCode2Int(key), grid.frameCount + operateDelay)
+					println(s"press ${keyCode2Int(key)}")
 					Key(grid.myId, keyCode2Int(key), grid.frameCount + advanceFrame + operateDelay)
-					NetTest(myId, System.currentTimeMillis())
 				}
 				serverActor ! msg
 			}

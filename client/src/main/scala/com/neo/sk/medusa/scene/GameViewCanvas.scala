@@ -50,11 +50,11 @@ class GameViewCanvas(canvas: Canvas) {
   def drawSnake(uid: String, data:GridDataSync):Unit = {
 
     val period = (System.currentTimeMillis() - basicTime).toInt
-    println(period)
+    //println(period)
     val snakes = data.snakes
-    println(snakes)
+    //println(snakes)
     val apples = data.appleDetails
-    println(apples)
+   // println(apples)
 
     val mySubFrameRevise =
       try {

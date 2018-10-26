@@ -7,9 +7,9 @@ import javafx.scene.canvas.Canvas
 import javafx.scene.control.Button
 import javafx.scene.paint.Color
 import javafx.util.Duration
-
 import com.neo.sk.medusa.model.GridOnClient
 import com.neo.sk.medusa.snake.Protocol
+import javafx.scene.input.KeyCode
 
 
 /**
@@ -29,8 +29,8 @@ class GameScene() {
 
 	val widthMap = 500
 	val heightMap = 500
-	val viewWidth = 1500
-	val viewHeight = 800
+	val viewWidth =1200
+	val viewHeight =600
 	val infoWidth = 1500
 	val infoHeight = 800
 	val group = new Group
@@ -39,9 +39,9 @@ class GameScene() {
   val infoCanvas = new Canvas(infoWidth, infoHeight)
 
 	val scene = new Scene(group)
-  group.getChildren.add(mapCanvas)
+ // group.getChildren.add(mapCanvas)
 	group.getChildren.add(viewCanvas)
-	group.getChildren.add(infoCanvas)
+	//group.getChildren.add(infoCanvas)
 
 	val map = new GameMapCanvas(mapCanvas)
 	val info = new GameInfoCanvas(infoCanvas)
