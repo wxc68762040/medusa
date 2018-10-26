@@ -7,7 +7,7 @@ import javafx.scene.canvas.Canvas
 import javafx.scene.control.Button
 import javafx.scene.paint.Color
 import javafx.util.Duration
-
+import com.neo.sk.medusa.snake.Protocol
 import com.neo.sk.medusa.controller.GridOnClient
 
 
@@ -35,7 +35,11 @@ class GameScene() {
 	val map = new GameMapCanvas(mapCanvas)
 	val info = new GameInfoCanvas(infoCanvas)
 	val view = new GameViewCanvas(viewCanvas)
+  viewCanvas.requestFocus()
 
+	def draw(myId:String, data: Protocol.GridDataSync): Unit ={
+
+	}
 	
 	
 }

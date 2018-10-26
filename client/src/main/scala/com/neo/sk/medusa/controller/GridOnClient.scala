@@ -56,7 +56,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
     val oldHead = snake.head
     
     val foodEaten = eatFood(snake.id, newHead, newSpeed, speedOrNot)
-    
+    var myId = ""
     val foodSum = if (foodEaten.nonEmpty) {
       newSpeed = foodEaten.get._2
       speedOrNot = foodEaten.get._3
