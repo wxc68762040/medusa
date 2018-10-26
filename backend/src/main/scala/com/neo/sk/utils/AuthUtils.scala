@@ -54,7 +54,7 @@ object AuthUtils extends HttpUtil {
   case class Wrap(playerInfo:PlayerInfo)
   case class VerifyRsp(data:Wrap,errCode:Int, msg:String)
 
-  def verifyAccessCode(accessCode:String){
+  def verifyAccessCode(accessCode:String):Future[Either[String,Wrap]]={
     val data = VerifyInfo(gameId, accessCode).asJson.noSpaces
     val sn = appId + System.currentTimeMillis()
     val (timestamp, noce, signature) = SecureUtil.generateSignatureParameters(List(appId, sn, data), secureKey)
