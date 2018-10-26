@@ -1,4 +1,4 @@
-package com.neo.sk.medusa.controller
+package com.neo.sk.medusa.model
 
 import java.awt.event.KeyEvent
 
@@ -120,13 +120,13 @@ class GridOnClient(override val boundary: Point) extends Grid {
 	var eatenApples  = Map[String, List[AppleWithFrame]]()
 	var savedGrid = Map[Long,Protocol.GridDataSync]()
 	var syncData: scala.Option[Protocol.GridDataSync] = None
-	var waitingShowKillList=List.empty[(String,String)]
+	var waitingShowKillList = List.empty[(String,String)]
 	
 	
 	def sync(dataOpt: scala.Option[Protocol.GridDataSync]) = {
 		if (dataOpt.nonEmpty) {
 			val data = dataOpt.get
-			//      grid.actionMap = grid.actionMap.filterKeys(_ >= data.frameCount - 1 - advanceFrame)
+//      grid.actionMap = grid.actionMap.filterKeys(_ >= data.frameCount - 1 - advanceFrame)
 			val presentFrame = frameCount
 			frameCount = data.frameCount
 			snakes = data.snakes.map(s => s.id -> s).toMap

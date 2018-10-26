@@ -95,7 +95,7 @@ class GameInfoCanvas(canvas: Canvas) {
 
     infoCtx.setFont(Font.font("18px Helvetica"))
     var i = 1
-    waitingShowKillList.foreach{
+    grid.waitingShowKillList.foreach{
       j =>
         if(j._1 != grid.myId){
           infoCtx.fillText(s"你击杀了 ${j._2}",centerX - 120,i*20)

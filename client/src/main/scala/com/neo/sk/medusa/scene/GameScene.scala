@@ -8,14 +8,24 @@ import javafx.scene.control.Button
 import javafx.scene.paint.Color
 import javafx.util.Duration
 
-import com.neo.sk.medusa.controller.GridOnClient
+import com.neo.sk.medusa.model.GridOnClient
 import com.neo.sk.medusa.snake.Protocol
 
 
 /**
 	* Created by wangxicheng on 2018/10/25.
 	*/
+
+object GameScene{
+	trait GameSceneListener {
+		def onKeyPressed(e: KeyCode): Unit
+	}
+}
+
 class GameScene() {
+
+	import GameScene._
+	var gameSceneListener: GameSceneListener = _
 
 	val widthMap = 500
 	val heightMap = 500
@@ -37,11 +47,15 @@ class GameScene() {
 	val info = new GameInfoCanvas(infoCanvas)
 	val view = new GameViewCanvas(viewCanvas)
   viewCanvas.requestFocus()
+	viewCanvas.setOnKeyPressed(event => gameSceneListener.onKeyPressed(event.getCode))
 
 	def draw(myId:String, data: Protocol.GridDataSync): Unit ={
     view.drawSnake(myId,data)
     map.drawMap(myId,data)
 		info.drawInfo(myId,data)
   }
-
+def setGameSceneListener(listener: GameSceneListener) {
+		gameSceneListener = listener
+	}
+	
 }

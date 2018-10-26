@@ -11,7 +11,7 @@ import akka.actor.typed.ActorRef
 import com.neo.sk.medusa.actor.WSClient
 import com.neo.sk.medusa.actor.WSClient.ConnectGame
 import com.neo.sk.medusa.common.StageContext
-import com.neo.sk.medusa.controller.{GameController, GridOnClient}
+import com.neo.sk.medusa.controller.GameController
 
 /**
 	* Created by wangxicheng on 2018/10/24.

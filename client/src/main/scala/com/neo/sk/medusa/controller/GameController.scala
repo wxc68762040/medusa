@@ -1,6 +1,7 @@
 package com.neo.sk.medusa.controller
 
-import javafx.animation.{KeyFrame, Timeline}
+import javafx.animation.{Animation, AnimationTimer, KeyFrame, Timeline}
+import javafx.scene.input.KeyCode
 import javafx.util.Duration
 import akka.actor.typed.ActorRef
 import akka.actor.typed.scaladsl.AskPattern._
@@ -9,8 +10,9 @@ import com.neo.sk.medusa.ClientBoot.gameMessageReceiver
 import com.neo.sk.medusa.actor.GameMessageReceiver.GridInitial
 import com.neo.sk.medusa.actor.WSClient
 import com.neo.sk.medusa.common.StageContext
+import com.neo.sk.medusa.model.GridOnClient
 import com.neo.sk.medusa.scene.GameScene
-import com.neo.sk.medusa.snake.Protocol.NetTest
+import com.neo.sk.medusa.snake.Protocol.{Key, NetTest}
 import com.neo.sk.medusa.snake.{Boundary, Point, Protocol}
 import javafx.scene.input.KeyCode
 import com.neo.sk.medusa.snake.Protocol._
@@ -24,6 +26,8 @@ object GameController {
 	val myRoomId = -1l
 	var basicTime = 0l
 	var myPorportion = 1.0
+	var firstCome = false
+
 
 	val watchKeys = Set(
 		KeyCode.SPACE,
@@ -45,10 +49,6 @@ object GameController {
 			case _ => KeyEvent.VK_F2
 		}
 	}
-
-	var firstCome = true
-
-	var waitingShowKillList=List.empty[(String,String)]
 }
 
 class GameController(id: String,
@@ -68,25 +68,53 @@ class GameController(id: String,
 		}
 	}
 
-	gameScene.viewCanvas.setOnKeyPressed({ event =>
-		if (watchKeys.contains(event.getCode)) {}
-		val msg: Protocol.UserAction = if (event.getCode == KeyCode.F2) {
-			NetTest(grid.myId, System.currentTimeMillis())
-		} else {
-			grid.addActionWithFrame(grid.myId, keyCode2Int(event.getCode), grid.frameCount + operateDelay)
-			Key(grid.myId, keyCode2Int(event.getCode), grid.frameCount + advanceFrame + operateDelay)
-		}
-		serverActor ! msg
-	})
+
 
 	def startGameLoop() = {
 
 		basicTime = System.currentTimeMillis()
+		val animationTimer = new AnimationTimer() {
+			override def handle(now: Long): Unit = {
+				gameScene.draw(myId, grid.getGridSyncData)
+			}
+		}
 		val timeline = new Timeline()
-		val keyFrame = new KeyFrame(Duration.millis(16), { _ =>
-			gameScene.draw(grid.myId, grid.getGridSyncData)
+		timeline.setCycleCount(Animation.INDEFINITE)
+		val keyFrame = new KeyFrame(Duration.millis(100), { _ =>
+			logicLoop()
+			println(grid.snakes.filter(_._1 == myId).map(_._2.head))
 		})
 		timeline.getKeyFrames.add(keyFrame)
+		animationTimer.start()
 		timeline.play()
 	}
+
+	private def logicLoop() = {
+		basicTime = System.currentTimeMillis()
+			if (!grid.justSynced) {
+				grid.update(false)
+			} else {
+				grid.sync(grid.syncData)
+				grid.syncData = None
+				grid.update(true)
+				grid.justSynced = false
+			}
+		grid.savedGrid += (grid.frameCount -> grid.getGridSyncData)
+		grid.savedGrid -= (grid.frameCount - Protocol.savingFrame - Protocol.advanceFrame)
+	}
+
+	gameScene.setGameSceneListener(new GameScene.GameSceneListener {
+		override def onKeyPressed(key: KeyCode): Unit = {
+			if (watchKeys.contains(key)) {
+				val msg: Protocol.UserAction = if (key == KeyCode.F2) {
+					NetTest(myId, System.currentTimeMillis())
+				} else {
+					grid.addActionWithFrame(grid.myId, keyCode2Int(key), grid.frameCount + operateDelay)
+					Key(grid.myId, keyCode2Int(key), grid.frameCount + advanceFrame + operateDelay)
+					NetTest(myId, System.currentTimeMillis())
+				}
+				serverActor ! msg
+			}
+		}
+	})
 }
