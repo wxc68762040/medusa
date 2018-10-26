@@ -5,6 +5,7 @@ import javafx.event.{ActionEvent, EventHandler}
 import javafx.scene.{Group, Scene}
 import javafx.scene.canvas.Canvas
 import javafx.scene.control.Button
+import javafx.scene.input.KeyCode
 import javafx.scene.paint.Color
 import javafx.util.Duration
 
@@ -14,8 +15,18 @@ import com.neo.sk.medusa.model.GridOnClient
 /**
 	* Created by wangxicheng on 2018/10/25.
 	*/
-class GameScene() {
 
+object GameScene{
+	trait GameSceneListener {
+		def onKeyPressed(e: KeyCode): Unit
+	}
+}
+
+class GameScene() {
+	
+	import GameScene._
+	var gameSceneListener: GameSceneListener = _
+	
 	val widthMap = 500
 	val heightMap = 500
 	val viewWidth = 600
@@ -36,6 +47,12 @@ class GameScene() {
 	val info = new GameInfoCanvas(infoCanvas)
 	val view = new GameViewCanvas(viewCanvas)
 
+	def draw(): Unit = {
 	
+	}
+	
+	def setGameSceneListener(listener: GameSceneListener) {
+		gameSceneListener = listener
+	}
 	
 }
