@@ -20,8 +20,17 @@ object GameController {
 	val bounds = Point(Boundary.w, Boundary.h)
 	val grid = new GridOnClient(bounds)
 	val myId = ""
+	val myRoomId = -1l
 	var basicTime = 0l
 	var myPorportion = 1.0
+	var deadName = ""
+	var deadLength=0
+	var deadKill=0
+	var yourKiller = ""
+
+	var firstCome = true
+
+	var waitingShowKillList=List.empty[(String,String)]
 }
 
 class GameController(id: String,

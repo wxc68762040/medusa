@@ -14,8 +14,8 @@ import javafx.util.Duration
 import com.neo.sk.medusa.snake.Protocol.{GridDataSync, _}
 import com.neo.sk.medusa.snake._
 import javafx.scene.paint.Color
-
 import com.neo.sk.medusa.controller.GameController._
+import javafx.scene.text.Font
 /**
   * User: gaohan
   * Date: 2018/10/23
@@ -41,7 +41,25 @@ class GameViewCanvas(canvas: Canvas) {
     val speedUpHeader = "#FFFF37"
   }
 
+  def drawGameOff(): Unit = {
+
+    ctx.drawImage(bgImage,0,0,windowWidth,windowHeight)
+    ctx.setFill(Color.web( "rgb(250, 250, 250)"))
+
+    if (firstCome) {
+      myPorportion = 1.0
+    } else {
+
+      ctx.setFont(Font.font("36px Helvetica"))
+      ctx.fillText("Ops, connection lost.", windowWidth / 2 - 250, windowHeight / 2 - 200)
+
+      myPorportion = 1.0
+    }
+
+  }
+
   def drawSnake(uid: String, data:GridDataSync):Unit = {
+
     val period = (System.currentTimeMillis() - basicTime).toInt
     val snakes = data.snakes
     val apples = data.appleDetails

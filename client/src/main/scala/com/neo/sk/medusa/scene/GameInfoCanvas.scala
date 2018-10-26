@@ -1,12 +1,120 @@
 package com.neo.sk.medusa.scene
 
+import com.neo.sk.medusa.snake.{Grid, Point}
+import com.neo.sk.medusa.snake.Protocol.GridDataSync
+import javafx.animation.{KeyFrame, Timeline}
+import javafx.event.{ActionEvent, EventHandler}
+import javafx.scene.canvas.{Canvas, GraphicsContext}
+import javafx.scene.effect.{BlendMode, BoxBlur}
+import javafx.scene.image.Image
+import javafx.scene.layout.Pane
+import javafx.scene.{Group, Scene}
+import javafx.stage.Stage
+import javafx.util.Duration
+import com.neo.sk.medusa.snake.Protocol.{GridDataSync, _}
+import com.neo.sk.medusa.snake._
+import javafx.scene.paint.Color
+import com.neo.sk.medusa.controller.GameController._
 import javafx.scene.{Group, Scene}
 import javafx.scene.canvas.Canvas
+import javafx.scene.text.Font
+
 /**
   * User: gaohan
   * Date: 2018/10/25
   * Time: 3:22 PM
   */
 class GameInfoCanvas(canvas: Canvas) {
+
+  val infoWidth = canvas.getWidth
+  val infoHeight = canvas.getHeight
+
+  var currentRank = List.empty[Score]
+  var historyRank = List.empty[Score]
+
+  val textLineHeight = 14
+  val infoCtx = canvas.getGraphicsContext2D
+
+  def drawTextLine (ctx: GraphicsContext, str: String, x: Int, lineNum: Int, lineBegin: Int = 0 ):Unit = {
+    ctx.fillText(str, x, (lineNum + lineBegin - 1) * textLineHeight)
+  }
+
+  def clearInfo(ctx: GraphicsContext): Unit = {
+    ctx.clearRect(0,0,infoWidth,infoHeight)
+  }
+
+  def drawInfo(uid: String, data:GridDataSync): Unit = {
+
+    clearInfo(infoCtx)
+
+    val snakes = data.snakes
+    val leftBegin = 10
+    val rightBegin = (infoWidth - 200).toInt
+
+    val centerX = infoWidth /2
+    val centerY = infoHeight /2
+
+    snakes.find(_.id == uid) match {
+      case Some(mySnake) =>
+        firstCome = false
+        val baseLine = 1
+        infoCtx.setFont(Font.font("12px Helvetica"))
+        infoCtx.setFill(Color.web("rgb(250,250,250)"))
+        drawTextLine(infoCtx, s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 1, baseLine)
+        drawTextLine(infoCtx, s"your kill = ${mySnake.kill}", leftBegin, 2, baseLine)
+        drawTextLine(infoCtx, s"your length = ${mySnake.length} ", leftBegin, 3, baseLine)
+//        drawTextLine(infoCtx, s"fps: ${netInfoHandler.fps.formatted("%.2f")} ping:${netInfoHandler.ping.formatted("%.2f")} dataps:${netInfoHandler.dataps.formatted("%.2f")}", leftBegin, 4, baseLine)
+//        drawTextLine(infoCtx, s"drawTimeAverage: ${netInfoHandler.drawTimeAverage}", leftBegin, 5, baseLine)
+        drawTextLine(infoCtx, s"roomId: $myRoomId", leftBegin, 6, baseLine)
+
+      case None =>
+        if (firstCome) {
+          infoCtx.setFont(Font.font("36px Helvetica"))
+        } else {
+          infoCtx.setFont(Font.font("24px Helvetica"))
+          infoCtx.setFill(Color.web("rgb(250, 250, 250)"))
+          //infoCtx.shadowBlur = 0
+          infoCtx.fillText(s"Your name   : $deadName", centerX - 150, centerY - 30)
+          infoCtx.fillText(s"Your length  : $deadLength", centerX - 150, centerY)
+          infoCtx.fillText(s"Your kill        : $deadKill", centerX - 150, centerY + 30)
+          infoCtx.fillText(s"Killer             : $yourKiller", centerX - 150, centerY + 60)
+          infoCtx.setFont(Font.font("36px Helvetica"))
+          infoCtx.fillText("Ops, Press Space Key To Restart!", centerX - 350, centerY - 150)
+          myPorportion = 1.0
+        }
+    }
+
+    infoCtx.setFont(Font.font("12px Helvetica"))
+
+    val currentRankBaseLine = 10
+    var index = 0
+    drawTextLine(infoCtx,s" --- Current Rank --- ", leftBegin, index, currentRankBaseLine)
+    currentRank.foreach{ score =>
+      index += 1
+      drawTextLine(infoCtx,s"[$index]: ${score.n.+("   ").take(8)} kill=${score.k} len=${score.l}",leftBegin,index,currentRankBaseLine)
+    }
+
+
+    val historyRankBaseLine = 2
+    index = 0
+    drawTextLine(infoCtx,s"---History Rank ---",rightBegin,index,historyRankBaseLine)
+    historyRank.foreach{ score  =>
+      index += 1
+      drawTextLine(infoCtx,s"[$index]: ${score.n.+("   ").take(8)} kill=${score.k} len= ${score.l}",rightBegin,index,historyRankBaseLine)
+    }
+
+    infoCtx.setFont(Font.font("18px Helvetica"))
+    var i = 1
+    waitingShowKillList.foreach{
+      j =>
+        if(j._1 != myId){
+          infoCtx.fillText(s"你击杀了 ${j._2}",centerX - 120,i*20)
+        }else {
+          infoCtx.fillText(s"你自杀了", centerX - 100,i*20)
+        }
+        i += 1
+    }
+  }
+
 
 }

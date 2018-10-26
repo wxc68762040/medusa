@@ -13,6 +13,7 @@ import javafx.stage.Stage
 import javafx.util.Duration
 import com.neo.sk.medusa.snake.Protocol.{GridDataSync, _}
 import com.neo.sk.medusa.snake._
+import com.neo.sk.medusa.scene._
 import javafx.scene.paint.Color
 
 import com.neo.sk.medusa.controller.GameController._
@@ -28,8 +29,8 @@ class GameMapCanvas(canvas: Canvas) {
 
   val mapCtx = canvas.getGraphicsContext2D
   val maxImage = new Image("file:/Users/gaohan/Desktop/medusa/client/src/main/resources/champion.png")
-  val mapWidth = 300
-  val mapHeight = 150
+  val mapWidth = canvas.getWidth
+  val mapHeight = canvas.getHeight
 
   mapCtx.fillRect(0,0,mapWidth,mapHeight)
 
