@@ -13,12 +13,17 @@ object Protocol4Agent {
                            )
     case class WsData(
                      userId:Long,
-                     token:String
+                     nickname:String,
+                     token:String,
+                     tokenExpireTime:Long
                      )
     case class WsResponse(
                         data:WsData,
                         errCode:Int = 0,
                         msg:String = "ok"
+                        )
+  case class Ws4AgentResponse(
+                               Ws4AgentRsp:WsResponse
                         )
   //连接游戏
     case class LinkGameData(
@@ -34,7 +39,7 @@ object Protocol4Agent {
                              )
     case class LinkResElement(
                                accessCode:String,
-                               gameServerInfo:GameServerInfo
+                               gsPrimaryInfo:GameServerInfo
                              )
     case class LinkGameRes(
                           data:LinkResElement,

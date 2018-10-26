@@ -166,7 +166,7 @@ trait LinkService extends ServiceUtils {
       dealFutureResult{
       AuthUtils.getToken().map{
           case Right(ti) =>
-            if(ti.gsToken==token){
+            if(ti==token){
               dealPostReq[DownloadRecordFile] { g =>
                 getRecordId(g.recordId).map{ r=>
                   val fileName = "文件路径（暂未指明）" + g.recordId
@@ -216,7 +216,8 @@ trait LinkService extends ServiceUtils {
 
 
 
- val linkRouteTemp:Route = getRecordListRoute~getRecordPlayerListRoute  val linkRoute =  (pathPrefix("link") & get) {
+ val linkRouteTemp:Route = getRecordListRoute~getRecordPlayerListRoute
+  val linkRoute =  (pathPrefix("link") & get) {
 
      playGameRoute ~ playGameClientRoute ~watchGameRoute ~ watchRecordRoute~ getRecordListRoute ~ getRecordListByTimeRoute ~ getRecordListByPlayerRoute ~ downloadRecordFile ~ getRecordPlayerListRoute
   }

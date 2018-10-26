@@ -35,6 +35,7 @@ object AuthUtils extends HttpUtil {
           case Right(rsp) =>
             if(rsp.errCode == 0){
               token = rsp.data.gsToken
+              Right(token)
             }else{
               log.debug(s"get token failed,error:${rsp.msg}")
               Left(rsp.msg)

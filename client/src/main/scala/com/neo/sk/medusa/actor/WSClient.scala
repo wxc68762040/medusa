@@ -11,17 +11,19 @@ import akka.stream.scaladsl.{Flow, Keep, Sink}
 import akka.stream.typed.scaladsl.{ActorSink, _}
 import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.ByteString
-import com.neo.sk.medusa.common.StageContext
+import com.neo.sk.medusa.common.{AppSettings, StageContext}
 import com.neo.sk.medusa.controller.GameController
 import com.neo.sk.medusa.scene.GameScene
 import com.neo.sk.medusa.snake.Protocol._
-import com.neo.sk.medusa.snake.Protocol4Agent.WsResponse
+import com.neo.sk.medusa.snake.Protocol4Agent.{Ws4AgentResponse, WsResponse}
 import org.seekloud.byteobject.ByteObject._
 import org.seekloud.byteobject.MiddleBufferInJvm
 import org.slf4j.LoggerFactory
+import io.circe.parser.decode
+
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
-
+import com.neo.sk.medusa.controller.Api4GameAgent._
 /**
 	* Created by wangxicheng on 2018/10/19.
 	*/
@@ -68,8 +70,8 @@ object WSClient {
 						if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
 							ctx.schedule(10.seconds, stream, NetTest(id, System.currentTimeMillis()))
 							val gameScene = new GameScene()
-							val gameController = new GameController(id, name, accessCode, stageCtx, gameScene, stream)
-							gameController.connectToGameServer
+//							val gameController = new GameController(id, name, accessCode, stageCtx, gameScene, stream)
+//							gameController.connectToGameServer
 							Future.successful(s"$logPrefix connect success.")
 						} else {
 							throw new RuntimeException(s"WSClient connection failed: ${upgrade.response.status}")
@@ -82,12 +84,11 @@ object WSClient {
 					Behaviors.same
 
 
-				case EstablishConnectionEs(ws,scanUrl) =>
-//					val wsUrl  = ws
-					val webSocketFlow = Http().webSocketClientFlow(WebSocketRequest(ws))
+				case EstablishConnectionEs(wsUrl,scanUrl) =>
+					val webSocketFlow = Http().webSocketClientFlow(WebSocketRequest(wsUrl))
 
 					val source = getSource
-					val sink = getSinkDup
+					val sink = getSinkDup(ctx.self)
 					val response =
 						source
 							.viaMat(webSocketFlow)(Keep.right)
@@ -95,7 +96,8 @@ object WSClient {
 							.run()
 					val connected = response.flatMap { upgrade =>
 						if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
-							Future.successful(s"$logPrefix connect success.")
+
+							Future.successful(s"$logPrefix connect success. EstablishConnectionEs!")
 						} else {
 							throw new RuntimeException(s"WSClient connection failed: ${upgrade.response.status}")
 						}
@@ -108,11 +110,28 @@ object WSClient {
 	}
 
 
-	def getSinkDup:Sink[Message,Future[Done]] = {
+	def getSinkDup(self: ActorRef[WsCommand]):Sink[Message,Future[Done]] = {
 		Sink.foreach{
 			case TextMessage.Strict(msg) =>
+				import io.circe.generic.auto._
+				import scala.concurrent.ExecutionContext.Implicits.global
+
 				log.debug(s"msg from webSocket: $msg")
-				TextMsg(msg)
+				val gameId = AppSettings.gameId
+				decode[Ws4AgentResponse](msg) match {
+					case Right(res) =>
+						println("res:   "+res)
+						val playerId = "user"+res.Ws4AgentRsp.data.userId.toString
+						linkGameAgent(gameId,playerId,res.Ws4AgentRsp.data.token).map{
+							case Right(resl) =>
+								log.debug("accessCode: "+resl.accessCode)
+								self ! ConnectGame(playerId,"",resl.accessCode)
+							case Left(l) =>
+								log.debug("link error!")
+						}
+					case Left(le) =>
+						log.debug(s"decode esheep webmsg error! Error information:${le}")
+				}
 
 			case BinaryMessage.Strict(bMsg) =>
 				//decode process.

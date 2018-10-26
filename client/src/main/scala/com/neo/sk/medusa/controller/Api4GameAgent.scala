@@ -1,6 +1,5 @@
 package com.neo.sk.medusa.controller
 
-import java.io.FileOutputStream
 
 import org.slf4j.LoggerFactory
 import com.neo.sk.medusa.snake.Protocol4Agent._
@@ -32,16 +31,18 @@ object Api4GameAgent extends  HttpUtil{
         Left("error")
     }
   }
-
+//没有处理机器人bot的情况
   def linkGameAgent(gameId:Long,playerId:String,token:String) ={
     val data = LinkGameData(gameId,playerId).asJson.noSpaces
+//    if()
     val url  = "http://flowdev.neoap.com/esheep/api/gameAgent/joinGame?token="+token
 
     postJsonRequestSend("post",url,Nil,data).map{
       case Right(jsonStr) =>
+
         decode[LinkGameRes](jsonStr) match {
           case Right(res) =>
-            Right(LinkResElement(res.data.accessCode,res.data.gameServerInfo))
+            Right(LinkResElement(res.data.accessCode,res.data.gsPrimaryInfo))
           case Left(le) =>
             Left("decode error: "+le)
         }
