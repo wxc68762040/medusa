@@ -10,6 +10,7 @@ import javafx.scene.paint.Color
 import javafx.util.Duration
 
 import com.neo.sk.medusa.model.GridOnClient
+import com.neo.sk.medusa.snake.Protocol
 
 
 /**
@@ -46,10 +47,16 @@ class GameScene() {
 	val map = new GameMapCanvas(mapCanvas)
 	val info = new GameInfoCanvas(infoCanvas)
 	val view = new GameViewCanvas(viewCanvas)
+  viewCanvas.requestFocus()
 
-	def draw(): Unit = {
-	
-	}
+	def draw(myId:String, data: Protocol.GridDataSync): Unit ={
+
+    view.drawSnake(myId,data)
+    map.drawMap(myId,data)
+    info.drawInfo(myId,data)
+
+
+  }
 	
 	def setGameSceneListener(listener: GameSceneListener) {
 		gameSceneListener = listener

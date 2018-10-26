@@ -3,7 +3,6 @@ package com.neo.sk.medusa.controller
 import javafx.animation.{Animation, AnimationTimer, KeyFrame, Timeline}
 import javafx.scene.input.KeyCode
 import javafx.util.Duration
-
 import akka.actor.typed.ActorRef
 import akka.actor.typed.scaladsl.AskPattern._
 import com.neo.sk.medusa.ClientBoot
@@ -15,7 +14,9 @@ import com.neo.sk.medusa.model.GridOnClient
 import com.neo.sk.medusa.scene.GameScene
 import com.neo.sk.medusa.snake.Protocol.{Key, NetTest}
 import com.neo.sk.medusa.snake.{Boundary, Point, Protocol}
-
+import javafx.scene.input.KeyCode
+import com.neo.sk.medusa.snake.Protocol._
+import java.awt.event.KeyEvent
 /**
 	* Created by wangxicheng on 2018/10/25.
 	*/
@@ -23,6 +24,7 @@ object GameController {
 	val bounds = Point(Boundary.w, Boundary.h)
 	val grid = new GridOnClient(bounds)
 	var myId = ""
+	val myRoomId = -1l
 	var basicTime = 0l
 	var myPorportion = 1.0
 	
@@ -53,7 +55,17 @@ class GameController(id: String,
 			startGameLoop()
 		}
 	}
-	
+	gameScene.viewCanvas.setOnKeyPressed({ event =>
+		if(watchKeys.contains(event.getCode)){}
+		val msg: Protocol.UserAction = if(event.getCode == KeyCode.F2){
+			NetTest(grid.myId, System.currentTimeMillis())
+		}else{
+			grid.addActionWithFrame(grid.myId, keyCode2Int(event.getCode), grid.frameCount + operateDelay)
+			Key(grid.myId, keyCode2Int(event.getCode), grid.frameCount + advanceFrame + operateDelay)
+		}
+		serverActor ! msg
+	})
+
 	def startGameLoop() = {
 		val animationTimer = new AnimationTimer() {
 			override def handle(now: Long): Unit = {
