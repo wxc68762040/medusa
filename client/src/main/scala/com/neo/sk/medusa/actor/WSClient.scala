@@ -17,7 +17,6 @@ import com.neo.sk.medusa.snake.Protocol._
 import org.seekloud.byteobject.ByteObject._
 import org.seekloud.byteobject.MiddleBufferInJvm
 import org.slf4j.LoggerFactory
-
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
 

@@ -2,6 +2,8 @@ package com.neo.sk.utils
 
 import java.io.File
 
+import akka.http.javadsl.model.ws.BinaryMessage
+import akka.util.ByteString
 import com.neo.sk.medusa.snake.Protocol
 import org.seekloud.byteobject.MiddleBufferInJvm
 import org.seekloud.essf.io.{FrameData, FrameInputStream, FrameOutputStream}
@@ -66,29 +68,30 @@ object ESSFSupport {
     bytesDecode[Protocol.GridDataSync](buffer)
   }
 
-//  def userMapDecode(a:Array[Byte])={
-//    val buffer = new MiddleBufferInJvm(a)
-//    bytesDecode[EssfMapInfo](buffer)
-//  }
+  def userMapDecode(a:Array[Byte])={
+    val buffer = new MiddleBufferInJvm(a)
+    bytesDecode[EssfMapInfo](buffer)
+  }
 
   def userMapEncode(u:mutable.HashMap[EssfMapKey,EssfMapJoinLeftInfo])(implicit middleBuffer: MiddleBufferInJvm)={
     EssfMapInfo(u.toList).fillMiddleBuffer(middleBuffer).result()
   }
 
   /**用于后端先解码数据然后再进行编码传输*/
-//  def replayEventDecode(a:Array[Byte]):TankGameEvent.WsMsgServer={
-//    if (a.length > 0) {
-//      val buffer = new MiddleBufferInJvm(a)
-//      bytesDecode[List[Protocol.WsMsgSource]](buffer) match {
-//        case Right(r) =>
-//          TankGameEvent.EventData(r)
-//        case Left(e) =>
-//          TankGameEvent.DecodeError()
-//      }
-//    }else{
-//      TankGameEvent.DecodeError()
-//    }
-//  }
+  def replayEventDecode(a:Array[Byte])={
+    if (a.length > 0) {
+      val buffer = new MiddleBufferInJvm(a)
+      bytesDecode[List[Protocol.GameMessage]](buffer) match {
+        case Right(r) =>
+          println(r)
+        case Left(e) =>
+          println("-----")
+
+      }
+    }else{
+      println("==")
+    }
+  }
 //
 //  def replayStateDecode(a:Array[Byte]):TankGameEvent.WsMsgServer={
 //    val buffer = new MiddleBufferInJvm(a)
@@ -144,9 +147,20 @@ object ESSFSupport {
 //    }
 //  }
 //
-//
-//  def main(args: Array[String]): Unit = {
-//    readData(initFileReader("C:\\Users\\sky\\IdeaProjects\\tank\\backend\\gameDataDirectoryPath\\tankGame_1539309693971_5"))
-//  }
+//import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage}
+import com.neo.sk.medusa.common.Constants
+  implicit val sendBuffer = new MiddleBufferInJvm(81920)
+  def main(args: Array[String]): Unit = {
+    val replay = initFileReader("D:\\Project\\medusa\\backend\\record\\medusa_10000021")
+    replay.init()
+    replay.gotoSnapshot(5)
+    while (replay.hasMoreFrame) {
+      replay.readFrame() match {
+        case Some(FrameData(idx, ev, stOp)) =>
+          println(idx)
+          replayEventDecode(ev)
+      }
+    }
+  }
 
 }
