@@ -36,12 +36,7 @@ object WSClient {
 	private val log = LoggerFactory.getLogger("WSClient")
 	private val logPrefix = "WSClient"
 	private var outputStream: Option[ActorRef[WsSendMsg]] = None
-
-	def create(gameMessageReceiver: ActorRef[WsMsgSource],
-						 stageCtx: StageContext,
-						 _system: ActorSystem,
-						 _materializer: Materializer,
-						 _executor: ExecutionContextExecutor): Behavior[WsCommand] = {
+	def create(gameMessageReceiver: ActorRef[WsMsgSource],stageCtx: StageContext, _system: ActorSystem, _materializer: Materializer, _executor: ExecutionContextExecutor): Behavior[WsCommand] = {
 		Behaviors.setup[WsCommand] { ctx =>
 			Behaviors.withTimers { timer =>
 				working(gameMessageReceiver, stageCtx)(timer, _system, _materializer, _executor)

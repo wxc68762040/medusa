@@ -1,6 +1,7 @@
 package com.neo.sk.medusa.http
 
 import akka.actor.{ActorSystem, Scheduler}
+
 import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
@@ -215,12 +216,9 @@ trait LinkService extends ServiceUtils {
 
 
 
- val linkRouteTemp:Route = getRecordListRoute~getRecordPlayerListRoute
+ val linkRouteTemp:Route = getRecordListRoute~getRecordPlayerListRoute  val linkRoute =  (pathPrefix("link") & get) {
 
-  val linkRoute = playGameClientRoute ~ (pathPrefix("game") & get) {
-      pathEndOrSingleSlash {
-        getFromResource("html/netSnake.html")
-      } ~ playGameRoute ~ watchGameRoute ~ watchRecordRoute ~ getRecordListRoute ~ getRecordListByTimeRoute ~ getRecordListByPlayerRoute ~ downloadRecordFile ~ getRecordPlayerListRoute
+     playGameRoute ~ playGameClientRoute ~watchGameRoute ~ watchRecordRoute~ getRecordListRoute ~ getRecordListByTimeRoute ~ getRecordListByPlayerRoute ~ downloadRecordFile ~ getRecordPlayerListRoute
   }
 
 }

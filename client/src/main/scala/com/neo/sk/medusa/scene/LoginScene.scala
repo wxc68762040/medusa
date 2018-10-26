@@ -16,14 +16,11 @@ import com.neo.sk.medusa.controller.{GameController, GridOnClient}
 /**
 	* Created by wangxicheng on 2018/10/24.
 	*/
-
 object LoginScene {
 	trait LoginSceneListener {
 		def onButtonConnect()
 	}
-}
-
-class LoginScene() {
+}class LoginScene() {
 
 	import LoginScene._
 	
@@ -49,7 +46,6 @@ class LoginScene() {
 	def drawScanUrl(scanUrl: String) = {
 
 	}
-
 	def setLoginSceneListener(listener: LoginSceneListener) {
 		loginSceneListener = listener
 	}

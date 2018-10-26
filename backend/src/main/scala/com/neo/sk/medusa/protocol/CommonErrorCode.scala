@@ -35,6 +35,7 @@ object CommonErrorCode {
 
   def loginAuthError = ErrorRsp(1000113, "this interface auth need login")
 
+  def fileNotExistError = ErrorRsp(1000008, "file not exist")
 
 
 }

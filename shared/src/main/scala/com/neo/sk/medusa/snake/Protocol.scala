@@ -12,6 +12,8 @@ object Protocol {
   case object CompleteMsgServer extends WsMsgSource
   case class FailMsgServer(ex: Throwable) extends WsMsgSource
 
+	trait GameMessageBeginning extends WsMsgSource
+	
   sealed trait GameMessage extends WsMsgSource
 
   case class GridDataSync(
@@ -20,6 +22,9 @@ object Protocol {
     appleDetails: List[Ap],
     timestamp: Long
   ) extends GameMessage
+
+
+
 
 
 
