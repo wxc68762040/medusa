@@ -22,7 +22,7 @@ class GameViewCanvas(canvas: Canvas) {
   val windowHeight = canvas.getHeight
 
   val ctx = canvas.getGraphicsContext2D
-  val bgImage = new Image("file:/Users/gaohan/Desktop/medusa/client/src/main/resources/bg.png")
+  val bgImage = new Image("file:/Users/gaohan/Desktop/medusa/client/src/main/resources/bg.png ")
 
   object MyColors {
     val myHeader = "#FFFFFF"
@@ -34,9 +34,6 @@ class GameViewCanvas(canvas: Canvas) {
   }
 
   def drawGameOff(): Unit = {
-
-    ctx.drawImage(bgImage,0,0,windowWidth,windowHeight)
-    ctx.setFill(Color.web( "rgb(250, 250, 250)"))
 
     if (firstCome) {
       myPorportion = 1.0
@@ -53,8 +50,11 @@ class GameViewCanvas(canvas: Canvas) {
   def drawSnake(uid: String, data:GridDataSync):Unit = {
 
     val period = (System.currentTimeMillis() - basicTime).toInt
+    println(period)
     val snakes = data.snakes
+    println(snakes)
     val apples = data.appleDetails
+    println(apples)
 
     val mySubFrameRevise =
       try {
@@ -85,7 +85,8 @@ class GameViewCanvas(canvas: Canvas) {
     ctx.save()
     ctx.translate(windowWidth / 2, windowHeight / 2)
     ctx.scale(1 / myPorportion, 1 / myPorportion)
-    ctx.drawImage(bgImage, 0 + deviationX, 0 + deviationY)
+    ctx.translate(-windowWidth / 2, -windowHeight / 2)
+    ctx.drawImage(bgImage, 0 + deviationX ,0 + deviationY,Boundary.w,Boundary.h )
 
     apples.filterNot(a => a.x < myHead.x - windowWidth / 2 * myPorportion || a.y < myHead.y - windowHeight / 2 * myPorportion || a.x > myHead.x + windowWidth / 2 * myPorportion || a.y > myHead.y + windowHeight / 2 * myPorportion).foreach { case Ap(score, _, _, x, y, _) =>
       val ApColor = score match {
@@ -122,7 +123,7 @@ class GameViewCanvas(canvas: Canvas) {
       joints = joints.reverse.enqueue(tail)
 
       ctx.beginPath()
-      if (id != myId) {
+      if (id != grid.myId) {
         ctx.setStroke(Color.web(snake.color))
         ctx.setEffect(new BoxBlur(10, 10, 3)) //模糊范围设置为10*10像素大小，模糊迭代次数设置为3
       } else {
@@ -157,6 +158,13 @@ class GameViewCanvas(canvas: Canvas) {
 
       val nameLength = if (snake.name.length > 15) 15 else snake.name.length
       var snakeSpeed = snake.speed
+      ctx.setFill(Color.WHITE)
+      val snakeName = if(snake.name.length > 15) snake.name.substring(0,14) else snake.name
+      ctx.fillText(snakeName, (x - myHead.x ) / myPorportion  + centerX- nameLength * 4, (y - myHead.y ) / myPorportion + centerY- 15)
+      if (snakeSpeed > fSpeed + 1) {
+        ctx.fillText(snakeSpeed.toInt.toString, (x - myHead.x ) / myPorportion  + centerX- nameLength * 4, (y - myHead.y ) / myPorportion + centerY - 25)
+      }
+    }
 
       ctx.setFill(Color.web(MyColors.boundaryColor))
       ctx.setEffect(new BoxBlur(10, 10, 3))
@@ -172,7 +180,6 @@ class GameViewCanvas(canvas: Canvas) {
 
 
     }
-  }
 
 }
 

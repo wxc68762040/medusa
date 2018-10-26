@@ -19,17 +19,17 @@ class GameScene() {
 
 	val widthMap = 500
 	val heightMap = 500
-	val viewWidth = 600
-	val viewHeight = 600
-	val infoWidth = 300
-	val infoHeight = 300
+	val viewWidth = 1500
+	val viewHeight = 800
+	val infoWidth = 1500
+	val infoHeight = 800
 	val group = new Group
 	val mapCanvas = new Canvas(widthMap, heightMap)
 	val viewCanvas = new Canvas(viewWidth, viewHeight)
   val infoCanvas = new Canvas(infoWidth, infoHeight)
 
 	val scene = new Scene(group)
-	group.getChildren.add(mapCanvas)
+  group.getChildren.add(mapCanvas)
 	group.getChildren.add(viewCanvas)
 	group.getChildren.add(infoCanvas)
 
@@ -39,14 +39,9 @@ class GameScene() {
   viewCanvas.requestFocus()
 
 	def draw(myId:String, data: Protocol.GridDataSync): Unit ={
-
     view.drawSnake(myId,data)
     map.drawMap(myId,data)
-    info.drawInfo(myId,data)
-
-
+		info.drawInfo(myId,data)
   }
 
-
-	
 }

@@ -40,16 +40,17 @@ class GameMapCanvas(canvas: Canvas) {
     mapCtx.restore()
 
     if(allSnakes.nonEmpty){
-      val me = allSnakes.filter(_.id == uid).head
-      val max = allSnakes.filter(_.id == maxId).head
-      val targetSnake  = List(me,max)
+//      val me = allSnakes.filter(_.id == uid).head
+//      val max = allSnakes.filter(_.id == maxId).head
+//      val targetSnake  = List(me,max)
 
-      targetSnake.foreach{ snake =>
+      allSnakes.foreach{ snake =>
         val x = snake.head.x + snake.direction.x * snake.speed * period /Protocol.frameRate
         val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
 
         var joints = snake.joints.enqueue(Point(x.toInt,y.toInt))
-        if ( snake.id != maxId && snake.id == myId ){
+
+        if ( snake.id != maxId && snake.id == grid.myId ){
           mapCtx.beginPath()
           mapCtx.setGlobalAlpha(1.0)
           mapCtx.setStroke(Color.WHITE)

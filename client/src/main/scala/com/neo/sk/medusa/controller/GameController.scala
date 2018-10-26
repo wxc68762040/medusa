@@ -21,10 +21,10 @@ import java.awt.event.KeyEvent
 object GameController {
 	val bounds = Point(Boundary.w, Boundary.h)
 	val grid = new GridOnClient(bounds)
-	val myId = ""
 	val myRoomId = -1l
 	var basicTime = 0l
 	var myPorportion = 1.0
+
 	val watchKeys = Set(
 		KeyCode.SPACE,
 		KeyCode.LEFT,
@@ -45,10 +45,6 @@ object GameController {
 			case _ => KeyEvent.VK_F2
 		}
 	}
-	var deadName = ""
-	var deadLength=0
-	var deadKill=0
-	var yourKiller = ""
 
 	var firstCome = true
 
@@ -61,20 +57,22 @@ class GameController(id: String,
 										 stageCtx: StageContext,
 										 gameScene: GameScene,
 										 serverActor: ActorRef[Protocol.WsSendMsg]) {
-	
+
 	import GameController._
-	
+
 	def connectToGameServer = {
 		ClientBoot.addToPlatform {
 			stageCtx.switchScene(gameScene.scene, "Gaming")
 			gameMessageReceiver ! GridInitial(grid)
+			startGameLoop()
 		}
 	}
+
 	gameScene.viewCanvas.setOnKeyPressed({ event =>
-		if(watchKeys.contains(event.getCode)){}
-		val msg: Protocol.UserAction = if(event.getCode == KeyCode.F2){
+		if (watchKeys.contains(event.getCode)) {}
+		val msg: Protocol.UserAction = if (event.getCode == KeyCode.F2) {
 			NetTest(grid.myId, System.currentTimeMillis())
-		}else{
+		} else {
 			grid.addActionWithFrame(grid.myId, keyCode2Int(event.getCode), grid.frameCount + operateDelay)
 			Key(grid.myId, keyCode2Int(event.getCode), grid.frameCount + advanceFrame + operateDelay)
 		}
@@ -82,6 +80,8 @@ class GameController(id: String,
 	})
 
 	def startGameLoop() = {
+
+		basicTime = System.currentTimeMillis()
 		val timeline = new Timeline()
 		val keyFrame = new KeyFrame(Duration.millis(16), { _ =>
 			gameScene.draw(grid.myId, grid.getGridSyncData)

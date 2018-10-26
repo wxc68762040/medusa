@@ -45,7 +45,9 @@ object GameMessageReceiver {
 					running(id, roomId, grid)
 					
 				case Protocol.Id(id) =>
-					grid.myId = id
+					ClientBoot.addToPlatform {
+						grid.myId = id
+					}
 					running(id, myRoomId, grid)
 				
 				case Protocol.TextMsg(message) =>

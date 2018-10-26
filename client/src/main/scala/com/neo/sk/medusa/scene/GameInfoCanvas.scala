@@ -8,6 +8,7 @@ import com.neo.sk.medusa.controller.GameController._
 import javafx.scene.canvas.Canvas
 import javafx.scene.text.Font
 
+
 /**
   * User: gaohan
   * Date: 2018/10/25
@@ -63,10 +64,10 @@ class GameInfoCanvas(canvas: Canvas) {
           infoCtx.setFont(Font.font("24px Helvetica"))
           infoCtx.setFill(Color.web("rgb(250, 250, 250)"))
           //infoCtx.shadowBlur = 0
-          infoCtx.fillText(s"Your name   : $deadName", centerX - 150, centerY - 30)
-          infoCtx.fillText(s"Your length  : $deadLength", centerX - 150, centerY)
-          infoCtx.fillText(s"Your kill        : $deadKill", centerX - 150, centerY + 30)
-          infoCtx.fillText(s"Killer             : $yourKiller", centerX - 150, centerY + 60)
+          infoCtx.fillText(s"Your name   : ${grid.deadName}", centerX - 150, centerY - 30)
+          infoCtx.fillText(s"Your length  : ${grid.deadLength}", centerX - 150, centerY)
+          infoCtx.fillText(s"Your kill        : ${grid.deadKill}", centerX - 150, centerY + 30)
+          infoCtx.fillText(s"Killer             : ${grid.yourKiller}", centerX - 150, centerY + 60)
           infoCtx.setFont(Font.font("36px Helvetica"))
           infoCtx.fillText("Ops, Press Space Key To Restart!", centerX - 350, centerY - 150)
           myPorportion = 1.0
@@ -96,7 +97,7 @@ class GameInfoCanvas(canvas: Canvas) {
     var i = 1
     waitingShowKillList.foreach{
       j =>
-        if(j._1 != myId){
+        if(j._1 != grid.myId){
           infoCtx.fillText(s"你击杀了 ${j._2}",centerX - 120,i*20)
         }else {
           infoCtx.fillText(s"你自杀了", centerX - 100,i*20)
