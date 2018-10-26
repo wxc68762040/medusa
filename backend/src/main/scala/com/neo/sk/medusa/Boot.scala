@@ -13,6 +13,7 @@ import com.neo.sk.medusa.core.{RoomManager, UserManager, WatcherManager}
 
 import scala.language.postfixOps
 
+import com.neo.sk.utils.CountUtils
 /**
   * User: Taoz
   * Date: 8/26/2016
@@ -38,6 +39,7 @@ object Boot extends HttpService {
   val userManager: ActorRef[UserManager.Command] = system.spawn(UserManager.behaviors,"UserManager")
   val roomManager: ActorRef[RoomManager.Command] = system.spawn(RoomManager.behaviors,"RoomManager")
   val watchManager: ActorRef[WatcherManager.Command] = system.spawn(WatcherManager.behaviors, "WatchManager")
+  CountUtils.initCount()
   
 	def main(args: Array[String]) {
     log.info("Starting.")
