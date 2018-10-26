@@ -13,7 +13,7 @@ import akka.actor.typed.scaladsl.adapter._
 import akka.http.scaladsl.Http
 import com.neo.sk.medusa.actor.{GameMessageReceiver, WSClient}
 import com.neo.sk.medusa.common.StageContext
-import com.neo.sk.medusa.controller.GridOnClient
+import com.neo.sk.medusa.model.GridOnClient
 import com.neo.sk.medusa.scene.{GameScene, LoginScene}
 import com.neo.sk.medusa.snake.{Boundary, Point}
 

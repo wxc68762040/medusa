@@ -7,6 +7,7 @@ import com.neo.sk.medusa.ClientBoot.gameMessageReceiver
 import com.neo.sk.medusa.actor.GameMessageReceiver.GridInitial
 import com.neo.sk.medusa.actor.WSClient
 import com.neo.sk.medusa.common.StageContext
+import com.neo.sk.medusa.model.GridOnClient
 import com.neo.sk.medusa.scene.GameScene
 import com.neo.sk.medusa.snake.{Boundary, Point, Protocol}
 

@@ -1,4 +1,4 @@
-package com.neo.sk.medusa.controller
+package com.neo.sk.medusa.model
 
 import java.awt.event.KeyEvent
 

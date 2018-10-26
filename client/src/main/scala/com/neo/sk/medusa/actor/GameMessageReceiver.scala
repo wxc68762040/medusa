@@ -3,7 +3,8 @@ package com.neo.sk.medusa.actor
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import com.neo.sk.medusa.ClientBoot
-import com.neo.sk.medusa.controller.{GameController, GridOnClient}
+import com.neo.sk.medusa.controller.GameController
+import com.neo.sk.medusa.model.GridOnClient
 import com.neo.sk.medusa.snake.Protocol.{FailMsgServer, GameMessageBeginning, WsMsgSource}
 import com.neo.sk.medusa.snake.{Apple, Point, Protocol}
 import org.slf4j.LoggerFactory

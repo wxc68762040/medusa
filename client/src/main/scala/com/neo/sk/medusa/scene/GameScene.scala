@@ -8,7 +8,7 @@ import javafx.scene.control.Button
 import javafx.scene.paint.Color
 import javafx.util.Duration
 
-import com.neo.sk.medusa.controller.GridOnClient
+import com.neo.sk.medusa.model.GridOnClient
 
 /**
 	* Created by wangxicheng on 2018/10/25.
