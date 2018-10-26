@@ -1,16 +1,8 @@
 package com.neo.sk.medusa.scene
 
 import com.neo.sk.medusa.snake.{Grid, Point}
-import com.neo.sk.medusa.snake.Protocol.GridDataSync
-import javafx.animation.{KeyFrame, Timeline}
-import javafx.event.{ActionEvent, EventHandler}
-import javafx.scene.canvas.{Canvas, GraphicsContext}
 import javafx.scene.effect.{BlendMode, BoxBlur}
 import javafx.scene.image.Image
-import javafx.scene.layout.Pane
-import javafx.scene.{Group, Scene}
-import javafx.stage.Stage
-import javafx.util.Duration
 import com.neo.sk.medusa.snake.Protocol.{GridDataSync, _}
 import com.neo.sk.medusa.snake._
 import javafx.scene.paint.Color

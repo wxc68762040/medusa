@@ -44,6 +44,7 @@ class GameScene() {
 	def draw(): Unit = {
 
 		val data = grid.getGridSyncData
+
 		view.drawSnake(myId,data)
 		map.drawMap(myId,data)
 		info.drawInfo(myId,data)
