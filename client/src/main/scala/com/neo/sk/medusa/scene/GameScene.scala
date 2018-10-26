@@ -9,30 +9,25 @@ import javafx.scene.paint.Color
 import javafx.util.Duration
 
 import com.neo.sk.medusa.controller.GridOnClient
-import com.neo.sk.medusa.controller.GameController._
-import com.neo.sk.medusa.scene.{GameInfoCanvas ,GameMapCanvas,GameViewCanvas}
+
 
 /**
 	* Created by wangxicheng on 2018/10/25.
 	*/
 class GameScene() {
 
-	val mapWidth = 300
-	val mapHeight = 150
-	val viewWidth = 1500
-	val viewHeight = 700
-	val infoWidth = 1500
-	val infoHeight = 700
+	val widthMap = 500
+	val heightMap = 500
+	val viewWidth = 600
+	val viewHeight = 600
+	val infoWidth = 300
+	val infoHeight = 300
 	val group = new Group
-	val mapCanvas = new Canvas(mapWidth, mapHeight)
+	val mapCanvas = new Canvas(widthMap, heightMap)
 	val viewCanvas = new Canvas(viewWidth, viewHeight)
   val infoCanvas = new Canvas(infoWidth, infoHeight)
 
 	val scene = new Scene(group)
-
-//	val windowWidth = scene.getWidth
-//	val windowHeight = scene.getHeight
-
 	group.getChildren.add(mapCanvas)
 	group.getChildren.add(viewCanvas)
 	group.getChildren.add(infoCanvas)
@@ -40,7 +35,11 @@ class GameScene() {
 	val map = new GameMapCanvas(mapCanvas)
 	val info = new GameInfoCanvas(infoCanvas)
 	val view = new GameViewCanvas(viewCanvas)
+  viewCanvas.requestFocus()
 
+	def draw(myId:String, data: Protocol.GridDataSync): Unit ={
+
+	}
 	def draw(): Unit = {
 
 		val data = grid.getGridSyncData
@@ -53,6 +52,6 @@ class GameScene() {
 
 	}
 
-	
+
 	
 }
