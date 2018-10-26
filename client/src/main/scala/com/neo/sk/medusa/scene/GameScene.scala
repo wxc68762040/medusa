@@ -48,14 +48,12 @@ class GameScene() {
 	val info = new GameInfoCanvas(infoCanvas)
 	val view = new GameViewCanvas(viewCanvas)
   viewCanvas.requestFocus()
+	viewCanvas.setOnKeyPressed(event => gameSceneListener.onKeyPressed(event.getCode))
 
 	def draw(myId:String, data: Protocol.GridDataSync): Unit ={
-
     view.drawSnake(myId,data)
     map.drawMap(myId,data)
     info.drawInfo(myId,data)
-
-
   }
 	
 	def setGameSceneListener(listener: GameSceneListener) {

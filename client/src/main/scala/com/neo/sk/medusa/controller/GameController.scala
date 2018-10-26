@@ -27,6 +27,8 @@ object GameController {
 	val myRoomId = -1l
 	var basicTime = 0l
 	var myPorportion = 1.0
+	var firstCome = false
+	
 	
 	val watchKeys = Set(
 		KeyCode.SPACE,
@@ -36,6 +38,18 @@ object GameController {
 		KeyCode.DOWN,
 		KeyCode.F2
 	)
+	
+	def keyCode2Int(c: KeyCode) = {
+		c match {
+			case KeyCode.SPACE => KeyEvent.VK_SPACE
+			case KeyCode.LEFT => KeyEvent.VK_LEFT
+			case KeyCode.UP => KeyEvent.VK_UP
+			case KeyCode.RIGHT => KeyEvent.VK_RIGHT
+			case KeyCode.DOWN => KeyEvent.VK_DOWN
+			case KeyCode.F2 => KeyEvent.VK_F2
+			case _ => KeyEvent.VK_F2
+		}
+	}
 }
 
 class GameController(id: String,
@@ -55,21 +69,12 @@ class GameController(id: String,
 			startGameLoop()
 		}
 	}
-	gameScene.viewCanvas.setOnKeyPressed({ event =>
-		if(watchKeys.contains(event.getCode)){}
-		val msg: Protocol.UserAction = if(event.getCode == KeyCode.F2){
-			NetTest(grid.myId, System.currentTimeMillis())
-		}else{
-			grid.addActionWithFrame(grid.myId, keyCode2Int(event.getCode), grid.frameCount + operateDelay)
-			Key(grid.myId, keyCode2Int(event.getCode), grid.frameCount + advanceFrame + operateDelay)
-		}
-		serverActor ! msg
-	})
+
 
 	def startGameLoop() = {
 		val animationTimer = new AnimationTimer() {
 			override def handle(now: Long): Unit = {
-				gameScene.draw()
+				gameScene.draw(myId, grid.getGridSyncData)
 			}
 		}
 		val timeline = new Timeline()
@@ -103,8 +108,8 @@ class GameController(id: String,
 				val msg: Protocol.UserAction = if (key == KeyCode.F2) {
 					NetTest(myId, System.currentTimeMillis())
 				} else {
-//					grid.addActionWithFrame(myId, key, grid.frameCount + operateDelay)
-//					Key(myId, e.keyCode, grid.frameCount + advanceFrame + operateDelay) //客户端自己的行为提前帧
+					grid.addActionWithFrame(grid.myId, keyCode2Int(key), grid.frameCount + operateDelay)
+					Key(grid.myId, keyCode2Int(key), grid.frameCount + advanceFrame + operateDelay)
 					NetTest(myId, System.currentTimeMillis())
 				}
 				serverActor ! msg
