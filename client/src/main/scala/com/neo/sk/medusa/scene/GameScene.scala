@@ -9,6 +9,7 @@ import javafx.scene.paint.Color
 import javafx.util.Duration
 
 import com.neo.sk.medusa.controller.GridOnClient
+import com.neo.sk.medusa.snake.Protocol
 
 
 /**
@@ -39,18 +40,12 @@ class GameScene() {
 
 	def draw(myId:String, data: Protocol.GridDataSync): Unit ={
 
-	}
-	def draw(): Unit = {
+    view.drawSnake(myId,data)
+    map.drawMap(myId,data)
+    info.drawInfo(myId,data)
 
-		val data = grid.getGridSyncData
 
-		view.drawSnake(myId,data)
-		map.drawMap(myId,data)
-		info.drawInfo(myId,data)
-
-		//drawGameOff()
-
-	}
+  }
 
 
 	
