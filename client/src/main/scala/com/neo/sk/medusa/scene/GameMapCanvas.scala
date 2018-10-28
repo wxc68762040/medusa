@@ -17,32 +17,29 @@ import javafx.scene.canvas.Canvas
 class GameMapCanvas(canvas: Canvas) {
 
   val mapCtx = canvas.getGraphicsContext2D
-  val maxImage = new Image("file:/Users/gaohan/Desktop/medusa/client/src/main/resources/champion.png")
+  val maxImage = new Image("champion.png")
   val mapWidth = canvas.getWidth
   val mapHeight = canvas.getHeight
 
-  mapCtx.fillRect(0,0,mapWidth,mapHeight)
 
   def drawMap( uid: String, data :GridDataSync):Unit = {
     val period = (System.currentTimeMillis() - basicTime).toInt
-
     mapCtx.clearRect(0,0,mapWidth,mapHeight)
-    mapCtx.setGlobalAlpha(0.2)
     mapCtx.setFill(Color.BLACK)
-    mapCtx.fillRect(0,0,mapWidth,mapHeight)
+    mapCtx.setGlobalAlpha(0.5)
+    mapCtx.fillRect(0,450 ,mapWidth,mapHeight - 450)
 
     val allSnakes = data.snakes
     val maxLength = if (allSnakes.nonEmpty) allSnakes.sortBy(r =>(r.length,r.id)).reverse.head.head else Point(0,0)
     val maxId = if (allSnakes.nonEmpty) allSnakes.sortBy(r => (r.length,r.id)).reverse.head.id else 0L
     mapCtx.save()
-    mapCtx.setGlobalAlpha(1.0)
-    mapCtx.drawImage(maxImage,(maxLength.x * LittleMap.w)/ Boundary.w -7,(maxLength.y * LittleMap.h) / Boundary.h - 7, 15,15)
+    mapCtx.drawImage(maxImage,(maxLength.x * LittleMap.w)/ Boundary.w -7,450 + (maxLength.y * LittleMap.h) / Boundary.h - 7, 15,15)
     mapCtx.restore()
 
     if(allSnakes.nonEmpty){
-//      val me = allSnakes.filter(_.id == uid).head
-//      val max = allSnakes.filter(_.id == maxId).head
-//      val targetSnake  = List(me,max)
+      val me = allSnakes.filter(_.id == uid).head
+      val max = allSnakes.filter(_.id == maxId).head
+      val targetSnake  = List(me,max)
 
       allSnakes.foreach{ snake =>
         val x = snake.head.x + snake.direction.x * snake.speed * period /Protocol.frameRate

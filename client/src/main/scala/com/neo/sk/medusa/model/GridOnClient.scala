@@ -11,6 +11,9 @@ import com.neo.sk.medusa.snake._
   */
 class GridOnClient(override val boundary: Point) extends Grid {
 
+	var currentRank = List.empty[Score]
+	var historyRank = List.empty[Score]
+
   override def debug(msg: String): Unit = println(msg)
 
   override def info(msg: String): Unit = println(msg)
@@ -47,6 +50,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
         snake.direction
       }
     }
+
     
     val speedInfoOpt = speedUp(snake, newDirection)
     var newSpeed = if (speedInfoOpt.nonEmpty) speedInfoOpt.get._2 else snake.speed

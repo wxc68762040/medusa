@@ -75,7 +75,7 @@ class GameController(id: String,
 		basicTime = System.currentTimeMillis()
 		val animationTimer = new AnimationTimer() {
 			override def handle(now: Long): Unit = {
-				gameScene.draw(grid.myId, grid.getGridSyncData)
+				gameScene.draw(grid.myId, grid.getGridSyncData, grid.historyRank, grid.currentRank)
 			}
 		}
 		val timeline = new Timeline()
@@ -83,6 +83,7 @@ class GameController(id: String,
 		val keyFrame = new KeyFrame(Duration.millis(100), { _ =>
 			logicLoop()
 		})
+
 		timeline.getKeyFrames.add(keyFrame)
 		animationTimer.start()
 		timeline.play()
@@ -109,7 +110,7 @@ class GameController(id: String,
 					NetTest(grid.myId, System.currentTimeMillis())
 				} else {
 					grid.addActionWithFrame(grid.myId, keyCode2Int(key), grid.frameCount + operateDelay)
-					println(s"press ${keyCode2Int(key)}")
+//					println(s"press ${keyCode2Int(key)}")
 					Key(grid.myId, keyCode2Int(key), grid.frameCount + advanceFrame + operateDelay)
 				}
 				serverActor ! msg

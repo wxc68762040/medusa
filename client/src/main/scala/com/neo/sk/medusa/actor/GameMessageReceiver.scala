@@ -94,8 +94,10 @@ object GameMessageReceiver {
 					Behavior.same
 				
 				case Protocol.Ranks(current, history) =>
-//					GameInfo.currentRank = current
-//					GameInfo.historyRank = history
+          ClientBoot.addToPlatform {
+            grid.currentRank = current
+            grid.historyRank = history
+          }
 					Behavior.same
 				
 				case Protocol.FeedApples(apples) =>

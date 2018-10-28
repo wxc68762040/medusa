@@ -19,8 +19,7 @@ class GameInfoCanvas(canvas: Canvas) {
   val infoWidth = canvas.getWidth
   val infoHeight = canvas.getHeight
 
-  var currentRank = List.empty[Score]
-  var historyRank = List.empty[Score]
+
 
   val textLineHeight = 14
   val infoCtx = canvas.getGraphicsContext2D
@@ -33,10 +32,11 @@ class GameInfoCanvas(canvas: Canvas) {
     ctx.clearRect(0,0,infoWidth,infoHeight)
   }
 
-  def drawInfo(uid: String, data:GridDataSync): Unit = {
+  def drawInfo(uid: String, data:GridDataSync,historyRank:List[Score], currentRank:List[Score]): Unit = {
 
     clearInfo(infoCtx)
-
+    infoCtx.setFill(Color.web("rgba(144,144,144,0.5)"))
+    infoCtx.fillRect(0,0, infoWidth, infoHeight)
     val snakes = data.snakes
     val leftBegin = 10
     val rightBegin = (infoWidth - 200).toInt
@@ -50,12 +50,13 @@ class GameInfoCanvas(canvas: Canvas) {
         val baseLine = 1
         infoCtx.setFont(Font.font("12px Helvetica"))
         infoCtx.setFill(Color.web("rgb(250,250,250)"))
-        drawTextLine(infoCtx, s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 1, baseLine)
-        drawTextLine(infoCtx, s"your kill = ${mySnake.kill}", leftBegin, 2, baseLine)
-        drawTextLine(infoCtx, s"your length = ${mySnake.length} ", leftBegin, 3, baseLine)
+        drawTextLine(infoCtx, s"YOU: id=[${mySnake.id}] ", leftBegin, 1, baseLine)
+        drawTextLine(infoCtx,s"name=[${mySnake.name.take(32)}]", leftBegin,2,baseLine)
+        drawTextLine(infoCtx, s"your kill = ${mySnake.kill}", leftBegin, 3, baseLine)
+        drawTextLine(infoCtx, s"your length = ${mySnake.length} ", leftBegin, 4, baseLine)
 //        drawTextLine(infoCtx, s"fps: ${netInfoHandler.fps.formatted("%.2f")} ping:${netInfoHandler.ping.formatted("%.2f")} dataps:${netInfoHandler.dataps.formatted("%.2f")}", leftBegin, 4, baseLine)
 //        drawTextLine(infoCtx, s"drawTimeAverage: ${netInfoHandler.drawTimeAverage}", leftBegin, 5, baseLine)
-        drawTextLine(infoCtx, s"roomId: $myRoomId", leftBegin, 6, baseLine)
+        drawTextLine(infoCtx, s"roomId: $myRoomId", leftBegin, 5, baseLine)
 
       case None =>
         if (firstCome) {
@@ -85,12 +86,12 @@ class GameInfoCanvas(canvas: Canvas) {
     }
 
 
-    val historyRankBaseLine = 2
+    val historyRankBaseLine = 15
     index = 0
     drawTextLine(infoCtx,s"---History Rank ---",rightBegin,index,historyRankBaseLine)
     historyRank.foreach{ score  =>
       index += 1
-      drawTextLine(infoCtx,s"[$index]: ${score.n.+("   ").take(8)} kill=${score.k} len= ${score.l}",rightBegin,index,historyRankBaseLine)
+      drawTextLine(infoCtx,s"[$index]: ${score.n.+("   ").take(8)} kill=${score.k} len= ${score.l}",leftBegin,index,historyRankBaseLine)
     }
 
     infoCtx.setFont(Font.font("18px Helvetica"))
