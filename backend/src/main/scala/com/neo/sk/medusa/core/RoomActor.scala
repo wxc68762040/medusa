@@ -98,17 +98,24 @@ object RoomActor {
             Behaviors.same
 
           case t: Key =>
+            val eventList = ListBuffer[Protocol.GameMessage]()
               if (t.frame >= grid.frameCount) {
                 grid.addActionWithFrame(t.id, t.keyCode, t.frame)
+                eventList.append(Protocol.SnakeAction(t.id, t.keyCode, t.frame))
                 dispatch(UserActor.DispatchMsg(Protocol.SnakeAction(t.id, t.keyCode, t.frame)), userMap)
               } else if (t.frame >= grid.frameCount - Protocol.savingFrame + Protocol.advanceFrame) {
                 grid.addActionWithFrame(t.id, t.keyCode, grid.frameCount)
+                eventList.append(Protocol.DistinctSnakeAction(t.keyCode, grid.frameCount, t.frame))
+                //eventList.append(Protocol.SnakeAction(t.id, t.keyCode, grid.frameCount))
                 dispatchDistinct(t.id, UserActor.DispatchMsg(Protocol.DistinctSnakeAction(t.keyCode, grid.frameCount, t.frame)),
                   UserActor.DispatchMsg(Protocol.SnakeAction(t.id, t.keyCode, grid.frameCount)), userMap)
                 log.info(s"key delay: server: ${grid.frameCount} client: ${t.frame}")
               } else {
                 log.info(s"key loss: server: ${grid.frameCount} client: ${t.frame}")
               }
+            if(isRecord) {
+              getGameRecorder(ctx, grid, roomId) ! GameRecorder.GameRecord(eventList.toList, Some(grid.getGridSyncData))
+            }
             Behaviors.same
 
           case BeginSync =>

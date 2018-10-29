@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory
 import com.neo.sk.medusa.common.AppSettings
 import com.neo.sk.medusa.core.GameRecorder.{EssfMapInfo, EssfMapJoinLeftInfo, EssfMapKey}
 import com.neo.sk.medusa.snake.GridOnServer
+import com.neo.sk.medusa.snake.Protocol.WsMsgSource
 
 import scala.collection.mutable
 
@@ -66,24 +67,24 @@ object ESSFSupport {
     bytesDecode[Protocol.GridDataSync](buffer)
   }
 
-//  def userMapDecode(a:Array[Byte])={
-//    val buffer = new MiddleBufferInJvm(a)
-//    bytesDecode[EssfMapInfo](buffer)
-//  }
+  def userMapDecode(a:Array[Byte])={
+    val buffer = new MiddleBufferInJvm(a)
+    bytesDecode[EssfMapInfo](buffer)
+  }
 
   def userMapEncode(u:mutable.HashMap[EssfMapKey,EssfMapJoinLeftInfo])(implicit middleBuffer: MiddleBufferInJvm)={
     EssfMapInfo(u.toList).fillMiddleBuffer(middleBuffer).result()
   }
 
   /**用于后端先解码数据然后再进行编码传输*/
-//  def replayEventDecode(a:Array[Byte]):TankGameEvent.WsMsgServer={
+//  def replayEventDecode(a:Array[Byte]):List[WsMsgSource] ={
 //    if (a.length > 0) {
 //      val buffer = new MiddleBufferInJvm(a)
 //      bytesDecode[List[Protocol.WsMsgSource]](buffer) match {
 //        case Right(r) =>
-//          TankGameEvent.EventData(r)
+//          r
 //        case Left(e) =>
-//          TankGameEvent.DecodeError()
+//         e
 //      }
 //    }else{
 //      TankGameEvent.DecodeError()

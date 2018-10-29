@@ -22,6 +22,7 @@ import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success}
 
 object GameRecorder {
+
   import org.seekloud.byteobject.ByteObject._
   import com.neo.sk.utils.ESSFSupport.initFileRecorder
 
@@ -35,25 +36,25 @@ object GameRecorder {
   final case class GameRecord(event: (List[Protocol.GameMessage], Option[Protocol.GameMessage])) extends Command
 
   final case class GameRecorderData(
-    roomId: Long,
-    fileName: String,
-    fileIndex: Long,
-    startTime: Long,
-    initStateOpt: Option[Protocol.WsMsgSource],
-    recorder: FrameOutputStream,
-    var gameRecordBuffer: List[GameRecord],
-    var fileRecordNum: Int = 0
-  )
+                                     roomId: Long,
+                                     fileName: String,
+                                     fileIndex: Long,
+                                     startTime: Long,
+                                     initStateOpt: Option[Protocol.WsMsgSource],
+                                     recorder: FrameOutputStream,
+                                     var gameRecordBuffer: List[GameRecord],
+                                     var fileRecordNum: Int = 0
+                                   )
 
   final case class EssfMapKey(
-    userId: String,
-    name: String
-  )
+                               userId: String,
+                               name: String
+                             )
 
   final case class EssfMapJoinLeftInfo(
-    joinF: Long,
-    leftF: Long
-  )
+                                        joinF: Long,
+                                        leftF: Long
+                                      )
 
   final case class UserJoinRoom(playerId: String, name: String, frame: Long) extends Command
 
@@ -63,7 +64,7 @@ object GameRecorder {
 
   final case class EssfMapInfo(m: List[(EssfMapKey, EssfMapJoinLeftInfo)])
 
-  private final case class SaveData(flag:Int) extends Command
+  private final case class SaveData(flag: Int) extends Command
 
   final case object SaveDataKey
 
@@ -74,20 +75,19 @@ object GameRecorder {
   case class TimeOut(msg: String) extends Command
 
   final case class SwitchBehavior(
-    name: String,
-    behavior: Behavior[Command],
-    durationOpt: Option[FiniteDuration] = None,
-    timeOut: TimeOut = TimeOut("busy time error")
-  ) extends Command
-
+                                   name: String,
+                                   behavior: Behavior[Command],
+                                   durationOpt: Option[FiniteDuration] = None,
+                                   timeOut: TimeOut = TimeOut("busy time error")
+                                 ) extends Command
 
 
   private[this] def switchBehavior(ctx: ActorContext[Command],
-    behaviorName: String, behavior: Behavior[Command], durationOpt: Option[FiniteDuration] = None, timeOut: TimeOut = TimeOut("busy time error"))
-    (implicit stashBuffer: StashBuffer[Command],
-      timer: TimerScheduler[Command]
-//      middleBuffer: MiddleBufferInJvm
-    ) = {
+                                   behaviorName: String, behavior: Behavior[Command], durationOpt: Option[FiniteDuration] = None, timeOut: TimeOut = TimeOut("busy time error"))
+                                  (implicit stashBuffer: StashBuffer[Command],
+                                   timer: TimerScheduler[Command]
+                                   //      middleBuffer: MiddleBufferInJvm
+                                  ) = {
     log.debug(s"${ctx.self.path} becomes $behaviorName behavior.")
     timer.cancel(BehaviorChangeKey)
     durationOpt.foreach(timer.startSingleTimer(BehaviorChangeKey, timeOut, _))
@@ -111,9 +111,9 @@ object GameRecorder {
   }
 
   def work(data: GameRecorder.GameRecorderData, essfMap: mutable.HashMap[EssfMapKey, EssfMapJoinLeftInfo],
-    userMap: mutable.HashMap[String, String], userAllMap: mutable.HashMap[String, String],
-    startFrame: Long, endFrame: Long)(implicit middleBuffer: MiddleBufferInJvm,
-    timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
+           userMap: mutable.HashMap[String, String], userAllMap: mutable.HashMap[String, String],
+           startFrame: Long, endFrame: Long)(implicit middleBuffer: MiddleBufferInJvm,
+                                             timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
     Behaviors.receive { (ctx, msg) =>
       msg match {
 
@@ -135,12 +135,12 @@ object GameRecorder {
               grid.frameCount
           }
 
-          val newStartFrame = if(startFrame == -1l){
+          val newStartFrame = if (startFrame == -1l) {
             t.event._2.get match {
               case grid: Protocol.GridDataSync =>
                 grid.frameCount
             }
-          }else startFrame
+          } else startFrame
 
           if (data.gameRecordBuffer.size > maxRecordNum) {
             val rs = data.gameRecordBuffer.reverse
@@ -182,33 +182,33 @@ object GameRecorder {
   }
 
   def save(data: GameRecorder.GameRecorderData, essfMap: mutable.HashMap[EssfMapKey, EssfMapJoinLeftInfo],
-    userMap: mutable.HashMap[String, String], userAllMap: mutable.HashMap[String, String],
-    startFrame: Long, endFrame: Long)(implicit middleBuffer: MiddleBufferInJvm,
-    timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
+           userMap: mutable.HashMap[String, String], userAllMap: mutable.HashMap[String, String],
+           startFrame: Long, endFrame: Long)(implicit middleBuffer: MiddleBufferInJvm,
+                                             timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
     Behaviors.receive { (ctx, msg) =>
       msg match {
 
         case SaveData(f) =>
 
           println(s"${ctx.self.path} save get msg saveData")
-          val mapInfo = essfMap.map{
-            essf=>
-              if(essf._2.leftF == -1L){
-                (essf._1,EssfMapJoinLeftInfo(essf._2.joinF,endFrame))
-              }else{
+          val mapInfo = essfMap.map {
+            essf =>
+              if (essf._2.leftF == -1L) {
+                (essf._1, EssfMapJoinLeftInfo(essf._2.joinF, endFrame))
+              } else {
                 essf
               }
           }
-          data.recorder.putMutableInfo(Constants.essfMapKeyName,ESSFSupport.userMapEncode(mapInfo))
+          data.recorder.putMutableInfo(Constants.essfMapKeyName, ESSFSupport.userMapEncode(mapInfo))
 
           data.recorder.finish()
           log.info(s"${ctx.self.path} has save game data to file=${data.fileName}_${data.fileIndex}")
           val recordInfo = rRecords(data.fileIndex, data.startTime, System.currentTimeMillis(), data.roomId, userAllMap.size, endFrame - startFrame)
-          GameRecordDao.insertGameRecord(recordInfo).onComplete{
+          GameRecordDao.insertGameRecord(recordInfo).onComplete {
             case Success(recordId) =>
               log.info(s"insert game record successful:$recordId")
               val list = ListBuffer[rRecordsUserMap]()
-              userAllMap.foreach{
+              userAllMap.foreach {
                 userRecord =>
                   list.append(rRecordsUserMap(-1l, recordId, userRecord._1, userRecord._2,
                     essfMap(EssfMapKey(userRecord._1, userRecord._2)).joinF + "-" + essfMap(EssfMapKey(userRecord._1, userRecord._2)).leftF))
@@ -232,13 +232,13 @@ object GameRecorder {
               }
             case Failure(e) =>
               log.error(s"insert geme record fail, error: $e")
-              if(f==0) {
+              if (f == 0) {
                 ctx.self ! SwitchBehavior("initRecorder", initRecorder(data.roomId, data.fileName, data.fileIndex, userMap))
-              }else{
+              } else {
                 Behaviors.stopped
               }
           }
-          switchBehavior(ctx,"busy",busy())
+          switchBehavior(ctx, "busy", busy())
         case unknow =>
           log.warn(s"${ctx} save got unknow msg ${unknow}")
           Behaviors.same
@@ -248,35 +248,35 @@ object GameRecorder {
   }
 
   private def initRecorder(
-    roomId: Long,
-    fileName: String,
-    fileIndex:Long,
-    userMap: mutable.HashMap[String, String]
-  )(
-    implicit stashBuffer:StashBuffer[Command],
-    timer:TimerScheduler[Command],
-    middleBuffer: MiddleBufferInJvm
-  ):Behavior[Command] = {
-    Behaviors.receive{(ctx,msg) =>
+                            roomId: Long,
+                            fileName: String,
+                            fileIndex: Long,
+                            userMap: mutable.HashMap[String, String]
+                          )(
+                            implicit stashBuffer: StashBuffer[Command],
+                            timer: TimerScheduler[Command],
+                            middleBuffer: MiddleBufferInJvm
+                          ): Behavior[Command] = {
+    Behaviors.receive { (ctx, msg) =>
       msg match {
-        case t:GameRecord =>
+        case t: GameRecord =>
           log.info(s"${ctx.self.path} initState get msg gameRecord")
           val startF = t.event._2.get match {
-            case grid : Protocol.GridDataSync =>
+            case grid: Protocol.GridDataSync =>
               grid.frameCount
           }
-          val newInitStateOpt =t.event._2
+          val newInitStateOpt = t.event._2
           val newCount = CountUtils.getId()
           val newRecorder = ESSFSupport.initFileRecorder(fileName, newCount, "", newInitStateOpt)
           val newGameRecorderData = GameRecorderData(roomId, fileName, newCount, System.currentTimeMillis(), newInitStateOpt, newRecorder, gameRecordBuffer = List[GameRecord]())
           val newEssfMap = mutable.HashMap.empty[EssfMapKey, EssfMapJoinLeftInfo]
           val newUserAllMap = mutable.HashMap.empty[String, String]
-          userMap.foreach{
-            user=>
-              newEssfMap.put(EssfMapKey(user._1,user._2), EssfMapJoinLeftInfo( startF, -1L))
+          userMap.foreach {
+            user =>
+              newEssfMap.put(EssfMapKey(user._1, user._2), EssfMapJoinLeftInfo(startF, -1L))
               newUserAllMap.put(user._1, user._2)
           }
-          switchBehavior(ctx,"work",work(newGameRecorderData, newEssfMap, newUserAllMap, userMap, startF, -1L))
+          switchBehavior(ctx, "work", work(newGameRecorderData, newEssfMap, newUserAllMap, userMap, startF, -1L))
 
         case unknow =>
           log.warn(s"${ctx} initRecorder got unknow msg ${unknow}")
@@ -287,14 +287,14 @@ object GameRecorder {
   }
 
   private def busy()(
-    implicit stashBuffer:StashBuffer[Command],
-    timer:TimerScheduler[Command]
-//    middleBuffer:MiddleBufferInJvm
+    implicit stashBuffer: StashBuffer[Command],
+    timer: TimerScheduler[Command]
+    //    middleBuffer:MiddleBufferInJvm
   ): Behavior[Command] =
     Behaviors.receive[Command] { (ctx, msg) =>
       msg match {
-        case SwitchBehavior(name, behavior,durationOpt,timeOut) =>
-          switchBehavior(ctx,name,behavior,durationOpt,timeOut)
+        case SwitchBehavior(name, behavior, durationOpt, timeOut) =>
+          switchBehavior(ctx, name, behavior, durationOpt, timeOut)
 
         case TimeOut(m) =>
           log.debug(s"${ctx.self.path} is time out when busy,msg=${m}")
@@ -305,7 +305,6 @@ object GameRecorder {
           Behavior.same
       }
     }
-
 
 
 }
