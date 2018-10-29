@@ -19,8 +19,6 @@ class GameInfoCanvas(canvas: Canvas) {
   val infoWidth = canvas.getWidth
   val infoHeight = canvas.getHeight
 
-
-
   val textLineHeight = 14
   val infoCtx = canvas.getGraphicsContext2D
 
@@ -35,7 +33,7 @@ class GameInfoCanvas(canvas: Canvas) {
   def drawInfo(uid: String, data:GridDataSync,historyRank:List[Score], currentRank:List[Score]): Unit = {
 
     clearInfo(infoCtx)
-    infoCtx.setFill(Color.web("rgba(144,144,144,0.5)"))
+    infoCtx.setFill(Color.web("rgba(144,144,144,0)"))
     infoCtx.fillRect(0,0, infoWidth, infoHeight)
     val snakes = data.snakes
     val leftBegin = 10
@@ -60,17 +58,17 @@ class GameInfoCanvas(canvas: Canvas) {
 
       case None =>
         if (firstCome) {
-          infoCtx.setFont(Font.font("36px Helvetica"))
+          infoCtx.setFont(Font.font(" Helvetica", 36))
         } else {
-          infoCtx.setFont(Font.font("24px Helvetica"))
+          infoCtx.setFont(Font.font(" Helvetica",24))
           infoCtx.setFill(Color.web("rgb(250, 250, 250)"))
           //infoCtx.shadowBlur = 0
           infoCtx.fillText(s"Your name   : ${grid.deadName}", centerX - 150, centerY - 30)
           infoCtx.fillText(s"Your length  : ${grid.deadLength}", centerX - 150, centerY)
           infoCtx.fillText(s"Your kill        : ${grid.deadKill}", centerX - 150, centerY + 30)
           infoCtx.fillText(s"Killer             : ${grid.yourKiller}", centerX - 150, centerY + 60)
-          infoCtx.setFont(Font.font("36px Helvetica"))
-          infoCtx.fillText("Ops, Press Space Key To Restart!", centerX - 350, centerY - 150)
+          infoCtx.setFont(Font.font("Verdana", 36))
+          infoCtx.fillText("Ops, Press Space Key To Restart!", centerX - 250, centerY - 120)
           myPorportion = 1.0
         }
     }
@@ -86,12 +84,12 @@ class GameInfoCanvas(canvas: Canvas) {
     }
 
 
-    val historyRankBaseLine = 15
+    val historyRankBaseLine = 2
     index = 0
     drawTextLine(infoCtx,s"---History Rank ---",rightBegin,index,historyRankBaseLine)
     historyRank.foreach{ score  =>
       index += 1
-      drawTextLine(infoCtx,s"[$index]: ${score.n.+("   ").take(8)} kill=${score.k} len= ${score.l}",leftBegin,index,historyRankBaseLine)
+      drawTextLine(infoCtx,s"[$index]: ${score.n.+("   ").take(8)} kill=${score.k} len= ${score.l}",rightBegin,index,historyRankBaseLine)
     }
 
     infoCtx.setFont(Font.font("18px Helvetica"))

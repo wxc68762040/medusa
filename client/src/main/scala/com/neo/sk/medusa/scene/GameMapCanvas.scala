@@ -20,6 +20,7 @@ class GameMapCanvas(canvas: Canvas) {
   val maxImage = new Image("champion.png")
   val mapWidth = canvas.getWidth
   val mapHeight = canvas.getHeight
+  println(mapHeight)
 
 
   def drawMap(uid: String, data :GridDataSync): Unit = {
@@ -27,13 +28,14 @@ class GameMapCanvas(canvas: Canvas) {
     mapCtx.clearRect(0, 0, mapWidth, mapHeight)
     mapCtx.setFill(Color.BLACK)
     mapCtx.setGlobalAlpha(0.5)
-    mapCtx.fillRect(0, 450, mapWidth, mapHeight - 450)
+    mapCtx.fillRect(0, 550, mapWidth, mapHeight - 550)
+
 
     val allSnakes = data.snakes
     val maxLength = if (allSnakes.nonEmpty) allSnakes.sortBy(r =>(r.length,r.id)).reverse.head.head else Point(0,0)
     val maxId = if (allSnakes.nonEmpty) allSnakes.sortBy(r => (r.length,r.id)).reverse.head.id else 0L
     mapCtx.save()
-    mapCtx.drawImage(maxImage, (maxLength.x * LittleMap.w) / Boundary.w - 7, 450 + (maxLength.y * LittleMap.h) / Boundary.h - 7, 15, 15)
+    mapCtx.drawImage(maxImage, (maxLength.x * LittleMap.w) / Boundary.w - 7, 550 + (maxLength.y * LittleMap.h) / Boundary.h - 7, 15, 15)
     mapCtx.restore()
 
     if(allSnakes.nonEmpty && allSnakes.exists(_.id == uid)) {
@@ -64,7 +66,7 @@ class GameMapCanvas(canvas: Canvas) {
       mapCtx.clearRect(0,0,mapWidth,mapHeight)
       mapCtx.setGlobalAlpha(0.2)
       mapCtx.setFill(Color.BLACK)
-      mapCtx.fillRect(0,0,mapWidth,mapHeight)
+      mapCtx.fillRect(0,550,mapWidth,mapHeight)
     }
 
 
