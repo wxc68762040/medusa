@@ -2,12 +2,14 @@ package com.neo.sk.medusa.core
 
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{Behaviors, StashBuffer, TimerScheduler}
+import com.neo.sk.medusa.common.AppSettings
 import com.neo.sk.medusa.core.GameRecorder.{EssfMapJoinLeftInfo, EssfMapKey}
 import org.seekloud.byteobject.MiddleBufferInJvm
 import org.seekloud.essf.io.FrameInputStream
 import org.slf4j.LoggerFactory
 import com.neo.sk.utils.ESSFSupport._
 import com.neo.sk.medusa.common.Constants._
+
 import scala.concurrent.duration._
 
 
@@ -30,8 +32,9 @@ object GameReader {
         implicit val sendBuffer: MiddleBufferInJvm = new MiddleBufferInJvm(81920)
         Behaviors.withTimers[Command] {
           implicit timer =>
-            val fileName = s"E:\\test\\medusa_$recordId"
-            val fileReader=initFileReader(fileName)
+            val fileName = "medusa"
+            val file = AppSettings.recordPath + fileName + recordId
+            val fileReader=initFileReader(file)
             fileReader.init()
             val userMap=userMapDecode(fileReader.getMutableInfo(essfMapKeyName).getOrElse(Array[Byte]())).right.get.m
             try{
