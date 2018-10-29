@@ -10,9 +10,5 @@ import java.util.concurrent.atomic.AtomicInteger
 object Constants {
 
   val essfMapKeyName = "essfKey"
-  val count = new AtomicInteger(10000)
 
-  def getId() = {
-    count.getAndIncrement()
-  }
 }

@@ -112,7 +112,7 @@ object UserManager {
       .via(UserActor.flow(userActor)) // ... and route them through the chatFlow ...
       .map { //... pack outgoing messages into WS JSON messages ...
       case message: GameMessage =>
-        val sendBuffer = new MiddleBufferInJvm(409600)
+        val sendBuffer = new MiddleBufferInJvm(40960)
         BinaryMessage.Strict(ByteString(
           //encoded process
           message.fillMiddleBuffer(sendBuffer).result()
