@@ -111,9 +111,9 @@ object GameRecorder {
   }
 
   def work(data: GameRecorder.GameRecorderData, essfMap: mutable.HashMap[EssfMapKey, EssfMapJoinLeftInfo],
-           userMap: mutable.HashMap[String, String], userAllMap: mutable.HashMap[String, String],
-           startFrame: Long, endFrame: Long)(implicit middleBuffer: MiddleBufferInJvm,
-                                             timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
+    userMap: mutable.HashMap[String, String], userAllMap: mutable.HashMap[String, String],
+    startFrame: Long, endFrame: Long)(implicit middleBuffer: MiddleBufferInJvm,
+    timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
     Behaviors.receive { (ctx, msg) =>
       msg match {
 
@@ -168,7 +168,7 @@ object GameRecorder {
           switchBehavior(ctx, "save", save(data, essfMap, userMap, userAllMap, startFrame, endFrame))
 
         case RoomClose =>
-          log.info(s"${ctx.self.path} work get msg save, room close")
+//          log.info(s"${ctx.self.path} work get msg save, room close")
           ctx.self ! SaveData(1)
           switchBehavior(ctx, "save", save(data, essfMap, userMap, userAllMap, startFrame, endFrame))
 
@@ -182,15 +182,15 @@ object GameRecorder {
   }
 
   def save(data: GameRecorder.GameRecorderData, essfMap: mutable.HashMap[EssfMapKey, EssfMapJoinLeftInfo],
-           userMap: mutable.HashMap[String, String], userAllMap: mutable.HashMap[String, String],
-           startFrame: Long, endFrame: Long)(implicit middleBuffer: MiddleBufferInJvm,
-                                             timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
+    userMap: mutable.HashMap[String, String], userAllMap: mutable.HashMap[String, String],
+    startFrame: Long, endFrame: Long)(implicit middleBuffer: MiddleBufferInJvm,
+    timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
     Behaviors.receive { (ctx, msg) =>
       msg match {
 
         case SaveData(f) =>
 
-          println(s"${ctx.self.path} save get msg saveData")
+          //println(s"${ctx.self.path} save get msg saveData")
           val mapInfo = essfMap.map {
             essf =>
               if (essf._2.leftF == -1L) {
@@ -206,7 +206,7 @@ object GameRecorder {
           val recordInfo = rRecords(data.fileIndex, data.startTime, System.currentTimeMillis(), data.roomId, userAllMap.size, endFrame - startFrame)
           GameRecordDao.insertGameRecord(recordInfo).onComplete {
             case Success(recordId) =>
-              log.info(s"insert game record successful:$recordId")
+//              log.info(s"insert game record successful:$recordId")
               val list = ListBuffer[rRecordsUserMap]()
               userAllMap.foreach {
                 userRecord =>
@@ -215,7 +215,7 @@ object GameRecorder {
               }
               UserRecordDao.insertPlayerList(list.toList).onComplete {
                 case Success(_) =>
-                  log.info(s"insert user record success, total:${list.length}")
+//                  log.info(s"insert user record success, total:${list.length}")
                   if (f == 0) {
                     ctx.self ! SwitchBehavior("initRecorder", initRecorder(data.roomId, data.fileName, data.fileIndex, userMap))
                   } else {
