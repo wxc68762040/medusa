@@ -30,16 +30,16 @@ class GameScene() {
 
 	val widthMap = 250
 	val heightMap = 600
-	val viewWidth =1200
-	val viewHeight =600
+	val viewWidth = 1200
+	val viewHeight = 600
 	val infoWidth = 250
 	val infoHeight = 300
 	val group = new Group
 	val mapCanvas = new Canvas(widthMap, heightMap)
 	val viewCanvas = new Canvas(viewWidth, viewHeight)
   val infoCanvas = new Canvas(infoWidth, infoHeight)
-	infoCanvas.setStyle("z-index = 100")
-  mapCanvas.setStyle("z-index = 120")
+	infoCanvas.setStyle("z-index: 100")
+  mapCanvas.setStyle("z-index: 120")
 
 	val scene = new Scene(group)
 
