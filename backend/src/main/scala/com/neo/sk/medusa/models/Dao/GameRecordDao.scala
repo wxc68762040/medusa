@@ -18,4 +18,8 @@ object GameRecordDao {
   def getMaxId() = {
     db.run(tRecords.map(_.recordsId).max.result)
   }
+
+  def recordIsExist(id: Long) = {
+    db.run(tRecords.filter(_.recordsId === id).exists.result)
+  }
 }

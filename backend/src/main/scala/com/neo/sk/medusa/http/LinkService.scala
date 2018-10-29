@@ -76,10 +76,8 @@ trait LinkService extends ServiceUtils {
     }
   }
 
-  val linkRoute = playGameClientRoute ~ (pathPrefix("game") & get) {
-    pathEndOrSingleSlash {
-      getFromResource("html/netSnake.html")
-    } ~ playGameRoute ~ watchGameRoute ~ watchRecordRoute
+  val linkRoute = (pathPrefix("link") & get) {
+      playGameRoute ~ playGameClientRoute ~ watchGameRoute ~ watchRecordRoute
   }
 
 }

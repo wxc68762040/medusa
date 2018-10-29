@@ -2,6 +2,8 @@ package com.neo.sk.utils
 
 import java.io.File
 
+import akka.http.javadsl.model.ws.BinaryMessage
+import akka.util.ByteString
 import com.neo.sk.medusa.snake.Protocol
 import org.seekloud.byteobject.MiddleBufferInJvm
 import org.seekloud.essf.io.{FrameData, FrameInputStream, FrameOutputStream}
@@ -32,7 +34,7 @@ object ESSFSupport {
     if(!dir.exists()){
       dir.mkdir()
     }
-    val file = AppSettings.recordPath + fileName + s"_$index"
+    val file = AppSettings.recordPath + fileName + index
     val name = "medusa"
     val version = "0.1"
     val gameInformationBytes = gameInformation.fillMiddleBuffer(middleBuffer).result()
@@ -77,19 +79,20 @@ object ESSFSupport {
   }
 
   /**用于后端先解码数据然后再进行编码传输*/
-//  def replayEventDecode(a:Array[Byte]):List[WsMsgSource] ={
-//    if (a.length > 0) {
-//      val buffer = new MiddleBufferInJvm(a)
-//      bytesDecode[List[Protocol.WsMsgSource]](buffer) match {
-//        case Right(r) =>
-//          r
-//        case Left(e) =>
-//         e
-//      }
-//    }else{
-//      TankGameEvent.DecodeError()
-//    }
-//  }
+  def replayEventDecode(a:Array[Byte])={
+    if (a.length > 0) {
+      val buffer = new MiddleBufferInJvm(a)
+      bytesDecode[List[Protocol.GameMessage]](buffer) match {
+        case Right(r) =>
+          println(r)
+        case Left(e) =>
+          println("-----")
+
+      }
+    }else{
+      println("==")
+    }
+  }
 //
 //  def replayStateDecode(a:Array[Byte]):TankGameEvent.WsMsgServer={
 //    val buffer = new MiddleBufferInJvm(a)

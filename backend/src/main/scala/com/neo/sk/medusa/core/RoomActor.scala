@@ -87,7 +87,7 @@ object RoomActor {
             Behaviors.same
 
           case t: UserDead =>
-            //log.info(s"room $roomId lost a player ${t.userId}")
+            log.info(s"room $roomId lost a player ${t.userId}")
             grid.removeSnake(t.userId)
             dispatchTo(t.userId, UserActor.DispatchMsg(Protocol.DeadInfo(t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killer)), userMap)
             dispatch(UserActor.DispatchMsg(Protocol.SnakeLeft(t.userId, t.deadInfo.name)), userMap)

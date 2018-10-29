@@ -14,4 +14,6 @@ class StageContext(stage: Stage) {
 		stage.sizeToScene()
 		stage.show()
 	}
+
+
 }

@@ -10,11 +10,13 @@ import akka.stream.scaladsl.{Flow, Keep}
 import akka.stream.typed.scaladsl.{ActorSink, _}
 import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.ByteString
+import com.neo.sk.medusa.common.StageContext
+import com.neo.sk.medusa.controller.GameController
+import com.neo.sk.medusa.scene.GameScene
 import com.neo.sk.medusa.snake.Protocol._
 import org.seekloud.byteobject.ByteObject._
 import org.seekloud.byteobject.MiddleBufferInJvm
 import org.slf4j.LoggerFactory
-
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
@@ -29,16 +31,22 @@ object WSClient {
 	
 	private val log = LoggerFactory.getLogger("WSClient")
 	private val logPrefix = "WSClient"
+	private var outputStream: Option[ActorRef[WsSendMsg]] = None
 	
-	def create(gameController: ActorRef[WsMsgSource], _system: ActorSystem, _materializer: Materializer, _executor: ExecutionContextExecutor): Behavior[WsCommand] = {
+	def create(gameMessageReceiver: ActorRef[WsMsgSource],
+						 stageCtx: StageContext,
+						 _system: ActorSystem,
+						 _materializer: Materializer,
+						 _executor: ExecutionContextExecutor): Behavior[WsCommand] = {
 		Behaviors.setup[WsCommand] { ctx =>
 			Behaviors.withTimers { timer =>
-				working(gameController)(timer, _system, _materializer, _executor)
+				working(gameMessageReceiver, stageCtx)(timer, _system, _materializer, _executor)
 			}
 		}
 	}
 	
-	private def working(gameController: ActorRef[WsMsgSource])
+	private def working(gameMessageReceiver: ActorRef[WsMsgSource],
+											stageCtx: StageContext)
 										 (implicit timer: TimerScheduler[WsCommand],
 											system: ActorSystem,
 											materializer: Materializer,
@@ -50,7 +58,7 @@ object WSClient {
 					println("now trying web socket")
 					val webSocketFlow = Http().webSocketClientFlow(WebSocketRequest(url))
 					val source = getSource
-					val sink = getSink(gameController)
+					val sink = getSink(gameMessageReceiver)
 					val ((stream, response), _) =
 						source
 				  	.viaMat(webSocketFlow)(Keep.both)
@@ -60,6 +68,9 @@ object WSClient {
 					val connected = response.flatMap { upgrade =>
 						if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
 							ctx.schedule(10.seconds, stream, NetTest(id, System.currentTimeMillis()))
+							val gameScene = new GameScene()
+							val gameController = new GameController(id, name, accessCode, stageCtx, gameScene, stream)
+							gameController.connectToGameServer
 							Future.successful(s"$logPrefix connect success.")
 						} else {
 							throw new RuntimeException(s"WSClient connection failed: ${upgrade.response.status}")
@@ -112,6 +123,6 @@ object WSClient {
 	def getWebSocketUri(playerId: String, playerName: String, accessCode: String): String = {
 		val wsProtocol = "ws"
 		val host ="localhost:30372"
-		s"$wsProtocol://$host/medusa/playGameClient?playerId=$playerId&playerName=$playerName&accessCode=$accessCode"
+		s"$wsProtocol://$host/medusa/link/playGameClient?playerId=$playerId&playerName=$playerName&accessCode=$accessCode"
 	}
 }
