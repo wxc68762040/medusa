@@ -1,11 +1,15 @@
 package com.neo.sk.medusa.scene
 
+import java.io.File
+
 import com.neo.sk.medusa.snake.{Grid, Point}
-import javafx.scene.effect.{BlendMode, BoxBlur}
+import javafx.scene.effect.{BlendMode, Bloom, BoxBlur}
 import javafx.scene.image.Image
+
 import com.neo.sk.medusa.snake.Protocol.{GridDataSync, _}
 import com.neo.sk.medusa.snake._
 import javafx.scene.paint.Color
+
 import com.neo.sk.medusa.controller.GameController._
 import javafx.scene.text.Font
 /**
@@ -23,6 +27,8 @@ class GameViewCanvas(canvas: Canvas) {
   val windowHeight = canvas.getHeight
 //  val bgImage = new Image("bg.png ")
   val ctx = canvas.getGraphicsContext2D
+  val bgColor = new Color(0.003, 0.176, 0.176, 1.0)
+  val bgImage = new Image("file:client/src/main/resources/bg.png")
 
   object MyColors {
     val myHeader = "#FFFFFF"
@@ -48,14 +54,11 @@ class GameViewCanvas(canvas: Canvas) {
   }
 
   def drawSnake(uid: String, data:GridDataSync):Unit = {
-    ctx.setFill(Color.WHITE)
+    ctx.setFill(bgColor)
     ctx.fillRect(0, 0, windowWidth, windowWidth)
     val period = (System.currentTimeMillis() - basicTime).toInt
-    //println(period)
     val snakes = data.snakes
-    //println(snakes)
     val apples = data.appleDetails
-   // println(apples)
 
     val mySubFrameRevise =
       try {
@@ -87,20 +90,21 @@ class GameViewCanvas(canvas: Canvas) {
     ctx.translate(windowWidth / 2, windowHeight / 2)
     ctx.scale(1 / myPorportion, 1 / myPorportion)
     ctx.translate(-windowWidth / 2, -windowHeight / 2)
-
-    ctx.setStroke(Color.web("#E0E0E0"))
-    ctx.beginPath()
-    for(i <- deviationX to ((deviationX + Boundary.w), 30) ){
-      ctx.moveTo(i, deviationY)
-      ctx.lineTo(i, deviationY + Boundary.h)
-    }
-
-    for(i <- deviationY to ((deviationY + Boundary.h), 30)){
-      ctx.moveTo(deviationX, i)
-      ctx.lineTo(deviationX + Boundary.w, i)
-    }
-
-    ctx.stroke()
+    ctx.drawImage(bgImage, 0 + deviationX, 0 + deviationY, Boundary.w, Boundary.h)
+    
+//    //格子线背景
+//    ctx.setStroke(Color.web("#E0E0E0"))
+//    ctx.beginPath()
+//    for(i <- deviationX to (deviationX + Boundary.w, 30) ){
+//      ctx.moveTo(i, deviationY)
+//      ctx.lineTo(i, deviationY + Boundary.h)
+//    }
+//
+//    for(i <- deviationY to (deviationY + Boundary.h, 30)){
+//      ctx.moveTo(deviationX, i)
+//      ctx.lineTo(deviationX + Boundary.w, i)
+//    }
+//    ctx.stroke()
 
     apples.filterNot(a => a.x < myHead.x - windowWidth / 2 * myPorportion || a.y < myHead.y - windowHeight / 2 * myPorportion || a.x > myHead.x + windowWidth / 2 * myPorportion || a.y > myHead.y + windowHeight / 2 * myPorportion).foreach { case Ap(score, _, _, x, y, _) =>
       val ApColor = score match {
@@ -124,10 +128,9 @@ class GameViewCanvas(canvas: Canvas) {
       while (step > 0) {
         val distance = tail.distance(joints.dequeue._1)
         if (distance >= step) {
-//          val target = tail + tail.getDirection(joints.dequeue._1) * step
-          val target = tail + tail.getDirection(joints.dequeue._1)
+          val target = tail + tail.getDirection(joints.dequeue._1) * step
           tail = target
-          step = step - 1
+          step = -1
         } else {
           step -= distance
           tail = joints.dequeue._1
@@ -140,8 +143,8 @@ class GameViewCanvas(canvas: Canvas) {
         ctx.setStroke(Color.web(snake.color))
         ctx.setEffect(new BoxBlur(2, 2, 3)) //模糊范围设置为10*10像素大小，模糊迭代次数设置为3
       } else {
-        ctx.setStroke(Color.web("rgba(0,0,0,1)"))
-        ctx.setEffect(new BoxBlur(2, 2, 3))
+        ctx.setStroke(Color.web("rgba(255, 255, 0, 1)"))
+        ctx.setEffect(new Bloom(0.0))
       }
       val snakeWidth = square * 2
       ctx.setLineWidth(snakeWidth)
@@ -175,7 +178,7 @@ class GameViewCanvas(canvas: Canvas) {
       val snakeName = if(snake.name.length > 15) snake.name.substring(0,14) else snake.name
       ctx.fillText(snakeName, (x - myHead.x ) / myPorportion  + centerX- nameLength * 4, (y - myHead.y ) / myPorportion + centerY- 15)
       if (snakeSpeed > fSpeed + 1) {
-        ctx.fillText(snakeSpeed.toInt.toString, (x - myHead.x ) / myPorportion  + centerX- nameLength * 4, (y - myHead.y ) / myPorportion + centerY - 25)
+        ctx.fillText(snakeSpeed.toInt.toString, (x - myHead.x) / myPorportion + centerX- nameLength * 4, (y - myHead.y) / myPorportion + centerY - 25)
       }
     }
 
