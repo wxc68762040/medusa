@@ -16,9 +16,10 @@ import scala.concurrent.duration.FiniteDuration
 	*/
 object GameMessageReceiver {
 	
-	case class GridInitial(grid: GridOnClient) extends GameMessageBeginning
+	case class ControllerInitial(controller: GameController) extends GameMessageBeginning
 	
 	private[this] val log = LoggerFactory.getLogger(this.getClass)
+	private[this] var grid: GridOnClient = _
 	
 	def create(): Behavior[WsMsgSource] = {
 		Behaviors.setup[WsMsgSource] { ctx =>
@@ -33,8 +34,9 @@ object GameMessageReceiver {
 			msg match {
 				case m: GameMessageBeginning =>
 					m match {
-						case GridInitial(grid) =>
-							switchBehavior(ctx, "running", running(myId, myRoomId, grid))
+						case ControllerInitial(gameController) =>
+							grid = GameController.grid
+							switchBehavior(ctx, "running", running(myId, myRoomId, gameController))
 					}
 				
 				case x =>
@@ -44,7 +46,7 @@ object GameMessageReceiver {
 		}
 	}
 	
-	private def running(myId: String, myRoomId: Long, grid: GridOnClient)
+	private def running(myId: String, myRoomId: Long, gameController: GameController)
 										 (implicit stashBuffer: StashBuffer[WsMsgSource]): Behavior[WsMsgSource] = {
 		Behaviors.receive[WsMsgSource] { (ctx, msg) =>
 			msg match {
@@ -52,13 +54,13 @@ object GameMessageReceiver {
 					ClientBoot.addToPlatform {
 						grid.myId = id
 					}
-					running(id, roomId, grid)
+					running(id, roomId, gameController)
 					
 				case Protocol.Id(id) =>
 					ClientBoot.addToPlatform {
 						grid.myId = id
 					}
-					running(id, myRoomId, grid)
+					running(id, myRoomId, gameController)
 				
 				case Protocol.TextMsg(message) =>
 					log.info(s"get TextMsg: $message")
@@ -143,7 +145,7 @@ object GameMessageReceiver {
 						if (!grid.init) {
 							grid.init = true
 							val timeout = 100 - (System.currentTimeMillis() - data.timestamp) % 100
-							//						dom.window.setTimeout(() => startLoop(), timeout)
+							gameController.startGameLoop()
 						}
 						grid.syncData = Some(data)
 						grid.sync(Some(data))
