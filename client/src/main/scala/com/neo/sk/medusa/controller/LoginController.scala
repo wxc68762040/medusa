@@ -29,4 +29,10 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 		}
 	}
 	
+	stageCtx.setStageListener(new StageContext.StageListener {
+		override def onCloseRequest(): Unit = {
+			stageCtx.closeStage()
+		}
+	})
+	
 }
