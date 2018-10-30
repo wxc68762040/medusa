@@ -7,6 +7,7 @@ import javafx.scene.paint.Color
 import com.neo.sk.medusa.controller.GameController._
 import javafx.scene.canvas.Canvas
 import javafx.scene.text.Font
+import java.util.{Timer, TimerTask}
 
 
 /**
@@ -94,16 +95,25 @@ class GameInfoCanvas(canvas: Canvas) {
 
     infoCtx.setFont(Font.font("18px Helvetica"))
     var i = 1
+
+//    val timer = new Timer(true)
+//    val timerTask = new TimerTask {
+//      override def run(): Unit = infoCtx.clearRect(400, 0, 200, 200)
+//      println("ok")
+//    }
+
     grid.waitingShowKillList.foreach{
       j =>
         if(j._1 != grid.myId){
           infoCtx.fillText(s"你击杀了 ${j._2}",centerX - 120,i*20)
         }else {
-          infoCtx.fillText(s"你自杀了", centerX - 100,i*20)
+          infoCtx.fillText(s"你自杀了----", centerX - 100,i*20)
+         // timer.schedule(timerTask,10 * 1000)
         }
         i += 1
     }
   }
+
 
 
 }
