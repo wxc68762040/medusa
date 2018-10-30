@@ -25,7 +25,7 @@ class GameViewCanvas(canvas: Canvas) {
 
   val windowWidth = canvas.getWidth
   val windowHeight = canvas.getHeight
-//  val bgImage = new Image("bg.png ")
+ // val bgImage = new Image("bg.png ")
   val ctx = canvas.getGraphicsContext2D
   val bgColor = new Color(0.003, 0.176, 0.176, 1.0)
   val bgImage = new Image("file:client/src/main/resources/bg.png")
