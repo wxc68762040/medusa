@@ -11,19 +11,23 @@ import scala.concurrent.Future
 import com.neo.sk.medusa.Boot.{executor, roomManager, scheduler, timeout}
 import com.neo.sk.medusa.core.UserManager
 import akka.actor.typed.scaladsl.AskPattern._
+import com.neo.sk.medusa.ApiDao.getRecordList
+import com.neo.sk.medusa.RecordApiProtocol.{Record, RecordListReq, RecordResponse}
 import com.neo.sk.utils.CirceSupport._
-import com.neo.sk.utils.ServiceUtils
+import com.neo.sk.utils.{HttpUtil, ServiceUtils}
 import io.circe.generic.auto._
 import io.circe.generic.auto._
 import io.circe.syntax._
 import io.circe._
 import com.neo.sk.medusa.protocol.PlayInfoProtocol._
 import com.neo.sk.medusa.core.RoomManager
+import com.neo.sk.utils.ServiceUtils.CommonRsp
 /**
   * User: yuwei
   * Date: 2018/10/19
   * Time: 12:48
   */
+
 trait Api4PlayInfo extends ServiceUtils{
 
   implicit val system: ActorSystem
@@ -63,6 +67,13 @@ trait Api4PlayInfo extends ServiceUtils{
       }
     )
   }
+
+
+  //
+
+
+
+
 
   val playInfoRoute:Route = getRoomIdRoute ~ getRoomList ~ getRoomPlayerList
 
