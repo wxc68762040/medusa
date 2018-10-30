@@ -89,7 +89,7 @@ object WSClient {
 				case EstablishConnectionEs(wsUrl,scanUrl) =>
 					val webSocketFlow = Http().webSocketClientFlow(WebSocketRequest(wsUrl))
 
-					val source = getSource
+					val source = getSource(ctx.self)
 					val sink = getSinkDup(ctx.self)
 					val response =
 						source

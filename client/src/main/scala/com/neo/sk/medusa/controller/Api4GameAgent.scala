@@ -9,7 +9,9 @@ import io.circe.parser.decode
 import io.circe.syntax._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-
+/**
+  * Created by nwh on 2018/10/24.
+  */
 object Api4GameAgent extends  HttpUtil{
 
 
