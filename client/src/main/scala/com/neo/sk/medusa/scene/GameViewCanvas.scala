@@ -124,10 +124,10 @@ class GameViewCanvas(canvas: Canvas) {
       while (step > 0) {
         val distance = tail.distance(joints.dequeue._1)
         if (distance >= step) {
-//          val target = tail + tail.getDirection(joints.dequeue._1) * step
-          val target = tail + tail.getDirection(joints.dequeue._1)
+          val target = tail + tail.getDirection(joints.dequeue._1) * step
+//          val target = tail + tail.getDirection(joints.dequeue._1)
           tail = target
-          step = step - 1
+          step = - 1
         } else {
           step -= distance
           tail = joints.dequeue._1

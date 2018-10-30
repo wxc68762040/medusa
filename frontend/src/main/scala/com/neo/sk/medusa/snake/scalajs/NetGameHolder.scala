@@ -43,6 +43,8 @@ object NetGameHolder extends js.JSApp {
   var gameLoopControl = 0 //保存gameLoop的setInterval的ID
   var myProportion = 1.0
   var eatenApples  = Map[String, List[AppleWithFrame]]()
+  var rePlayOver = false
+
 
 
   val grid = new GridOnClient(bounds)
@@ -258,14 +260,20 @@ object NetGameHolder extends js.JSApp {
                   myRoomId = roomId.toInt + 1
                 //                  writeToArea(s"$user joined!")
                 case Protocol.NewSnakeNameExist(id, name, roomId)=>
+
+                case Protocol.ReplayOver =>
+                  rePlayOver = true
+                  grid.snakes = Map.empty[String, SnakeInfo]
 //                  nameExist.innerHTML = "名字已存在"
                 case Protocol.SnakeLeft(id, user) =>
                   grid.removeSnake(id)
 //                  writeToArea(s"$user left!")
                 case Protocol.SnakeAction(id, keyCode, frame) =>
-                  if(id != myId) {
-                    grid.addActionWithFrame(id, keyCode, frame)
-                  }
+                  if(state.contains("playGame")) {
+                    if (id != myId) {
+                      grid.addActionWithFrame(id, keyCode, frame)
+                    }
+                  }else grid.addActionWithFrame(id,keyCode,frame)
                 case Protocol.DistinctSnakeAction(keyCode, frame ,frontFrame) =>
 //                  println(s"当前前端帧数frameCount:${grid.frameCount}")
 //                  println(s"actionMap保存最大帧数:${grid.actionMap.keySet.max}")
@@ -308,6 +316,16 @@ object NetGameHolder extends js.JSApp {
                       grid.snakes += (info.snakeId -> newSnake)
                     }
                   }
+
+                case Protocol.SyncApples(ap) =>
+                  grid.grid = grid.grid.filter { case (_, spot) =>
+                    spot match {
+                      case Apple(_, life, _, _) if life >= 0 => true
+                      case _ => false
+                    }
+                  }
+                  val appleMap = ap.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
+                  grid.grid = appleMap
 
                 case data: Protocol.GridDataSync =>
                   if(!grid.init) {

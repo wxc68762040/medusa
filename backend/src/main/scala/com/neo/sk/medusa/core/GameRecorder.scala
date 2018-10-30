@@ -29,7 +29,7 @@ object GameRecorder {
   private final val log = LoggerFactory.getLogger(this.getClass)
   private final val InitTime = Some(5.minutes)
   private final val saveTime = 60.seconds
-  private final val maxRecordNum = 100
+  private final val maxRecordNum = 10
 
   sealed trait Command
 
@@ -104,7 +104,7 @@ object GameRecorder {
         val fileRecorder = initFileRecorder(fileName, index, gameInformation, initStateOpt)
         val gameRecordBuffer: List[GameRecord] = List[GameRecord]()
         timer.startSingleTimer(SaveDataKey, Save, saveTime)
-        val data = GameRecorderData(roomId, fileName, 0, System.currentTimeMillis(), initStateOpt, fileRecorder, gameRecordBuffer)
+        val data = GameRecorderData(roomId, fileName, index, System.currentTimeMillis(), initStateOpt, fileRecorder, gameRecordBuffer)
         switchBehavior(ctx, "work", work(data, mutable.HashMap[EssfMapKey, EssfMapJoinLeftInfo](), mutable.HashMap[String, String](), mutable.HashMap[String, String](), -1l, -1l))
       }
     }

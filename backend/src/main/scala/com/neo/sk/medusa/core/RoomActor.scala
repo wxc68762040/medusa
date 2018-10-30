@@ -63,12 +63,12 @@ object RoomActor {
             if(isRecord){
               getGameRecorder(ctx, grid, roomId)
             }
-            idle(roomId, 0, mutable.HashMap[String, (ActorRef[UserActor.Command], String)](), grid)
+            idle(roomId, 0,ListBuffer[Protocol.GameMessage](), mutable.HashMap[String, (ActorRef[UserActor.Command], String)](), grid)
         }
     }
   }
 
-  private def idle(roomId: Long, tickCount: Long,
+  private def idle(roomId: Long, tickCount: Long, eventList:ListBuffer[Protocol.GameMessage],
                    userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String)], grid: GridOnServer)
                   (implicit timer: TimerScheduler[RoomActor.Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
@@ -79,6 +79,11 @@ object RoomActor {
             userMap.put(t.playerId, (t.userActor, t.playerName))
             grid.addSnake(t.playerId, t.playerName)
             dispatchTo(t.playerId, UserActor.DispatchMsg(Protocol.Id(t.playerId)), userMap)
+            eventList.append(Protocol.NewSnakeJoined(t.playerId, t.playerName, roomId))
+            if(isRecord) {
+              grid.genWaitingSnake()
+              eventList.append(grid.getGridSyncData)
+            }
             dispatch(UserActor.DispatchMsg(Protocol.NewSnakeJoined(t.playerId, t.playerName, roomId)), userMap)
             dispatch(UserActor.DispatchMsg(grid.getGridSyncData), userMap)
             if(isRecord){
@@ -91,6 +96,8 @@ object RoomActor {
             grid.removeSnake(t.userId)
             dispatchTo(t.userId, UserActor.DispatchMsg(Protocol.DeadInfo(t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killer)), userMap)
             dispatch(UserActor.DispatchMsg(Protocol.SnakeLeft(t.userId, t.deadInfo.name)), userMap)
+            eventList.append(Protocol.DeadInfo(t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killer))
+            eventList.append(Protocol.SnakeLeft(t.userId, t.deadInfo.name))
             userMap.remove(t.userId)
             if(isRecord){
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserLeftRoom(t.userId, t.deadInfo.name, grid.frameCount)
@@ -98,24 +105,20 @@ object RoomActor {
             Behaviors.same
 
           case t: Key =>
-            val eventList = ListBuffer[Protocol.GameMessage]()
               if (t.frame >= grid.frameCount) {
                 grid.addActionWithFrame(t.id, t.keyCode, t.frame)
                 eventList.append(Protocol.SnakeAction(t.id, t.keyCode, t.frame))
                 dispatch(UserActor.DispatchMsg(Protocol.SnakeAction(t.id, t.keyCode, t.frame)), userMap)
               } else if (t.frame >= grid.frameCount - Protocol.savingFrame + Protocol.advanceFrame) {
                 grid.addActionWithFrame(t.id, t.keyCode, grid.frameCount)
+                eventList.append(Protocol.SnakeAction(t.id, t.keyCode, grid.frameCount))
                 eventList.append(Protocol.DistinctSnakeAction(t.keyCode, grid.frameCount, t.frame))
-                //eventList.append(Protocol.SnakeAction(t.id, t.keyCode, grid.frameCount))
                 dispatchDistinct(t.id, UserActor.DispatchMsg(Protocol.DistinctSnakeAction(t.keyCode, grid.frameCount, t.frame)),
                   UserActor.DispatchMsg(Protocol.SnakeAction(t.id, t.keyCode, grid.frameCount)), userMap)
                 log.info(s"key delay: server: ${grid.frameCount} client: ${t.frame}")
               } else {
                 log.info(s"key loss: server: ${grid.frameCount} client: ${t.frame}")
               }
-            if(isRecord) {
-              getGameRecorder(ctx, grid, roomId) ! GameRecorder.GameRecord(eventList.toList, Some(grid.getGridSyncData))
-            }
             Behaviors.same
 
           case BeginSync =>
@@ -126,6 +129,7 @@ object RoomActor {
             grid.removeSnake(t.playerId)
             val userName=userMap(t.playerId)._2
             dispatch(UserActor.DispatchMsg(Protocol.SnakeLeft(t.playerId,userName)),userMap)
+            eventList.append(Protocol.SnakeLeft(t.playerId,userName))
             if(isRecord) {
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserLeftRoom(t.playerId, userMap(t.playerId)._2, grid.frameCount)
             }
@@ -135,7 +139,6 @@ object RoomActor {
           case Sync =>
             val newTick = tickCount + 1
             grid.update(false)
-            val eventList = ListBuffer[Protocol.GameMessage]()
             val feedApples = grid.getFeededApple
             val eatenApples = grid.getEatenApples
             val speedUpInfo = grid.getSpeedUpInfo
@@ -149,22 +152,30 @@ object RoomActor {
                 eventList.append(Protocol.KillList(g._2))
                 dispatchTo(g._1, UserActor.DispatchMsg(Protocol.KillList(g._2)), userMap)
             }
+
+            if (feedApples.nonEmpty) {
+              eventList.append(Protocol.FeedApples(feedApples))
+            }
+            if (eatenApples.nonEmpty) {
+              val tmp = Protocol.EatApples(eatenApples.map(r => EatFoodInfo(r._1, r._2)).toList)
+              eventList.append(tmp)
+            }
+            if (speedUpInfo.nonEmpty) {
+              eventList.append(Protocol.SpeedUp(speedUpInfo))
+            }
             if (tickCount % 20 == 5) {
               val GridSyncData = grid.getGridSyncData
-              eventList.append(GridSyncData)
+              eventList.append(Protocol.SyncApples(GridSyncData.appleDetails))
               dispatch(UserActor.DispatchMsg(GridSyncData), userMap)
             } else {
               if (feedApples.nonEmpty) {
-                eventList.append(Protocol.FeedApples(feedApples))
                 dispatch(UserActor.DispatchMsg(Protocol.FeedApples(feedApples)), userMap)
               }
               if (eatenApples.nonEmpty) {
                 val tmp = Protocol.EatApples(eatenApples.map(r => EatFoodInfo(r._1, r._2)).toList)
-                eventList.append(tmp)
                 dispatch(UserActor.DispatchMsg(tmp), userMap)
               }
               if (speedUpInfo.nonEmpty) {
-                eventList.append(Protocol.SpeedUp(speedUpInfo))
                 dispatch(UserActor.DispatchMsg(Protocol.SpeedUp(speedUpInfo)), userMap)
               }
             }
@@ -175,7 +186,7 @@ object RoomActor {
             if(isRecord) {
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.GameRecord(eventList.toList, Some(grid.getGridSyncData))
             }
-            idle(roomId, newTick, userMap, grid)
+            idle(roomId, newTick, ListBuffer[Protocol.GameMessage](), userMap, grid)
 
           case NetTest(id, createTime) =>
             dispatchTo(id, UserActor.DispatchMsg(Protocol.NetDelayTest(createTime)), userMap)
