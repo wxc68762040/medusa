@@ -83,9 +83,12 @@ trait LinkService extends ServiceUtils {
   }
 
   private val watchRecordRoute = path("watchRecord"){
-    parameter('recordId.as[Long], 'playerId.as[String], 'watchPlayerId.as[Long], 'frame.as[Long]){
+    parameter('recordId.as[Long], 'playerId.as[String], 'watchPlayerId.as[String], 'frame.as[Long]){
       (recordId, playerId, watchPlayerId, frame) =>
-        complete()
+        val flowFuture:Future[Flow[Message,Message,Any]] =userManager ? (UserManager.GetReplayWebSocketFlow(recordId,playerId,watchPlayerId,frame,_))
+        dealFutureResult(
+          flowFuture.map(r => handleWebSocketMessages(r))
+        )
     }
   }
 

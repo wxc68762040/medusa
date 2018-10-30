@@ -38,12 +38,12 @@ trait Api4PlayInfo extends ServiceUtils{
 
   private val getRoomIdRoute = (path("getRoomId") & post){
     dealPostReq[GetRoomIdReq]{ req =>
-      val roomId:Future[RoomManager.RoomIdRsp] = roomManager ? (RoomManager.GetRoomIdByPlayerId(req.playId, _))
+      val roomId:Future[RoomManager.RoomIdRsp] = roomManager ? (RoomManager.GetRoomIdByPlayerId(req.playerId, _))
       roomId.map{ rsp =>
         if(rsp.roomId != -1) {
           complete(GetRoomIdRsp(RoomInfo(rsp.roomId)))
         }else{
-          complete(GetRoomIdRsp(RoomInfo(-1), 100009, s"playerId ${req.playId} not exist"))
+          complete(GetRoomIdRsp(RoomInfo(-1), 100009, s"playerId ${req.playerId} not exist"))
         }
       }
     }

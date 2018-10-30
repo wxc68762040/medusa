@@ -46,7 +46,7 @@ object RoomManager {
   val behaviors: Behavior[Command] = {
     log.info(s"RoomManager start...")
     Behaviors.setup[Command] {
-      ctx =>
+      _ =>
         Behaviors.withTimers[Command] {
           implicit timer =>
             val maxUserNum = 30

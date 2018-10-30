@@ -1,4 +1,4 @@
-package com.neo.sk.medusa.controller
+package com.neo.sk.medusa.model
 
 import java.awt.event.KeyEvent
 
@@ -10,6 +10,9 @@ import com.neo.sk.medusa.snake._
   * Time: 10:13 PM
   */
 class GridOnClient(override val boundary: Point) extends Grid {
+
+	var currentRank = List.empty[Score]
+	var historyRank = List.empty[Score]
 
   override def debug(msg: String): Unit = println(msg)
 
@@ -47,6 +50,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
         snake.direction
       }
     }
+
     
     val speedInfoOpt = speedUp(snake, newDirection)
     var newSpeed = if (speedInfoOpt.nonEmpty) speedInfoOpt.get._2 else snake.speed
@@ -120,13 +124,13 @@ class GridOnClient(override val boundary: Point) extends Grid {
 	var eatenApples  = Map[String, List[AppleWithFrame]]()
 	var savedGrid = Map[Long,Protocol.GridDataSync]()
 	var syncData: scala.Option[Protocol.GridDataSync] = None
-	var waitingShowKillList=List.empty[(String,String)]
+	var waitingShowKillList = List.empty[(String,String)]
 	
 	
 	def sync(dataOpt: scala.Option[Protocol.GridDataSync]) = {
 		if (dataOpt.nonEmpty) {
 			val data = dataOpt.get
-			//      grid.actionMap = grid.actionMap.filterKeys(_ >= data.frameCount - 1 - advanceFrame)
+//      grid.actionMap = grid.actionMap.filterKeys(_ >= data.frameCount - 1 - advanceFrame)
 			val presentFrame = frameCount
 			frameCount = data.frameCount
 			snakes = data.snakes.map(s => s.id -> s).toMap

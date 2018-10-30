@@ -13,7 +13,7 @@ import com.neo.sk.medusa.ClientBoot
 import com.neo.sk.medusa.actor.WSClient
 import com.neo.sk.medusa.actor.WSClient.ConnectGame
 import com.neo.sk.medusa.common.StageContext
-import com.neo.sk.medusa.controller.{GameController, GridOnClient}
+import com.neo.sk.medusa.controller.GameController
 import javafx.scene.image.Image
 import com.neo.sk.medusa.controller.LoginController
 import com.sun.xml.internal.messaging.saaj.util.ByteInputStream
@@ -55,6 +55,7 @@ class LoginScene() {
 			canvasCtx.drawImage(img,0,0)
 		}
 	}
+	
 	def setLoginSceneListener(listener: LoginSceneListener) {
 		loginSceneListener = listener
 	}

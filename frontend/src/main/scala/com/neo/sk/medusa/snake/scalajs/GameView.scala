@@ -123,7 +123,7 @@ object GameView  {
       while (step > 0){//尾巴在移动到下一个节点前就要停止
         val distance = tail.distance(joints.dequeue._1)
         if (distance >= step){
-          val target = tail + tail.getDirection(joints.dequeue._1) * step
+          val target = tail + tail.getDirection(joints.dequeue._1)
           tail = target
           step = -1
         } else { //尾巴在移动到下一个节点后还需要继续移动

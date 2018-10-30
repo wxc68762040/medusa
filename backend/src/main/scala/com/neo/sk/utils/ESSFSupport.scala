@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory
 import com.neo.sk.medusa.common.AppSettings
 import com.neo.sk.medusa.core.GameRecorder.{EssfMapInfo, EssfMapJoinLeftInfo, EssfMapKey}
 import com.neo.sk.medusa.snake.GridOnServer
+import com.neo.sk.medusa.snake.Protocol.WsMsgSource
 
 import scala.collection.mutable
 
@@ -147,20 +148,9 @@ object ESSFSupport {
 //    }
 //  }
 //
-//import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage}
-import com.neo.sk.medusa.common.Constants
-  implicit val sendBuffer = new MiddleBufferInJvm(81920)
-  def main(args: Array[String]): Unit = {
-    val replay = initFileReader("D:\\Project\\medusa\\backend\\record\\medusa_10000021")
-    replay.init()
-    replay.gotoSnapshot(5)
-    while (replay.hasMoreFrame) {
-      replay.readFrame() match {
-        case Some(FrameData(idx, ev, stOp)) =>
-          println(idx)
-          replayEventDecode(ev)
-      }
-    }
-  }
+//
+//  def main(args: Array[String]): Unit = {
+//    readData(initFileReader("C:\\Users\\sky\\IdeaProjects\\tank\\backend\\gameDataDirectoryPath\\tankGame_1539309693971_5"))
+//  }
 
 }

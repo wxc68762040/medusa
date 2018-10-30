@@ -1,7 +1,7 @@
 package com.neo.sk.medusa.actor
 
 import akka.Done
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, PoisonPill}
 import akka.actor.typed._
 import akka.actor.typed.scaladsl.{Behaviors, TimerScheduler}
 import akka.http.scaladsl.Http
@@ -21,6 +21,7 @@ import org.seekloud.byteobject.MiddleBufferInJvm
 import org.slf4j.LoggerFactory
 import io.circe.parser.decode
 
+
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import com.neo.sk.medusa.controller.Api4GameAgent._
@@ -34,6 +35,8 @@ object WSClient {
 	case class ConnectGame(id: String, name: String, accessCode: String) extends WsCommand
 	case class EstablishConnectionEs(ws:String,scanUrl:String) extends WsCommand
 
+
+	case object Stop extends WsCommand
 
 	private val log = LoggerFactory.getLogger("WSClient")
 	private val logPrefix = "WSClient"
@@ -58,7 +61,7 @@ object WSClient {
 					val url = getWebSocketUri(id, name, accessCode)
 					println("now trying web socket")
 					val webSocketFlow = Http().webSocketClientFlow(WebSocketRequest(url))
-					val source = getSource
+					val source = getSource(ctx.self)
 					val sink = getSink(gameMessageReceiver)
 					val ((stream, response), _) =
 						source
@@ -68,10 +71,9 @@ object WSClient {
 					
 					val connected = response.flatMap { upgrade =>
 						if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
-							ctx.schedule(10.seconds, stream, NetTest(id, System.currentTimeMillis()))
 							val gameScene = new GameScene()
 //							val gameController = new GameController(id, name, accessCode, stageCtx, gameScene, stream)
-//							gameController.connectToGameServer
+//							gameController.connectToGameServer(gameController)
 							Future.successful(s"$logPrefix connect success.")
 						} else {
 							throw new RuntimeException(s"WSClient connection failed: ${upgrade.response.status}")
@@ -105,6 +107,10 @@ object WSClient {
 					connected.onComplete(i => log.info(i.toString))
 					Behavior.same
 
+
+				case Stop =>
+					log.info("WSClient now stop.")
+					Behaviors.stopped
 			}
 		}
 	}
@@ -169,11 +175,14 @@ object WSClient {
 				msg
 		}.to(ActorSink.actorRef[WsMsgSource](actor, CompleteMsgServer, FailMsgServer))
 	
-	def getSource = ActorSource.actorRef[WsSendMsg](
+	def getSource(wsClient: ActorRef[WsCommand]) = ActorSource.actorRef[WsSendMsg](
 		completionMatcher = {
 			case WsSendComplete =>
+				log.info("WebSocket Complete")
+				wsClient ! Stop
 		}, failureMatcher = {
-			case WsSendFailed(ex) ⇒ ex
+			case WsSendFailed(ex) ⇒
+				ex
 		},
 		bufferSize = 8,
 		overflowStrategy = OverflowStrategy.fail
