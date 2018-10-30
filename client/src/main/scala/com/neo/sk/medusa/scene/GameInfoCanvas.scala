@@ -31,6 +31,14 @@ class GameInfoCanvas(canvas: Canvas) {
     ctx.clearRect(0,0,infoWidth,infoHeight)
   }
 
+  def setTimer(timer: Timer): Unit = {
+    val timerTask = new TimerTask {
+      override def run(): Unit = infoCtx.clearRect(400, 0, 200, 200)
+    }
+    println("Timer is ok")
+    timer.schedule(timerTask,10 * 1000)
+  }
+
   def drawInfo(uid: String, data:GridDataSync,historyRank:List[Score], currentRank:List[Score]): Unit = {
 
     clearInfo(infoCtx)
@@ -39,6 +47,7 @@ class GameInfoCanvas(canvas: Canvas) {
     val snakes = data.snakes
     val leftBegin = 10
     val rightBegin = (infoWidth - 200).toInt
+
 
     val centerX = infoWidth /2
     val centerY = infoHeight /2
@@ -60,6 +69,8 @@ class GameInfoCanvas(canvas: Canvas) {
       case None =>
         if (firstCome) {
           infoCtx.setFont(Font.font(" Helvetica", 36))
+          infoCtx.setFill(Color.web("rgb(250, 250, 250)"))
+          infoCtx.fillText(s"Please Wait...",centerX - 150,centerY - 30)
         } else {
           infoCtx.setFont(Font.font(" Helvetica",24))
           infoCtx.setFill(Color.web("rgb(250, 250, 250)"))
@@ -108,12 +119,12 @@ class GameInfoCanvas(canvas: Canvas) {
           infoCtx.fillText(s"你击杀了 ${j._2}",centerX - 120,i*20)
         }else {
           infoCtx.fillText(s"你自杀了----", centerX - 100,i*20)
-         // timer.schedule(timerTask,10 * 1000)
+         //timer.schedule(timerTask,10 * 1000)
+          val timers = new Timer()
+          setTimer(timers)
         }
         i += 1
     }
   }
-
-
 
 }
