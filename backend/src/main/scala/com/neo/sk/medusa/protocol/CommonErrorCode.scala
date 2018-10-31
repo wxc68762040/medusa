@@ -37,5 +37,7 @@ object CommonErrorCode {
 
   def fileNotExistError = ErrorRsp(1000008, "file not exist")
 
+  def authUserError(e:String) = ErrorRsp(10000115, "Autherror: " + e )
+
 
 }

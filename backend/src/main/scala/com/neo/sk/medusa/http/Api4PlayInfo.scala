@@ -11,7 +11,6 @@ import scala.concurrent.Future
 import com.neo.sk.medusa.Boot.{executor, roomManager, scheduler, timeout}
 import com.neo.sk.medusa.core.UserManager
 import akka.actor.typed.scaladsl.AskPattern._
-import com.neo.sk.medusa.ApiDao.getRecordList
 import com.neo.sk.medusa.RecordApiProtocol.{Record, RecordListReq, RecordResponse}
 import com.neo.sk.utils.CirceSupport._
 import com.neo.sk.utils.{HttpUtil, ServiceUtils}
@@ -53,23 +52,21 @@ trait Api4PlayInfo extends ServiceUtils{
     dealPostReq[GetPlayerListReq]{ req =>
       val playerList:Future[RoomManager.GetPlayerListRsp] = roomManager ? (RoomManager.GetPlayerListReq(req.roomId, _))
       playerList.map{ rsp =>
-
         complete(GetPlayerListRsp(PlayerList(rsp.playerList)))
       }
     }
   }
 
-  private val getRoomList = (path("getRoomList") & get) {
-    val roomList: Future[RoomManager.GetRoomListRsp] = roomManager ? (r=>RoomManager.GetRoomListReq(r))
-    dealFutureResult(
+  private val getRoomList = (path("getRoomList") & post) {
+    dealGetReq {
+      val roomList: Future[RoomManager.GetRoomListRsp] = roomManager ? (r => RoomManager.GetRoomListReq(r))
       roomList.map { rsp =>
         complete(GetRoomListRsp(RoomList(rsp.roomList)))
       }
-    )
+    }
   }
 
 
-  //
 
 
 
