@@ -1,7 +1,5 @@
 package com.neo.sk.medusa.actor
 
-import java.net.URLEncoder
-
 import akka.Done
 import akka.actor.{ActorSystem, PoisonPill}
 import akka.actor.typed._
@@ -23,6 +21,7 @@ import org.seekloud.byteobject.MiddleBufferInJvm
 import org.slf4j.LoggerFactory
 import io.circe.parser.decode
 
+import java.net.URLEncoder
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import com.neo.sk.medusa.controller.Api4GameAgent._
@@ -87,7 +86,7 @@ object WSClient {
 					Behaviors.same
 
 
-				case EstablishConnectionEs(wsUrl,scanUrl) =>
+				case EstablishConnectionEs(wsUrl, scanUrl) =>
 					val webSocketFlow = Http().webSocketClientFlow(WebSocketRequest(wsUrl))
 
 					val source = getSource(ctx.self)
@@ -199,9 +198,9 @@ object WSClient {
 	def getWebSocketUri(playerId: String, playerName: String, accessCode: String): String = {
 		val wsProtocol = "ws"
 		val host ="localhost:30372"
-		val playerIdEncoder = URLEncoder.encode(playerId,"utf-8")
-		val playerNameEncoder = URLEncoder.encode(playerName,"utf-8")
-		val accessCodeEncoder = URLEncoder.encode(accessCode,"utf-8")
+		val playerIdEncoder = URLEncoder.encode(playerId, "utf-8")
+		val playerNameEncoder = URLEncoder.encode(playerName, "utf-8")
+		val accessCodeEncoder = URLEncoder.encode(accessCode, "utf-8")
 		s"$wsProtocol://$host/medusa/link/playGameClient?playerId=$playerIdEncoder&playerName=$playerNameEncoder&accessCode=$accessCodeEncoder"
 	}
 }

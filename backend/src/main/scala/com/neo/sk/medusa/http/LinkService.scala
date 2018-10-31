@@ -1,13 +1,11 @@
 package com.neo.sk.medusa.http
 
 import akka.actor.{ActorSystem, Scheduler}
-
 import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.scaladsl.Flow
 import akka.stream.{ActorAttributes, Materializer, Supervision}
-import akka.util.{ByteString, Timeout}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
@@ -18,19 +16,17 @@ import com.neo.sk.utils.CirceSupport._
 import com.neo.sk.utils.{AuthUtils, ServiceUtils}
 import io.circe.generic.auto._
 import com.neo.sk.utils.ServiceUtils
-
 import io.circe.syntax._
 import io.circe._
-import com.neo.sk.medusa.ApiDao
 import com.neo.sk.medusa.RecordApiProtocol._
 import com.neo.sk.medusa.ApiDao._
 import com.neo.sk.medusa.models.SlickTables
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
 import akka.stream.scaladsl.{FileIO, Source}
 import java.io.File
-
+import java.net.URLDecoder
 import com.neo.sk.utils.AuthUtils.TokenRsp
-import com.neo.sk.utils.ServiceUtils.CommonRsp
+import com.neo.sk.utils.ServiceUtils.{CommonRsp, AccessCodeError}
 /**
   * User: Taoz
   * Date: 9/1/2016
@@ -48,33 +44,40 @@ trait LinkService extends ServiceUtils {
   private val playGameRoute = path("playGame") {
     parameter('playerId.as[String], 'playerName.as[String], 'roomId.as[Long].?, 'accessCode.as[String]) {
       (playerId,playerName,roomId, accessCode) =>
-        dealFutureResult{
-            AuthUtils.verifyAccessCode(accessCode).flatMap {
-              case Right(r) =>
-                val flowFuture: Future[Flow[Message, Message, Any]] = userManager ? (UserManager.GetWebSocketFlow(playerId, playerName, roomId.getOrElse(-1), _))
-                flowFuture.map(r => handleWebSocketMessages(r))
-              case Left(e) =>
-                log.debug(s"accessCode error: ${e}")
-                Future.successful(complete(CommonRsp(1,"error")))
-            }
-        }
+        dealFutureResult {
+					AuthUtils.verifyAccessCode(accessCode).flatMap {
+						case Right(r) =>
+							val flowFuture: Future[Flow[Message, Message, Any]] = userManager ? (UserManager.GetWebSocketFlow(playerId, playerName, roomId.getOrElse(-1), _))
+							flowFuture.map(r => handleWebSocketMessages(r))
+						case Left(e) =>
+							log.error(s"accessCode error: $e")
+							Future.successful(complete(AccessCodeError))
+					}
+				}
     }
   }
 
   private val playGameClientRoute = path("playGameClient") {
     parameter('playerId.as[String], 'playerName.as[String], 'roomId.as[Long].?, 'accessCode.as[String]) {
-      (playerId, playerName, roomId, accessCode) =>
-
-            extractUpgradeToWebSocket { upgrade =>
-              println("_____________________________________________ accessCode: "+accessCode)
-              val flowFuture: Future[Flow[Message, Message, Any]] = userManager ? (UserManager.GetWebSocketFlow(playerId, playerName, roomId.getOrElse(-1), _))
-              dealFutureResult(
-                flowFuture.map(r => complete(upgrade.handleMessages(r)))
-              )
-            }
-
-
-    }
+			(playerIdEncode, playerNameEncode, roomId, accessCodeEncode) =>
+				val playerId = URLDecoder.decode(playerIdEncode, "UTF-8")
+				val playerName = URLDecoder.decode(playerNameEncode, "UTF-8")
+				val accessCode = URLDecoder.decode(accessCodeEncode, "UTF-8")
+				dealFutureResult {
+					AuthUtils.verifyAccessCode(accessCode).map {
+						case Right(r) =>
+							extractUpgradeToWebSocket { upgrade =>
+								val flowFuture: Future[Flow[Message, Message, Any]] = userManager ? (UserManager.GetWebSocketFlow(playerId, playerName, roomId.getOrElse(-1), _))
+								dealFutureResult {
+									flowFuture.map(r => complete(upgrade.handleMessages(r)))
+								}
+							}
+						case Left(e) =>
+							log.error(s"accessCode error: $e")
+							complete(AccessCodeError)
+					}
+				}
+		}
   }
 
   private val watchGameRoute = path("watchGame"){
