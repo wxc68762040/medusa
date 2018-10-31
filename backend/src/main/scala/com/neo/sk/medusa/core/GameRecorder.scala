@@ -174,7 +174,7 @@ object GameRecorder {
 
 
         case unknow =>
-          log.warn(s"${ctx.self.path} recv an unknown msg:${unknow}")
+          log.warn(s"${ctx.self.path} recv an unknown msg:$unknow")
           Behaviors.same
 
       }
@@ -240,7 +240,7 @@ object GameRecorder {
           }
           switchBehavior(ctx, "busy", busy())
         case unknow =>
-          log.warn(s"${ctx} save got unknow msg ${unknow}")
+          log.warn(s"$ctx save got unknow msg $unknow")
           Behaviors.same
       }
 
@@ -279,7 +279,7 @@ object GameRecorder {
           switchBehavior(ctx, "work", work(newGameRecorderData, newEssfMap, newUserAllMap, userMap, startF, -1L))
 
         case unknow =>
-          log.warn(s"${ctx} initRecorder got unknow msg ${unknow}")
+          log.warn(s"$ctx initRecorder got unknow msg $unknow")
           Behaviors.same
       }
     }
@@ -297,7 +297,7 @@ object GameRecorder {
           switchBehavior(ctx, name, behavior, durationOpt, timeOut)
 
         case TimeOut(m) =>
-          log.debug(s"${ctx.self.path} is time out when busy,msg=${m}")
+          log.debug(s"${ctx.self.path} is time out when busy,msg=$m")
           Behaviors.stopped
 
         case unknowMsg =>
