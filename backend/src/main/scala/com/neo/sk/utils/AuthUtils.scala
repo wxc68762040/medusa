@@ -59,9 +59,9 @@ object AuthUtils extends HttpUtil {
     val data = VerifyInfo(gameId, accessCode).asJson.noSpaces
     val sn = appId + System.currentTimeMillis()
     val (timestamp, noce, signature) = SecureUtil.generateSignatureParameters(List(appId, sn, data), secureKey)
-    val postData = PostEnvelope(appId,sn,timestamp,noce,data,signature).asJson.noSpaces
+    val postData = PostEnvelope(appId, sn, timestamp, noce, data, signature).asJson.noSpaces
     val url = "/esheep/api/gameServer/verifyAccessCode?token=lkasdjlaksjdl2389"
-    postJsonRequestSend("post",url,Nil,postData).map{
+    postJsonRequestSend("post", url, Nil, postData).map{
       case Right(jsonStr) =>
         decode[VerifyRsp](jsonStr) match {
           case Right(rsp) =>

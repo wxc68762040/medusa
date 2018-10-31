@@ -88,7 +88,6 @@ object WSClient {
 
 				case EstablishConnectionEs(wsUrl, scanUrl) =>
 					val webSocketFlow = Http().webSocketClientFlow(WebSocketRequest(wsUrl))
-
 					val source = getSource(ctx.self)
 					val sink = getSinkDup(ctx.self)
 					val response =
@@ -98,7 +97,6 @@ object WSClient {
 							.run()
 					val connected = response.flatMap { upgrade =>
 						if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
-
 							Future.successful(s"$logPrefix connect success. EstablishConnectionEs!")
 						} else {
 							throw new RuntimeException(s"WSClient connection failed: ${upgrade.response.status}")
@@ -126,18 +124,16 @@ object WSClient {
 				val gameId = AppSettings.gameId
 				decode[Ws4AgentResponse](msg) match {
 					case Right(res) =>
-						println("res:   "+res)
-						val playerId = "user"+res.Ws4AgentRsp.data.userId.toString
+						val playerId = "user" + res.Ws4AgentRsp.data.userId.toString
 						val nickname = res.Ws4AgentRsp.data.nickname
-						linkGameAgent(gameId,playerId,res.Ws4AgentRsp.data.token).map{
-							case Right(resl) =>
-								log.debug("accessCode: "+resl.accessCode)
-								self ! ConnectGame(playerId,nickname,resl.accessCode)
+						linkGameAgent(gameId, playerId, res.Ws4AgentRsp.data.token).map {
+							case Right(linkRes) =>
+								self ! ConnectGame(playerId, nickname, linkRes.accessCode)
 							case Left(l) =>
-								log.debug("link error!")
+								log.error("link error!")
 						}
 					case Left(le) =>
-						log.debug(s"decode esheep webmsg error! Error information:${le}")
+						log.error(s"decode esheep webmsg error! Error information:${le}")
 				}
 
 			case BinaryMessage.Strict(bMsg) =>
@@ -198,9 +194,8 @@ object WSClient {
 	def getWebSocketUri(playerId: String, playerName: String, accessCode: String): String = {
 		val wsProtocol = "ws"
 		val host ="localhost:30372"
-		val playerIdEncoder = URLEncoder.encode(playerId, "utf-8")
-		val playerNameEncoder = URLEncoder.encode(playerName, "utf-8")
-		val accessCodeEncoder = URLEncoder.encode(accessCode, "utf-8")
-		s"$wsProtocol://$host/medusa/link/playGameClient?playerId=$playerIdEncoder&playerName=$playerNameEncoder&accessCode=$accessCodeEncoder"
+		val playerIdEncoder = URLEncoder.encode(playerId, "UTF-8")
+		val playerNameEncoder = URLEncoder.encode(playerName, "UTF-8")
+		s"$wsProtocol://$host/medusa/link/playGameClient?playerId=$playerIdEncoder&playerName=$playerNameEncoder&accessCode=$accessCode"
 	}
 }

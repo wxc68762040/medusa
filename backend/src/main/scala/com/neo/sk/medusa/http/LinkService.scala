@@ -59,22 +59,17 @@ trait LinkService extends ServiceUtils {
 
   private val playGameClientRoute = path("playGameClient") {
     parameter('playerId.as[String], 'playerName.as[String], 'roomId.as[Long].?, 'accessCode.as[String]) {
-			(playerIdEncode, playerNameEncode, roomId, accessCodeEncode) =>
+			(playerIdEncode, playerNameEncode, roomId, accessCode) =>
 				val playerId = URLDecoder.decode(playerIdEncode, "UTF-8")
 				val playerName = URLDecoder.decode(playerNameEncode, "UTF-8")
-				val accessCode = URLDecoder.decode(accessCodeEncode, "UTF-8")
 				dealFutureResult {
-					AuthUtils.verifyAccessCode(accessCode).map {
+					AuthUtils.verifyAccessCode(accessCode).flatMap {
 						case Right(r) =>
-							extractUpgradeToWebSocket { upgrade =>
-								val flowFuture: Future[Flow[Message, Message, Any]] = userManager ? (UserManager.GetWebSocketFlow(playerId, playerName, roomId.getOrElse(-1), _))
-								dealFutureResult {
-									flowFuture.map(r => complete(upgrade.handleMessages(r)))
-								}
-							}
+  						val flowFuture: Future[Flow[Message, Message, Any]] = userManager ? (UserManager.GetWebSocketFlow(playerId, playerName, roomId.getOrElse(-1), _))
+              flowFuture.map(r => handleWebSocketMessages(r))
 						case Left(e) =>
 							log.error(s"accessCode error: $e")
-							complete(AccessCodeError)
+              Future.successful(complete(AccessCodeError))
 					}
 				}
 		}
@@ -231,11 +226,11 @@ trait LinkService extends ServiceUtils {
   }
 
 
-
- val linkRouteTemp:Route = getRecordListRoute~getRecordPlayerListRoute
+  val linkRouteTemp:Route = getRecordListRoute ~ getRecordPlayerListRoute
+  
   val linkRoute =  (pathPrefix("link") & get) {
-
-     playGameRoute ~ playGameClientRoute ~watchGameRoute ~ watchRecordRoute~ getRecordListRoute ~ getRecordListByTimeRoute ~ getRecordListByPlayerRoute ~ downloadRecordFile ~ getRecordPlayerListRoute
+    playGameRoute ~ playGameClientRoute ~ watchGameRoute ~ watchRecordRoute ~
+      getRecordListRoute ~ getRecordListByTimeRoute ~ getRecordListByPlayerRoute ~ downloadRecordFile ~ getRecordPlayerListRoute
   }
 
 }
