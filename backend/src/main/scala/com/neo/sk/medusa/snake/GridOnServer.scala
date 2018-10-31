@@ -59,7 +59,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
   }
 
 
-  private[this] def genWaitingSnake() = {
+  def genWaitingSnake() = {
     waitingJoin.filterNot(kv => snakes.contains(kv._1)).foreach { case (id, name) =>
       val color = randomColor()
       val head = randomHeadEmptyPoint()

@@ -34,6 +34,10 @@ object Protocol {
     eatFoodInfo: List[EatFoodInfo]
   ) extends GameMessage
 
+  case class SyncApples(
+    app:List[Ap]
+  ) extends GameMessage
+
   case class SpeedUp(
     info: List[SpeedUpInfo]
   ) extends GameMessage
@@ -65,6 +69,8 @@ object Protocol {
   case class DistinctSnakeAction(keyCode: Int, frame: Long, frontFrame: Long) extends GameMessage
 
   case class SnakeAction(id: String, keyCode: Int, frame: Long) extends GameMessage
+
+  case object ReplayOver extends GameMessage
 
   case class SnakeLeft(id: String, name: String) extends GameMessage
 

@@ -18,7 +18,9 @@ class GridOnClient(override val boundary: Point) extends Grid {
   override def update(isSynced: Boolean): Unit = {
     super.update(isSynced: Boolean)
   }
-  
+
+
+//  def addSnake(id: String, name: String) = snakes += (id -> SnakeInfo())
   override def updateSnakes() = {
     var updatedSnakes = List.empty[SnakeInfo]
     val acts = actionMap.getOrElse(frameCount, Map.empty[String, Int])
