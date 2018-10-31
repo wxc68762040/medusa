@@ -37,7 +37,7 @@ object GameReader {
             fileReader.init()
             val userMap=userMapDecode(fileReader.getMutableInfo(essfMapKeyName).getOrElse(Array[Byte]())).right.get.m
             try{
-              work(true, recordId,userActor,fileReader,userMap)
+              work(isFirst = true, recordId,userActor,fileReader,userMap)
             }catch {
               case e:Throwable=>
                 log.error("error---"+e.getMessage)
@@ -56,7 +56,7 @@ object GameReader {
             sendBuffer: MiddleBufferInJvm
           ): Behavior[Command] = {
     Behaviors.receive[Command] {
-      (ctx, msg) =>
+      (_, msg) =>
         msg match {
           case InitPlay(watchPlayerId,frame)=>
             log.info(s"init replay....")
@@ -72,11 +72,11 @@ object GameReader {
                 }else{
                   timer.startSingleTimer(BehaviorWaitKey,TimeOut("wait time out"),waitTime)
                 }
-                work(true, recordId, userActor, fileReader, userMap)
+                work(isFirst = true, recordId, userActor, fileReader, userMap)
               case None=>
                 log.info(s"don't have this player$watchPlayerId")
                 timer.startSingleTimer(BehaviorWaitKey,TimeOut("wait time out"),waitTime)
-                work(true, recordId, userActor, fileReader, userMap)
+                work(isFirst = true, recordId, userActor, fileReader, userMap)
 
             }
 
@@ -92,7 +92,7 @@ object GameReader {
                    }
                  case None =>
                }
-              work(false, recordId, userActor, fileReader, userMap)
+              work(isFirst = false, recordId, userActor, fileReader, userMap)
             }
             else{
               timer.cancel(GameLoopKey)
