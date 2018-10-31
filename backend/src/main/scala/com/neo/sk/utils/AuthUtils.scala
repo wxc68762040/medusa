@@ -55,7 +55,7 @@ object AuthUtils extends HttpUtil with ServiceUtils {
 
 
   def accessAuth(accessCode:String)(f: PlayerInfo => server.Route):server.Route = {
-    if(true) {
+    if(false) {
       val verifyAccessCodeFutureRst: Future[VerifyRsp] = authActor ? (e => AuthActor.VerifyAccessCode(accessCode, e))
       dealFutureResult{
         verifyAccessCodeFutureRst.map{ rsp =>
