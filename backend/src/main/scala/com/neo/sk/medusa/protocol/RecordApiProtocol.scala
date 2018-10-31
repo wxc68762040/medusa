@@ -3,7 +3,7 @@ package com.neo.sk.medusa
 object RecordApiProtocol {
 //全量获取比赛录像列表
   case class RecordListReq(
-                          var  lastRecordId:Long,
+                          lastRecordId:Long,
                           count:Int
                           )
 
@@ -11,13 +11,13 @@ object RecordApiProtocol {
   case class RecordListByTimeReq(
                                 startTime:Long,
                                 endTime:Long,
-                                var  lastRecordId:Long,
+                                lastRecordId:Long,
                                 count:Int
                                 )
 //筛选指定玩家比赛录像列表
   case class RecordListByPlayerReq(
                                   playerId:String,
-                                  var lastRecordId:Long,
+                                  lastRecordId:Long,
                                   count:Int
                                   )
 //获取比赛录像的返回格式

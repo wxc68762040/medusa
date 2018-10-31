@@ -42,6 +42,7 @@ trait ServiceUtils extends CirceSupport {
 
   import ServiceUtils._
 
+
   def htmlResponse(html: String): HttpResponse = {
     HttpResponse(entity = HttpEntity(ContentTypes.`text/html(UTF-8)`, html))
   }
@@ -85,6 +86,13 @@ trait ServiceUtils extends CirceSupport {
   }
 
 //  private def getSecureKey(appId: String) = AppSettings.appSecureMap.get(appId)
+
+  def dealGetReq(f: => Future[server.Route]): server.Route = {
+    entity(as[Either[Error, PostEnvelope]]){
+      case Right(envelope) =>
+       dealFutureResult(f)
+    }
+  }
 
   def dealPostReq[A](f: A => Future[server.Route])(implicit decoder: Decoder[A]): server.Route = {
     entity(as[Either[Error, PostEnvelope]]) {
