@@ -22,7 +22,7 @@ object GameMap {
   private[this] val mapCtx = mapCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
   dom.document.getElementById("GameMap").setAttribute("style",s"position:absolute;z-index:3;left: 0px;top:${NetGameHolder.windowHight + 50}px")
 
-  def drawLittleMap(uid : String, data:GridDataSync):Unit ={
+  def drawLittleMap(uid : String, data:GridDataSync, scaleW: Double, scaleH: Double):Unit ={
     GameInfo.setStartBgOff()
 
     val period = (System.currentTimeMillis() - NetGameHolder.basicTime-2).toInt
@@ -30,7 +30,7 @@ object GameMap {
     mapCtx.clearRect(0,0,mapCanvas.width,mapCanvas.height)
     mapCtx.globalAlpha=0.2
     mapCtx.fillStyle= Color.Black.toString()
-    mapCtx.fillRect(0,0,mapCanvas.width,mapCanvas.height)
+    mapCtx.fillRect(0,0,mapCanvas.width * scaleW,mapCanvas.height * scaleH)
 
     val allSnakes = data.snakes
 
@@ -39,7 +39,7 @@ object GameMap {
     mapCtx.save()
     val maxPic = dom.document.getElementById("maxPic").asInstanceOf[HTMLElement]
     mapCtx.globalAlpha=1
-    mapCtx.drawImage(maxPic,(maxLength.x * LittleMap.w) / Boundary.w - 7,(maxLength.y * LittleMap.h) / Boundary.h -7 ,15,15)//画出冠军的位置
+    mapCtx.drawImage(maxPic,(maxLength.x * LittleMap.w * scaleW) / Boundary.w - 7,(maxLength.y * LittleMap.h * scaleH) / Boundary.h -7 ,15,15)//画出冠军的位置
     mapCtx.restore()
 
     if (allSnakes.nonEmpty){
@@ -57,10 +57,10 @@ object GameMap {
           mapCtx.beginPath()
           mapCtx.globalAlpha = 1
           mapCtx.strokeStyle =Color.White.toString()
-          mapCtx.lineWidth = 2
-          mapCtx.moveTo((joints.head.x * LittleMap.w) / Boundary.w, (joints.head.y * LittleMap.h) / Boundary.h)
+          mapCtx.lineWidth = 2 * scaleW
+          mapCtx.moveTo((joints.head.x * LittleMap.w * scaleW) / Boundary.w, (joints.head.y * LittleMap.h * scaleH) / Boundary.h)
           for(i <- 1 until joints.length) {
-            mapCtx.lineTo((joints(i).x * LittleMap.w) / Boundary.w, (joints(i).y * LittleMap.h) / Boundary.h)
+            mapCtx.lineTo((joints(i).x * LittleMap.w * scaleW) / Boundary.w, (joints(i).y * LittleMap.h * scaleH) / Boundary.h)
           }
           mapCtx.stroke()
           mapCtx.closePath()
@@ -68,10 +68,10 @@ object GameMap {
 
       }
     }else{
-      mapCtx.clearRect(0,0,mapCanvas.width,mapCanvas.height)
+      mapCtx.clearRect(0,0,mapCanvas.width * scaleW, mapCanvas.height * scaleH)
       mapCtx.globalAlpha=0.2
       mapCtx.fillStyle= Color.Black.toString()
-      mapCtx.fillRect(0,0,mapCanvas.width,mapCanvas.height)
+      mapCtx.fillRect(0,0,mapCanvas.width * scaleW, mapCanvas.height * scaleH)
     }
 
 

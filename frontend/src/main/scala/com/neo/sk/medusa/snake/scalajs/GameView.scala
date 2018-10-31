@@ -53,7 +53,7 @@ object GameView  {
     }
   }
 
-  def drawGrid(uid: String, data: GridDataSync): Unit = {
+  def drawGrid(uid: String, data: GridDataSync, scaleW: Double, scaleH:Double): Unit = {
     val cacheCanvas = dom.document.createElement("canvas").asInstanceOf[Canvas]
     val cacheCtx = cacheCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
     cacheCanvas.width = canvasBoundary.x
@@ -96,7 +96,7 @@ object GameView  {
     cacheCtx.translate(windowWidth/2, windowHight/2)
     cacheCtx.scale(1/myProportion, 1/myProportion)
     cacheCtx.translate(-windowWidth/2, -windowHight/2 )
-    cacheCtx.drawImage(canvasPic,0 + deviationX,0 + deviationY, Boundary.w, Boundary.h)
+    cacheCtx.drawImage(canvasPic,0 + deviationX * scaleW,0 + deviationY * scaleH, Boundary.w * scaleW, Boundary.h * scaleH)
 
     apples.filterNot( a=>a.x < myHead.x - windowWidth/2 * myProportion || a.y < myHead.y - windowHight/2 *myProportion || a.x >myHead.x + windowWidth/2 * myProportion|| a.y > myHead.y + windowHight/2* myProportion).foreach{ case Ap (score,_,_,x,y,_)=>
        cacheCtx.fillStyle = score match{
@@ -106,7 +106,7 @@ object GameView  {
        }
         cacheCtx.shadowBlur = 20 //指定模糊效果
         cacheCtx.shadowColor = "#FFFFFF" //阴影的颜色，默认为透明黑
-        cacheCtx.fillRect(x - square + deviationX, y - square + deviationY, square * 2, square *2)//在（x,y)的位置绘制一个填充矩形
+        cacheCtx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 * scaleW, square *2 * scaleW)//在（x,y)的位置绘制一个填充矩形
     }
 
     cacheCtx.fillStyle = MyColors.otherHeader
@@ -123,7 +123,7 @@ object GameView  {
       while (step > 0){//尾巴在移动到下一个节点前就要停止
         val distance = tail.distance(joints.dequeue._1)
         if (distance >= step){
-          val target = tail + tail.getDirection(joints.dequeue._1)
+          val target = tail + tail.getDirection(joints.dequeue._1) * step
           tail = target
           step = -1
         } else { //尾巴在移动到下一个节点后还需要继续移动
@@ -145,7 +145,7 @@ object GameView  {
         cacheCtx.shadowBlur = 20
         cacheCtx.shadowColor = "rgba(255,255,255,1)"
       }
-      val snakeWidth = square * 2
+      val snakeWidth = square * 2 * scaleW
       cacheCtx.lineWidth = snakeWidth
       cacheCtx.moveTo(joints.head.x + deviationX, joints.head.y + deviationY)
       for(i <- 1 until joints.length) {
@@ -165,13 +165,13 @@ object GameView  {
           cacheCtx.shadowBlur = 5
           cacheCtx.shadowColor = "#FFFFFF"
           cacheCtx.fillStyle = MyColors.speedUpHeader
-          cacheCtx.fillRect(x - 1.5 * square + deviationX, y - 1.5 * square + deviationY, square * 3, square * 3)
+          cacheCtx.fillRect(x - 1.5 * square + deviationX, y - 1.5 * square + deviationY, square * 3 * scaleW, square * 3 * scaleH)
         }
         cacheCtx.fillStyle = MyColors.myHeader
         if (id == uid ){
-          cacheCtx.fillRect(x - square + deviationX, y - square + deviationY, square * 2,square * 2)
+          cacheCtx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 * scaleW,square * 2 * scaleH)
         }else {
-          cacheCtx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 , square * 2)
+          cacheCtx.fillRect(x - square + deviationX, y - square + deviationY, square * 2 * scaleW , square * 2 * scaleH)
         }
 
       }
@@ -191,10 +191,10 @@ object GameView  {
     cacheCtx.fillStyle = MyColors.boundaryColor
     cacheCtx.shadowBlur = 5
     cacheCtx.shadowColor= "#FFFFFF"
-    cacheCtx.fillRect(0 + deviationX, 0 + deviationY, Boundary.w, boundaryWidth)
-    cacheCtx.fillRect(0 + deviationX, 0 + deviationY, boundaryWidth, Boundary.h)
-    cacheCtx.fillRect(0+ deviationX, Boundary.h + deviationY, Boundary.w, boundaryWidth)
-    cacheCtx.fillRect(Boundary.w + deviationX, 0 + deviationY, boundaryWidth, Boundary.h)
+    cacheCtx.fillRect(0 + deviationX , 0 + deviationY , Boundary.w * scaleW, boundaryWidth * scaleW)
+    cacheCtx.fillRect(0 + deviationX , 0 + deviationY , boundaryWidth * scaleW, Boundary.h * scaleH)
+    cacheCtx.fillRect(0+ deviationX ,Boundary.h + deviationY, Boundary.w * scaleW, boundaryWidth *scaleW)
+    cacheCtx.fillRect(Boundary.w  + deviationX, 0 + deviationY * scaleH, boundaryWidth * scaleW, Boundary.h * scaleH)
     cacheCtx.restore()
 
 
@@ -204,7 +204,7 @@ object GameView  {
 
     ctx.font = "10px Verdana"
     ctx.fillStyle = "#012d2d"
-    ctx.fillRect(0, 0 ,canvas.width,canvas.height)
+    ctx.fillRect(0, 0 ,(canvas.width) * scaleW,(canvas.height) * scaleH)
     ctx.drawImage(cacheCanvas,0,0)
 
   }

@@ -40,7 +40,8 @@ object GameInfo {
 
 
 
-  def drawInfo(uid: String, data: GridDataSync): Unit = {
+  def drawInfo(uid: String, data: GridDataSync, scaleW: Double, scaleH: Double): Unit = {
+
 
     val infoCacheCanvas = dom.document.getElementById("GameInfo").asInstanceOf[Canvas]
     val infoCacheCtx = infoCacheCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
@@ -55,6 +56,7 @@ object GameInfo {
     val rightBegin = canvasBoundary.x - 200
 
     val centerX = windowWidth/2
+    println(centerX)
     val centerY = windowHight/2
 
     snakes.find(_.id == uid) match {
@@ -107,7 +109,7 @@ object GameInfo {
       drawTextLine(infoCacheCtx,s"[$index]: ${score.n.+("   ").take(8)} kill=${score.k} len= ${score.l}",rightBegin,index,historyRankBaseLine)
     }
 
-    infoCacheCtx.font = "18px Helvetica"
+    infoCacheCtx.font = "(18 * scaleW *scaleH)px Helvetica"
     var i = 1
     waitingShowKillList.foreach{
       j =>

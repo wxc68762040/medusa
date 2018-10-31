@@ -6,7 +6,7 @@ import com.neo.sk.medusa.snake._
 import javafx.scene.paint.Color
 import com.neo.sk.medusa.controller.GameController._
 import javafx.scene.canvas.Canvas
-import javafx.scene.text.Font
+import javafx.scene.text.{Font, FontPosture, FontWeight}
 import java.util.{Timer, TimerTask}
 
 
@@ -79,7 +79,7 @@ class GameInfoCanvas(canvas: Canvas) {
           infoCtx.fillText(s"Your length  : ${grid.deadLength}", centerX - 150, centerY)
           infoCtx.fillText(s"Your kill        : ${grid.deadKill}", centerX - 150, centerY + 30)
           infoCtx.fillText(s"Killer             : ${grid.yourKiller}", centerX - 150, centerY + 60)
-          infoCtx.setFont(Font.font("Verdana", 36))
+          infoCtx.setFont(Font.font("Verdana",FontWeight.BOLD ,36))
           infoCtx.fillText("Ops, Press Space Key To Restart!", centerX - 250, centerY - 120)
           myPorportion = 1.0
         }

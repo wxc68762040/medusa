@@ -28,9 +28,14 @@ object NetGameHolder extends js.JSApp {
 
   var state = ""
   val bounds = Point(Boundary.w, Boundary.h)
-  val windowWidth = dom.document.documentElement.clientWidth
-  val windowHight = dom.document.documentElement.clientHeight
-  val canvasBoundary = Point(dom.document.documentElement.clientWidth,dom.document.documentElement.clientHeight)
+  var windowWidth = dom.document.documentElement.clientWidth
+  println("firstWidth" + windowWidth)
+  var windowHight = dom.document.documentElement.clientHeight
+  val initWindowWidth = windowWidth
+  val initWindowHight = windowHight
+  var canvasBoundary = Point(dom.document.documentElement.clientWidth,dom.document.documentElement.clientHeight)
+
+  //override val scaleW =
 
   var syncData: scala.Option[Protocol.GridDataSync] = None
 
@@ -102,6 +107,7 @@ object NetGameHolder extends js.JSApp {
 
   def gameLoop(): Unit = {
     basicTime = System.currentTimeMillis()
+
     if (wsSetup) {
       if (!justSynced) {
         update(false)
@@ -117,8 +123,20 @@ object NetGameHolder extends js.JSApp {
   }
 
   def drawLoop(): Double => Unit = { _ =>
-    draw()
     nextAnimation = dom.window.requestAnimationFrame(drawLoop())
+
+    windowWidth = dom.document.documentElement.clientWidth
+    windowHight = dom.document.documentElement.clientHeight
+    val newWindowWidth = windowWidth
+    val newWindowHight = windowHight
+    val scaleW = (newWindowWidth.toDouble / initWindowWidth.toDouble)
+    val scaleH = (newWindowHight.toDouble / initWindowHight.toDouble)
+    draw(scaleW,scaleH)
+    println(scaleW)
+    println(scaleH)
+    canvasBoundary = Point(dom.document.documentElement.clientWidth,dom.document.documentElement.clientHeight)
+    println("Width" + windowWidth)
+
   }
 
   def moveEatenApple(): Unit = {
@@ -167,14 +185,14 @@ object NetGameHolder extends js.JSApp {
     grid.update(isSynced: Boolean)
   }
 
-  def draw(): Unit = {
+  def draw(scaleW: Double,scaleH: Double ): Unit = {
     netInfoHandler.fpsCounter += 1
     if (wsSetup) {
       val data = grid.getGridSyncData
       val timeNow = System.currentTimeMillis()
-      GameView.drawGrid(myId, data)
-      GameMap.drawLittleMap(myId,data)
-      GameInfo.drawInfo(myId, data)
+      GameView.drawGrid(myId, data, scaleW, scaleH)
+      GameMap.drawLittleMap(myId, data,scaleW, scaleH)
+      GameInfo.drawInfo(myId, data, scaleW, scaleH)
       val drawOnceTime = System.currentTimeMillis() - timeNow
       netInfoHandler.drawTimeAverage = drawOnceTime.toInt
     } else {
