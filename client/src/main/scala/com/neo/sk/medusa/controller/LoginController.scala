@@ -22,10 +22,8 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 	var scanUrl = ""
 	loginScene.setLoginSceneListener(new LoginScene.LoginSceneListener {
 		override def onButtonConnect(): Unit = {
-			val id = System.currentTimeMillis().toString
-			val name = "name" + System.currentTimeMillis().toString
-			val accessCode = "jgfkldpwer"
-			getLoginResponseFromEs.map {
+
+			getLoginResponseFromEs().map {
 				case Right(r) =>
 					wsUrl = r.data.wsUrl
 					scanUrl = r.data.scanUrl
@@ -33,8 +31,9 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 					wsClient ! EstablishConnectionEs(wsUrl,scanUrl)
 				case Left(l) =>
 			}
-			wsClient ! ConnectGame(id, name, accessCode)
+
 		}
+
 	})
 	
 	def showScene() {

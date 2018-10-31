@@ -47,23 +47,33 @@ trait LinkService extends ServiceUtils {
 
   private val playGameRoute = path("playGame") {
     parameter('playerId.as[String], 'playerName.as[String], 'roomId.as[Long].?, 'accessCode.as[String]) {
-      (playerId, playerName, roomId, accessCode) =>
-        val flowFuture: Future[Flow[Message, Message, Any]] = userManager ? (UserManager.GetWebSocketFlow(playerId, playerName, roomId.getOrElse(-1), _))
-        dealFutureResult(
-          flowFuture.map(r => handleWebSocketMessages(r))
-        )
+      (playerId,playerName,roomId, accessCode) =>
+        dealFutureResult{
+            AuthUtils.verifyAccessCode(accessCode).flatMap {
+              case Right(r) =>
+                val flowFuture: Future[Flow[Message, Message, Any]] = userManager ? (UserManager.GetWebSocketFlow(playerId, playerName, roomId.getOrElse(-1), _))
+                flowFuture.map(r => handleWebSocketMessages(r))
+              case Left(e) =>
+                log.debug(s"accessCode error: ${e}")
+                Future.successful(complete(CommonRsp(1,"error")))
+            }
+        }
     }
   }
 
   private val playGameClientRoute = path("playGameClient") {
     parameter('playerId.as[String], 'playerName.as[String], 'roomId.as[Long].?, 'accessCode.as[String]) {
       (playerId, playerName, roomId, accessCode) =>
-        extractUpgradeToWebSocket { upgrade =>
-          val flowFuture: Future[Flow[Message, Message, Any]] = userManager ? (UserManager.GetWebSocketFlow(playerId, playerName, roomId.getOrElse(-1), _))
-          dealFutureResult(
-            flowFuture.map(r => complete(upgrade.handleMessages(r)))
-          )
-        }
+
+            extractUpgradeToWebSocket { upgrade =>
+              println("_____________________________________________ accessCode: "+accessCode)
+              val flowFuture: Future[Flow[Message, Message, Any]] = userManager ? (UserManager.GetWebSocketFlow(playerId, playerName, roomId.getOrElse(-1), _))
+              dealFutureResult(
+                flowFuture.map(r => complete(upgrade.handleMessages(r)))
+              )
+            }
+
+
     }
   }
 
