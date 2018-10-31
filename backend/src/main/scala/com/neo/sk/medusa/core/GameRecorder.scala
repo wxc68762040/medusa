@@ -300,8 +300,8 @@ object GameRecorder {
           log.debug(s"${ctx.self.path} is time out when busy,msg=$m")
           Behaviors.stopped
 
-        case unknowMsg =>
-          stashBuffer.stash(unknowMsg)
+        case unknownMsg =>
+          stashBuffer.stash(unknownMsg)
           Behavior.same
       }
     }
