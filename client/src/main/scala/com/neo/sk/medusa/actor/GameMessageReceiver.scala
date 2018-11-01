@@ -144,11 +144,9 @@ object GameMessageReceiver {
 					ClientBoot.addToPlatform {
 						if (!grid.init) {
 							grid.init = true
-							val timeout = 100 - (System.currentTimeMillis() - data.timestamp) % 100
 							gameController.startGameLoop()
 						}
 						grid.syncData = Some(data)
-						grid.sync(Some(data))
 						grid.justSynced = true
 					}
 					Behavior.same
@@ -156,7 +154,6 @@ object GameMessageReceiver {
 				case Protocol.NetDelayTest(createTime) =>
 					ClientBoot.addToPlatform {
 						val receiveTime = System.currentTimeMillis()
-						println(grid.snakes.size)
 					}
 					//					netInfoHandler.ping = receiveTime - createTime
 					Behavior.same

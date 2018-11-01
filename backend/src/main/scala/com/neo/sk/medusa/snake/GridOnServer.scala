@@ -60,6 +60,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
 
 
   def genWaitingSnake() = {
+    val snakeNumber = waitingJoin.size
     waitingJoin.filterNot(kv => snakes.contains(kv._1)).foreach { case (id, name) =>
       val color = randomColor()
       val head = randomHeadEmptyPoint()
@@ -68,6 +69,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
       snakes += id -> SnakeInfo(id, name, head, head, head, color, direction)
     }
     waitingJoin = Map.empty[String, String]
+    snakeNumber
   }
 
   implicit val scoreOrdering = new Ordering[Score] {
@@ -425,7 +427,6 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
 
   override def update(isSynced: Boolean): Unit = {
     super.update(isSynced: Boolean)
-    genWaitingSnake()
     updateRanks()
   }
 

@@ -88,14 +88,14 @@ class GameController(id: String,
 
 	private def logicLoop() = {
 		basicTime = System.currentTimeMillis()
-			if (!grid.justSynced) {
-				grid.update(false)
-			} else {
-				grid.sync(grid.syncData)
-				grid.syncData = None
-				grid.update(true)
-				grid.justSynced = false
-			}
+		if (!grid.justSynced) {
+			grid.update(false)
+		} else {
+			grid.sync(grid.syncData)
+			grid.syncData = None
+			grid.update(true)
+			grid.justSynced = false
+		}
 		grid.savedGrid += (grid.frameCount -> grid.getGridSyncData)
 		grid.savedGrid -= (grid.frameCount - Protocol.savingFrame - Protocol.advanceFrame)
 	}
