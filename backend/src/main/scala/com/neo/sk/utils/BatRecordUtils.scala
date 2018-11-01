@@ -31,7 +31,7 @@ object BatRecordUtils extends HttpUtil {
   case class PutRecordRsp(errCode:Int, msg:String)
 
   def outputBatRecord(playerRecordWrap: PlayerRecordWrap) = {
-    val token = AuthUtils.token
+    val token = ""
     val data = playerRecordWrap.asJson.noSpaces
     val sn = appId + System.currentTimeMillis()
     val (timestamp, noce, signature) = SecureUtil.generateSignatureParameters(List(appId, sn, data), secureKey)

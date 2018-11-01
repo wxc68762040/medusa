@@ -99,7 +99,7 @@ trait HttpUtil {
     methodName: String,
     request: BoundRequestBuilder,
     charset: Charset,
-    needLogRsp:Boolean = true
+    needLogRsp:Boolean = false
                             )(implicit executor: ExecutionContext) = {
     request.scalaExecute().map { response =>
       Right(parseResp(response, charset,needLogRsp))
@@ -112,8 +112,8 @@ trait HttpUtil {
     parameters: List[(String, String)],
     jsonStr: String,
     charsetName: String = "UTF-8",
-    timeOut:Int = 20 * 1000,
-    needLogRsp:Boolean = true
+    timeOut:Int = 2 * 1000,
+    needLogRsp:Boolean = false
   )(implicit executor: ExecutionContext): Future[Either[Throwable, String]] = {
     log.info("Post Request [" + methodName + "] Processing...")
     log.debug(methodName + " url=" + url)

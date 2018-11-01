@@ -7,12 +7,10 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.{ActorAttributes, Materializer, Supervision}
 import org.slf4j.LoggerFactory
-
 import scala.concurrent.Future
 import com.neo.sk.medusa.Boot.{executor, roomManager, scheduler, timeout}
 import com.neo.sk.medusa.core.UserManager
 import akka.actor.typed.scaladsl.AskPattern._
-import com.neo.sk.medusa.ApiDao.getRecordList
 import com.neo.sk.medusa.RecordApiProtocol.{Record, RecordListReq, RecordResponse}
 import com.neo.sk.utils.CirceSupport._
 import com.neo.sk.utils.{HttpUtil, ServiceUtils}
@@ -22,9 +20,7 @@ import io.circe.syntax._
 import io.circe._
 import com.neo.sk.medusa.protocol.PlayInfoProtocol._
 import com.neo.sk.medusa.core.RoomManager
-import com.neo.sk.medusa.protocol.CommonErrorCode.parseJsonError
-import com.neo.sk.utils.SecureUtil.PostEnvelope
-import com.neo.sk.utils.ServiceUtils.{CommonRsp, authCheck}
+import com.neo.sk.utils.ServiceUtils.CommonRsp
 /**
   * User: yuwei
   * Date: 2018/10/19
@@ -56,41 +52,23 @@ trait Api4PlayInfo extends ServiceUtils{
     dealPostReq[GetPlayerListReq]{ req =>
       val playerList:Future[RoomManager.GetPlayerListRsp] = roomManager ? (RoomManager.GetPlayerListReq(req.roomId, _))
       playerList.map{ rsp =>
-
         complete(GetPlayerListRsp(PlayerList(rsp.playerList)))
       }
     }
   }
 
   private val getRoomList = (path("getRoomList") & post) {
-
-    entity(as[Either[Error, PostEnvelope]]) {
-      case Right(envelope) =>
-        if (authCheck) {
-          ensurePostEnvelope(envelope) {
-            val roomList: Future[RoomManager.GetRoomListRsp] = roomManager ? (r => RoomManager.GetRoomListReq(r))
-            roomList.map { rsp =>
-              complete(GetRoomListRsp(RoomList(rsp.roomList)))
-            }
-          }
-        }else{
-          complete(parseJsonError)
-        }
-      case Left(l) =>
-        log.error(s"json parse PostEnvelope error: $l")
-        complete(parseJsonError)
+    dealGetReq {
+      val roomList: Future[RoomManager.GetRoomListRsp] = roomManager ? (r => RoomManager.GetRoomListReq(r))
+      roomList.map { rsp =>
+        complete(GetRoomListRsp(RoomList(rsp.roomList)))
+      }
     }
   }
 
 
-  //
 
-  //    val roomList: Future[RoomManager.GetRoomListRsp] = roomManager ? (r=>RoomManager.GetRoomListReq(r))
-  //    dealFutureResult(
-  //      roomList.map { rsp =>
-  //        complete(GetRoomListRsp(RoomList(rsp.roomList)))
-  //      }
-  //    )
+
 
 
 

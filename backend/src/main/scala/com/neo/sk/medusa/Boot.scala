@@ -9,7 +9,7 @@ import akka.util.Timeout
 import com.neo.sk.medusa.http.HttpService
 import akka.actor.typed.scaladsl.adapter._
 import akka.dispatch.MessageDispatcher
-import com.neo.sk.medusa.core.{RoomManager, UserManager, WatcherManager}
+import com.neo.sk.medusa.core.{RoomManager, UserManager, WatcherManager, AuthActor}
 
 import scala.language.postfixOps
 
@@ -39,6 +39,7 @@ object Boot extends HttpService {
   val userManager: ActorRef[UserManager.Command] = system.spawn(UserManager.behaviors,"UserManager")
   val roomManager: ActorRef[RoomManager.Command] = system.spawn(RoomManager.behaviors,"RoomManager")
   val watchManager: ActorRef[WatcherManager.Command] = system.spawn(WatcherManager.behaviors, "WatchManager")
+  val authActor = system.spawn(AuthActor.behaviors, "AuthActor")
   CountUtils.initCount()
   
 	def main(args: Array[String]) {

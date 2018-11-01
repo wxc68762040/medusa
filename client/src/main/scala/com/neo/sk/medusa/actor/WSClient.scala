@@ -72,8 +72,8 @@ object WSClient {
 					val connected = response.flatMap { upgrade =>
 						if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
 							val gameScene = new GameScene()
-//							val gameController = new GameController(id, name, accessCode, stageCtx, gameScene, stream)
-//							gameController.connectToGameServer(gameController)
+							val gameController = new GameController(id, name, accessCode, stageCtx, gameScene, stream)
+							gameController.connectToGameServer(gameController)
 							Future.successful(s"$logPrefix connect success.")
 						} else {
 							throw new RuntimeException(s"WSClient connection failed: ${upgrade.response.status}")
@@ -122,20 +122,28 @@ object WSClient {
 
 				log.debug(s"msg from webSocket: $msg")
 				val gameId = AppSettings.gameId
-				decode[Ws4AgentResponse](msg) match {
-					case Right(res) =>
-						val playerId = "user" + res.Ws4AgentRsp.data.userId.toString
-						val nickname = res.Ws4AgentRsp.data.nickname
-						linkGameAgent(gameId, playerId, res.Ws4AgentRsp.data.token).map {
-							case Right(linkRes) =>
-								self ! ConnectGame(playerId, nickname, linkRes.accessCode)
-							case Left(l) =>
-								log.error("link error!")
-						}
-					case Left(le) =>
-						log.error(s"decode esheep webmsg error! Error information:${le}")
-				}
-
+        if(msg.length > 50) {
+          decode[Ws4AgentResponse](msg) match {
+            case Right(res) =>
+              if (res.Ws4AgentRsp.errCode == 0) {
+                println("res:   " + res)
+                val playerId = "user" + res.Ws4AgentRsp.data.userId.toString
+                val nickname = res.Ws4AgentRsp.data.nickname
+                linkGameAgent(gameId, playerId, res.Ws4AgentRsp.data.token).map {
+                  case Right(resl) =>
+                    log.debug("accessCode: " + resl.accessCode)
+                    self ! ConnectGame(playerId, nickname, resl.accessCode)
+                  case Left(l) =>
+                    log.debug("link error!")
+                }
+              } else {
+                log.debug("link error!")
+              }
+            case Left(le) =>
+              println("===========================================================")
+              log.debug(s"decode esheep webmsg error! Error information:${le}")
+          }
+        }
 			case BinaryMessage.Strict(bMsg) =>
 				//decode process.
 				val buffer = new MiddleBufferInJvm(bMsg.asByteBuffer)

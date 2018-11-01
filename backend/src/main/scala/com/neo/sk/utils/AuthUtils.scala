@@ -5,37 +5,40 @@ import io.circe.{Decoder, Json}
 import io.circe.generic.auto._
 import io.circe.parser.decode
 import io.circe.syntax._
+import com.neo.sk.medusa.Boot.{executor, scheduler,timeout}
+import scala.concurrent.Future
 import com.neo.sk.utils.SecureUtil.PostEnvelope
+import com.neo.sk.medusa.Boot.authActor
+import com.neo.sk.medusa.core.AuthActor
 import com.neo.sk.medusa.Boot.executor
 import scala.concurrent.Future
+import akka.actor.typed.scaladsl.AskPattern._
 import scala.util.{Failure, Success}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse}
+import akka.http.scaladsl.server
+import akka.http.scaladsl.server.Directives._
+import com.neo.sk.medusa.protocol.CommonErrorCode.authUserError
 
 /**
   * User: yuwei
   * Date: 2018/10/18
   * Time: 16:02
   */
-object AuthUtils extends HttpUtil {
-
-  var token = ""
+object AuthUtils extends HttpUtil with ServiceUtils {
 
   case class GetTokenInfo(gameId:Long, gsKey:String)
-  case class TokenMassage(gsToken:String, expireTime:Long)
+  case class TokenMassage(token:String, expireTime:Long)
   case class TokenRsp(data:TokenMassage, errCode:Int, msg:String)
 
   def getToken() = {
     val data = GetTokenInfo(gameId, gsKey).asJson.noSpaces
-    val sn = appId + System.currentTimeMillis()
-    val (timestamp, noce, signature) = SecureUtil.generateSignatureParameters(List(appId, sn, data), secureKey)
-    val postData = PostEnvelope(appId,sn,timestamp,noce,data,signature).asJson.noSpaces
     val url = "http://flowdev.neoap.com/esheep/api/gameServer/gsKey2Token"
-    postJsonRequestSend("post",url,Nil,postData).map{
+    postJsonRequestSend("post",url,Nil,data).map{
       case Right(jsonStr) =>
         decode[TokenRsp](jsonStr) match {
           case Right(rsp) =>
             if(rsp.errCode == 0){
-              token = rsp.data.gsToken
-              Right(token)
+              Right(rsp.data)
             }else{
               log.debug(s"get token failed,error:${rsp.msg}")
               Left(rsp.msg)
@@ -50,18 +53,37 @@ object AuthUtils extends HttpUtil {
     }
   }
 
+
+  def accessAuth(accessCode:String)(f: PlayerInfo => server.Route):server.Route = {
+    if(false) {
+      val verifyAccessCodeFutureRst: Future[VerifyRsp] = authActor ? (e => AuthActor.VerifyAccessCode(accessCode, e))
+      dealFutureResult{
+        verifyAccessCodeFutureRst.map{ rsp =>
+          if(rsp.errCode == 0){
+            f(rsp.data)
+          } else{
+            complete(authUserError(rsp.msg))
+          }
+        }.recover{
+          case e:Exception =>
+            log.warn(s"verifyAccess code failed, code=${accessCode}, error:${e.getMessage}")
+            complete(authUserError(e.getMessage))
+        }
+      }
+    } else {
+      f(PlayerInfo("test", "test" ))
+    }
+  }
+
+
   case class VerifyInfo(gameId:Long, accessCode:String)
   case class PlayerInfo(playerId:String, nickname:String)
-  case class Wrap(playerInfo:PlayerInfo)
-  case class VerifyRsp(data:Wrap,errCode:Int, msg:String)
+  case class VerifyRsp(data:PlayerInfo,errCode:Int = 0, msg:String = "ok")
 
-  def verifyAccessCode(accessCode:String):Future[Either[String,Wrap]]={
+  def verifyAccessCode(accessCode:String, token:String):Future[Either[String,PlayerInfo]]={
     val data = VerifyInfo(gameId, accessCode).asJson.noSpaces
-    val sn = appId + System.currentTimeMillis()
-    val (timestamp, noce, signature) = SecureUtil.generateSignatureParameters(List(appId, sn, data), secureKey)
-    val postData = PostEnvelope(appId, sn, timestamp, noce, data, signature).asJson.noSpaces
-    val url = "/esheep/api/gameServer/verifyAccessCode?token=lkasdjlaksjdl2389"
-    postJsonRequestSend("post", url, Nil, postData).map{
+    val url = "http://flowdev.neoap.com/esheep/api/gameServer/verifyAccessCode?token=" + token
+    postJsonRequestSend("post",url,Nil,data).map{
       case Right(jsonStr) =>
         decode[VerifyRsp](jsonStr) match {
           case Right(rsp) =>
@@ -81,4 +103,7 @@ object AuthUtils extends HttpUtil {
     }
   }
 
+  def main(args: Array[String]): Unit = {
+    getToken()
+  }
 }
