@@ -15,6 +15,7 @@ import akka.stream.typed.scaladsl.{ActorSink, ActorSource}
 import com.neo.sk.medusa.core.RoomActor.UserLeft
 import com.neo.sk.medusa.snake.Protocol
 import io.circe.Decoder
+import com.neo.sk.medusa.protocol.RecordApiProtocol
 import net.sf.ehcache.transaction.xa.commands.Command
 import org.seekloud.byteobject.MiddleBufferInJvm
 import org.seekloud.byteobject.ByteObject._
@@ -73,6 +74,8 @@ object UserActor {
   case class ReplayGame(recordId:Long,watchPlayerId:String,frame:Long)extends Command
 
   case class ReplayData(data:Array[Byte]) extends Command
+
+  case class GetRecordFrame(recordId:Long, sender:ActorRef[RecordApiProtocol.FrameInfo]) extends Command
 
   case class ReplayShot(shot:Array[Byte]) extends Command
 
@@ -167,6 +170,7 @@ object UserActor {
 
           case ReplayOver =>
             frontActor ! Protocol.ReplayOver
+            userManager ! UserManager.UserGone(playerId)
             Behaviors.stopped
 
           case NetTest(_, createTime) =>
@@ -174,7 +178,12 @@ object UserActor {
             Behaviors.same
 
           case StopReplay=>
+            userManager ! UserManager.UserGone(playerId)
             Behaviors.stopped
+
+          case GetRecordFrame(recordId, sender) =>
+            getGameReplay(ctx,recordId) ! GameReader.GetRecordFrame(sender)
+            Behaviors.same
 
           case UnKnowAction(unknownMsg) =>
             log.info(s"${ctx.self.path} receive an UnKnowAction when play:$unknownMsg")
@@ -232,6 +241,7 @@ object UserActor {
           case UserLeft =>
             roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
             roomActor ! RoomActor.UserLeft(playerId)
+            userManager! UserManager.UserGone(playerId)
             Behaviors.stopped
 
           case t:YouAreWatched =>

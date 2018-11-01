@@ -10,7 +10,7 @@ import akka.util.{ByteString, Timeout}
 import org.slf4j.LoggerFactory
 import io.circe.syntax._
 import io.circe._
-import com.neo.sk.medusa.RecordApiProtocol._
+import com.neo.sk.medusa .protocol.RecordApiProtocol._
 import com.neo.sk.medusa.models.Dao.GameRecordDao._
 import com.neo.sk.medusa.models.SlickTables
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
@@ -119,7 +119,24 @@ trait Api4Record extends ServiceUtils{
     }
   }
 
+  private val getRecordFrame = (path("getRecordFrame") & post){
+    dealPostReq[GetRecordFrameReq]{ req =>
+      val reqFuture:Future[FrameInfo] = userManager ? (UserManager.GetRecordFrame(req.recordId, req.playerId, _))
 
-  val recordRoute = getRecordListRoute ~ getRecordListByPlayerRoute ~ getRecordListByTimeRoute ~ getRecordPlayerListRoute
+        reqFuture.map { rsp =>
+          if(rsp.frame == -1) {
+            complete(GetRecordFrameRsp(FrameInfo(0,0), 100098, "the user does not exist or has finished the record"))
+          }else if(rsp.frame >= 0 ){
+            complete(GetRecordFrameRsp(FrameInfo(rsp.frame, rsp.frameNum)))
+          }else{
+            complete(GetRecordFrameRsp(FrameInfo(0,0), 100099, "get record frameNum error"))
+          }
+        }
+    }
+  }
+
+
+  val recordRoute = getRecordListRoute ~ getRecordListByPlayerRoute ~ getRecordListByTimeRoute ~
+                    getRecordPlayerListRoute ~ getRecordFrame
 
 }

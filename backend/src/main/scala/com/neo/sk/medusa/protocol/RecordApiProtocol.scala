@@ -1,4 +1,4 @@
-package com.neo.sk.medusa
+package com.neo.sk.medusa.protocol
 
 object RecordApiProtocol {
 //全量获取比赛录像列表
@@ -59,18 +59,23 @@ object RecordApiProtocol {
                                      errCode:Int = 0,
                                      msg:String = "ok"
                                      )
-//  //鉴权
-//  case class VerifyAccessCode(
-//                             gameId:Long,
-//                             accessCode: String
-//                             )
-//  //鉴权返回
-//  case class AccessCodeResponse(
-//                              data:UserInfoInRecord,
-//                              errCode:Int = 0,
-//                              msg:String = "ok"
-//                               )
+//获取录像进度
 
+  case class GetRecordFrameReq(
+    recordId:Long,
+    playerId:String
+  )
+
+  case class FrameInfo(
+    frame:Int,
+    frameNum:Long
+  )
+
+  case class GetRecordFrameRsp(
+    data:FrameInfo,
+    errCode:Int = 0,
+    msg:String = "ok"
+  )
 
 //失败返回
   case class GetResourceError(
