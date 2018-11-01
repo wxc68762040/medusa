@@ -18,7 +18,7 @@ import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse}
 import akka.http.scaladsl.server
 import akka.http.scaladsl.server.Directives._
 import com.neo.sk.medusa.protocol.CommonErrorCode.authUserError
-import com.neo.sk.medusa.common.AppSettings.isAuth
+import com.neo.sk.medusa.common.AppSettings._
 
 /**
   * User: yuwei
@@ -33,7 +33,7 @@ object AuthUtils extends HttpUtil with ServiceUtils {
 
   def getToken() = {
     val data = GetTokenInfo(gameId, gsKey).asJson.noSpaces
-    val url = "http://flowdev.neoap.com/esheep/api/gameServer/gsKey2Token"
+    val url = esheepProtocol + "://" + esheepHost + "/esheep/api/gameServer/gsKey2Token"
     postJsonRequestSend("post",url,Nil,data).map{
       case Right(jsonStr) =>
         decode[TokenRsp](jsonStr) match {
@@ -83,7 +83,7 @@ object AuthUtils extends HttpUtil with ServiceUtils {
 
   def verifyAccessCode(accessCode:String, token:String):Future[Either[String,PlayerInfo]]={
     val data = VerifyInfo(gameId, accessCode).asJson.noSpaces
-    val url = "http://flowdev.neoap.com/esheep/api/gameServer/verifyAccessCode?token=" + token
+    val url = esheepProtocol + "://" + esheepHost + "/esheep/api/gameServer/verifyAccessCode?token=" + token
     postJsonRequestSend("post",url,Nil,data).map{
       case Right(jsonStr) =>
         decode[VerifyRsp](jsonStr) match {

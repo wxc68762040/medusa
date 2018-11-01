@@ -30,14 +30,10 @@ object BatRecordUtils extends HttpUtil {
   case class PlayerRecordWrap(playerRecord:PlayerRecord)
   case class PutRecordRsp(errCode:Int, msg:String)
 
-  def outputBatRecord(playerRecordWrap: PlayerRecordWrap) = {
-    val token = ""
+  def outputBatRecord(playerRecordWrap: PlayerRecordWrap, token:String) = {
     val data = playerRecordWrap.asJson.noSpaces
-    val sn = appId + System.currentTimeMillis()
-    val (timestamp, noce, signature) = SecureUtil.generateSignatureParameters(List(appId, sn, data), secureKey)
-    val postData = PostEnvelope(appId,sn,timestamp,noce,data,signature).asJson.noSpaces
-    val url = "/esheep/api/gameServer/addPlayerRecord?" + token
-    postJsonRequestSend("post",url,Nil,postData).map{
+    val url = esheepProtocol + "://" + esheepHost + "/esheep/api/gameServer/addPlayerRecord?" + token
+    postJsonRequestSend("post",url,Nil,data).map{
       case Right(jsonStr) =>
         decode[PutRecordRsp](jsonStr) match {
           case Right(rsp) =>

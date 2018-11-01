@@ -29,6 +29,8 @@ object AppSettings {
   val secureKey = appConfig.getString("gameInfo.SecureKey")
   val gsKey = appConfig.getString("gameInfo.gsKey")
   val gameId = appConfig.getLong("gameInfo.gameId")
-  val esheepSecureKey = ""
+  val esheepSecureKey =  "kdfd4e560mdfnx"
+  val esheepProtocol = appConfig.getString("esheepServer.protocol")
+  val esheepHost = appConfig.getString("esheepServer.host")
 
 }

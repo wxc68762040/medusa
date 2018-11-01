@@ -33,6 +33,8 @@ object AppSettings {
   val recordPath = appConfig.getString("record.recordPath")
   val isRecord = appConfig.getBoolean("record.isRecord")
   val isAuth = appConfig.getBoolean("isAuth")
+  val esheepProtocol = appConfig.getString("esheepServer.protocol")
+  val esheepHost = appConfig.getString("esheepServer.host")
 
 
   val slickConfig = config.getConfig("slick.db")

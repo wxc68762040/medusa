@@ -7,6 +7,7 @@ import com.neo.sk.medusa.utils.HttpUtil
 import io.circe.generic.auto._
 import io.circe.parser.decode
 import io.circe.syntax._
+import com.neo.sk.medusa.common.AppSettings._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 /**
@@ -19,7 +20,7 @@ object Api4GameAgent extends  HttpUtil{
 
   def getLoginResponseFromEs()={
     val methodName = "GET"
-    val url = "http://flowdev.neoap.com/esheep/api/gameAgent/login"
+    val url = esheepProtocol + "://" + esheepHost + "/esheep/api/gameAgent/login"
     getRequestSend(methodName, url, Nil,"UTF-8").map{
       case Right(r) =>
         decode[LoginResponse](r) match {
@@ -37,7 +38,7 @@ object Api4GameAgent extends  HttpUtil{
   def linkGameAgent(gameId:Long,playerId:String,token:String) ={
     val data = LinkGameData(gameId,playerId).asJson.noSpaces
 //    if()
-    val url  = "http://flowdev.neoap.com/esheep/api/gameAgent/joinGame?token="+token
+    val url  = esheepProtocol + "://" + esheepHost + "/esheep/api/gameAgent/joinGame?token="+token
 
     postJsonRequestSend("post",url,Nil,data).map{
       case Right(jsonStr) =>
