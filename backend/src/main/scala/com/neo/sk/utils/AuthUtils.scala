@@ -18,6 +18,7 @@ import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse}
 import akka.http.scaladsl.server
 import akka.http.scaladsl.server.Directives._
 import com.neo.sk.medusa.protocol.CommonErrorCode.authUserError
+import com.neo.sk.medusa.common.AppSettings.isAuth
 
 /**
   * User: yuwei
@@ -55,7 +56,7 @@ object AuthUtils extends HttpUtil with ServiceUtils {
 
 
   def accessAuth(accessCode:String)(f: PlayerInfo => server.Route):server.Route = {
-    if(false) {
+    if(isAuth) {
       val verifyAccessCodeFutureRst: Future[VerifyRsp] = authActor ? (e => AuthActor.VerifyAccessCode(accessCode, e))
       dealFutureResult{
         verifyAccessCodeFutureRst.map{ rsp =>
