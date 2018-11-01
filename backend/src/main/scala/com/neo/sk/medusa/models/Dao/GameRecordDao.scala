@@ -77,6 +77,10 @@ object GameRecordDao {
       .distinct
       .result)
   }
+
+  def getFrameCount(recordId: Long) ={
+    db.run(tRecords.filter(_.recordsId === recordId).map(_.frameCount).result.headOption)
+  }
   """
     |没用的
   """

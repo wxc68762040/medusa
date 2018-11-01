@@ -17,6 +17,8 @@ import org.seekloud.byteobject.ByteObject._
 import io.circe.generic.auto._
 import com.neo.sk.medusa.snake.Protocol._
 import net.sf.ehcache.transaction.xa.commands.Command
+import com.neo.sk.medusa.protocol.RecordApiProtocol
+import scala.collection.mutable.ListBuffer
 
 object UserManager {
 
@@ -32,7 +34,11 @@ object UserManager {
 
   case class YourUserUnwatched(playerId: String, watcherId: String) extends Command
 
+  case class GetRecordFrame(recordId:Long, playerId:String, sender:ActorRef[RecordApiProtocol.FrameInfo]) extends Command
+
   case class UserReady(playerId: String, userActor: ActorRef[UserActor.Command], state: Int) extends Command
+
+  case class UserGone(playerId:String) extends Command
 
   val behaviors: Behavior[Command] = {
     log.info(s"UserManager start...")
@@ -42,31 +48,35 @@ object UserManager {
           implicit timer =>
             val userRoomMap = mutable.HashMap.empty[String, (Long, String)]
             val userRecMap = mutable.HashMap.empty[String, UserActor.ReplayGame]
-            idle(userRoomMap,userRecMap)
+            val allUser = mutable.HashMap.empty[String, ActorRef[UserActor.Command]]
+            idle(userRoomMap,userRecMap, allUser)
         }
     }
   }
 
   def idle(userRoomMap: mutable.HashMap[String, (Long, String)],
-           userRecMap: mutable.HashMap[String, UserActor.ReplayGame])(implicit timer: TimerScheduler[Command]): Behavior[Command] =
+           userRecMap: mutable.HashMap[String, UserActor.ReplayGame],
+           allUser:mutable.HashMap[String, ActorRef[UserActor.Command]])(implicit timer: TimerScheduler[Command]): Behavior[Command] =
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
           case GetWebSocketFlow(playerId, playerName, roomId, replyTo) =>
+            val user = getUserActor(ctx, playerId, playerName)
+            allUser.put(playerId, user)
             if (userRoomMap.get(playerId).nonEmpty) {
               userRoomMap.update(playerId, (roomId, playerName))
             } else {
               userRoomMap.put(playerId, (roomId, playerName))
             }
-            replyTo ! getWebSocketFlow(getUserActor(ctx, playerId, playerName))
+            replyTo ! getWebSocketFlow(user)
             Behaviors.same
 
           case GetReplayWebSocketFlow(recordId, playerId, watchPlayerId, frame, replyTo) =>
-
+            //watchPlayerId 被观看的人
             userRecMap.update(playerId,UserActor.ReplayGame(recordId,watchPlayerId,frame))
-
-            replyTo ! getWatchRecWebSocketFlow(getUserActor(ctx, playerId, "player4watch"))
-
+            val user = getUserActor(ctx, playerId, "player4watch")
+            allUser.put(playerId, user)
+            replyTo ! getWatchRecWebSocketFlow(user)
             Behaviors.same
 
           case UserReady(playerId, userActor, state) =>
@@ -75,12 +85,24 @@ object UserManager {
               userRoomMap.remove(playerId)
             } else {
               userActor ! UserActor.ReplayGame(userRecMap(playerId).recordId, userRecMap(playerId).watchPlayerId, userRecMap(playerId).frame)
-            userRecMap.remove(playerId)
+              userRecMap.remove(playerId)
+            }
+            Behaviors.same
+
+          case GetRecordFrame(recordId, playerId, sender) =>
+            if(allUser.get(playerId).isEmpty){
+              sender ! RecordApiProtocol.FrameInfo( -1, -1)
+            }else{
+              getUserActor(ctx, playerId, "player4watch") ! UserActor.GetRecordFrame(recordId, sender)
             }
             Behaviors.same
 
           case t: YourUserUnwatched =>
             getUserActor(ctx, t.playerId, "") ! UserActor.YouAreUnwatched(t.watcherId)
+            Behaviors.same
+
+          case UserGone(playerId) =>
+            allUser.remove(playerId)
             Behaviors.same
 
           case ChildDead(name, childRef) =>
