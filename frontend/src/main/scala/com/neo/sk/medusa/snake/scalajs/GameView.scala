@@ -190,11 +190,12 @@ object GameView  {
     //画边界
     cacheCtx.fillStyle = MyColors.boundaryColor
     cacheCtx.shadowBlur = 5
+
     cacheCtx.shadowColor= "#FFFFFF"
-    cacheCtx.fillRect(0 + deviationX , 0 + deviationY , Boundary.w * scaleW, boundaryWidth * scaleW)
-    cacheCtx.fillRect(0 + deviationX , 0 + deviationY , boundaryWidth * scaleW, Boundary.h * scaleH)
-    cacheCtx.fillRect(0+ deviationX ,Boundary.h + deviationY, Boundary.w * scaleW, boundaryWidth *scaleW)
-    cacheCtx.fillRect(Boundary.w  + deviationX, 0 + deviationY * scaleH, boundaryWidth * scaleW, Boundary.h * scaleH)
+    cacheCtx.fillRect(0 + deviationX * scaleW , 0 + deviationY * scaleH , Boundary.w * scaleW, boundaryWidth * scaleW)
+    cacheCtx.fillRect(0 + deviationX * scaleW , 0 + deviationY * scaleH , boundaryWidth * scaleW, Boundary.h * scaleH)
+    cacheCtx.fillRect(0 + deviationX * scaleW ,(Boundary.h + deviationY) * scaleH, Boundary.w * scaleW, boundaryWidth *scaleW)
+    cacheCtx.fillRect((Boundary.w  + deviationX) * scaleW, 0 + deviationY * scaleH, boundaryWidth * scaleW, Boundary.h * scaleH)
     cacheCtx.restore()
 
 

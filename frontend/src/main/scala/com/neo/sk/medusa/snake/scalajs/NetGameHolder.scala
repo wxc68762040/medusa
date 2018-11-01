@@ -29,7 +29,6 @@ object NetGameHolder extends js.JSApp {
   var state = ""
   val bounds = Point(Boundary.w, Boundary.h)
   var windowWidth = dom.document.documentElement.clientWidth
-  println("firstWidth" + windowWidth)
   var windowHight = dom.document.documentElement.clientHeight
   val initWindowWidth = windowWidth
   val initWindowHight = windowHight
