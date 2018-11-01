@@ -55,16 +55,16 @@ trait LinkService extends ServiceUtils {
 
   private val playGameClientRoute = path("playGameClient") {
     parameter('playerId.as[String], 'playerName.as[String], 'roomId.as[Long].?, 'accessCode.as[String]) {
-      (playerId, playerName, roomId, accessCode) =>
-        accessAuth(accessCode) { info =>
-          extractUpgradeToWebSocket { upgrade =>
-            val flowFuture: Future[Flow[Message, Message, Any]] = userManager ? (UserManager.GetWebSocketFlow(playerId, playerName, roomId.getOrElse(-1), _))
-            dealFutureResult(
-              flowFuture.map(r => complete(upgrade.handleMessages(r)))
-            )
-          }
-        }
-    }
+			(playerIdEncoded, playerNameEncoded, roomId, accessCode) =>
+				val playerId = URLDecoder.decode(playerIdEncoded, "UTF-8")
+				val playerName = URLDecoder.decode(playerNameEncoded, "UTF-8")
+				accessAuth(accessCode) { info =>
+					val flowFuture: Future[Flow[Message, Message, Any]] = userManager ? (UserManager.GetWebSocketFlow(playerId, playerName, roomId.getOrElse(-1), _))
+					dealFutureResult(
+						flowFuture.map(r => handleWebSocketMessages(r))
+					)
+				}
+		}
   }
 
   private val watchGameRoute = path("watchGame") {

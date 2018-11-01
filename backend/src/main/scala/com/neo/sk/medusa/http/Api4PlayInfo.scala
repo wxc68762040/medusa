@@ -65,13 +65,7 @@ trait Api4PlayInfo extends ServiceUtils{
       }
     }
   }
-
-
-
-
-
-
-
+	
   val playInfoRoute:Route = getRoomIdRoute ~ getRoomList ~ getRoomPlayerList
 
 }

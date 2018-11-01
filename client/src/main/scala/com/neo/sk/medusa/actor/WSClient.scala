@@ -40,7 +40,6 @@ object WSClient {
 
 	private val log = LoggerFactory.getLogger("WSClient")
 	private val logPrefix = "WSClient"
-	private var outputStream: Option[ActorRef[WsSendMsg]] = None
 	def create(gameMessageReceiver: ActorRef[WsMsgSource],stageCtx: StageContext, _system: ActorSystem, _materializer: Materializer, _executor: ExecutionContextExecutor): Behavior[WsCommand] = {
 		Behaviors.setup[WsCommand] { ctx =>
 			Behaviors.withTimers { timer =>
@@ -59,7 +58,6 @@ object WSClient {
 			msg match {
 				case ConnectGame(id, name, accessCode) =>
 					val url = getWebSocketUri(id, name, accessCode)
-					println("now trying web socket")
 					val webSocketFlow = Http().webSocketClientFlow(WebSocketRequest(url))
 					val source = getSource(ctx.self)
 					val sink = getSink(gameMessageReceiver)
@@ -134,14 +132,14 @@ object WSClient {
                     log.debug("accessCode: " + resl.accessCode)
                     self ! ConnectGame(playerId, nickname, resl.accessCode)
                   case Left(l) =>
-                    log.debug("link error!")
+                    log.error("link error!")
                 }
               } else {
-                log.debug("link error!")
+                log.error("link error!")
               }
             case Left(le) =>
               println("===========================================================")
-              log.debug(s"decode esheep webmsg error! Error information:${le}")
+              log.error(s"decode esheep webmsg error! Error information:${le}")
           }
         }
 			case BinaryMessage.Strict(bMsg) =>
@@ -157,10 +155,7 @@ object WSClient {
 				msg
 		}
 	}
-
-
-
-
+	
 	def getSink(actor: ActorRef[WsMsgSource]) =
 		Flow[Message].collect {
 			case TextMessage.Strict(msg) =>
