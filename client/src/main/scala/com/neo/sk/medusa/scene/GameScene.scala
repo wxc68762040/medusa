@@ -57,7 +57,7 @@ class GameScene() {
     map.drawMap(myId, data)
 		info.drawInfo(myId, data, historyRank, currentRank)
   }
-def setGameSceneListener(listener: GameSceneListener) {
+	def setGameSceneListener(listener: GameSceneListener) {
 		gameSceneListener = listener
 	}
 	
