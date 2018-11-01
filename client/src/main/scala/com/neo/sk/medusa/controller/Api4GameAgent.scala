@@ -20,7 +20,7 @@ object Api4GameAgent extends  HttpUtil{
   def getLoginResponseFromEs()={
     val methodName = "GET"
     val url = "http://flowdev.neoap.com/esheep/api/gameAgent/login"
-    getRequestSend(methodName,url,Nil,"UTF-8").map{
+    getRequestSend(methodName, url, Nil,"UTF-8").map{
       case Right(r) =>
         decode[LoginResponse](r) match {
           case Right(rin) =>
