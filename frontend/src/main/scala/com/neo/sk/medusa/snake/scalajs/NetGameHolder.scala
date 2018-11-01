@@ -30,8 +30,12 @@ object NetGameHolder extends js.JSApp {
   val bounds = Point(Boundary.w, Boundary.h)
   var windowWidth = dom.document.documentElement.clientWidth
   var windowHight = dom.document.documentElement.clientHeight
+//  var windowWidth = 1500
+//  var windowHight = 700
   val initWindowWidth = windowWidth
   val initWindowHight = windowHight
+//  val initWindowWidth = 1500
+//  val initWindowHight = 700
   var canvasBoundary = Point(dom.document.documentElement.clientWidth,dom.document.documentElement.clientHeight)
 
   //override val scaleW =

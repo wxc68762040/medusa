@@ -97,6 +97,7 @@ object GameView  {
     cacheCtx.scale(1/myProportion, 1/myProportion)
     cacheCtx.translate(-windowWidth/2, -windowHight/2 )
     cacheCtx.drawImage(canvasPic,0 + deviationX * scaleW,0 + deviationY * scaleH, Boundary.w * scaleW, Boundary.h * scaleH)
+    //cacheCtx.drawImage(canvasPic,0 + deviationX ,0 + deviationY , Boundary.w * scaleW, Boundary.h * scaleH)
 
     apples.filterNot( a=>a.x < myHead.x - windowWidth/2 * myProportion || a.y < myHead.y - windowHight/2 *myProportion || a.x >myHead.x + windowWidth/2 * myProportion|| a.y > myHead.y + windowHight/2* myProportion).foreach{ case Ap (score,_,_,x,y,_)=>
        cacheCtx.fillStyle = score match{
@@ -192,10 +193,10 @@ object GameView  {
     cacheCtx.shadowBlur = 5
 
     cacheCtx.shadowColor= "#FFFFFF"
-    cacheCtx.fillRect(0 + deviationX * scaleW , 0 + deviationY * scaleH , Boundary.w * scaleW, boundaryWidth * scaleW)
-    cacheCtx.fillRect(0 + deviationX * scaleW , 0 + deviationY * scaleH , boundaryWidth * scaleW, Boundary.h * scaleH)
-    cacheCtx.fillRect(0 + deviationX * scaleW ,(Boundary.h + deviationY) * scaleH, Boundary.w * scaleW, boundaryWidth *scaleW)
-    cacheCtx.fillRect((Boundary.w  + deviationX) * scaleW, 0 + deviationY * scaleH, boundaryWidth * scaleW, Boundary.h * scaleH)
+    cacheCtx.fillRect(0 + deviationX , 0 + deviationY  , Boundary.w , boundaryWidth * scaleW )
+    cacheCtx.fillRect(0 + deviationX , 0 + deviationY , boundaryWidth * scaleW , Boundary.h )
+    cacheCtx.fillRect(0 + deviationX ,Boundary.h + deviationY, Boundary.w , boundaryWidth *scaleW)
+    cacheCtx.fillRect(Boundary.w  + deviationX, 0 + deviationY  , boundaryWidth * scaleW, Boundary.h )
     cacheCtx.restore()
 
 
