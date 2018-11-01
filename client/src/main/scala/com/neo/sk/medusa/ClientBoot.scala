@@ -44,13 +44,6 @@ class ClientBoot extends javafx.application.Application {
 		val loginScene = new LoginScene()
 		val loginController = new LoginController(wsClient, loginScene, context)
 		loginController.showScene()
-
-
-//		val gameViewScene = new GameScene()
-//		mainStage.setMaximized(true)
-//		context.switchScene(gameViewScene.GameViewScene,"Medusa")
-
-	
 	}
 	
 }

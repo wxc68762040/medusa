@@ -3,11 +3,11 @@ package com.neo.sk.medusa.controller
 import javafx.animation.{Animation, AnimationTimer, KeyFrame, Timeline}
 import javafx.scene.input.KeyCode
 import javafx.util.Duration
+
 import akka.actor.typed.ActorRef
-import akka.actor.typed.scaladsl.AskPattern._
 import com.neo.sk.medusa.ClientBoot
 import com.neo.sk.medusa.ClientBoot.gameMessageReceiver
-import com.neo.sk.medusa.actor.GameMessageReceiver.GridInitial
+import com.neo.sk.medusa.actor.GameMessageReceiver.ControllerInitial
 import com.neo.sk.medusa.actor.WSClient
 import com.neo.sk.medusa.common.StageContext
 import com.neo.sk.medusa.model.GridOnClient
@@ -15,6 +15,7 @@ import com.neo.sk.medusa.scene.GameScene
 import com.neo.sk.medusa.snake.Protocol.{Key, NetTest}
 import com.neo.sk.medusa.snake.{Boundary, Point, Protocol}
 import javafx.scene.input.KeyCode
+
 import com.neo.sk.medusa.snake.Protocol._
 import java.awt.event.KeyEvent
 /**
@@ -60,18 +61,14 @@ class GameController(id: String,
 
 	import GameController._
 
-	def connectToGameServer = {
+	def connectToGameServer(gameController: GameController) = {
 		ClientBoot.addToPlatform {
 			stageCtx.switchScene(gameScene.scene, "Gaming")
-			gameMessageReceiver ! GridInitial(grid)
-			startGameLoop()
+			gameMessageReceiver ! ControllerInitial(gameController)
 		}
 	}
 
-
-
 	def startGameLoop() = {
-
 		basicTime = System.currentTimeMillis()
 		val animationTimer = new AnimationTimer() {
 			override def handle(now: Long): Unit = {
@@ -110,11 +107,17 @@ class GameController(id: String,
 					NetTest(grid.myId, System.currentTimeMillis())
 				} else {
 					grid.addActionWithFrame(grid.myId, keyCode2Int(key), grid.frameCount + operateDelay)
-//					println(s"press ${keyCode2Int(key)}")
 					Key(grid.myId, keyCode2Int(key), grid.frameCount + advanceFrame + operateDelay)
 				}
 				serverActor ! msg
 			}
+		}
+	})
+	
+	stageCtx.setStageListener(new StageContext.StageListener {
+		override def onCloseRequest(): Unit = {
+			serverActor ! WsSendComplete
+			stageCtx.closeStage()
 		}
 	})
 }

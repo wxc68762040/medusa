@@ -72,7 +72,11 @@ object UserActor {
 
   case class ReplayGame(recordId:Long,watchPlayerId:String,frame:Long)extends Command
 
-  case class ReplayData(frameData:FrameData)extends Command
+  case class ReplayData(data:Array[Byte]) extends Command
+
+  case class ReplayShot(shot:Array[Byte]) extends Command
+
+  case object ReplayOver extends Command
 
   def create(playerId: String, playerName: String): Behavior[Command] = {
     Behaviors.setup[Command] {
@@ -135,14 +139,12 @@ object UserActor {
 
             Behaviors.stopped
 
-          case ReplayData(frameData)=>
+          case ReplayData(message)=>
 
-            log.info(s"receive replay data ")
-             val buffer = new MiddleBufferInJvm(frameData.eventsData)
+             val buffer = new MiddleBufferInJvm(message)
             //val buffer1= new MiddleBufferInJvm(frameData.stateData.get)
               bytesDecode[List[Protocol.GameMessage]](buffer) match {
                 case Right(r)=>
-                  log.info(s"$r")
                   r.foreach{
                     g=>
                       frontActor ! g
@@ -151,6 +153,21 @@ object UserActor {
                   log.info(s"$e")
               }
             Behaviors.same
+
+          case ReplayShot(shot) =>
+            val buffer = new MiddleBufferInJvm(shot)
+            //val buffer1= new MiddleBufferInJvm(frameData.stateData.get)
+            bytesDecode[Protocol.GameMessage](buffer) match {
+              case Right(r)=>
+                frontActor ! r
+              case Left(e)=>
+                log.info(s"$e")
+            }
+            Behaviors.same
+
+          case ReplayOver =>
+            frontActor ! Protocol.ReplayOver
+            Behaviors.stopped
 
           case NetTest(_, createTime) =>
             frontActor ! Protocol.NetDelayTest(createTime)

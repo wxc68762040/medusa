@@ -28,19 +28,18 @@ object ServiceUtils {
   private val log = LoggerFactory.getLogger("com.neo.sk.gypsy.http.ServiceUtils")
   case class CommonRsp(errCode: Int = 0, msg: String = "ok")
   final val SignatureError = CommonRsp(1000001, "signature error.")
-
-  final val RequestTimeout = CommonRsp(1000003, "request timestamp is too old.")
-
   final val AppClientIdError = CommonRsp(1000002, "appClientId error.")
+  final val RequestTimeout = CommonRsp(1000003, "request timestamp is too old.")
+  final val AccessCodeError = CommonRsp(1000004, "access error")
 
   final val INTERNAL_ERROR = CommonRsp(10001, "Internal error.")
-
   final val JsonParseError = CommonRsp(10002, "Json parse error.")
 }
 
 trait ServiceUtils extends CirceSupport {
 
   import ServiceUtils._
+
 
   def htmlResponse(html: String): HttpResponse = {
     HttpResponse(entity = HttpEntity(ContentTypes.`text/html(UTF-8)`, html))
@@ -85,6 +84,13 @@ trait ServiceUtils extends CirceSupport {
   }
 
 //  private def getSecureKey(appId: String) = AppSettings.appSecureMap.get(appId)
+
+  def dealGetReq(f: => Future[server.Route]): server.Route = {
+    entity(as[Either[Error, PostEnvelope]]){
+      case Right(envelope) =>
+       dealFutureResult(f)
+    }
+  }
 
   def dealPostReq[A](f: A => Future[server.Route])(implicit decoder: Decoder[A]): server.Route = {
     entity(as[Either[Error, PostEnvelope]]) {

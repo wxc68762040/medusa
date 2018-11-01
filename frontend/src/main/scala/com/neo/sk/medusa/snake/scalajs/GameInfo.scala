@@ -58,37 +58,43 @@ object GameInfo {
     val centerX = windowWidth/2
     println(centerX)
     val centerY = windowHight/2
+    if(!NetGameHolder.rePlayOver) {
+      snakes.find(_.id == uid) match {
+        case Some(mySnake) =>
+          startBg.setAttribute("style", "display:none")
+          NetGameHolder.firstCome = false
+          val baseLine = 1
+          infoCacheCtx.font = "12px Helvetica"
+          infoCacheCtx.fillStyle = "rgb(250,250,250)"
+          drawTextLine(infoCacheCtx, s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 1, baseLine)
+          drawTextLine(infoCacheCtx, s"your kill = ${mySnake.kill}", leftBegin, 2, baseLine)
+          drawTextLine(infoCacheCtx, s"your length = ${mySnake.length} ", leftBegin, 3, baseLine)
+          drawTextLine(infoCacheCtx, s"fps: ${netInfoHandler.fps.formatted("%.2f")} ping:${netInfoHandler.ping.formatted("%.2f")} dataps:${netInfoHandler.dataps.formatted("%.2f")}", leftBegin, 4, baseLine)
+          drawTextLine(infoCacheCtx, s"drawTimeAverage: ${netInfoHandler.drawTimeAverage}", leftBegin, 5, baseLine)
+          drawTextLine(infoCacheCtx, s"roomId: $myRoomId", leftBegin, 6, baseLine)
 
-    snakes.find(_.id == uid) match {
-    case Some(mySnake) =>
-      startBg.setAttribute("style", "display:none")
-      NetGameHolder.firstCome = false
-      val baseLine = 1
-      infoCacheCtx.font = "12px Helvetica"
-      infoCacheCtx.fillStyle = "rgb(250,250,250)"
-      drawTextLine(infoCacheCtx, s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 1, baseLine)
-      drawTextLine(infoCacheCtx, s"your kill = ${mySnake.kill}", leftBegin, 2, baseLine)
-      drawTextLine(infoCacheCtx, s"your length = ${mySnake.length} ", leftBegin, 3, baseLine)
-      drawTextLine(infoCacheCtx, s"fps: ${netInfoHandler.fps.formatted("%.2f")} ping:${netInfoHandler.ping.formatted("%.2f")} dataps:${netInfoHandler.dataps.formatted("%.2f")}", leftBegin, 4, baseLine)
-      drawTextLine(infoCacheCtx, s"drawTimeAverage: ${netInfoHandler.drawTimeAverage}", leftBegin, 5, baseLine)
-      drawTextLine(infoCacheCtx, s"roomId: $myRoomId", leftBegin, 6, baseLine)
-
-    case None =>
-      if (NetGameHolder.firstCome) {
-        infoCacheCtx.font = "36px Helvetica"
-      } else {
-        infoCacheCtx.font = "24px Helvetica"
-        infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
-        infoCacheCtx.shadowBlur = 0
-        infoCacheCtx.fillText(s"Your name   : $deadName", centerX - 150, centerY - 30)
-        infoCacheCtx.fillText(s"Your length  : $deadLength", centerX - 150, centerY)
-        infoCacheCtx.fillText(s"Your kill        : $deadKill", centerX - 150, centerY + 30)
-        infoCacheCtx.fillText(s"Killer             : $yourKiller", centerX - 150, centerY + 60)
-        infoCacheCtx.font = "36px Helvetica"
-        infoCacheCtx.fillText("Ops, Press Space Key To Restart!", centerX - 350, centerY - 150)
-        myProportion = 1.0
+        case None =>
+          if (NetGameHolder.firstCome) {
+            infoCacheCtx.font = "36px Helvetica"
+          } else {
+            infoCacheCtx.font = "24px Helvetica"
+            infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
+            infoCacheCtx.shadowBlur = 0
+            infoCacheCtx.fillText(s"Your name   : $deadName", centerX - 150, centerY - 30)
+            infoCacheCtx.fillText(s"Your length  : $deadLength", centerX - 150, centerY)
+            infoCacheCtx.fillText(s"Your kill        : $deadKill", centerX - 150, centerY + 30)
+            infoCacheCtx.fillText(s"Killer             : $yourKiller", centerX - 150, centerY + 60)
+            infoCacheCtx.font = "36px Helvetica"
+            infoCacheCtx.fillText("Ops, Press Space Key To Restart!", centerX - 350, centerY - 150)
+            myProportion = 1.0
+          }
       }
-  }
+    }else{
+      infoCacheCtx.font = "36px Helvetica"
+      infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
+      infoCacheCtx.shadowBlur = 0
+      infoCacheCtx.fillText("This record is Over",centerX - 150, centerY - 30)
+    }
 
     infoCacheCtx.font = "12px Helvetica"
 

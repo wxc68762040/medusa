@@ -29,7 +29,7 @@ object GameRecorder {
   private final val log = LoggerFactory.getLogger(this.getClass)
   private final val InitTime = Some(5.minutes)
   private final val saveTime = 60.seconds
-  private final val maxRecordNum = 100
+  private final val maxRecordNum = 10
 
   sealed trait Command
 
@@ -104,7 +104,7 @@ object GameRecorder {
         val fileRecorder = initFileRecorder(fileName, index, gameInformation, initStateOpt)
         val gameRecordBuffer: List[GameRecord] = List[GameRecord]()
         timer.startSingleTimer(SaveDataKey, Save, saveTime)
-        val data = GameRecorderData(roomId, fileName, 0, System.currentTimeMillis(), initStateOpt, fileRecorder, gameRecordBuffer)
+        val data = GameRecorderData(roomId, fileName, index, System.currentTimeMillis(), initStateOpt, fileRecorder, gameRecordBuffer)
         switchBehavior(ctx, "work", work(data, mutable.HashMap[EssfMapKey, EssfMapJoinLeftInfo](), mutable.HashMap[String, String](), mutable.HashMap[String, String](), -1l, -1l))
       }
     }
@@ -174,7 +174,7 @@ object GameRecorder {
 
 
         case unknow =>
-          log.warn(s"${ctx.self.path} recv an unknown msg:${unknow}")
+          log.warn(s"${ctx.self.path} recv an unknown msg:$unknow")
           Behaviors.same
 
       }
@@ -240,7 +240,7 @@ object GameRecorder {
           }
           switchBehavior(ctx, "busy", busy())
         case unknow =>
-          log.warn(s"${ctx} save got unknow msg ${unknow}")
+          log.warn(s"$ctx save got unknow msg $unknow")
           Behaviors.same
       }
 
@@ -279,7 +279,7 @@ object GameRecorder {
           switchBehavior(ctx, "work", work(newGameRecorderData, newEssfMap, newUserAllMap, userMap, startF, -1L))
 
         case unknow =>
-          log.warn(s"${ctx} initRecorder got unknow msg ${unknow}")
+          log.warn(s"$ctx initRecorder got unknow msg $unknow")
           Behaviors.same
       }
     }
@@ -297,7 +297,7 @@ object GameRecorder {
           switchBehavior(ctx, name, behavior, durationOpt, timeOut)
 
         case TimeOut(m) =>
-          log.debug(s"${ctx.self.path} is time out when busy,msg=${m}")
+          log.debug(s"${ctx.self.path} is time out when busy,msg=$m")
           Behaviors.stopped
 
         case unknowMsg =>

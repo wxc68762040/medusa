@@ -1,7 +1,5 @@
 package com.neo.sk.medusa.core
 
-import java.util.concurrent.atomic.AtomicInteger
-
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors, TimerScheduler}
 import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage}
