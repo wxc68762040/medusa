@@ -78,12 +78,6 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
       if (r == 0) {
         r = y.k - x.k
       }
-      if (r == 0) {
-        val h = new Regex("[0-9]*")
-        val a = h.findFirstIn(x.id)
-        val b = h.findFirstIn(y.id)
-        r = (a.get.toLong - b.get.toLong).toInt
-      }
       r
     }
   }
