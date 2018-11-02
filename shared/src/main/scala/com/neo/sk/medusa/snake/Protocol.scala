@@ -11,6 +11,7 @@ object Protocol {
 
   case object CompleteMsgServer extends WsMsgSource
   case class FailMsgServer(ex: Throwable) extends WsMsgSource
+  case object HeartBeat extends WsMsgSource
 
 	trait GameMessageBeginning extends WsMsgSource
 	
@@ -43,6 +44,7 @@ object Protocol {
     name: String,
     length: Int,
     kill: Int,
+    killerId: String,
     killer: String
   ) extends GameMessage
 

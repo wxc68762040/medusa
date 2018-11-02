@@ -5,7 +5,7 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors, StashBuffer, TimerSch
 import com.neo.sk.medusa.ClientBoot
 import com.neo.sk.medusa.controller.GameController
 import com.neo.sk.medusa.model.GridOnClient
-import com.neo.sk.medusa.snake.Protocol.{FailMsgServer, GameMessageBeginning, WsMsgSource}
+import com.neo.sk.medusa.snake.Protocol.{FailMsgServer, GameMessageBeginning, HeartBeat, WsMsgSource}
 import com.neo.sk.medusa.snake.{Apple, Point, Protocol}
 import org.slf4j.LoggerFactory
 
@@ -53,8 +53,16 @@ object GameMessageReceiver {
 				case Protocol.JoinRoomSuccess(id, roomId)=>
 					ClientBoot.addToPlatform {
 						grid.myId = id
+						GameController.myRoomId = roomId
 					}
 					running(id, roomId, gameController)
+					
+				case Protocol.JoinRoomFailure(_, _, errCode, msg) =>
+					log.error(s"join room failed $errCode: $msg")
+					ClientBoot.addToPlatform {
+						gameController.gameStop()
+					}
+					Behavior.stopped
 					
 				case Protocol.Id(id) =>
 					ClientBoot.addToPlatform {
@@ -158,7 +166,7 @@ object GameMessageReceiver {
 					//					netInfoHandler.ping = receiveTime - createTime
 					Behavior.same
 				
-				case Protocol.DeadInfo(myName, myLength, myKill, killer) =>
+				case Protocol.DeadInfo(myName, myLength, myKill, killerId, killer) =>
 					ClientBoot.addToPlatform {
 						grid.deadName = myName
 						grid.deadLength = myLength
@@ -180,7 +188,11 @@ object GameMessageReceiver {
 					Behavior.same
 				
 				case FailMsgServer(_) =>
-					println("fail msg server")
+					log.info("fail msg server")
+					Behavior.same
+					
+				case HeartBeat =>
+					log.info(s"get HeartBeat")
 					Behavior.same
 					
 				case x =>

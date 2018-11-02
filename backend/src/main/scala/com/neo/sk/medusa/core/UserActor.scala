@@ -32,6 +32,7 @@ object UserActor {
   private final val InitTime = Some(5.minutes)
 
   private final case object BehaviorChangeKey
+  private final case object HeartBeatKey
 
   sealed trait Command
 
@@ -80,6 +81,8 @@ object UserActor {
   case class ReplayShot(shot:Array[Byte]) extends Command
 
   case object ReplayOver extends Command
+  
+  case object HeartBeat extends Command //wait 状态下保持websocket用
 
   def create(playerId: String, playerName: String): Behavior[Command] = {
     Behaviors.setup[Command] {
@@ -98,8 +101,13 @@ object UserActor {
       (ctx, msg) =>
         msg match {
           case UserFrontActor(frontActor) =>
-            userManager ! UserManager.UserReady(playerId, ctx.self,0)
-            switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor))
+            if(ctx.self.path.toString.endsWith("-duplicate")) {
+              frontActor ! Protocol.JoinRoomFailure(playerId, -1L, 200001, "user joined game again")
+              Behavior.stopped
+            } else {
+              userManager ! UserManager.UserReady(playerId, ctx.self, 0)
+              switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor))
+            }
 
           case UserWatchFrontActor(frontActor)=>
             userManager ! UserManager.UserReady(playerId, ctx.self,1)
@@ -129,17 +137,12 @@ object UserActor {
             Behaviors.same
 
           case JoinRoomSuccess(rId, roomActor) =>
-
             roomActor ! RoomActor.UserJoinGame(playerId, playerName, ctx.self)
-
             frontActor ! Protocol.JoinRoomSuccess(playerId, rId)
-
             switchBehavior(ctx, "play", play(playerId, playerName, rId, frontActor, roomActor, mutable.HashMap[String, ActorRef[WatcherActor.Command]]()))
 
           case JoinRoomFailure(rId, errorCode, reason) =>
-
             frontActor ! Protocol.JoinRoomFailure(playerId, rId, errorCode, reason)
-
             Behaviors.stopped
 
           case ReplayData(message)=>
@@ -222,9 +225,10 @@ object UserActor {
               case t: Protocol.SnakeLeft =>
                 //如果死亡十分钟后无操作 则杀死userActor
                 //fixme
-                if(t.id==playerId){
+                if(t.id==playerId) {
                   timer.startSingleTimer(UserDeadTimerKey, UserLeft, 10.minutes)
                   frontActor ! t
+                  timer.startPeriodicTimer(HeartBeatKey, HeartBeat, 50.seconds)
                   switchBehavior(ctx, "wait", wait(playerId, playerName, roomId, frontActor))
                 }else{
                   frontActor ! t
@@ -257,6 +261,10 @@ object UserActor {
             log.debug(s"${ctx.self.path} receive an UnKnowAction when play:$unknownMsg")
             Behaviors.same
 
+          case UserFrontActor(newFrontActor) => //已经在游戏中的玩家又再次加入
+            newFrontActor ! Protocol.JoinRoomFailure(playerId, roomId, 200001, "user joined game again")
+            Behaviors.same
+            
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when play:$x")
             Behaviors.unhandled
@@ -283,8 +291,13 @@ object UserActor {
             switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor))
 
           case UserLeft =>
+            log.info(s"${ctx.self.path} left while wait")
             roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
             Behaviors.stopped
+
+          case HeartBeat =>
+            frontActor ! Protocol.HeartBeat
+            Behaviors.same
 
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when wait:$x")
@@ -300,7 +313,7 @@ object UserActor {
                                    durationOpt: Option[FiniteDuration] = None,
                                    timeOut: TimeOut = TimeOut("busy time error"))
                                   (implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]) = {
-    log.debug(s"${ctx.self.path} becomes $behaviorName behavior.")
+    log.info(s"${ctx.self.path} becomes $behaviorName behavior.")
     timer.cancel(BehaviorChangeKey)
     durationOpt.foreach(duration => timer.startSingleTimer(BehaviorChangeKey, timeOut, duration))
     stashBuffer.unstashAll(ctx, behavior)
