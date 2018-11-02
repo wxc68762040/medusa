@@ -257,7 +257,7 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.TextMsg(message) =>
                 //                  writeToArea(s"MESSAGE: $message")
                 case Protocol.NewSnakeJoined(id, user, roomId) =>
-                  myRoomId = roomId.toInt + 1
+                  myRoomId = roomId
                 //                  writeToArea(s"$user joined!")
                 case Protocol.NewSnakeNameExist(id, name, roomId)=>
 

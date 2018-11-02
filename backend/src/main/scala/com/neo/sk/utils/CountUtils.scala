@@ -21,7 +21,7 @@ object CountUtils {
     GameRecordDao.getMaxId().onComplete {
       case Success(value) =>
         val base = value.getOrElse(10000l)
-        count.set(base)
+        count.set(base + 1)
         log.info(s"get init count success:$base")
       case Failure(exception) =>
         log.info("get init count error")

@@ -29,7 +29,7 @@ object AppSettings {
   val secureKey = appConfig.getString("gameInfo.SecureKey")
   val gsKey = appConfig.getString("gameInfo.gsKey")
   val gameId = appConfig.getLong("gameInfo.gameId")
-  val esheepSecureKey = "kdfd4e560mdfnx"
+  val esheepSecureKey = "ALKJSDa782hKHjkajsdjdss2jh"
   val recordPath = appConfig.getString("record.recordPath")
   val isRecord = appConfig.getBoolean("record.isRecord")
   val isAuth = appConfig.getBoolean("isAuth")
