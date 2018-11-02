@@ -246,6 +246,7 @@ object UserActor {
 
           case t:YouAreWatched =>
             watcherMap.put(t.watcherId, t.watcherRef)
+            t.watcherRef ! WatcherActor.GetWatchedId(playerId)
             Behaviors.same
 
           case t: YouAreUnwatched =>
