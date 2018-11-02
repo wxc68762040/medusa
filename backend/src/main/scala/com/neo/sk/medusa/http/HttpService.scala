@@ -45,7 +45,7 @@ trait HttpService extends
 
 
   val routes =
-    (pathPrefix("medusa") & get) {
+    (pathPrefix("medusa") ) {
        snakeRoute ~ resourceRoutes  ~ linkRoute ~ playInfoRoute ~ downloadRoute ~
        downloadRoute2 ~ recordRoute
     }
