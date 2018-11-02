@@ -74,7 +74,7 @@ object GameRecordDao {
   """
 
   def getRecordPlayerList(recordId: Long, playerId: String) = {
-    db.run(tRecordsUserMap.filter(_.recordsId === recordId).map(r => (r.playerId, r.nickname))
+    db.run(tRecordsUserMap.filter(_.recordsId === recordId).map(r => (r.playerId, r.nickname, r.playPeriod))
       .distinct
       .result)
   }
@@ -82,15 +82,18 @@ object GameRecordDao {
   def getFrameCount(recordId: Long) = {
     db.run(tRecords.filter(_.recordsId === recordId).map(_.frameCount).result.headOption)
   }
+  
+  """
+    |根据recordId获取Record
+  """
+  def getRecordById(recordId: Long) = {
+    db.run(tRecords.filter(_.recordsId === recordId).result.headOption)
+  }
+  
   """
     |没用的
   """
-
-  def getRecordId(recordId: Long) = {
-    db.run(tRecords.filter(_.recordsId === recordId).result)
-  }
-
-
+  
   def insertGameRecord(record: rRecords) = {
     db.run(tRecords.returning(tRecords.map(_.recordsId)) += record)
   }
