@@ -14,6 +14,7 @@ import com.neo.sk.medusa.snake.GridOnServer
 import com.neo.sk.medusa.snake.Protocol.WsMsgSource
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 /**
   * User: yuwei
@@ -74,7 +75,7 @@ object ESSFSupport {
     bytesDecode[EssfMapInfo](buffer)
   }
 
-  def userMapEncode(u:mutable.HashMap[EssfMapKey,EssfMapJoinLeftInfo])(implicit middleBuffer: MiddleBufferInJvm)={
+  def userMapEncode(u:mutable.HashMap[EssfMapKey,ListBuffer[EssfMapJoinLeftInfo]])(implicit middleBuffer: MiddleBufferInJvm)={
     EssfMapInfo(u.toList).fillMiddleBuffer(middleBuffer).result()
   }
 

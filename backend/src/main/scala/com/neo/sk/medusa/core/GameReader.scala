@@ -9,12 +9,16 @@ import org.slf4j.LoggerFactory
 import com.neo.sk.utils.ESSFSupport._
 import com.neo.sk.medusa.common.Constants._
 import com.neo.sk.medusa.models.Dao.GameRecordDao
+
 import scala.concurrent.duration._
 import com.neo.sk.medusa.common.AppSettings.recordPath
 import com.neo.sk.medusa.snake.Protocol
 import com.neo.sk.medusa.protocol.RecordApiProtocol
+
 import scala.util.{Failure, Success}
 import com.neo.sk.medusa.Boot.executor
+
+import scala.collection.mutable.ListBuffer
 import scala.concurrent._
 
 object GameReader {
@@ -55,7 +59,7 @@ object GameReader {
   def work(isFirst:Boolean, recordId:Long, frameIndex:Int,
            userActor: ActorRef[UserActor.Command],
            fileReader: FrameInputStream,
-           userMap: List[(EssfMapKey, EssfMapJoinLeftInfo)])(
+           userMap: List[(EssfMapKey, ListBuffer[EssfMapJoinLeftInfo])])(
             implicit stashBuffer: StashBuffer[Command],
             timer: TimerScheduler[Command],
             sendBuffer: MiddleBufferInJvm
