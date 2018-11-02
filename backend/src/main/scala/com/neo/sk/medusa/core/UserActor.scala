@@ -81,6 +81,8 @@ object UserActor {
   case class ReplayShot(shot:Array[Byte]) extends Command
 
   case object ReplayOver extends Command
+
+  case object KillSelf extends Command
   
   case object HeartBeat extends Command //wait 状态下保持websocket用
 
@@ -160,6 +162,9 @@ object UserActor {
               }
             Behaviors.same
 
+          case KillSelf =>
+            Behaviors.stopped
+
           case ReplayShot(shot) =>
             val buffer = new MiddleBufferInJvm(shot)
             //val buffer1= new MiddleBufferInJvm(frameData.stateData.get)
@@ -218,6 +223,9 @@ object UserActor {
           case NetTest(id, createTime) =>
             roomActor ! RoomActor.NetTest(id, createTime)
             Behaviors.same
+
+          case KillSelf =>
+            Behaviors.stopped
 
           case DispatchMsg(m) =>
             watcherMap.values.foreach(t => t ! WatcherActor.TransInfo(m))

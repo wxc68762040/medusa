@@ -73,7 +73,10 @@ object UserManager {
 
           case GetReplayWebSocketFlow(recordId, playerId, watchPlayerId, frame, replyTo) =>
             //watchPlayerId 被观看的人
-            userRecMap.update(playerId,UserActor.ReplayGame(recordId,watchPlayerId,frame))
+            userRecMap.put(playerId,UserActor.ReplayGame(recordId,watchPlayerId,frame))
+            if(allUser.get(playerId).isDefined){
+              getUserActor(ctx, playerId, "player4watch") ! UserActor.KillSelf
+            }
             val user = getUserActor(ctx, playerId, "player4watch")
             allUser.put(playerId, user)
             replyTo ! getWatchRecWebSocketFlow(user)
