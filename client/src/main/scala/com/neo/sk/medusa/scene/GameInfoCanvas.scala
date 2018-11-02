@@ -23,7 +23,7 @@ class GameInfoCanvas(canvas: Canvas) {
   val textLineHeight = 14
   val infoCtx = canvas.getGraphicsContext2D
 
-  def drawTextLine (ctx: GraphicsContext, str: String, x: Int, lineNum: Int, lineBegin: Int = 0 ):Unit = {
+  def drawTextLine(ctx: GraphicsContext, str: String, x: Int, lineNum: Int, lineBegin: Int = 0):Unit = {
     ctx.fillText(str, x, (lineNum + lineBegin - 1) * textLineHeight)
   }
 
@@ -32,7 +32,6 @@ class GameInfoCanvas(canvas: Canvas) {
   }
 
   def drawInfo(uid: String, data:GridDataSync,historyRank:List[Score], currentRank:List[Score]): Unit = {
-
     clearInfo(infoCtx)
     infoCtx.setFill(Color.web("rgba(144,144,144,0)"))
     infoCtx.fillRect(0,0, infoWidth, infoHeight)
@@ -40,8 +39,8 @@ class GameInfoCanvas(canvas: Canvas) {
     val leftBegin = 10
     val rightBegin = (infoWidth - 200).toInt
 
-    val centerX = infoWidth /2
-    val centerY = infoHeight /2
+    val centerX = infoWidth / 2
+    val centerY = infoHeight / 2
 
     snakes.find(_.id == uid) match {
       case Some(mySnake) =>
@@ -101,7 +100,7 @@ class GameInfoCanvas(canvas: Canvas) {
 //      override def run(): Unit = infoCtx.clearRect(400, 0, 200, 200)
 //      println("ok")
 //    }
-
+    grid.waitingShowKillList = grid.waitingShowKillList.filter(_._3 >= System.currentTimeMillis() - 5 * 1000)
     grid.waitingShowKillList.foreach{
       j =>
         if(j._1 != grid.myId){

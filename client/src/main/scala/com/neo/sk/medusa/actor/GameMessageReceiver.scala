@@ -175,9 +175,8 @@ object GameMessageReceiver {
 				
 				case Protocol.KillList(killList) =>
 					ClientBoot.addToPlatform {
-						grid.waitingShowKillList :::= killList
+						grid.waitingShowKillList :::= killList.map(e => (e._1, e._2, System.currentTimeMillis()))
 					}
-//					dom.window.setTimeout(()=>waitingShowKillList = waitingShowKillList.drop(killList.length),2000)
 					Behavior.same
 				
 				case FailMsgServer(_) =>
