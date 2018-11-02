@@ -34,6 +34,7 @@ object AuthUtils extends HttpUtil with ServiceUtils {
   def getToken() = {
     val data = GetTokenInfo(gameId, gsKey).asJson.noSpaces
     val url = esheepProtocol + "://" + esheepHost + "/esheep/api/gameServer/gsKey2Token"
+    println(url + "================")
     postJsonRequestSend("post",url,Nil,data).map{
       case Right(jsonStr) =>
         decode[TokenRsp](jsonStr) match {
