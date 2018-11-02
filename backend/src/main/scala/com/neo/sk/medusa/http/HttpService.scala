@@ -17,7 +17,8 @@ trait HttpService extends
   LinkService with
   ResourceService with
   Api4PlayInfo with
-  DownLoadService{
+  DownLoadService with
+  Api4Record{
 
 
   implicit val system: ActorSystem
@@ -45,7 +46,8 @@ trait HttpService extends
 
   val routes =
     (pathPrefix("medusa") & get) {
-       snakeRoute ~ resourceRoutes  ~ linkRoute ~ playInfoRoute ~ downloadRoute ~ downloadRoute2
+       snakeRoute ~ resourceRoutes  ~ linkRoute ~ playInfoRoute ~ downloadRoute ~
+       downloadRoute2 ~ recordRoute
     }
 
 
