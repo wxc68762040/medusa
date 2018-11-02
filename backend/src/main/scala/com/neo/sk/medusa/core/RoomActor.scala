@@ -30,9 +30,9 @@ object RoomActor {
 
   case class UserJoinGame(playerId: String, playerName: String, userActor: ActorRef[UserActor.Command]) extends Command
 
-  case class UserDead(userId: String,deadInfo: DeadInfo) extends Command
+  case class UserDead(userId: String, deadInfo: DeadInfo) extends Command
 
-  case class DeadInfo(name: String, length: Int, kill: Int, killer: String)
+  case class DeadInfo(name: String, length: Int, kill: Int, killerId: String, killer: String)
 
   case class Key(id: String, keyCode: Int, frame: Long) extends Command
 
@@ -89,9 +89,9 @@ object RoomActor {
           case t: UserDead =>
             log.info(s"room $roomId lost a player ${t.userId}")
             grid.removeSnake(t.userId)
-            dispatchTo(t.userId, UserActor.DispatchMsg(Protocol.DeadInfo(t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killer)), userMap)
+            dispatchTo(t.userId, UserActor.DispatchMsg(Protocol.DeadInfo(t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer)), userMap)
             dispatch(UserActor.DispatchMsg(Protocol.SnakeLeft(t.userId, t.deadInfo.name)), userMap)
-            eventList.append(Protocol.DeadInfo(t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killer))
+            eventList.append(Protocol.DeadInfo(t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer))
             eventList.append(Protocol.SnakeLeft(t.userId, t.deadInfo.name))
             userMap.remove(t.userId)
             if(isRecord){

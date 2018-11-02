@@ -340,7 +340,7 @@ object NetGameHolder extends js.JSApp {
                   netInfoHandler.ping = receiveTime - createTime
 //                  val m = s"Net Delay Test: createTime=$createTime, receiveTime=$receiveTime, twoWayDelay=${receiveTime - createTime}, ping: ${netInfoHandler.ping}"
 //                  writeToArea(m)
-                case Protocol.DeadInfo(myName, myLength, myKill, killer) =>
+                case Protocol.DeadInfo(myName, myLength, myKill, killerId, killer) =>
                   deadName = myName
                   deadLength = myLength
                   deadKill = myKill
@@ -350,8 +350,6 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.KillList(killList) =>
                   waitingShowKillList :::= killList
                   dom.window.setTimeout(()=>waitingShowKillList = waitingShowKillList.drop(killList.length),2000)
-
-
               }
 
               case Left(e) =>

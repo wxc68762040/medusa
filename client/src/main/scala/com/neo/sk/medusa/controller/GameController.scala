@@ -24,7 +24,7 @@ import java.awt.event.KeyEvent
 object GameController {
 	val bounds = Point(Boundary.w, Boundary.h)
 	val grid = new GridOnClient(bounds)
-	val myRoomId = -1l
+	var myRoomId = -1l
 	var basicTime = 0l
 	var myPorportion = 1.0
 	var firstCome = false
@@ -84,6 +84,10 @@ class GameController(id: String,
 		timeline.getKeyFrames.add(keyFrame)
 		animationTimer.start()
 		timeline.play()
+	}
+	
+	def gameStop() = {
+		stageCtx.closeStage()
 	}
 
 	private def logicLoop() = {

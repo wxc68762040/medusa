@@ -119,11 +119,15 @@ object UserManager {
 
   private def getUserActor(ctx: ActorContext[Command], playerId: String, playerName: String): ActorRef[UserActor.Command] = {
     val childName = s"UserActor-$playerId"
-    ctx.child(childName).getOrElse {
+    if(ctx.child(childName).nonEmpty) {
+      val tempActor = ctx.spawn(UserActor.create(playerId, playerName), childName + "-duplicate")
+      ctx.watchWith(tempActor, ChildDead(childName + "-duplicate", tempActor))
+      tempActor
+    } else {
       val actor = ctx.spawn(UserActor.create(playerId, playerName), childName)
       ctx.watchWith(actor, ChildDead(childName, actor))
       actor
-    }.upcast[UserActor.Command]
+    }
   }
 
   private def getWebSocketFlow(userActor: ActorRef[UserActor.Command]): Flow[Message, Message, Any] = {
