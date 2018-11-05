@@ -371,6 +371,7 @@ object NetGameHolder extends js.JSApp {
 //                  val m = s"Net Delay Test: createTime=$createTime, receiveTime=$receiveTime, twoWayDelay=${receiveTime - createTime}, ping: ${netInfoHandler.ping}"
 //                  writeToArea(m)
                 case Protocol.DeadInfo(myName, myLength, myKill, killerId, killer) =>
+                  grid.removeSnake(myId)
                   deadName = myName
                   deadLength = myLength
                   deadKill = myKill
