@@ -56,7 +56,7 @@ object GameInfo {
 
     val centerX = windowWidth/2
     val centerY = windowHight/2
-    if(!NetGameHolder.rePlayOver && !NetGameHolder.loginAgain) {
+    if(!NetGameHolder.rePlayOver || !NetGameHolder.loginAgain) {
       snakes.find(_.id == uid) match {
         case Some(mySnake) =>
           startBg.setAttribute("style", "display:none")

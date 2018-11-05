@@ -221,6 +221,7 @@ object UserActor {
             Behaviors.same
 
           case KillSelf =>
+            frontActor ! YouHaveLogined
             Behaviors.stopped
 
           case DispatchMsg(m) =>

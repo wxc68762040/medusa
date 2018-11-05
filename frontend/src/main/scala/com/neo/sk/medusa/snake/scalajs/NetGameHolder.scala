@@ -267,6 +267,7 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.NewSnakeNameExist(id, name, roomId)=>
 
                 case Protocol.YouHaveLogined =>
+                  println("============")
                   loginAgain = true
                   grid.snakes = Map.empty[String, SnakeInfo]
 

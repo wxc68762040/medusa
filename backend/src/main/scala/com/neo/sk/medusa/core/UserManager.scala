@@ -63,6 +63,7 @@ object UserManager {
           case GetWebSocketFlow(playerId, playerName, roomId, replyTo) =>
             if(allUser.get(playerId).isDefined){
               getUserActor(ctx, playerId, playerName) ! UserActor.KillSelf
+              println("=============================")
             }
             val user = getUserActor(ctx, playerId, playerName)
             allUser.put(playerId, user)
