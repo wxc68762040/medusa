@@ -70,7 +70,7 @@ trait ServiceUtils extends CirceSupport {
       val paramList = List(appClientId.toString, timestamp, nonce, sn) ::: data
       if (timestamp.toLong + 120000 < System.currentTimeMillis()) {
         Future.successful(complete(requestTimeOut))
-      } else if (checkSignature(paramList, signature, AppSettings.esheepSecureKey)) {
+      } else if (checkSignature(paramList, signature, AppSettings.gsKey)) {
         f
       } else {
         Future.successful(complete(signatureError))

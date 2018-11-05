@@ -15,12 +15,12 @@ object CountUtils {
 
 
   private final val log = LoggerFactory.getLogger(this.getClass)
-  val count:AtomicLong = new AtomicLong(10000l)
+  val count:AtomicLong = new AtomicLong(10000000L)
 
   def initCount() = {
     GameRecordDao.getMaxId().onComplete {
       case Success(value) =>
-        val base = value.getOrElse(10000l)
+        val base = value.getOrElse(10000000L)
         count.set(base + 1)
         log.info(s"get init count success:$base")
       case Failure(exception) =>
