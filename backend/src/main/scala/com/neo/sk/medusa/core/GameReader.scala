@@ -65,7 +65,6 @@ object GameReader {
             userMap.find(_._1.userId==watchPlayerId ) match {
               case Some(player)=>
                 fileReader.gotoSnapshot(frame.toInt)
-                userActor ! UserActor.DispatchMsg(Protocol.Id(watchPlayerId))
                 if(fileReader.hasMoreFrame){
                   log.info(s"start read record..")
                   timer.startPeriodicTimer(GameLoopKey, GameLoop, 100.millis)

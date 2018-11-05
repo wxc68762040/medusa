@@ -156,7 +156,6 @@ object UserActor {
 
           case ReplayShot(shot) =>
             val buffer = new MiddleBufferInJvm(shot)
-            //val buffer1= new MiddleBufferInJvm(frameData.stateData.get)
             bytesDecode[Protocol.GameMessage](buffer) match {
               case Right(r)=>
                 frontActor ! r
@@ -263,6 +262,10 @@ object UserActor {
             Behaviors.same
 
           case _:NetTest =>
+            Behaviors.same
+
+          case DispatchMsg(m) =>
+            frontActor ! m
             Behaviors.same
 
           case RestartGame =>
