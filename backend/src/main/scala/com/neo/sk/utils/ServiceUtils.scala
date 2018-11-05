@@ -24,17 +24,15 @@ import com.neo.sk.utils.SecureUtil._
   */
 object ServiceUtils {
 
-  val authCheck = false
+  val authCheck = true
   private val log = LoggerFactory.getLogger("com.neo.sk.gypsy.http.ServiceUtils")
   case class CommonRsp(errCode: Int = 0, msg: String = "ok")
   final val SignatureError = CommonRsp(1000001, "signature error.")
-
-  final val RequestTimeout = CommonRsp(1000003, "request timestamp is too old.")
-
   final val AppClientIdError = CommonRsp(1000002, "appClientId error.")
+  final val RequestTimeout = CommonRsp(1000003, "request timestamp is too old.")
+  final val AccessCodeError = CommonRsp(1000004, "access error")
 
   final val INTERNAL_ERROR = CommonRsp(10001, "Internal error.")
-
   final val JsonParseError = CommonRsp(10002, "Json parse error.")
 }
 
@@ -72,7 +70,7 @@ trait ServiceUtils extends CirceSupport {
       val paramList = List(appClientId.toString, timestamp, nonce, sn) ::: data
       if (timestamp.toLong + 120000 < System.currentTimeMillis()) {
         Future.successful(complete(requestTimeOut))
-      } else if (checkSignature(paramList, signature, AppSettings.esheepSecureKey)) {
+      } else if (checkSignature(paramList, signature, AppSettings.gsKey)) {
         f
       } else {
         Future.successful(complete(signatureError))

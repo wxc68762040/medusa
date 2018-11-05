@@ -28,7 +28,7 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 					wsUrl = r.data.wsUrl
 					scanUrl = r.data.scanUrl
 					loginScene.drawScanUrl(imageFromBase64(scanUrl))
-					wsClient ! EstablishConnectionEs(wsUrl,scanUrl)
+					wsClient ! EstablishConnectionEs(wsUrl, scanUrl)
 				case Left(l) =>
 			}
 
@@ -36,12 +36,17 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 
 	})
 	
+	stageCtx.setStageListener(new StageContext.StageListener {
+		override def onCloseRequest(): Unit = {
+			stageCtx.closeStage()
+		}
+	})
+	
 	def showScene() {
 		ClientBoot.addToPlatform {
 			stageCtx.switchScene(loginScene.scene, "Login")
 		}
 	}
-
 
 	def imageFromBase64(base64Str:String) = {
 		if(base64Str == null) null

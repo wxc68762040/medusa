@@ -55,8 +55,10 @@ object AuthActor {
             AuthUtils.getToken().map{
               case Right(t) =>
                 token = t.token
+                log.info(s"---get new token----")
                 timer.startSingleTimer(TokenTimerKey, RenewToken, (t.expireTime - 10).seconds)
               case Left(e) =>
+                timer.startSingleTimer(TokenTimerKey, RenewToken, 10.seconds)
             }
             Behaviors.same
 

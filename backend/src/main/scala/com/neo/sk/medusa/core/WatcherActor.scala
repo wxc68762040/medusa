@@ -1,14 +1,9 @@
 package com.neo.sk.medusa.core
 
-import java.awt.event.KeyEvent
-
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors, StashBuffer, TimerScheduler}
 import akka.actor.typed.{ActorRef, Behavior}
-import akka.http.scaladsl.model.ws.Message
 import akka.stream.OverflowStrategy
-import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.{Flow, Sink, Source}
-import com.neo.sk.medusa.snake.Protocol._
 import com.neo.sk.medusa.Boot.watchManager
 import akka.stream.typed.scaladsl.{ActorSink, ActorSource}
 import com.neo.sk.medusa.snake.Protocol
@@ -27,13 +22,14 @@ object WatcherActor {
 
   private final val InitTime = Some(5.minutes)
 
+
   private final case object BehaviorChangeKey
 
   sealed trait Command
 
   final case class FailureMessage(ex: Throwable) extends Command
 
-  case class UserFrontActor(actor: ActorRef[WsMsgSource]) extends Command
+  case class UserFrontActor(actor: ActorRef[Protocol.WsMsgSource]) extends Command
 
   case object KillSelf extends Command
 
@@ -43,11 +39,15 @@ object WatcherActor {
 
   private case object UserLeft extends Command
 
-  private case class UnKnowAction(unknownMsg: UserAction) extends Command
-
   case class TimeOut(msg: String) extends Command
 
-  case class TransInfo(msg: WsMsgSource) extends Command
+  case class UnKnowAction(action: Protocol.UserAction) extends Command
+
+  case class TransInfo(msg: Protocol.WsMsgSource) extends Command
+
+  case class GetWatchedId(id:String) extends Command
+
+  case object WatcherReady extends Command
 
 
   def create(watcherId: String): Behavior[Command] = {
@@ -56,45 +56,55 @@ object WatcherActor {
         implicit val stashBuffer: StashBuffer[Command] = StashBuffer[Command](Int.MaxValue)
         Behaviors.withTimers[Command] {
           implicit timer =>
-            switchBehavior(ctx, "init", init(watcherId), InitTime, TimeOut("init"))
+            switchBehavior(ctx, "init", init(watcherId,""), InitTime, TimeOut("init"))
         }
     }
   }
 
-  private def init(watcherId: String)(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]) =
+  private def init(watcherId: String, watchedId:String)(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]):Behavior[Command] =
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
           case UserFrontActor(frontActor) =>
-            switchBehavior(ctx, "idle", idle(watcherId, frontActor))
+            ctx.self ! WatcherReady
+            switchBehavior(ctx, "idle", idle(watcherId,watchedId, frontActor))
+
+          case GetWatchedId(id) =>
+            init(watchedId, id)
+
           case TimeOut(m) =>
             log.debug(s"${ctx.self.path} is time out when busy,msg=$m")
             Behaviors.stopped
+
           case x =>
-            log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")
-            Behaviors.unhandled
+            log.error(s"${ctx.self.path} receive an unknown msg when init:$x")
+            Behaviors.same
         }
     }
 
 
-  private def idle(watcherId: String, frontActor: ActorRef[Protocol.WsMsgSource])(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
+  private def idle(watcherId: String, watchedId:String, frontActor: ActorRef[Protocol.WsMsgSource])(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
+
+          case WatcherReady =>
+            frontActor ! Protocol.Id(watchedId)
+            Behaviors.same
 
           case UserLeft =>
             watchManager ! WatcherManager.WatcherGone(watcherId)
             Behaviors.stopped
 
+          case GetWatchedId(id) =>
+            frontActor ! Protocol.Id(id)
+            Behaviors.same
+
           case TransInfo(x) =>
             frontActor ! x
             Behaviors.same
 
-          case UnKnowAction(unknownMsg) =>
-            log.debug(s"${ctx.self.path} receive an UnKnowAction when idle:$unknownMsg")
-            Behaviors.same
-
-          case t: NetTest =>
+          case NetTest(b, a) =>
             Behaviors.same
 
           case KillSelf =>
@@ -121,9 +131,9 @@ object WatcherActor {
   }
 
 
-  def flow(watcherActor: ActorRef[Command])(implicit decoder: Decoder[UserAction]): Flow[UserAction, WsMsgSource, Any] = {
+  def flow(watcherActor: ActorRef[Command])(implicit decoder: Decoder[Protocol.UserAction]): Flow[Protocol.UserAction, Protocol.WsMsgSource, Any] = {
     val in =
-      Flow[UserAction]
+      Flow[Protocol.UserAction]
         .map {
           case Protocol.Key(id, keyCode, frame) =>
             Key(id, keyCode, frame)
@@ -136,12 +146,12 @@ object WatcherActor {
         .to(sink(watcherActor))
 
     val out =
-      ActorSource.actorRef[WsMsgSource](
+      ActorSource.actorRef[Protocol.WsMsgSource](
         completionMatcher = {
-          case CompleteMsgServer =>
+          case Protocol.CompleteMsgServer =>
         },
         failureMatcher = {
-          case FailMsgServer(ex) => ex
+          case Protocol.FailMsgServer(ex) => ex
         },
         bufferSize = 64,
         overflowStrategy = OverflowStrategy.dropHead

@@ -30,9 +30,9 @@ object RoomActor {
 
   case class UserJoinGame(playerId: String, playerName: String, userActor: ActorRef[UserActor.Command]) extends Command
 
-  case class UserDead(userId: String,deadInfo: DeadInfo) extends Command
+  case class UserDead(userId: String, deadInfo: DeadInfo) extends Command
 
-  case class DeadInfo(name: String, length: Int, kill: Int, killer: String)
+  case class DeadInfo(name: String, length: Int, kill: Int, killerId: String, killer: String)
 
   case class Key(id: String, keyCode: Int, frame: Long) extends Command
 
@@ -87,12 +87,7 @@ object RoomActor {
             grid.addSnake(t.playerId, t.playerName)
             dispatchTo(t.playerId, UserActor.DispatchMsg(Protocol.Id(t.playerId)), userMap)
             eventList.append(Protocol.NewSnakeJoined(t.playerId, t.playerName, roomId))
-            if(isRecord) {
-              grid.genWaitingSnake()
-              eventList.append(grid.getGridSyncData)
-            }
             dispatch(UserActor.DispatchMsg(Protocol.NewSnakeJoined(t.playerId, t.playerName, roomId)), userMap)
-            dispatch(UserActor.DispatchMsg(grid.getGridSyncData), userMap)
             if(isRecord){
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserJoinRoom(t.playerId, t.playerName, grid.frameCount)
             }
@@ -101,9 +96,9 @@ object RoomActor {
           case t: UserDead =>
             log.info(s"room $roomId lost a player ${t.userId}")
             grid.removeSnake(t.userId)
-            dispatchTo(t.userId, UserActor.DispatchMsg(Protocol.DeadInfo(t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killer)), userMap)
+            dispatchTo(t.userId, UserActor.DispatchMsg(Protocol.DeadInfo(t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer)), userMap)
             dispatch(UserActor.DispatchMsg(Protocol.SnakeLeft(t.userId, t.deadInfo.name)), userMap)
-            eventList.append(Protocol.DeadInfo(t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killer))
+            eventList.append(Protocol.DeadInfo(t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer))
             eventList.append(Protocol.SnakeLeft(t.userId, t.deadInfo.name))
             //userMap.remove(t.userId)
             deadUserList += t.userId
@@ -117,20 +112,20 @@ object RoomActor {
             Behaviors.same
 
           case t: Key =>
-              if (t.frame >= grid.frameCount) {
-                grid.addActionWithFrame(t.id, t.keyCode, t.frame)
-                eventList.append(Protocol.SnakeAction(t.id, t.keyCode, t.frame))
-                dispatch(UserActor.DispatchMsg(Protocol.SnakeAction(t.id, t.keyCode, t.frame)), userMap)
-              } else if (t.frame >= grid.frameCount - Protocol.savingFrame + Protocol.advanceFrame) {
-                grid.addActionWithFrame(t.id, t.keyCode, grid.frameCount)
-                eventList.append(Protocol.SnakeAction(t.id, t.keyCode, grid.frameCount))
-                eventList.append(Protocol.DistinctSnakeAction(t.keyCode, grid.frameCount, t.frame))
-                dispatchDistinct(t.id, UserActor.DispatchMsg(Protocol.DistinctSnakeAction(t.keyCode, grid.frameCount, t.frame)),
-                  UserActor.DispatchMsg(Protocol.SnakeAction(t.id, t.keyCode, grid.frameCount)), userMap)
-                log.info(s"key delay: server: ${grid.frameCount} client: ${t.frame}")
-              } else {
-                log.info(s"key loss: server: ${grid.frameCount} client: ${t.frame}")
-              }
+            if (t.frame >= grid.frameCount) {
+              grid.addActionWithFrame(t.id, t.keyCode, t.frame)
+              eventList.append(Protocol.SnakeAction(t.id, t.keyCode, t.frame))
+              dispatch(UserActor.DispatchMsg(Protocol.SnakeAction(t.id, t.keyCode, t.frame)), userMap)
+            } else if (t.frame >= grid.frameCount - Protocol.savingFrame + Protocol.advanceFrame) {
+              grid.addActionWithFrame(t.id, t.keyCode, grid.frameCount)
+              eventList.append(Protocol.SnakeAction(t.id, t.keyCode, grid.frameCount))
+              eventList.append(Protocol.DistinctSnakeAction(t.keyCode, grid.frameCount, t.frame))
+              dispatchDistinct(t.id, UserActor.DispatchMsg(Protocol.DistinctSnakeAction(t.keyCode, grid.frameCount, t.frame)),
+                UserActor.DispatchMsg(Protocol.SnakeAction(t.id, t.keyCode, grid.frameCount)), userMap)
+              log.info(s"key delay: server: ${grid.frameCount} client: ${t.frame}")
+            } else {
+              log.info(s"key loss: server: ${grid.frameCount} client: ${t.frame}")
+            }
             Behaviors.same
 
           case BeginSync =>
@@ -160,6 +155,11 @@ object RoomActor {
             val eatenApples = grid.getEatenApples
             val speedUpInfo = grid.getSpeedUpInfo
             grid.resetFoodData()
+            val snakeNumber = grid.genWaitingSnake()
+            if(snakeNumber > 0) {
+              eventList.append(grid.getGridSyncData)
+              dispatch(UserActor.DispatchMsg(grid.getGridSyncData), userMap)
+            }
             if (grid.deadSnakeList.nonEmpty) {
               eventList.append(Protocol.DeadList(grid.deadSnakeList.map(_.id)))
               dispatch(UserActor.DispatchMsg(Protocol.DeadList(grid.deadSnakeList.map(_.id))), userMap)
@@ -183,7 +183,9 @@ object RoomActor {
             if (tickCount % 20 == 5) {
               val GridSyncData = grid.getGridSyncData
               eventList.append(Protocol.SyncApples(GridSyncData.appleDetails))
-              dispatch(UserActor.DispatchMsg(GridSyncData), userMap)
+              if (!(snakeNumber > 0)) { //需要生成蛇的情况下，已经广播过一次全量数据，不再次广播
+                dispatch(UserActor.DispatchMsg(GridSyncData), userMap)
+              }
             } else {
               if (feedApples.nonEmpty) {
                 dispatch(UserActor.DispatchMsg(Protocol.FeedApples(feedApples)), userMap)
@@ -218,7 +220,7 @@ object RoomActor {
 
           case t: YourUserIsWatched =>
             userMap.get(t.playerId).foreach(a => a._1 ! UserActor.YouAreWatched(t.watcherId, t.watcherRef))
-            t.watcherRef ! WatcherActor.TransInfo(Protocol.Id(t.playerId).asInstanceOf[WsMsgSource])
+//            t.watcherRef ! WatcherActor.TransInfo(Protocol.Id(t.playerId))
             Behaviors.same
 
           case ChildDead(name, childRef) =>

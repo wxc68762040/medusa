@@ -18,8 +18,6 @@ import org.seekloud.byteobject.ByteObject._
 import com.neo.sk.medusa.models.Dao.{GameRecordDao, UserRecordDao}
 import com.neo.sk.medusa.models.SlickTables._
 import com.neo.sk.medusa.Boot.executor
-import net.sf.ehcache.transaction.xa.commands.Command
-
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success}
@@ -65,7 +63,7 @@ object GameRecorder {
 
   final case object RoomEmpty extends Command
 
-  final case class EssfMapInfo(m: List[(EssfMapKey, EssfMapJoinLeftInfo)])
+  final case class EssfMapInfo(m: List[(EssfMapKey, ListBuffer[EssfMapJoinLeftInfo])])
 
   private final case class SaveData(flag: Int) extends Command
 
@@ -110,43 +108,37 @@ object GameRecorder {
         val gameRecordBuffer: List[GameRecord] = List[GameRecord]()
         timer.startSingleTimer(SaveDataKey, Save, saveTime)
         val data = GameRecorderData(roomId, fileName, index, System.currentTimeMillis(), initStateOpt, fileRecorder, gameRecordBuffer)
-        switchBehavior(ctx, "work", work(data, mutable.HashMap[EssfMapKey, EssfMapJoinLeftInfo](), mutable.HashMap[String, String](), mutable.HashMap[String, String](), -1l, -1l))
+        switchBehavior(ctx, "work", work(data, mutable.HashMap[EssfMapKey, ListBuffer[EssfMapJoinLeftInfo]](), mutable.HashMap[String, String](), mutable.HashMap[String, String](), 1l))
       }
     }
   }
 
-  def work(data: GameRecorder.GameRecorderData, essfMap: mutable.HashMap[EssfMapKey, EssfMapJoinLeftInfo],
+  def work(data: GameRecorder.GameRecorderData, essfMap: mutable.HashMap[EssfMapKey, ListBuffer[EssfMapJoinLeftInfo]],
     userMap: mutable.HashMap[String, String], userAllMap: mutable.HashMap[String, String],
-    startFrame: Long, endFrame: Long)(implicit middleBuffer: MiddleBufferInJvm,
+    frameIndex: Long)(implicit middleBuffer: MiddleBufferInJvm,
     timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
     Behaviors.receive { (ctx, msg) =>
       msg match {
 
         case t: UserJoinRoom =>
-          log.info(s"${ctx.self.path} get a new user recorder")
           userMap.put(t.playerId, t.name)
           userAllMap.put(t.playerId, t.name)
-          essfMap.put(EssfMapKey(t.playerId, t.name), EssfMapJoinLeftInfo(t.frame, -1))
+          val tmp = essfMap.getOrElse(EssfMapKey(t.playerId, t.name), ListBuffer[EssfMapJoinLeftInfo]())
+          tmp.append(EssfMapJoinLeftInfo(frameIndex, -1))
+          essfMap.put(EssfMapKey(t.playerId, t.name), tmp)
           Behaviors.same
 
         case t: UserLeftRoom =>
           userMap.remove(t.playerId)
-          essfMap.put(EssfMapKey(t.playerId, t.name), EssfMapJoinLeftInfo(essfMap(EssfMapKey(t.playerId, t.name)).joinF, t.frame))
+          val tmp = essfMap(EssfMapKey(t.playerId, t.name))
+          val last = tmp.last
+          tmp.remove(tmp.length -1)
+          tmp.append(EssfMapJoinLeftInfo(last.joinF, frameIndex))
+          essfMap.put(EssfMapKey(t.playerId, t.name), tmp)
           Behaviors.same
 
         case t: GameRecord =>
           data.gameRecordBuffer = t :: data.gameRecordBuffer
-          val newEndF = t.event._2.get match {
-            case grid: Protocol.GridDataSync =>
-              grid.frameCount
-          }
-
-          val newStartFrame = if (startFrame == -1l) {
-            t.event._2.get match {
-              case grid: Protocol.GridDataSync =>
-                grid.frameCount
-            }
-          } else startFrame
 
           if (data.gameRecordBuffer.size > maxRecordNum) {
             val rs = data.gameRecordBuffer.reverse
@@ -162,21 +154,19 @@ object GameRecorder {
             }
 
             data.gameRecordBuffer = List[GameRecord]()
-            switchBehavior(ctx, "work", work(data, essfMap, userAllMap, userMap, newStartFrame, newEndF))
-          } else {
-            switchBehavior(ctx, "work", work(data, essfMap, userAllMap, userMap, newStartFrame, newEndF))
           }
+          switchBehavior(ctx, "work", work(data, essfMap, userAllMap, userMap, frameIndex + 1))
 
         case Save =>
           log.info(s"${ctx.self.path} work get msg save")
           timer.startSingleTimer(SaveDataKey, Save, saveTime)
           ctx.self ! SaveData(0)
-          switchBehavior(ctx, "save", save(data, essfMap, userMap, userAllMap, startFrame, endFrame))
+          switchBehavior(ctx, "save", save(data, essfMap, userMap, userAllMap, frameIndex))
 
         case RoomEmpty =>
           log.info(s"${ctx.self.path} work get msg save, room close")
           ctx.self ! SaveData(1)
-          switchBehavior(ctx, "save", save(data, essfMap, userMap, userAllMap, startFrame, endFrame))
+          switchBehavior(ctx, "save", save(data, essfMap, userMap, userAllMap, frameIndex))
 
 
         case unknow =>
@@ -187,9 +177,9 @@ object GameRecorder {
     }
   }
 
-  def save(data: GameRecorder.GameRecorderData, essfMap: mutable.HashMap[EssfMapKey, EssfMapJoinLeftInfo],
+  def save(data: GameRecorder.GameRecorderData, essfMap: mutable.HashMap[EssfMapKey, ListBuffer[EssfMapJoinLeftInfo]],
     userMap: mutable.HashMap[String, String], userAllMap: mutable.HashMap[String, String],
-    startFrame: Long, endFrame: Long)(implicit middleBuffer: MiddleBufferInJvm,
+    frameIndex:Long)(implicit middleBuffer: MiddleBufferInJvm,
     timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
     Behaviors.receive { (ctx, msg) =>
       msg match {
@@ -199,8 +189,12 @@ object GameRecorder {
           //println(s"${ctx.self.path} save get msg saveData")
           val mapInfo = essfMap.map {
             essf =>
-              if (essf._2.leftF == -1L) {
-                (essf._1, EssfMapJoinLeftInfo(essf._2.joinF, endFrame))
+              if (essf._2.last.leftF == -1L) {
+                val tmp = essf._2
+                val last = tmp.last
+                tmp.remove(tmp.length -1)
+                tmp.append(EssfMapJoinLeftInfo(last.joinF, frameIndex))
+                (essf._1, tmp)
               } else {
                 essf
               }
@@ -209,14 +203,14 @@ object GameRecorder {
 
           data.recorder.finish()
           log.info(s"${ctx.self.path} has save game data to file=${data.fileName}_${data.fileIndex}")
-          val recordInfo = rRecords(data.fileIndex, data.startTime, System.currentTimeMillis(), data.roomId, userAllMap.size, endFrame - startFrame)
+          val recordInfo = rRecords(data.fileIndex, data.startTime, System.currentTimeMillis(), data.roomId, userAllMap.size, frameIndex)
           GameRecordDao.insertGameRecord(recordInfo).onComplete {
             case Success(recordId) =>
               val list = ListBuffer[rRecordsUserMap]()
               userAllMap.foreach {
                 userRecord =>
-                  list.append(rRecordsUserMap(-1l, recordId, userRecord._1, userRecord._2,
-                    essfMap(EssfMapKey(userRecord._1, userRecord._2)).joinF + "-" + essfMap(EssfMapKey(userRecord._1, userRecord._2)).leftF))
+                  list.append(rRecordsUserMap(-1l, recordId, userRecord._1, userRecord._2,mapInfo(EssfMapKey(userRecord._1, userRecord._2)).foldLeft("")((s,e) => s + e.joinF + "," + e.leftF + ";")
+                  ))
               }
               UserRecordDao.insertPlayerList(list.toList).onComplete {
                 case Success(_) =>
@@ -266,22 +260,21 @@ object GameRecorder {
       msg match {
         case t: GameRecord =>
           log.info(s"${ctx.self.path} initState get msg gameRecord")
-          val startF = t.event._2.get match {
-            case grid: Protocol.GridDataSync =>
-              grid.frameCount
-          }
           val newInitStateOpt = t.event._2
           val newCount = CountUtils.getId()
           val newRecorder = ESSFSupport.initFileRecorder(fileName, newCount, "", newInitStateOpt)
           val newGameRecorderData = GameRecorderData(roomId, fileName, newCount, System.currentTimeMillis(), newInitStateOpt, newRecorder, gameRecordBuffer = List[GameRecord]())
-          val newEssfMap = mutable.HashMap.empty[EssfMapKey, EssfMapJoinLeftInfo]
+          val newEssfMap = mutable.HashMap.empty[EssfMapKey, ListBuffer[EssfMapJoinLeftInfo]]
+
           val newUserAllMap = mutable.HashMap.empty[String, String]
           userMap.foreach {
             user =>
-              newEssfMap.put(EssfMapKey(user._1, user._2), EssfMapJoinLeftInfo(startF, -1L))
+              val tmpListBuffer = ListBuffer[EssfMapJoinLeftInfo]()
+              tmpListBuffer.append(EssfMapJoinLeftInfo(1, -1L))
+              newEssfMap.put(EssfMapKey(user._1, user._2), tmpListBuffer)
               newUserAllMap.put(user._1, user._2)
           }
-          switchBehavior(ctx, "work", work(newGameRecorderData, newEssfMap, newUserAllMap, userMap, startF, -1L))
+          switchBehavior(ctx, "work", work(newGameRecorderData, newEssfMap, newUserAllMap, userMap, 1l))
 
         case unknow =>
           log.warn(s"$ctx initRecorder got unknow msg $unknow")

@@ -1,7 +1,5 @@
 package com.neo.sk.medusa.actor
 
-import java.net.URLEncoder
-
 import akka.Done
 import akka.actor.{ActorSystem, PoisonPill}
 import akka.actor.typed._
@@ -23,6 +21,7 @@ import org.seekloud.byteobject.MiddleBufferInJvm
 import org.slf4j.LoggerFactory
 import io.circe.parser.decode
 
+import java.net.URLEncoder
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import com.neo.sk.medusa.controller.Api4GameAgent._
@@ -41,7 +40,6 @@ object WSClient {
 
 	private val log = LoggerFactory.getLogger("WSClient")
 	private val logPrefix = "WSClient"
-	private var outputStream: Option[ActorRef[WsSendMsg]] = None
 	def create(gameMessageReceiver: ActorRef[WsMsgSource],stageCtx: StageContext, _system: ActorSystem, _materializer: Materializer, _executor: ExecutionContextExecutor): Behavior[WsCommand] = {
 		Behaviors.setup[WsCommand] { ctx =>
 			Behaviors.withTimers { timer =>
@@ -60,7 +58,6 @@ object WSClient {
 			msg match {
 				case ConnectGame(id, name, accessCode) =>
 					val url = getWebSocketUri(id, name, accessCode)
-					println("now trying web socket")
 					val webSocketFlow = Http().webSocketClientFlow(WebSocketRequest(url))
 					val source = getSource(ctx.self)
 					val sink = getSink(gameMessageReceiver)
@@ -73,8 +70,8 @@ object WSClient {
 					val connected = response.flatMap { upgrade =>
 						if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
 							val gameScene = new GameScene()
-//							val gameController = new GameController(id, name, accessCode, stageCtx, gameScene, stream)
-//							gameController.connectToGameServer(gameController)
+							val gameController = new GameController(id, name, accessCode, stageCtx, gameScene, stream)
+							gameController.connectToGameServer(gameController)
 							Future.successful(s"$logPrefix connect success.")
 						} else {
 							throw new RuntimeException(s"WSClient connection failed: ${upgrade.response.status}")
@@ -87,9 +84,8 @@ object WSClient {
 					Behaviors.same
 
 
-				case EstablishConnectionEs(wsUrl,scanUrl) =>
+				case EstablishConnectionEs(wsUrl, scanUrl) =>
 					val webSocketFlow = Http().webSocketClientFlow(WebSocketRequest(wsUrl))
-
 					val source = getSource(ctx.self)
 					val sink = getSinkDup(ctx.self)
 					val response =
@@ -99,7 +95,6 @@ object WSClient {
 							.run()
 					val connected = response.flatMap { upgrade =>
 						if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
-
 							Future.successful(s"$logPrefix connect success. EstablishConnectionEs!")
 						} else {
 							throw new RuntimeException(s"WSClient connection failed: ${upgrade.response.status}")
@@ -125,22 +120,28 @@ object WSClient {
 
 				log.debug(s"msg from webSocket: $msg")
 				val gameId = AppSettings.gameId
-				decode[Ws4AgentResponse](msg) match {
-					case Right(res) =>
-						println("res:   "+res)
-						val playerId = "user"+res.Ws4AgentRsp.data.userId.toString
-						val nickname = res.Ws4AgentRsp.data.nickname
-						linkGameAgent(gameId,playerId,res.Ws4AgentRsp.data.token).map{
-							case Right(resl) =>
-								log.debug("accessCode: "+resl.accessCode)
-								self ! ConnectGame(playerId,nickname,resl.accessCode)
-							case Left(l) =>
-								log.debug("link error!")
-						}
-					case Left(le) =>
-						log.debug(s"decode esheep webmsg error! Error information:${le}")
-				}
-
+        if(msg.length > 50) {
+          decode[Ws4AgentResponse](msg) match {
+            case Right(res) =>
+              if (res.Ws4AgentRsp.errCode == 0) {
+                println("res:   " + res)
+                val playerId = "user" + res.Ws4AgentRsp.data.userId.toString
+                val nickname = res.Ws4AgentRsp.data.nickname
+                linkGameAgent(gameId, playerId, res.Ws4AgentRsp.data.token).map {
+                  case Right(resl) =>
+                    log.debug("accessCode: " + resl.accessCode)
+                    self ! ConnectGame(playerId, nickname, resl.accessCode)
+                  case Left(l) =>
+                    log.error("link error!")
+                }
+              } else {
+                log.error("link error!")
+              }
+            case Left(le) =>
+              println("===========================================================")
+              log.error(s"decode esheep webmsg error! Error information:${le}")
+          }
+        }
 			case BinaryMessage.Strict(bMsg) =>
 				//decode process.
 				val buffer = new MiddleBufferInJvm(bMsg.asByteBuffer)
@@ -154,10 +155,7 @@ object WSClient {
 				msg
 		}
 	}
-
-
-
-
+	
 	def getSink(actor: ActorRef[WsMsgSource]) =
 		Flow[Message].collect {
 			case TextMessage.Strict(msg) =>
@@ -198,10 +196,10 @@ object WSClient {
 	
 	def getWebSocketUri(playerId: String, playerName: String, accessCode: String): String = {
 		val wsProtocol = "ws"
-		val host ="localhost:30372"
-		val playerIdEncoder = URLEncoder.encode(playerId,"utf-8")
-		val playerNameEncoder = URLEncoder.encode(playerName,"utf-8")
-		val accessCodeEncoder = URLEncoder.encode(accessCode,"utf-8")
-		s"$wsProtocol://$host/medusa/link/playGameClient?playerId=$playerIdEncoder&playerName=$playerNameEncoder&accessCode=$accessCodeEncoder"
+		//val host ="10.1.29.250:" + AppSettings.httpPort
+		val host = "flowdev.neoap.com"
+		val playerIdEncoder = URLEncoder.encode(playerId, "UTF-8")
+		val playerNameEncoder = URLEncoder.encode(playerName, "UTF-8")
+		s"$wsProtocol://$host/medusa/link/playGameClient?playerId=$playerIdEncoder&playerName=$playerNameEncoder&accessCode=$accessCode"
 	}
 }

@@ -5,7 +5,7 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors, StashBuffer, TimerSch
 import com.neo.sk.medusa.ClientBoot
 import com.neo.sk.medusa.controller.GameController
 import com.neo.sk.medusa.model.GridOnClient
-import com.neo.sk.medusa.snake.Protocol.{FailMsgServer, GameMessageBeginning, WsMsgSource}
+import com.neo.sk.medusa.snake.Protocol.{FailMsgServer, GameMessageBeginning, HeartBeat, WsMsgSource}
 import com.neo.sk.medusa.snake.{Apple, Point, Protocol}
 import org.slf4j.LoggerFactory
 
@@ -53,8 +53,16 @@ object GameMessageReceiver {
 				case Protocol.JoinRoomSuccess(id, roomId)=>
 					ClientBoot.addToPlatform {
 						grid.myId = id
+						GameController.myRoomId = roomId
 					}
 					running(id, roomId, gameController)
+					
+				case Protocol.JoinRoomFailure(_, _, errCode, msg) =>
+					log.error(s"join room failed $errCode: $msg")
+					ClientBoot.addToPlatform {
+						gameController.gameStop()
+					}
+					Behavior.stopped
 					
 				case Protocol.Id(id) =>
 					ClientBoot.addToPlatform {
@@ -65,7 +73,13 @@ object GameMessageReceiver {
 				case Protocol.TextMsg(message) =>
 					log.info(s"get TextMsg: $message")
 					Behavior.same
-				
+
+				case Protocol.YouHaveLogined =>
+					ClientBoot.addToPlatform{
+						grid.loginAgain = true
+					}
+				  Behaviors.stopped
+
 				case Protocol.NewSnakeJoined(id, user, roomId) =>
 					log.info(s"new user $user joined")
 					Behavior.same
@@ -144,11 +158,9 @@ object GameMessageReceiver {
 					ClientBoot.addToPlatform {
 						if (!grid.init) {
 							grid.init = true
-							val timeout = 100 - (System.currentTimeMillis() - data.timestamp) % 100
 							gameController.startGameLoop()
 						}
 						grid.syncData = Some(data)
-						grid.sync(Some(data))
 						grid.justSynced = true
 					}
 					Behavior.same
@@ -156,12 +168,11 @@ object GameMessageReceiver {
 				case Protocol.NetDelayTest(createTime) =>
 					ClientBoot.addToPlatform {
 						val receiveTime = System.currentTimeMillis()
-						println(grid.snakes.size)
 					}
 					//					netInfoHandler.ping = receiveTime - createTime
 					Behavior.same
 				
-				case Protocol.DeadInfo(myName, myLength, myKill, killer) =>
+				case Protocol.DeadInfo(myName, myLength, myKill, killerId, killer) =>
 					ClientBoot.addToPlatform {
 						grid.deadName = myName
 						grid.deadLength = myLength
@@ -178,13 +189,16 @@ object GameMessageReceiver {
 				
 				case Protocol.KillList(killList) =>
 					ClientBoot.addToPlatform {
-						grid.waitingShowKillList :::= killList
+						grid.waitingShowKillList :::= killList.map(e => (e._1, e._2, System.currentTimeMillis()))
 					}
-//					dom.window.setTimeout(()=>waitingShowKillList = waitingShowKillList.drop(killList.length),2000)
 					Behavior.same
 				
 				case FailMsgServer(_) =>
-					println("fail msg server")
+					log.info("fail msg server")
+					Behavior.same
+					
+				case HeartBeat =>
+					log.info(s"get HeartBeat")
 					Behavior.same
 					
 				case x =>

@@ -19,7 +19,8 @@ object GameInfo {
 
   val textLineHeight = 14
   var basicTime = 0L
-
+  val canvas = dom.document.getElementById("GameInfo").asInstanceOf[Canvas]
+  
   private[this] val startBg = dom.document.getElementById("startBg")
 
   def setStartBg()={
@@ -42,11 +43,10 @@ object GameInfo {
 
   def drawInfo(uid: String, data: GridDataSync): Unit = {
 
-    val infoCacheCanvas = dom.document.getElementById("GameInfo").asInstanceOf[Canvas]
-    val infoCacheCtx = infoCacheCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
-
-    infoCacheCanvas.width = canvasBoundary.x
-    infoCacheCanvas.height = canvasBoundary.y
+    val infoCacheCtx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
+  
+    canvas.width = canvasBoundary.x
+    canvas.height = canvasBoundary.y
 
     clearInfo(infoCacheCtx)
 
@@ -56,7 +56,7 @@ object GameInfo {
 
     val centerX = windowWidth/2
     val centerY = windowHight/2
-    if(!NetGameHolder.rePlayOver) {
+    if(!NetGameHolder.rePlayOver && !NetGameHolder.loginAgain && !NetGameHolder.recordNotExist) {
       snakes.find(_.id == uid) match {
         case Some(mySnake) =>
           startBg.setAttribute("style", "display:none")
@@ -87,11 +87,21 @@ object GameInfo {
             myProportion = 1.0
           }
       }
-    }else{
+    }else if(NetGameHolder.recordNotExist){
+      infoCacheCtx.font = "36px Helvetica"
+      infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
+      infoCacheCtx.shadowBlur = 0
+      infoCacheCtx.fillText("This record not exists",centerX - 150, centerY - 30)
+    }else if(NetGameHolder.rePlayOver && ! NetGameHolder.loginAgain){
       infoCacheCtx.font = "36px Helvetica"
       infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
       infoCacheCtx.shadowBlur = 0
       infoCacheCtx.fillText("This record is Over",centerX - 150, centerY - 30)
+    }else if(!NetGameHolder.rePlayOver && NetGameHolder.loginAgain){
+      infoCacheCtx.font = "36px Helvetica"
+      infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
+      infoCacheCtx.shadowBlur = 0
+      infoCacheCtx.fillText("您已在异地登陆",centerX - 150, centerY - 30)
     }
 
     infoCacheCtx.font = "12px Helvetica"

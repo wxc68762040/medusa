@@ -24,7 +24,7 @@ import java.awt.event.KeyEvent
 object GameController {
 	val bounds = Point(Boundary.w, Boundary.h)
 	val grid = new GridOnClient(bounds)
-	val myRoomId = -1l
+	var myRoomId = -1l
 	var basicTime = 0l
 	var myPorportion = 1.0
 	var firstCome = false
@@ -72,7 +72,7 @@ class GameController(id: String,
 		basicTime = System.currentTimeMillis()
 		val animationTimer = new AnimationTimer() {
 			override def handle(now: Long): Unit = {
-				gameScene.draw(grid.myId, grid.getGridSyncData, grid.historyRank, grid.currentRank)
+				gameScene.draw(grid.myId, grid.getGridSyncData, grid.historyRank, grid.currentRank, grid.loginAgain)
 			}
 		}
 		val timeline = new Timeline()
@@ -85,17 +85,21 @@ class GameController(id: String,
 		animationTimer.start()
 		timeline.play()
 	}
+	
+	def gameStop() = {
+		stageCtx.closeStage()
+	}
 
 	private def logicLoop() = {
 		basicTime = System.currentTimeMillis()
-			if (!grid.justSynced) {
-				grid.update(false)
-			} else {
-				grid.sync(grid.syncData)
-				grid.syncData = None
-				grid.update(true)
-				grid.justSynced = false
-			}
+		if (!grid.justSynced) {
+			grid.update(false)
+		} else {
+			grid.sync(grid.syncData)
+			grid.syncData = None
+			grid.update(true)
+			grid.justSynced = false
+		}
 		grid.savedGrid += (grid.frameCount -> grid.getGridSyncData)
 		grid.savedGrid -= (grid.frameCount - Protocol.savingFrame - Protocol.advanceFrame)
 	}

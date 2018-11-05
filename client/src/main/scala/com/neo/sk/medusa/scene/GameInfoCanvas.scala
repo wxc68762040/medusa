@@ -23,7 +23,7 @@ class GameInfoCanvas(canvas: Canvas) {
   val textLineHeight = 14
   val infoCtx = canvas.getGraphicsContext2D
 
-  def drawTextLine (ctx: GraphicsContext, str: String, x: Int, lineNum: Int, lineBegin: Int = 0 ):Unit = {
+  def drawTextLine(ctx: GraphicsContext, str: String, x: Int, lineNum: Int, lineBegin: Int = 0):Unit = {
     ctx.fillText(str, x, (lineNum + lineBegin - 1) * textLineHeight)
   }
 
@@ -31,8 +31,7 @@ class GameInfoCanvas(canvas: Canvas) {
     ctx.clearRect(0,0,infoWidth,infoHeight)
   }
 
-  def drawInfo(uid: String, data:GridDataSync,historyRank:List[Score], currentRank:List[Score]): Unit = {
-
+  def drawInfo(uid: String, data:GridDataSync,historyRank:List[Score], currentRank:List[Score], loginAgain:Boolean): Unit = {
     clearInfo(infoCtx)
     infoCtx.setFill(Color.web("rgba(144,144,144,0)"))
     infoCtx.fillRect(0,0, infoWidth, infoHeight)
@@ -40,38 +39,43 @@ class GameInfoCanvas(canvas: Canvas) {
     val leftBegin = 10
     val rightBegin = (infoWidth - 200).toInt
 
-    val centerX = infoWidth /2
-    val centerY = infoHeight /2
+    val centerX = infoWidth / 2
+    val centerY = infoHeight / 2
+    if(!loginAgain) {
+      snakes.find(_.id == uid) match {
+        case Some(mySnake) =>
+          firstCome = false
+          val baseLine = 1
+          infoCtx.setFont(Font.font("12px Helvetica"))
+          infoCtx.setFill(Color.web("rgb(250,250,250)"))
+          drawTextLine(infoCtx, s"YOU: id=[${mySnake.id}] ", leftBegin, 1, baseLine)
+          drawTextLine(infoCtx, s"name=[${mySnake.name.take(32)}]", leftBegin, 2, baseLine)
+          drawTextLine(infoCtx, s"your kill = ${mySnake.kill}", leftBegin, 3, baseLine)
+          drawTextLine(infoCtx, s"your length = ${mySnake.length} ", leftBegin, 4, baseLine)
+          //        drawTextLine(infoCtx, s"fps: ${netInfoHandler.fps.formatted("%.2f")} ping:${netInfoHandler.ping.formatted("%.2f")} dataps:${netInfoHandler.dataps.formatted("%.2f")}", leftBegin, 4, baseLine)
+          //        drawTextLine(infoCtx, s"drawTimeAverage: ${netInfoHandler.drawTimeAverage}", leftBegin, 5, baseLine)
+          drawTextLine(infoCtx, s"roomId: $myRoomId", leftBegin, 5, baseLine)
 
-    snakes.find(_.id == uid) match {
-      case Some(mySnake) =>
-        firstCome = false
-        val baseLine = 1
-        infoCtx.setFont(Font.font("12px Helvetica"))
-        infoCtx.setFill(Color.web("rgb(250,250,250)"))
-        drawTextLine(infoCtx, s"YOU: id=[${mySnake.id}] ", leftBegin, 1, baseLine)
-        drawTextLine(infoCtx,s"name=[${mySnake.name.take(32)}]", leftBegin,2,baseLine)
-        drawTextLine(infoCtx, s"your kill = ${mySnake.kill}", leftBegin, 3, baseLine)
-        drawTextLine(infoCtx, s"your length = ${mySnake.length} ", leftBegin, 4, baseLine)
-//        drawTextLine(infoCtx, s"fps: ${netInfoHandler.fps.formatted("%.2f")} ping:${netInfoHandler.ping.formatted("%.2f")} dataps:${netInfoHandler.dataps.formatted("%.2f")}", leftBegin, 4, baseLine)
-//        drawTextLine(infoCtx, s"drawTimeAverage: ${netInfoHandler.drawTimeAverage}", leftBegin, 5, baseLine)
-        drawTextLine(infoCtx, s"roomId: $myRoomId", leftBegin, 5, baseLine)
-
-      case None =>
-        if (firstCome) {
-          infoCtx.setFont(Font.font(" Helvetica", 36))
-        } else {
-          infoCtx.setFont(Font.font(" Helvetica",24))
-          infoCtx.setFill(Color.web("rgb(250, 250, 250)"))
-          //infoCtx.shadowBlur = 0
-          infoCtx.fillText(s"Your name   : ${grid.deadName}", centerX - 150, centerY - 30)
-          infoCtx.fillText(s"Your length  : ${grid.deadLength}", centerX - 150, centerY)
-          infoCtx.fillText(s"Your kill        : ${grid.deadKill}", centerX - 150, centerY + 30)
-          infoCtx.fillText(s"Killer             : ${grid.yourKiller}", centerX - 150, centerY + 60)
-          infoCtx.setFont(Font.font("Verdana", 36))
-          infoCtx.fillText("Ops, Press Space Key To Restart!", centerX - 250, centerY - 120)
-          myPorportion = 1.0
-        }
+        case None =>
+          if (firstCome) {
+            infoCtx.setFont(Font.font(" Helvetica", 36))
+          } else {
+            infoCtx.setFont(Font.font(" Helvetica", 24))
+            infoCtx.setFill(Color.web("rgb(250, 250, 250)"))
+            //infoCtx.shadowBlur = 0
+            infoCtx.fillText(s"Your name   : ${grid.deadName}", centerX - 150, centerY - 30)
+            infoCtx.fillText(s"Your length  : ${grid.deadLength}", centerX - 150, centerY)
+            infoCtx.fillText(s"Your kill        : ${grid.deadKill}", centerX - 150, centerY + 30)
+            infoCtx.fillText(s"Killer             : ${grid.yourKiller}", centerX - 150, centerY + 60)
+            infoCtx.setFont(Font.font("Verdana", 36))
+            infoCtx.fillText("Ops, Press Space Key To Restart!", centerX - 250, centerY - 120)
+            myPorportion = 1.0
+          }
+      }
+    }else{
+      infoCtx.setFont(Font.font("36px Helvetica"))
+      infoCtx.setFill(Color.web( "rgb(250, 250, 250)"))
+      infoCtx.fillText("您已在异地登陆",centerX - 150, centerY - 30)
     }
 
     infoCtx.setFont(Font.font("12px Helvetica"))
@@ -101,7 +105,7 @@ class GameInfoCanvas(canvas: Canvas) {
 //      override def run(): Unit = infoCtx.clearRect(400, 0, 200, 200)
 //      println("ok")
 //    }
-
+    grid.waitingShowKillList = grid.waitingShowKillList.filter(_._3 >= System.currentTimeMillis() - 5 * 1000)
     grid.waitingShowKillList.foreach{
       j =>
         if(j._1 != grid.myId){
