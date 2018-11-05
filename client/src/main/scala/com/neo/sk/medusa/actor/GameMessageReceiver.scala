@@ -73,7 +73,13 @@ object GameMessageReceiver {
 				case Protocol.TextMsg(message) =>
 					log.info(s"get TextMsg: $message")
 					Behavior.same
-				
+
+				case Protocol.YouHaveLogined =>
+					ClientBoot.addToPlatform{
+						grid.loginAgain = true
+					}
+				  Behaviors.stopped
+
 				case Protocol.NewSnakeJoined(id, user, roomId) =>
 					log.info(s"new user $user joined")
 					Behavior.same

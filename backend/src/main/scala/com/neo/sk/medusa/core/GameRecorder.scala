@@ -70,6 +70,8 @@ object GameRecorder {
 
   final case object Save extends Command
 
+  private final case object KillSelf extends Command
+
   private final case object BehaviorChangeKey
 
   case class TimeOut(msg: String) extends Command
@@ -217,14 +219,14 @@ object GameRecorder {
                     ctx.self ! SwitchBehavior("initRecorder", initRecorder(data.roomId, data.fileName, data.fileIndex, userMap))
                   } else {
                     log.info(s"------------${ctx.self.path} stopped")
-                    Behaviors.stopped
+                    ctx.self ! KillSelf
                   }
                 case Failure(e) =>
                   log.error(s"insert user record fail, error: $e")
                   if (f == 0) {
                     ctx.self ! SwitchBehavior("initRecorder", initRecorder(data.roomId, data.fileName, data.fileIndex, userMap))
                   } else {
-                    Behaviors.stopped
+                    ctx.self ! KillSelf
                   }
               }
             case Failure(e) =>
@@ -232,7 +234,7 @@ object GameRecorder {
               if (f == 0) {
                 ctx.self ! SwitchBehavior("initRecorder", initRecorder(data.roomId, data.fileName, data.fileIndex, userMap))
               } else {
-                Behaviors.stopped
+                ctx.self ! KillSelf
               }
           }
           switchBehavior(ctx, "busy", busy())
@@ -263,7 +265,7 @@ object GameRecorder {
           val newRecorder = ESSFSupport.initFileRecorder(fileName, newCount, "", newInitStateOpt)
           val newGameRecorderData = GameRecorderData(roomId, fileName, newCount, System.currentTimeMillis(), newInitStateOpt, newRecorder, gameRecordBuffer = List[GameRecord]())
           val newEssfMap = mutable.HashMap.empty[EssfMapKey, ListBuffer[EssfMapJoinLeftInfo]]
-          
+
           val newUserAllMap = mutable.HashMap.empty[String, String]
           userMap.foreach {
             user =>
@@ -294,6 +296,9 @@ object GameRecorder {
 
         case TimeOut(m) =>
           log.debug(s"${ctx.self.path} is time out when busy,msg=$m")
+          Behaviors.stopped
+
+        case KillSelf =>
           Behaviors.stopped
 
         case unknowMsg =>

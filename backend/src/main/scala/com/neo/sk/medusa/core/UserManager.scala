@@ -61,6 +61,9 @@ object UserManager {
       (ctx, msg) =>
         msg match {
           case GetWebSocketFlow(playerId, playerName, roomId, replyTo) =>
+            if(allUser.get(playerId).isDefined){
+              getUserActor(ctx, playerId, playerName) ! UserActor.KillSelf
+            }
             val user = getUserActor(ctx, playerId, playerName)
             allUser.put(playerId, user)
             if (userRoomMap.get(playerId).nonEmpty) {
@@ -122,15 +125,11 @@ object UserManager {
 
   private def getUserActor(ctx: ActorContext[Command], playerId: String, playerName: String): ActorRef[UserActor.Command] = {
     val childName = s"UserActor-$playerId"
-    if(ctx.child(childName).nonEmpty) {
-      val tempActor = ctx.spawn(UserActor.create(playerId, playerName), childName + "-duplicate")
-      ctx.watchWith(tempActor, ChildDead(childName + "-duplicate", tempActor))
-      tempActor
-    } else {
+    ctx.child(childName).getOrElse{
       val actor = ctx.spawn(UserActor.create(playerId, playerName), childName)
       ctx.watchWith(actor, ChildDead(childName, actor))
       actor
-    }
+    }.upcast[UserActor.Command]
   }
 
   private def getWebSocketFlow(userActor: ActorRef[UserActor.Command]): Flow[Message, Message, Any] = {

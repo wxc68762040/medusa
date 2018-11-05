@@ -72,7 +72,7 @@ class GameController(id: String,
 		basicTime = System.currentTimeMillis()
 		val animationTimer = new AnimationTimer() {
 			override def handle(now: Long): Unit = {
-				gameScene.draw(grid.myId, grid.getGridSyncData, grid.historyRank, grid.currentRank)
+				gameScene.draw(grid.myId, grid.getGridSyncData, grid.historyRank, grid.currentRank, grid.loginAgain)
 			}
 		}
 		val timeline = new Timeline()
