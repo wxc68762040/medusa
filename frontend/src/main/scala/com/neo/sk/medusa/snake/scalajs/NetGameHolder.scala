@@ -224,6 +224,9 @@ object NetGameHolder extends js.JSApp {
             }
           }
         }
+        GameInfo.canvas.onclick = {
+          _ => GameView.canvas.focus()
+        }
       }
       event0
     }
@@ -249,7 +252,7 @@ object NetGameHolder extends js.JSApp {
             val middleDataInJs = new MiddleBufferInJs(buf) //put data into MiddleBuffer
             val encodedData: Either[decoder.DecoderFailure, Protocol.GameMessage] =
               bytesDecode[Protocol.GameMessage](middleDataInJs) // get encoded data.
-            GameView.canvas.focus()
+//            GameView.canvas.focus()
             encodedData match {
               case Right(data) => data match {
                 case Protocol.JoinRoomSuccess(id,roomId)=>
