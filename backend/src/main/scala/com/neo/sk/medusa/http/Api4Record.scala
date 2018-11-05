@@ -41,9 +41,7 @@ trait Api4Record extends ServiceUtils{
 
   //根据不同筛选条件获取比赛录像信息列表
   private val getRecordListRoute = (path("getRecordList") & post) {
-    println("----------------------------------")
     dealPostReq[RecordListReq] { req =>
-      println("================================================")
       getRecordList(req.lastRecordId, req.count).map { r =>
         val searchRes = r.groupBy(_._1)
         var gameList = List.empty[Record]

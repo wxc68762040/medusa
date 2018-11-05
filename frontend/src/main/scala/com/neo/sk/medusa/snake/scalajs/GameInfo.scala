@@ -56,7 +56,7 @@ object GameInfo {
 
     val centerX = windowWidth/2
     val centerY = windowHight/2
-    if(!NetGameHolder.rePlayOver) {
+    if(!NetGameHolder.rePlayOver && !NetGameHolder.loginAgain) {
       snakes.find(_.id == uid) match {
         case Some(mySnake) =>
           startBg.setAttribute("style", "display:none")
@@ -87,11 +87,16 @@ object GameInfo {
             myProportion = 1.0
           }
       }
-    }else{
+    }else if(NetGameHolder.rePlayOver && ! NetGameHolder.loginAgain){
       infoCacheCtx.font = "36px Helvetica"
       infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
       infoCacheCtx.shadowBlur = 0
       infoCacheCtx.fillText("This record is Over",centerX - 150, centerY - 30)
+    }else if(!NetGameHolder.rePlayOver && NetGameHolder.loginAgain){
+      infoCacheCtx.font = "36px Helvetica"
+      infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
+      infoCacheCtx.shadowBlur = 0
+      infoCacheCtx.fillText("您已在异地登陆",centerX - 150, centerY - 30)
     }
 
     infoCacheCtx.font = "12px Helvetica"

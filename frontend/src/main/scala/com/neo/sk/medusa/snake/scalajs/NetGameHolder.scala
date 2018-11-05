@@ -27,6 +27,8 @@ import org.seekloud.byteobject.decoder._
 object NetGameHolder extends js.JSApp {
 
   var state = ""
+
+  var loginAgain = false
   val bounds = Point(Boundary.w, Boundary.h)
   val windowWidth = dom.document.documentElement.clientWidth
   val windowHight = dom.document.documentElement.clientHeight
@@ -260,6 +262,10 @@ object NetGameHolder extends js.JSApp {
                   myRoomId = roomId
                 //                  writeToArea(s"$user joined!")
                 case Protocol.NewSnakeNameExist(id, name, roomId)=>
+
+                case Protocol.YouHaveLogined =>
+                  loginAgain = true
+                  grid.snakes = Map.empty[String, SnakeInfo]
 
                 case Protocol.ReplayOver =>
                   rePlayOver = true

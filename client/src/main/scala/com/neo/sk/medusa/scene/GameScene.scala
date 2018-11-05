@@ -52,10 +52,10 @@ class GameScene() {
   viewCanvas.requestFocus()
 	viewCanvas.setOnKeyPressed(event => gameSceneListener.onKeyPressed(event.getCode))
 
-	def draw(myId:String, data: Protocol.GridDataSync,historyRank:List[Score], currentRank:List[Score]): Unit ={
+	def draw(myId:String, data: Protocol.GridDataSync,historyRank:List[Score], currentRank:List[Score], loginAgain:Boolean): Unit ={
     view.drawSnake(myId, data)
     map.drawMap(myId, data)
-		info.drawInfo(myId, data, historyRank, currentRank)
+		info.drawInfo(myId, data, historyRank, currentRank,loginAgain)
   }
 	def setGameSceneListener(listener: GameSceneListener) {
 		gameSceneListener = listener

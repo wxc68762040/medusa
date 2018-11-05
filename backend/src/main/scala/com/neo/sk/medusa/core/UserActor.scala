@@ -103,13 +103,8 @@ object UserActor {
       (ctx, msg) =>
         msg match {
           case UserFrontActor(frontActor) =>
-            if(ctx.self.path.toString.endsWith("-duplicate")) {
-              frontActor ! Protocol.JoinRoomFailure(playerId, -1L, 200001, "user joined game again")
-              Behavior.stopped
-            } else {
-              userManager ! UserManager.UserReady(playerId, ctx.self, 0)
-              switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor))
-            }
+            userManager ! UserManager.UserReady(playerId, ctx.self, 0)
+            switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor))
 
           case UserWatchFrontActor(frontActor)=>
             userManager ! UserManager.UserReady(playerId, ctx.self,1)
@@ -163,6 +158,7 @@ object UserActor {
             Behaviors.same
 
           case KillSelf =>
+            frontActor ! YouHaveLogined
             Behaviors.stopped
 
           case ReplayShot(shot) =>
@@ -249,6 +245,10 @@ object UserActor {
 
           case RestartGame =>
             Behaviors.same
+
+          case KillSelf =>
+            frontActor ! YouHaveLogined
+            Behaviors.stopped
 
           case UserLeft =>
             roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
