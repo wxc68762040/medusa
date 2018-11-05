@@ -63,7 +63,6 @@ object UserManager {
           case GetWebSocketFlow(playerId, playerName, roomId, replyTo) =>
             if(allUser.get(playerId).isDefined){
               getUserActor(ctx, playerId, playerName) ! UserActor.KillSelf
-              println("=============================")
             }
             val user = getUserActor(ctx, playerId, playerName)
             allUser.put(playerId, user)
@@ -77,6 +76,7 @@ object UserManager {
 
           case GetReplayWebSocketFlow(recordId, playerId, watchPlayerId, frame, replyTo) =>
             //watchPlayerId 被观看的人
+
             userRecMap.put(playerId,UserActor.ReplayGame(recordId,watchPlayerId,frame))
             if(allUser.get(playerId).isDefined){
               getUserActor(ctx, playerId, "player4watch") ! UserActor.KillSelf

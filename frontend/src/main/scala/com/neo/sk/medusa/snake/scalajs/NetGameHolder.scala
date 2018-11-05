@@ -47,7 +47,7 @@ object NetGameHolder extends js.JSApp {
   var eatenApples  = Map[String, List[AppleWithFrame]]()
   var rePlayOver = false
 
-
+  var recordNotExist = false
 
   val grid = new GridOnClient(bounds)
 
@@ -267,9 +267,11 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.NewSnakeNameExist(id, name, roomId)=>
 
                 case Protocol.YouHaveLogined =>
-                  println("============")
                   loginAgain = true
                   grid.snakes = Map.empty[String, SnakeInfo]
+
+                case Protocol.RecordNotExist =>
+                  recordNotExist = true
 
                 case Protocol.ReplayOver =>
                   rePlayOver = true

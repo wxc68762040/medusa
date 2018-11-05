@@ -2,6 +2,7 @@ package com.neo.sk.medusa.core
 
 
 import java.awt.event.KeyEvent
+import java.io.File
 
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors, StashBuffer, TimerScheduler}
 import akka.actor.typed.{ActorRef, Behavior}
@@ -12,6 +13,7 @@ import akka.stream.scaladsl.{Flow, Sink, Source}
 import com.neo.sk.medusa.snake.Protocol._
 import com.neo.sk.medusa.Boot.{roomManager, userManager}
 import akka.stream.typed.scaladsl.{ActorSink, ActorSource}
+import com.neo.sk.medusa.common.AppSettings.recordPath
 import com.neo.sk.medusa.core.RoomActor.UserLeft
 import com.neo.sk.medusa.snake.Protocol
 import io.circe.Decoder
@@ -130,8 +132,15 @@ object UserActor {
           case ReplayGame(recordId,watchPlayerId,frame)=>
             log.info(s"start replay")
             frontActor ! Protocol.Id(watchPlayerId)
-            getGameReplay(ctx,recordId) ! GameReader.InitPlay(watchPlayerId,frame)
-            Behaviors.same
+            val fileName = recordPath + "medusa" + recordId
+            val tmpFile =new File(fileName)
+            if(tmpFile.exists()) {
+              getGameReplay(ctx, recordId) ! GameReader.InitPlay(watchPlayerId, frame)
+              Behaviors.same
+            }else{
+              frontActor ! RecordNotExist
+              Behaviors.stopped
+            }
 
           case JoinRoomSuccess(rId, roomActor) =>
             roomActor ! RoomActor.UserJoinGame(playerId, playerName, ctx.self)

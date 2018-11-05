@@ -26,6 +26,8 @@ object Protocol {
 
   case object YouHaveLogined extends GameMessage
 
+  case object RecordNotExist extends GameMessage
+
   case class FeedApples(
     aLs: List[Ap]
   ) extends GameMessage
