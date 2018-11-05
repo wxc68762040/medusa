@@ -154,7 +154,7 @@ object GameRecorder {
 
             data.gameRecordBuffer = List[GameRecord]()
           }
-          switchBehavior(ctx, "work", work(data, essfMap, userAllMap, userMap, frameIndex + 1))
+          switchBehavior(ctx, "work", work(data, essfMap,  userMap, userAllMap, frameIndex + 1))
 
         case Save =>
           log.info(s"${ctx.self.path} work get msg save")
@@ -274,7 +274,7 @@ object GameRecorder {
               newEssfMap.put(EssfMapKey(user._1, user._2), tmpListBuffer)
               newUserAllMap.put(user._1, user._2)
           }
-          switchBehavior(ctx, "work", work(newGameRecorderData, newEssfMap, newUserAllMap, userMap, 1l))
+          switchBehavior(ctx, "work", work(newGameRecorderData, newEssfMap,  userMap, newUserAllMap,1l))
 
         case unknow =>
           log.warn(s"$ctx initRecorder got unknow msg $unknow")

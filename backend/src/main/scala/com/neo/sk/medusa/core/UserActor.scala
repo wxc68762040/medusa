@@ -15,6 +15,7 @@ import com.neo.sk.medusa.Boot.{roomManager, userManager}
 import akka.stream.typed.scaladsl.{ActorSink, ActorSource}
 import com.neo.sk.medusa.common.AppSettings.recordPath
 import com.neo.sk.medusa.core.RoomActor.UserLeft
+import com.neo.sk.medusa.core.UserManager.UserGone
 import com.neo.sk.medusa.snake.Protocol
 import io.circe.Decoder
 import com.neo.sk.medusa.protocol.RecordApiProtocol
@@ -118,6 +119,7 @@ object UserActor {
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when init:$x")
             Behaviors.unhandled
+
         }
     }
 
@@ -168,7 +170,8 @@ object UserActor {
 
           case KillSelf =>
             frontActor ! YouHaveLogined
-            Behaviors.stopped
+            ctx.self ! StopReplay
+            Behaviors.same
 
           case ReplayShot(shot) =>
             val buffer = new MiddleBufferInJvm(shot)
@@ -231,7 +234,8 @@ object UserActor {
 
           case KillSelf =>
             frontActor ! YouHaveLogined
-            Behaviors.stopped
+//            ctx.self ! UserLeft
+            Behaviors.same
 
           case DispatchMsg(m) =>
             watcherMap.values.foreach(t => t ! WatcherActor.TransInfo(m))
@@ -256,11 +260,8 @@ object UserActor {
           case RestartGame =>
             Behaviors.same
 
-          case KillSelf =>
-            frontActor ! YouHaveLogined
-            Behaviors.stopped
-
           case UserLeft =>
+            println("+++++++++++++++++++++++++++++++++")
             roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
             roomActor ! RoomActor.UserLeft(playerId)
             userManager! UserManager.UserGone(playerId)
