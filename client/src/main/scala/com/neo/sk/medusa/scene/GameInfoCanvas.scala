@@ -102,11 +102,6 @@ class GameInfoCanvas(canvas: Canvas) {
     infoCtx.setFont(Font.font("18px Helvetica"))
     var i = 1
 
-//    val timer = new Timer(true)
-//    val timerTask = new TimerTask {
-//      override def run(): Unit = infoCtx.clearRect(400, 0, 200, 200)
-//      println("ok")
-//    }
     grid.waitingShowKillList = grid.waitingShowKillList.filter(_._3 >= System.currentTimeMillis() - 5 * 1000)
     grid.waitingShowKillList.foreach{
       j =>
@@ -114,9 +109,6 @@ class GameInfoCanvas(canvas: Canvas) {
           infoCtx.fillText(s"你击杀了 ${j._2}",centerX - 120,i*20)
         }else {
           infoCtx.fillText(s"你自杀了----", centerX - 100,i*20)
-         //timer.schedule(timerTask,10 * 1000)
-          val timers = new Timer()
-          setTimer(timers)
         }
         i += 1
     }

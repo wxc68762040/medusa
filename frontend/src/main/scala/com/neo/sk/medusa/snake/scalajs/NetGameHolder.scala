@@ -127,7 +127,6 @@ object NetGameHolder extends js.JSApp {
   }
 
   def drawLoop(): Double => Unit = { _ =>
-    draw()
     nextAnimation = dom.window.requestAnimationFrame(drawLoop())
 
     windowWidth = dom.document.documentElement.clientWidth

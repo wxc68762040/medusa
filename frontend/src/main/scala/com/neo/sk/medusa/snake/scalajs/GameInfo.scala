@@ -45,8 +45,6 @@ object GameInfo {
   def drawInfo(uid: String, data: GridDataSync, scaleW: Double, scaleH: Double): Unit = {
 
 
-    val infoCacheCtx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
-
     canvas.width = canvasBoundary.x
     canvas.height = canvasBoundary.y
     val infoCacheCanvas = dom.document.getElementById("GameInfo").asInstanceOf[Canvas]
@@ -64,7 +62,7 @@ object GameInfo {
     val rightBegin = (canvasBoundary.x - 200 * scaleW).toInt
 
     val centerX = windowWidth/2
-    val centerY = windowHight/2
+    val centerY = windowHeight/2
     if(!NetGameHolder.rePlayOver && !NetGameHolder.loginAgain && !NetGameHolder.recordNotExist) {
       snakes.find(_.id == uid) match {
         case Some(mySnake) =>
