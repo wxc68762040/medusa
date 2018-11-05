@@ -1,7 +1,5 @@
 package com.neo.sk.medusa.snake.scalajs
 
-import java.awt.event.MouseEvent
-
 import com.neo.sk.medusa.snake.Protocol._
 import com.neo.sk.medusa.snake._
 import org.scalajs.dom
@@ -29,6 +27,8 @@ import org.seekloud.byteobject.decoder._
 object NetGameHolder extends js.JSApp {
 
   var state = ""
+
+  var loginAgain = false
   val bounds = Point(Boundary.w, Boundary.h)
   var windowWidth = 1600
   var windowHeight = 900
@@ -53,7 +53,7 @@ object NetGameHolder extends js.JSApp {
   var eatenApples  = Map[String, List[AppleWithFrame]]()
   var rePlayOver = false
 
-
+  var recordNotExist = false
 
   val grid = new GridOnClient(bounds)
 
@@ -72,7 +72,6 @@ object NetGameHolder extends js.JSApp {
     KeyCode.Down,
     KeyCode.F2
   )
-  val watchEvent = MouseEvent.MOUSE_CLICKED
 
   var waitingShowKillList=List.empty[(String,String)]
   var savedGrid = Map[Long,Protocol.GridDataSync]()
@@ -113,7 +112,6 @@ object NetGameHolder extends js.JSApp {
 
   def gameLoop(): Unit = {
     basicTime = System.currentTimeMillis()
-
     if (wsSetup) {
       if (!justSynced) {
         update(false)
@@ -129,6 +127,7 @@ object NetGameHolder extends js.JSApp {
   }
 
   def drawLoop(): Double => Unit = { _ =>
+    draw()
     nextAnimation = dom.window.requestAnimationFrame(drawLoop())
 
     windowWidth = dom.document.documentElement.clientWidth
@@ -244,10 +243,9 @@ object NetGameHolder extends js.JSApp {
             }
           }
         }
-        GameInfo.gameInfoCanvas.onclick = {
+        GameInfo.canvas.onclick = {
           _ => GameView.canvas.focus()
         }
-
       }
       event0
     }
@@ -273,7 +271,7 @@ object NetGameHolder extends js.JSApp {
             val middleDataInJs = new MiddleBufferInJs(buf) //put data into MiddleBuffer
             val encodedData: Either[decoder.DecoderFailure, Protocol.GameMessage] =
               bytesDecode[Protocol.GameMessage](middleDataInJs) // get encoded data.
-            GameView.canvas.focus()
+//            GameView.canvas.focus()
             encodedData match {
               case Right(data) => data match {
                 case Protocol.JoinRoomSuccess(id,roomId)=>
@@ -283,9 +281,16 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.TextMsg(message) =>
                 //                  writeToArea(s"MESSAGE: $message")
                 case Protocol.NewSnakeJoined(id, user, roomId) =>
-                  myRoomId = roomId.toInt + 1
+                  myRoomId = roomId
                 //                  writeToArea(s"$user joined!")
                 case Protocol.NewSnakeNameExist(id, name, roomId)=>
+
+                case Protocol.YouHaveLogined =>
+                  loginAgain = true
+                  grid.snakes = Map.empty[String, SnakeInfo]
+
+                case Protocol.RecordNotExist =>
+                  recordNotExist = true
 
                 case Protocol.ReplayOver =>
                   rePlayOver = true
@@ -366,7 +371,7 @@ object NetGameHolder extends js.JSApp {
                   netInfoHandler.ping = receiveTime - createTime
 //                  val m = s"Net Delay Test: createTime=$createTime, receiveTime=$receiveTime, twoWayDelay=${receiveTime - createTime}, ping: ${netInfoHandler.ping}"
 //                  writeToArea(m)
-                case Protocol.DeadInfo(myName, myLength, myKill, killer) =>
+                case Protocol.DeadInfo(myName, myLength, myKill, killerId, killer) =>
                   deadName = myName
                   deadLength = myLength
                   deadKill = myKill
@@ -376,8 +381,6 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.KillList(killList) =>
                   waitingShowKillList :::= killList
                   dom.window.setTimeout(()=>waitingShowKillList = waitingShowKillList.drop(killList.length),2000)
-
-
               }
 
               case Left(e) =>

@@ -5,7 +5,6 @@ import com.neo.sk.medusa.snake._
 import com.neo.sk.medusa.snake.scalajs.NetGameHolder._
 import org.scalajs.dom
 import org.scalajs.dom.html.{Canvas, Document => _}
-import org.scalajs.dom.window.addEventListener
 
 /**
   * User: gaohan
@@ -20,6 +19,7 @@ object GameInfo {
 
   val textLineHeight = 14
   var basicTime = 0L
+  val canvas = dom.document.getElementById("GameInfo").asInstanceOf[Canvas]
 
   private[this] val startBg = dom.document.getElementById("startBg")
   val gameInfoCanvas = dom.document.getElementById("GameInfo").asInstanceOf[Canvas]
@@ -45,6 +45,10 @@ object GameInfo {
   def drawInfo(uid: String, data: GridDataSync, scaleW: Double, scaleH: Double): Unit = {
 
 
+    val infoCacheCtx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
+
+    canvas.width = canvasBoundary.x
+    canvas.height = canvasBoundary.y
     val infoCacheCanvas = dom.document.getElementById("GameInfo").asInstanceOf[Canvas]
     val infoCacheCtx = infoCacheCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
@@ -60,9 +64,8 @@ object GameInfo {
     val rightBegin = (canvasBoundary.x - 200 * scaleW).toInt
 
     val centerX = windowWidth/2
-    val centerY = windowHeight/2
-
-    if(!NetGameHolder.rePlayOver) {
+    val centerY = windowHight/2
+    if(!NetGameHolder.rePlayOver && !NetGameHolder.loginAgain && !NetGameHolder.recordNotExist) {
       snakes.find(_.id == uid) match {
         case Some(mySnake) =>
           startBg.setAttribute("style", "display:none")
@@ -93,11 +96,21 @@ object GameInfo {
             myProportion = 1.0
           }
       }
-    }else{
+    }else if(NetGameHolder.recordNotExist){
       infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
       infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
       infoCacheCtx.shadowBlur = 0
+      infoCacheCtx.fillText("This record not exists",centerX - 150, centerY - 30)
+    }else if(NetGameHolder.rePlayOver && ! NetGameHolder.loginAgain){
+      infoCacheCtx.font = "36px Helvetica"
+      infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
+      infoCacheCtx.shadowBlur = 0
       infoCacheCtx.fillText("This record is Over",centerX - 150, centerY - 30)
+    }else if(!NetGameHolder.rePlayOver && NetGameHolder.loginAgain){
+      infoCacheCtx.font = "36px Helvetica"
+      infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
+      infoCacheCtx.shadowBlur = 0
+      infoCacheCtx.fillText("您已在异地登陆",centerX - 150, centerY - 30)
     }
 
     infoCacheCtx.font = s"${14 * scaleW}px Helvetica"

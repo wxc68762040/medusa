@@ -60,6 +60,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
 
 
   def genWaitingSnake() = {
+    val snakeNumber = waitingJoin.size
     waitingJoin.filterNot(kv => snakes.contains(kv._1)).foreach { case (id, name) =>
       val color = randomColor()
       val head = randomHeadEmptyPoint()
@@ -68,6 +69,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
       snakes += id -> SnakeInfo(id, name, head, head, head, color, direction)
     }
     waitingJoin = Map.empty[String, String]
+    snakeNumber
   }
 
   implicit val scoreOrdering = new Ordering[Score] {
@@ -75,12 +77,6 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
       var r = y.l - x.l
       if (r == 0) {
         r = y.k - x.k
-      }
-      if (r == 0) {
-        val h = new Regex("[0-9]*")
-        val a = h.findFirstIn(x.id)
-        val b = h.findFirstIn(y.id)
-        r = (a.get.toLong - b.get.toLong).toInt
       }
       r
     }
@@ -251,11 +247,12 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
       grid.get(dead.head) match {
         case Some(x: Body) =>
           // snake dead
-          roomActor ! RoomActor.UserDead(snake.id,DeadInfo(snake.name,snake.length,snake.kill,x.id))
+          val killer = snakes.filter(_._1 == x.id).map(_._2.name).headOption.getOrElse("unknown")
+          roomActor ! RoomActor.UserDead(snake.id, DeadInfo(snake.name, snake.length, snake.kill, x.id, killer))
           Left(x.id)
         case _ =>
           //snake hit wall
-          roomActor ! RoomActor.UserDead(snake.id,DeadInfo(snake.name,snake.length,snake.kill,"0"))
+          roomActor ! RoomActor.UserDead(snake.id, DeadInfo(snake.name, snake.length, snake.kill, "0", "墙"))
           Left("0") //撞墙的情况
       }
     } else {
@@ -425,7 +422,6 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
 
   override def update(isSynced: Boolean): Unit = {
     super.update(isSynced: Boolean)
-    genWaitingSnake()
     updateRanks()
   }
 

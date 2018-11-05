@@ -29,11 +29,11 @@ class GameScene() {
 	var gameSceneListener: GameSceneListener = _
 
 	val widthMap = 300
-	val heightMap = 700
-	val viewWidth =1200
-	val viewHeight =700
-	val infoWidth =  1200
-	val infoHeight = 700
+	val heightMap = 900
+	val viewWidth = 1600
+	val viewHeight = 900
+	val infoWidth = 1600
+	val infoHeight = 900
 	val group = new Group
 	val mapCanvas = new Canvas(widthMap, heightMap)
 	val viewCanvas = new Canvas(viewWidth, viewHeight)
@@ -52,12 +52,12 @@ class GameScene() {
   viewCanvas.requestFocus()
 	viewCanvas.setOnKeyPressed(event => gameSceneListener.onKeyPressed(event.getCode))
 
-	def draw(myId:String, data: Protocol.GridDataSync,historyRank:List[Score], currentRank:List[Score]): Unit ={
+	def draw(myId:String, data: Protocol.GridDataSync,historyRank:List[Score], currentRank:List[Score], loginAgain:Boolean): Unit ={
     view.drawSnake(myId, data)
     map.drawMap(myId, data)
-		info.drawInfo(myId, data, historyRank, currentRank)
+		info.drawInfo(myId, data, historyRank, currentRank,loginAgain)
   }
-def setGameSceneListener(listener: GameSceneListener) {
+	def setGameSceneListener(listener: GameSceneListener) {
 		gameSceneListener = listener
 	}
 	

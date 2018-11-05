@@ -5,20 +5,24 @@ import io.circe.{Decoder, Json}
 import io.circe.generic.auto._
 import io.circe.parser.decode
 import io.circe.syntax._
-import com.neo.sk.medusa.Boot.{executor, scheduler,timeout}
+import com.neo.sk.medusa.Boot.{executor, scheduler, timeout}
+
 import scala.concurrent.Future
 import com.neo.sk.utils.SecureUtil.PostEnvelope
 import com.neo.sk.medusa.Boot.authActor
 import com.neo.sk.medusa.core.AuthActor
 import com.neo.sk.medusa.Boot.executor
+
 import scala.concurrent.Future
 import akka.actor.typed.scaladsl.AskPattern._
+
 import scala.util.{Failure, Success}
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse}
 import akka.http.scaladsl.server
 import akka.http.scaladsl.server.Directives._
 import com.neo.sk.medusa.protocol.CommonErrorCode.authUserError
-import com.neo.sk.medusa.common.AppSettings.isAuth
+import com.neo.sk.medusa.common.AppSettings._
+import org.slf4j.LoggerFactory
 
 /**
   * User: yuwei
@@ -30,26 +34,28 @@ object AuthUtils extends HttpUtil with ServiceUtils {
   case class GetTokenInfo(gameId:Long, gsKey:String)
   case class TokenMassage(token:String, expireTime:Long)
   case class TokenRsp(data:TokenMassage, errCode:Int, msg:String)
-
-  def getToken() = {
+	private val log = LoggerFactory.getLogger(this.getClass)
+	
+	def getToken() = {
     val data = GetTokenInfo(gameId, gsKey).asJson.noSpaces
-    val url = "http://flowdev.neoap.com/esheep/api/gameServer/gsKey2Token"
-    postJsonRequestSend("post",url,Nil,data).map{
+    val url = esheepProtocol + "://" + esheepHost + "/esheep/api/gameServer/gsKey2Token"
+    postJsonRequestSend("post", url, Nil, data, "UTF-8", 30 * 1000).map{
       case Right(jsonStr) =>
         decode[TokenRsp](jsonStr) match {
           case Right(rsp) =>
             if(rsp.errCode == 0){
+							log.info("get token success")
               Right(rsp.data)
             }else{
-              log.debug(s"get token failed,error:${rsp.msg}")
+              log.error(s"get token failed, error:${rsp.msg}")
               Left(rsp.msg)
             }
           case Left(error) =>
-            log.warn(s"get token parse error:${error.getMessage}")
+            log.error(s"get token parse error:${error.getMessage}")
             Left(error.getMessage)
         }
       case Left(error) =>
-        log.debug(s"get token failed,error:${error.getMessage}")
+        log.error(s"get token failed,error:${error.getMessage}")
         Left(error.getMessage)
     }
   }
@@ -83,7 +89,7 @@ object AuthUtils extends HttpUtil with ServiceUtils {
 
   def verifyAccessCode(accessCode:String, token:String):Future[Either[String,PlayerInfo]]={
     val data = VerifyInfo(gameId, accessCode).asJson.noSpaces
-    val url = "http://flowdev.neoap.com/esheep/api/gameServer/verifyAccessCode?token=" + token
+    val url = esheepProtocol + "://" + esheepHost + "/esheep/api/gameServer/verifyAccessCode?token=" + token
     postJsonRequestSend("post",url,Nil,data).map{
       case Right(jsonStr) =>
         decode[VerifyRsp](jsonStr) match {
@@ -91,15 +97,15 @@ object AuthUtils extends HttpUtil with ServiceUtils {
             if(rsp.errCode == 0){
               Right(rsp.data)
             }else{
-              log.debug(s"get token failed,error:${rsp.msg}")
+              log.error(s"get token failed,error:${rsp.msg}")
               Left(rsp.msg)
             }
           case Left(error) =>
-            log.warn(s"get token parse error:${error.getMessage}")
+            log.error(s"get token parse error, origin string: $jsonStr")
             Left(error.getMessage)
         }
       case Left(error) =>
-        log.debug(s"get token failed,error:${error.getMessage}")
+        log.error(s"get token failed,error:${error.getMessage}")
         Left(error.getMessage)
     }
   }

@@ -29,10 +29,11 @@ object AppSettings {
   val secureKey = appConfig.getString("gameInfo.SecureKey")
   val gsKey = appConfig.getString("gameInfo.gsKey")
   val gameId = appConfig.getLong("gameInfo.gameId")
-  val esheepSecureKey = "kdfd4e560mdfnx"
   val recordPath = appConfig.getString("record.recordPath")
   val isRecord = appConfig.getBoolean("record.isRecord")
   val isAuth = appConfig.getBoolean("isAuth")
+  val esheepProtocol = appConfig.getString("esheepServer.protocol")
+  val esheepHost = appConfig.getString("esheepServer.host")
 
 
   val slickConfig = config.getConfig("slick.db")
