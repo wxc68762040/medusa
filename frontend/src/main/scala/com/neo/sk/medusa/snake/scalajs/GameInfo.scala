@@ -19,7 +19,8 @@ object GameInfo {
 
   val textLineHeight = 14
   var basicTime = 0L
-
+  val canvas = dom.document.getElementById("GameInfo").asInstanceOf[Canvas]
+  
   private[this] val startBg = dom.document.getElementById("startBg")
 
   def setStartBg()={
@@ -42,11 +43,10 @@ object GameInfo {
 
   def drawInfo(uid: String, data: GridDataSync): Unit = {
 
-    val infoCacheCanvas = dom.document.getElementById("GameInfo").asInstanceOf[Canvas]
-    val infoCacheCtx = infoCacheCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
-
-    infoCacheCanvas.width = canvasBoundary.x
-    infoCacheCanvas.height = canvasBoundary.y
+    val infoCacheCtx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
+  
+    canvas.width = canvasBoundary.x
+    canvas.height = canvasBoundary.y
 
     clearInfo(infoCacheCtx)
 
