@@ -101,7 +101,7 @@ object AuthUtils extends HttpUtil with ServiceUtils {
               Left(rsp.msg)
             }
           case Left(error) =>
-            log.error(s"get token parse error:${error.getMessage}")
+            log.error(s"get token parse error, origin string: $jsonStr")
             Left(error.getMessage)
         }
       case Left(error) =>

@@ -29,10 +29,10 @@ class GameScene() {
 	var gameSceneListener: GameSceneListener = _
 
 	val widthMap = 300
-	val heightMap = 700
-	val viewWidth = 1200
+	val heightMap = 900
+	val viewWidth = 1600
 	val viewHeight = 900
-	val infoWidth = 1200
+	val infoWidth = 1600
 	val infoHeight = 900
 	val group = new Group
 	val mapCanvas = new Canvas(widthMap, heightMap)
