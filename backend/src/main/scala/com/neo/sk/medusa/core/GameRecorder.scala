@@ -7,6 +7,7 @@ import org.seekloud.byteobject.MiddleBufferInJvm
 import org.seekloud.essf.io.FrameOutputStream
 import org.slf4j.LoggerFactory
 import com.neo.sk.medusa.snake.Protocol
+
 import scala.concurrent.duration._
 import scala.language.implicitConversions
 import com.neo.sk.medusa.common.Constants
@@ -28,7 +29,7 @@ object GameRecorder {
 
   private final val log = LoggerFactory.getLogger(this.getClass)
   private final val InitTime = Some(5.minutes)
-  private final val saveTime = 60.seconds
+  private final val saveTime = 30.minutes
   private final val maxRecordNum = 10
 
   sealed trait Command
@@ -60,7 +61,7 @@ object GameRecorder {
 
   final case class UserLeftRoom(playerId: String, name: String, frame: Long) extends Command
 
-  final case object RoomClose extends Command
+  final case object RoomEmpty extends Command
 
   final case class EssfMapInfo(m: List[(EssfMapKey, ListBuffer[EssfMapJoinLeftInfo])])
 
@@ -70,11 +71,11 @@ object GameRecorder {
 
   final case object Save extends Command
 
-  private final case object KillSelf extends Command
-
   private final case object BehaviorChangeKey
 
   case class TimeOut(msg: String) extends Command
+
+  case object Stopped extends Command
 
   final case class SwitchBehavior(
                                    name: String,
@@ -162,8 +163,8 @@ object GameRecorder {
           ctx.self ! SaveData(0)
           switchBehavior(ctx, "save", save(data, essfMap, userMap, userAllMap, frameIndex))
 
-        case RoomClose =>
-//          log.info(s"${ctx.self.path} work get msg save, room close")
+        case RoomEmpty =>
+          log.info(s"${ctx.self.path} work get msg save, room close")
           ctx.self ! SaveData(1)
           switchBehavior(ctx, "save", save(data, essfMap, userMap, userAllMap, frameIndex))
 
@@ -205,7 +206,6 @@ object GameRecorder {
           val recordInfo = rRecords(data.fileIndex, data.startTime, System.currentTimeMillis(), data.roomId, userAllMap.size, frameIndex)
           GameRecordDao.insertGameRecord(recordInfo).onComplete {
             case Success(recordId) =>
-//              log.info(s"insert game record successful:$recordId")
               val list = ListBuffer[rRecordsUserMap]()
               userAllMap.foreach {
                 userRecord =>
@@ -219,22 +219,22 @@ object GameRecorder {
                     ctx.self ! SwitchBehavior("initRecorder", initRecorder(data.roomId, data.fileName, data.fileIndex, userMap))
                   } else {
                     log.info(s"------------${ctx.self.path} stopped")
-                    ctx.self ! KillSelf
+                    ctx.self ! Stopped
                   }
                 case Failure(e) =>
                   log.error(s"insert user record fail, error: $e")
                   if (f == 0) {
                     ctx.self ! SwitchBehavior("initRecorder", initRecorder(data.roomId, data.fileName, data.fileIndex, userMap))
                   } else {
-                    ctx.self ! KillSelf
+                    ctx.self ! Stopped
                   }
               }
             case Failure(e) =>
-              log.error(s"insert geme record fail, error: $e")
+              log.error(s"insert game record fail, error: $e")
               if (f == 0) {
                 ctx.self ! SwitchBehavior("initRecorder", initRecorder(data.roomId, data.fileName, data.fileIndex, userMap))
               } else {
-                ctx.self ! KillSelf
+                ctx.self ! Stopped
               }
           }
           switchBehavior(ctx, "busy", busy())
@@ -298,11 +298,11 @@ object GameRecorder {
           log.debug(s"${ctx.self.path} is time out when busy,msg=$m")
           Behaviors.stopped
 
-        case KillSelf =>
+        case Stopped=>
           Behaviors.stopped
 
-        case unknowMsg =>
-          stashBuffer.stash(unknowMsg)
+        case unknownMsg =>
+          stashBuffer.stash(unknownMsg)
           Behavior.same
       }
     }

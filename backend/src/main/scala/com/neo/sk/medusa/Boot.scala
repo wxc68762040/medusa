@@ -39,7 +39,7 @@ object Boot extends HttpService {
   val userManager: ActorRef[UserManager.Command] = system.spawn(UserManager.behaviors,"UserManager")
   val roomManager: ActorRef[RoomManager.Command] = system.spawn(RoomManager.behaviors,"RoomManager")
   val watchManager: ActorRef[WatcherManager.Command] = system.spawn(WatcherManager.behaviors, "WatchManager")
-  val authActor = system.spawn(AuthActor.behaviors, "AuthActor")
+  val authActor: ActorRef[AuthActor.Command] = system.spawn(AuthActor.behaviors, "AuthActor")
   CountUtils.initCount()
   
 	def main(args: Array[String]) {
