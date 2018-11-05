@@ -1,5 +1,7 @@
 package com.neo.sk.medusa.snake.scalajs
 
+import java.awt.event.MouseEvent
+
 import com.neo.sk.medusa.snake.Protocol._
 import com.neo.sk.medusa.snake._
 import org.scalajs.dom
@@ -28,15 +30,13 @@ object NetGameHolder extends js.JSApp {
 
   var state = ""
   val bounds = Point(Boundary.w, Boundary.h)
-  var windowWidth = dom.document.documentElement.clientWidth
-  var windowHight = dom.document.documentElement.clientHeight
-//  var windowWidth = 1500
-//  var windowHight = 700
+  var windowWidth = 1600
+  var windowHeight = 900
   val initWindowWidth = windowWidth
-  val initWindowHight = windowHight
-//  val initWindowWidth = 1500
-//  val initWindowHight = 700
+  val initWindowHeight = windowHeight
   var canvasBoundary = Point(dom.document.documentElement.clientWidth,dom.document.documentElement.clientHeight)
+  var mapBoundary = Point(LittleMap.w ,LittleMap.h )
+
 
   //override val scaleW =
 
@@ -72,6 +72,7 @@ object NetGameHolder extends js.JSApp {
     KeyCode.Down,
     KeyCode.F2
   )
+  val watchEvent = MouseEvent.MOUSE_CLICKED
 
   var waitingShowKillList=List.empty[(String,String)]
   var savedGrid = Map[Long,Protocol.GridDataSync]()
@@ -131,16 +132,16 @@ object NetGameHolder extends js.JSApp {
     nextAnimation = dom.window.requestAnimationFrame(drawLoop())
 
     windowWidth = dom.document.documentElement.clientWidth
-    windowHight = dom.document.documentElement.clientHeight
+    windowHeight = dom.document.documentElement.clientHeight
     val newWindowWidth = windowWidth
-    val newWindowHight = windowHight
+    val newWindowHight = windowHeight
     val scaleW = (newWindowWidth.toDouble / initWindowWidth.toDouble)
-    val scaleH = (newWindowHight.toDouble / initWindowHight.toDouble)
+    val scaleH = (newWindowHight.toDouble / initWindowHeight.toDouble)
     draw(scaleW,scaleH)
-    println(scaleW)
-    println(scaleH)
+    println("scale=" + scaleH)
     canvasBoundary = Point(dom.document.documentElement.clientWidth,dom.document.documentElement.clientHeight)
-    println("Width" + windowWidth)
+    mapBoundary = Point((LittleMap.w * scaleW).toInt ,(LittleMap.h * scaleH).toInt )
+    println("windowWidth =" + windowWidth)
 
   }
 
@@ -213,7 +214,7 @@ object NetGameHolder extends js.JSApp {
   def joinGame(path:String, parameters:String): Unit = {
     //joinButton.disabled = true
     val playground = dom.document.getElementById("playground")
-    playground.innerHTML = s"Trying to join game ."
+    //playground.innerHTML = s"Trying to join game ."
     val gameStream = new WebSocket(getWebSocketUri(dom.document, path, parameters))
 
     gameStream.onopen = { (event0: Event) =>
@@ -223,10 +224,10 @@ object NetGameHolder extends js.JSApp {
       }, Protocol.netInfoRate)
       //      dom.window.setInterval(() => netInfoHandler.refreshDataInfo(),Protocol.dataCounterRate)
       GameView.drawGameOn()
-      playground.insertBefore(p("Game connection was successful!"), playground.firstChild)
+      //playground.insertBefore(p("Game connection was successful!"), playground.firstChild)
       wsSetup = true
       if(state.contains("playGame")) {
-        GameView.canvas.focus()
+        //GameView.canvas.focus()
         GameView.canvas.onkeydown = {
           (e: dom.KeyboardEvent) => {
             if (watchKeys.contains(e.keyCode)) {
@@ -243,13 +244,17 @@ object NetGameHolder extends js.JSApp {
             }
           }
         }
+        GameInfo.gameInfoCanvas.onclick = {
+          _ => GameView.canvas.focus()
+        }
+
       }
       event0
     }
 
     gameStream.onerror = { (event: ErrorEvent) =>
       GameView.drawGameOff()
-      playground.insertBefore(p(s"Failed: code: ${event.colno}"), playground.firstChild)
+     // playground.insertBefore(p(s"Failed: code: ${event.colno}"), playground.firstChild)
       //joinButton.disabled = false
       wsSetup = false
 //      nameField.focus()
@@ -385,14 +390,15 @@ object NetGameHolder extends js.JSApp {
 
     gameStream.onclose = { (event: Event) =>
       GameView.drawGameOff()
-      playground.insertBefore(p("Connection to game lost. You can try to rejoin manually."), playground.firstChild)
+      //playground.insertBefore(p("Connection to game lost. You can try to rejoin manually."), playground.firstChild)
       //joinButton.disabled = false
       wsSetup = false
 //      nameField.focus()
     }
 
-    def writeToArea(text: String): Unit =
-      playground.insertBefore(p(text), playground.firstChild)
+    def writeToArea(text: String): Unit = {
+     // playground.insertBefore(p(text), playground.firstChild)
+    }
   }
   def getWebSocketUri(document: Document, path: String, parameters:String): String = {
     val wsProtocol = if (dom.document.location.protocol == "https:") "wss" else "ws"

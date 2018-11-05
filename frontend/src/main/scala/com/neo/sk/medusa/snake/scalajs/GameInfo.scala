@@ -5,6 +5,7 @@ import com.neo.sk.medusa.snake._
 import com.neo.sk.medusa.snake.scalajs.NetGameHolder._
 import org.scalajs.dom
 import org.scalajs.dom.html.{Canvas, Document => _}
+import org.scalajs.dom.window.addEventListener
 
 /**
   * User: gaohan
@@ -21,6 +22,9 @@ object GameInfo {
   var basicTime = 0L
 
   private[this] val startBg = dom.document.getElementById("startBg")
+  val gameInfoCanvas = dom.document.getElementById("GameInfo").asInstanceOf[Canvas]
+
+
 
   def setStartBg()={
     startBg.setAttribute("style", s"position:absolute;;z-index:4;left: 0px; top: 200px;background: rgba(0, 0, 0, 0.8);height:${canvasBoundary.y}px;width:${canvasBoundary.x}px")
@@ -38,13 +42,13 @@ object GameInfo {
     ctx.clearRect(0,0,canvasBoundary.x,canvasBoundary.y)
   }
 
-
-
   def drawInfo(uid: String, data: GridDataSync, scaleW: Double, scaleH: Double): Unit = {
 
 
     val infoCacheCanvas = dom.document.getElementById("GameInfo").asInstanceOf[Canvas]
     val infoCacheCtx = infoCacheCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
+
+    //infoCacheCanvas.addEventListener("click",listener =  )
 
     infoCacheCanvas.width = canvasBoundary.x
     infoCacheCanvas.height = canvasBoundary.y
@@ -53,18 +57,18 @@ object GameInfo {
 
     val snakes = data.snakes
     val leftBegin = 10
-    val rightBegin = canvasBoundary.x - 200
+    val rightBegin = (canvasBoundary.x - 200 * scaleW).toInt
 
     val centerX = windowWidth/2
-    println(centerX)
-    val centerY = windowHight/2
+    val centerY = windowHeight/2
+
     if(!NetGameHolder.rePlayOver) {
       snakes.find(_.id == uid) match {
         case Some(mySnake) =>
           startBg.setAttribute("style", "display:none")
           NetGameHolder.firstCome = false
           val baseLine = 1
-          infoCacheCtx.font = s"${12 * scaleW}px Helvetica"
+          infoCacheCtx.font = s"${14 * scaleW}px Helvetica"
           infoCacheCtx.fillStyle = "rgb(250,250,250)"
           drawTextLine(infoCacheCtx, s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 1, baseLine,scaleW,scaleH)
           drawTextLine(infoCacheCtx, s"your kill = ${mySnake.kill}", leftBegin, 2, baseLine, scaleW, scaleH)
@@ -75,28 +79,28 @@ object GameInfo {
 
         case None =>
           if (NetGameHolder.firstCome) {
-            infoCacheCtx.font = s"${36 * scaleW}px Helvetica"
+            infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
           } else {
-            infoCacheCtx.font = s"${24 * scaleW}px Helvetica"
+            infoCacheCtx.font = s"${26 * scaleW}px Helvetica"
             infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
             infoCacheCtx.shadowBlur = 0
-            infoCacheCtx.fillText(s"Your name   : $deadName", centerX - 150, centerY - 30)
-            infoCacheCtx.fillText(s"Your length  : $deadLength", centerX - 150, centerY)
-            infoCacheCtx.fillText(s"Your kill        : $deadKill", centerX - 150, centerY + 30)
-            infoCacheCtx.fillText(s"Killer             : $yourKiller", centerX - 150, centerY + 60)
-            infoCacheCtx.font = s"${36 * scaleW}px Helvetica"
-            infoCacheCtx.fillText("Ops, Press Space Key To Restart!", centerX - 350, centerY - 150)
+            infoCacheCtx.fillText(s"Your name   : $deadName", centerX - 150 * scaleW, centerY - 30 * scaleH)
+            infoCacheCtx.fillText(s"Your length  : $deadLength", centerX - 150 * scaleW, centerY)
+            infoCacheCtx.fillText(s"Your kill        : $deadKill", centerX - 150 * scaleW, centerY + 30 * scaleH)
+            infoCacheCtx.fillText(s"Killer             : $yourKiller", centerX - 150 * scaleW, centerY + 60 * scaleH)
+            infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
+            infoCacheCtx.fillText("Ops, Press Space Key To Restart!", centerX - 350 * scaleW, centerY - 150 * scaleH)
             myProportion = 1.0
           }
       }
     }else{
-      infoCacheCtx.font = s"${36 * scaleW}px Helvetica"
+      infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
       infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
       infoCacheCtx.shadowBlur = 0
       infoCacheCtx.fillText("This record is Over",centerX - 150, centerY - 30)
     }
 
-    infoCacheCtx.font = s"${12 * scaleW}px Helvetica"
+    infoCacheCtx.font = s"${14 * scaleW}px Helvetica"
 
     val currentRankBaseLine = 10
     var index = 0
@@ -115,7 +119,7 @@ object GameInfo {
       drawTextLine(infoCacheCtx,s"[$index]: ${score.n.+("   ").take(8)} kill=${score.k} len= ${score.l}",rightBegin,index,historyRankBaseLine,scaleW,scaleH)
     }
 
-    infoCacheCtx.font = s"${18 * scaleW}px Helvetica"
+    infoCacheCtx.font = s"${20 * scaleW}px Helvetica"
     var i = 1
     waitingShowKillList.foreach{
       j =>

@@ -263,18 +263,18 @@ package object snake {
   val boundaryWidth = 3
 
   object MyBoundary {
-    val w = 1500
-    val h = 700
+    val w = 1600
+    val h = 900
   }
 
   object LittleMap {
-    val w = 300
-    val h = 150
+    val w = 320
+    val h = 180
   }
 
   object gameInfo{
-    val w = 1500
-    val h = 700
+    val w = 1600
+    val h = 900
   }
 
   object FoodType {

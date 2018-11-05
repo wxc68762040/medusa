@@ -6,6 +6,7 @@ import org.scalajs.dom
 import org.scalajs.dom.ext.Color
 import org.scalajs.dom.html.Canvas
 import org.scalajs.dom.raw.HTMLElement
+import com.neo.sk.medusa.snake.scalajs.NetGameHolder._
 
 /**
   * User: gaohan
@@ -14,23 +15,24 @@ import org.scalajs.dom.raw.HTMLElement
   * 游戏小地图
   */
 object GameMap {
-  val mapBoundary = Point(LittleMap.w ,LittleMap.h)
-
-  //var basicTime = 0L
 
   private[this] val mapCanvas = dom.document.getElementById("GameMap").asInstanceOf[Canvas]
   private[this] val mapCtx = mapCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
-  dom.document.getElementById("GameMap").setAttribute("style",s"position:absolute;z-index:3;left: 0px;top:${NetGameHolder.windowHight + 50}px")
 
   def drawLittleMap(uid : String, data:GridDataSync, scaleW: Double, scaleH: Double):Unit ={
+
     GameInfo.setStartBgOff()
 
+    dom.document.getElementById("GameMap").setAttribute("style",s"position:absolute;z-index:3;left: 0px;bottom:${0}px;")
+    println(windowHeight)
     val period = (System.currentTimeMillis() - NetGameHolder.basicTime-2).toInt
+    mapCanvas.width = mapBoundary.x
+    mapCanvas.height = mapBoundary.y
 
     mapCtx.clearRect(0,0,mapCanvas.width,mapCanvas.height)
     mapCtx.globalAlpha=0.2
     mapCtx.fillStyle= Color.Black.toString()
-    mapCtx.fillRect(0,0,mapCanvas.width * scaleW,mapCanvas.height * scaleH)
+    mapCtx.fillRect(0,0,mapCanvas.width,mapCanvas.height)
 
     val allSnakes = data.snakes
 
@@ -39,15 +41,10 @@ object GameMap {
     mapCtx.save()
     val maxPic = dom.document.getElementById("maxPic").asInstanceOf[HTMLElement]
     mapCtx.globalAlpha=1
-    mapCtx.drawImage(maxPic,(maxLength.x * LittleMap.w * scaleW) / Boundary.w - 7,(maxLength.y * LittleMap.h * scaleH) / Boundary.h -7 ,15,15)//画出冠军的位置
+    mapCtx.drawImage(maxPic,(maxLength.x * LittleMap.w) * scaleW / Boundary.w - 7,(maxLength.y * LittleMap.h) * scaleH / Boundary.h - 7 ,15 * scaleW,15 * scaleH)//画出冠军的位置
     mapCtx.restore()
 
     if (allSnakes.nonEmpty){
-//      val me = allSnakes.filter( _.id== uid).head
-//      val max = allSnakes.filter(_.id == maxId).head
-//
-//      val targetSnake = List(me,max)
-
       allSnakes.foreach{snake =>
         val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
         val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
@@ -58,9 +55,9 @@ object GameMap {
           mapCtx.globalAlpha = 1
           mapCtx.strokeStyle =Color.White.toString()
           mapCtx.lineWidth = 2 * scaleW
-          mapCtx.moveTo((joints.head.x * LittleMap.w * scaleW) / Boundary.w, (joints.head.y * LittleMap.h * scaleH) / Boundary.h)
+          mapCtx.moveTo((joints.head.x * LittleMap.w) / Boundary.w, (joints.head.y * LittleMap.h ) / Boundary.h)
           for(i <- 1 until joints.length) {
-            mapCtx.lineTo((joints(i).x * LittleMap.w * scaleW) / Boundary.w, (joints(i).y * LittleMap.h * scaleH) / Boundary.h)
+            mapCtx.lineTo((joints(i).x * LittleMap.w) / Boundary.w, (joints(i).y * LittleMap.h) / Boundary.h)
           }
           mapCtx.stroke()
           mapCtx.closePath()
@@ -68,10 +65,10 @@ object GameMap {
 
       }
     }else{
-      mapCtx.clearRect(0,0,mapCanvas.width * scaleW, mapCanvas.height * scaleH)
+      mapCtx.clearRect(0,0,mapCanvas.width, mapCanvas.height )
       mapCtx.globalAlpha=0.2
       mapCtx.fillStyle= Color.Black.toString()
-      mapCtx.fillRect(0,0,mapCanvas.width * scaleW, mapCanvas.height * scaleH)
+      mapCtx.fillRect(0,0,mapCanvas.width, mapCanvas.height)
     }
 
 
