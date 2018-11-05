@@ -68,6 +68,8 @@ object AuthActor {
                 sender ! AuthUtils.VerifyRsp(data)
               case Left(e) =>
                 sender ! AuthUtils.VerifyRsp(PlayerInfo("",""), 100089, "Access Auth error:" + e)
+                timer.cancel(TokenTimerKey)
+                ctx.self ! RenewToken
                 log.info("-----AuthActor verify accessCode error-----")
             }
 

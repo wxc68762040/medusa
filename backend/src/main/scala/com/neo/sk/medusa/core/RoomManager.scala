@@ -111,11 +111,9 @@ object RoomManager {
           case UserLeftRoom(playerId, roomId) =>
             if(userRoomMap.get(playerId).nonEmpty){
               if(roomNumMap(roomId)-1<=0){
-                log.info(s"room empty")
                 roomNumMap.update(roomId,roomNumMap(roomId)-1)
-                timer.startSingleTimer(RoomEmptyTimerKey(roomId),RoomEmptyKill(roomId),30.seconds)
+                timer.startSingleTimer(RoomEmptyTimerKey(roomId),RoomEmptyKill(roomId),5.minutes)
               }else{
-                log.info(s"room not empty  Num ${roomNumMap(roomId)-1}")
                 roomNumMap.update(roomId,roomNumMap(roomId)-1)
               }
               userRoomMap.remove(playerId)

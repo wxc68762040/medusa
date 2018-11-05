@@ -40,6 +40,8 @@ object RoomActor {
 
   case object KillRoom extends Command
 
+  case object CloseRecorder extends Command
+
   private case object Sync extends Command
 
   private case object BeginSync extends Command
@@ -47,6 +49,8 @@ object RoomActor {
   private case object TimerKey4SyncBegin
 
   private case object TimerKey4SyncLoop
+
+  private case object TimerKey4CloseRec
 
   final case class ChildDead[U](name: String, childRef: ActorRef[U]) extends Command
 
@@ -63,20 +67,23 @@ object RoomActor {
             if(isRecord){
               getGameRecorder(ctx, grid, roomId)
             }
-            idle(roomId, 0,ListBuffer[Protocol.GameMessage](), mutable.HashMap[String, (ActorRef[UserActor.Command], String)](), grid)
+            idle(roomId, 0,ListBuffer[Protocol.GameMessage](), mutable.HashMap[String, (ActorRef[UserActor.Command], String)](),mutable.ListBuffer[String]() ,grid)
         }
     }
   }
 
   private def idle(roomId: Long, tickCount: Long, eventList:ListBuffer[Protocol.GameMessage],
-                   userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String)], grid: GridOnServer)
+                   userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String)],
+                   deadUserList:mutable.ListBuffer[String] ,grid: GridOnServer)
                   (implicit timer: TimerScheduler[RoomActor.Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
           case t: UserJoinGame =>
             log.info(s"room $roomId got a new player: ${t.playerId}")
+            timer.cancel(TimerKey4CloseRec)
             userMap.put(t.playerId, (t.userActor, t.playerName))
+            deadUserList-=t.playerId
             grid.addSnake(t.playerId, t.playerName)
             dispatchTo(t.playerId, UserActor.DispatchMsg(Protocol.Id(t.playerId)), userMap)
             eventList.append(Protocol.NewSnakeJoined(t.playerId, t.playerName, roomId))
@@ -93,9 +100,14 @@ object RoomActor {
             dispatch(UserActor.DispatchMsg(Protocol.SnakeLeft(t.userId, t.deadInfo.name)), userMap)
             eventList.append(Protocol.DeadInfo(t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer))
             eventList.append(Protocol.SnakeLeft(t.userId, t.deadInfo.name))
-            userMap.remove(t.userId)
+            //userMap.remove(t.userId)
+            deadUserList += t.userId
             if(isRecord){
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserLeftRoom(t.userId, t.deadInfo.name, grid.frameCount)
+            }
+            if (userMap.keys.forall(u => deadUserList.contains(u))){
+              //log.info(s"test room empty")
+              timer.startSingleTimer(TimerKey4CloseRec,CloseRecorder,1.minutes)
             }
             Behaviors.same
 
@@ -129,6 +141,11 @@ object RoomActor {
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserLeftRoom(t.playerId, userMap(t.playerId)._2, grid.frameCount)
             }
             userMap.remove(t.playerId)
+            if (userMap.isEmpty && ! deadUserList.contains(t.playerId)){
+              //非正常死亡退出
+              timer.startSingleTimer(TimerKey4CloseRec,CloseRecorder,1.minutes)
+            }
+            if(deadUserList.contains(t.playerId)) deadUserList-=t.playerId
             Behaviors.same
 
           case Sync =>
@@ -185,24 +202,30 @@ object RoomActor {
               eventList.append(Protocol.Ranks(grid.currentRank, grid.historyRankList))
               dispatch(UserActor.DispatchMsg(Protocol.Ranks(grid.currentRank, grid.historyRankList)), userMap)
             }
-            if(isRecord) {
+            if(isRecord && userMap.exists(u=> ! deadUserList.contains(u._1))) {
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.GameRecord(eventList.toList, Some(grid.getGridSyncData))
             }
-            idle(roomId, newTick, ListBuffer[Protocol.GameMessage](), userMap, grid)
+            idle(roomId, newTick, ListBuffer[Protocol.GameMessage](), userMap, deadUserList,grid)
 
           case NetTest(id, createTime) =>
             dispatchTo(id, UserActor.DispatchMsg(Protocol.NetDelayTest(createTime)), userMap)
             Behaviors.same
 
           case KillRoom =>
-            if(isRecord){
-              getGameRecorder(ctx, grid, roomId) ! GameRecorder.RoomClose
-            }
             Behaviors.stopped
+
+          case CloseRecorder=>
+            getGameRecorder(ctx, grid, roomId) ! GameRecorder.RoomEmpty
+            Behaviors.same
 
           case t: YourUserIsWatched =>
             userMap.get(t.playerId).foreach(a => a._1 ! UserActor.YouAreWatched(t.watcherId, t.watcherRef))
 //            t.watcherRef ! WatcherActor.TransInfo(Protocol.Id(t.playerId))
+            Behaviors.same
+
+          case ChildDead(name, childRef) =>
+            log.info(s"Child${childRef.path}----$name is dead")
+            ctx.unwatch(childRef)
             Behaviors.same
 
           case x =>
