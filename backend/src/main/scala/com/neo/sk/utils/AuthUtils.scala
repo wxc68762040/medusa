@@ -96,7 +96,7 @@ object AuthUtils extends HttpUtil with ServiceUtils {
           case Right(rsp) =>
             if(rsp.errCode == 0){
               Right(rsp.data)
-            }else{
+            } else {
               log.error(s"get token failed,error:${rsp.msg}")
               Left(rsp.msg)
             }
