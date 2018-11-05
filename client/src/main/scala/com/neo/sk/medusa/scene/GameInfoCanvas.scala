@@ -59,6 +59,8 @@ class GameInfoCanvas(canvas: Canvas) {
         case None =>
           if (firstCome) {
             infoCtx.setFont(Font.font(" Helvetica", 36))
+            infoCtx.setFill(Color.web("rgb(250, 250, 250)"))
+            infoCtx.fillText(s"Please Wait...",centerX - 150,centerY - 30)
           } else {
             infoCtx.setFont(Font.font(" Helvetica", 24))
             infoCtx.setFill(Color.web("rgb(250, 250, 250)"))
@@ -100,11 +102,6 @@ class GameInfoCanvas(canvas: Canvas) {
     infoCtx.setFont(Font.font("18px Helvetica"))
     var i = 1
 
-//    val timer = new Timer(true)
-//    val timerTask = new TimerTask {
-//      override def run(): Unit = infoCtx.clearRect(400, 0, 200, 200)
-//      println("ok")
-//    }
     grid.waitingShowKillList = grid.waitingShowKillList.filter(_._3 >= System.currentTimeMillis() - 5 * 1000)
     grid.waitingShowKillList.foreach{
       j =>
@@ -112,7 +109,6 @@ class GameInfoCanvas(canvas: Canvas) {
           infoCtx.fillText(s"你击杀了 ${j._2}",centerX - 120,i*20)
         }else {
           infoCtx.fillText(s"你自杀了----", centerX - 100,i*20)
-         // timer.schedule(timerTask,10 * 1000)
         }
         i += 1
     }

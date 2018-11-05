@@ -40,14 +40,12 @@ class GameViewCanvas(canvas: Canvas) {
   }
 
   def drawGameOff(): Unit = {
-
     if (firstCome) {
       myPorportion = 1.0
     } else {
 
       ctx.setFont(Font.font("36px Helvetica"))
       ctx.fillText("Ops, connection lost.", windowWidth / 2 - 250, windowHeight / 2 - 200)
-
       myPorportion = 1.0
     }
 
