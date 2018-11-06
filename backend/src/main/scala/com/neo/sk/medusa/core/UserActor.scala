@@ -273,6 +273,7 @@ object UserActor {
             Behaviors.same
 
           case UserFrontActor(newFrontActor) => //已经在游戏中的玩家又再次加入
+            log.info("user enter again")
 						frontActor ! YouHaveLogined
             newFrontActor ! Protocol.JoinRoomSuccess(playerId, roomId)
             play(playerId, playerName, roomId, newFrontActor, roomActor, watcherMap)
