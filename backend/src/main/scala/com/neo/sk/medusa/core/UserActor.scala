@@ -146,8 +146,6 @@ object UserActor {
             }
 
           case JoinRoomSuccess(rId, roomActor) =>
-            println(watcherMap)
-            println("---------")
             roomActor ! RoomActor.UserJoinGame(playerId, playerName, ctx.self)
             frontActor ! Protocol.JoinRoomSuccess(playerId, rId)
             switchBehavior(ctx, "play", play(playerId, playerName, rId, frontActor, roomActor, watcherMap))
