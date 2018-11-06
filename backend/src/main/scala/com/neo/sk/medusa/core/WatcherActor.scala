@@ -50,27 +50,27 @@ object WatcherActor {
   case object WatcherReady extends Command
 
 
-  def create(watcherId: String): Behavior[Command] = {
+  def create(watcherId: String, roomId:Long): Behavior[Command] = {
     Behaviors.setup[Command] {
       ctx =>
         implicit val stashBuffer: StashBuffer[Command] = StashBuffer[Command](Int.MaxValue)
         Behaviors.withTimers[Command] {
           implicit timer =>
-            switchBehavior(ctx, "init", init(watcherId,""), InitTime, TimeOut("init"))
+            switchBehavior(ctx, "init", init(watcherId,"", roomId), InitTime, TimeOut("init"))
         }
     }
   }
 
-  private def init(watcherId: String, watchedId:String)(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]):Behavior[Command] =
+  private def init(watcherId: String, watchedId:String, roomId:Long)(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]):Behavior[Command] =
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
           case UserFrontActor(frontActor) =>
             ctx.self ! WatcherReady
-            switchBehavior(ctx, "idle", idle(watcherId,watchedId, frontActor))
+            switchBehavior(ctx, "idle", idle(watcherId,watchedId, roomId, frontActor))
 
           case GetWatchedId(id) =>
-            init(watchedId, id)
+            init(watchedId, id, roomId)
 
           case TimeOut(m) =>
             log.debug(s"${ctx.self.path} is time out when busy,msg=$m")
@@ -83,13 +83,13 @@ object WatcherActor {
     }
 
 
-  private def idle(watcherId: String, watchedId:String, frontActor: ActorRef[Protocol.WsMsgSource])(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
+  private def idle(watcherId: String, watchedId:String, roomId:Long, frontActor: ActorRef[Protocol.WsMsgSource])(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
 
           case WatcherReady =>
-            frontActor ! Protocol.Id(watchedId)
+            frontActor ! Protocol.JoinRoomSuccess(watchedId, roomId)
             Behaviors.same
 
           case UserLeft =>
@@ -101,7 +101,6 @@ object WatcherActor {
             Behaviors.same
 
           case TransInfo(x) =>
-            println("===============")
             frontActor ! x
             Behaviors.same
 

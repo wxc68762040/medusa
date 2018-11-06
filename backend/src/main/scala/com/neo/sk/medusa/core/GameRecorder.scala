@@ -91,7 +91,7 @@ object GameRecorder {
                                    timer: TimerScheduler[Command]
                                    //      middleBuffer: MiddleBufferInJvm
                                   ) = {
-    log.debug(s"${ctx.self.path} becomes $behaviorName behavior.")
+    //log.debug(s"${ctx.self.path} becomes $behaviorName behavior.")
     timer.cancel(BehaviorChangeKey)
     durationOpt.foreach(timer.startSingleTimer(BehaviorChangeKey, timeOut, _))
     stashBuffer.unstashAll(ctx, behavior)
@@ -155,7 +155,7 @@ object GameRecorder {
 
             data.gameRecordBuffer = List[GameRecord]()
           }
-          switchBehavior(ctx, "work", work(data, essfMap,  userMap, userAllMap, frameIndex + 1))
+          switchBehavior(ctx, "work", work(data, essfMap, userMap, userAllMap, frameIndex + 1))
 
         case Save =>
           log.info(s"${ctx.self.path} work get msg save")
@@ -169,8 +169,9 @@ object GameRecorder {
           switchBehavior(ctx, "save", save(data, essfMap, userMap, userAllMap, frameIndex))
 
 
-        case unknow =>
-          log.warn(s"${ctx.self.path} recv an unknown msg:$unknow")
+        case unknownMsg =>
+          log.warn(s"${ctx.self.path} recv an unknown msg:$unknownMsg")
+          stashBuffer.stash(unknownMsg)
           Behaviors.same
 
       }
@@ -238,8 +239,9 @@ object GameRecorder {
               }
           }
           switchBehavior(ctx, "busy", busy())
-        case unknow =>
-          log.warn(s"$ctx save got unknow msg $unknow")
+        case unknownMsg =>
+          log.warn(s"$ctx save got unknown msg $unknownMsg")
+          stashBuffer.stash(unknownMsg)
           Behaviors.same
       }
 
@@ -274,10 +276,12 @@ object GameRecorder {
               newEssfMap.put(EssfMapKey(user._1, user._2), tmpListBuffer)
               newUserAllMap.put(user._1, user._2)
           }
-          switchBehavior(ctx, "work", work(newGameRecorderData, newEssfMap,  userMap, newUserAllMap,1l))
+          ctx.self ! t
+          switchBehavior(ctx, "work", work(newGameRecorderData, newEssfMap, userMap, newUserAllMap, 1l))
 
-        case unknow =>
-          log.warn(s"$ctx initRecorder got unknow msg $unknow")
+        case unknownMsg =>
+          log.warn(s"$ctx initRecorder got unknown msg $unknownMsg")
+          stashBuffer.stash(unknownMsg)
           Behaviors.same
       }
     }

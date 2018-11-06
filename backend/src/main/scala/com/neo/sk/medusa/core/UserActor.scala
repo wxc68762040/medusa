@@ -59,7 +59,7 @@ object UserActor {
 
   private case object RestartGame extends Command
 
-  private case class UserLeft(frontActor: ActorRef[WsMsgSource]) extends Command
+  private case object UserLeft extends Command
 
   private case object StopReplay extends Command
 
@@ -82,6 +82,8 @@ object UserActor {
   case class GetRecordFrame(recordId:Long, sender:ActorRef[RecordApiProtocol.FrameInfo]) extends Command
 
   case class ReplayShot(shot:Array[Byte]) extends Command
+  
+  case class FrontLeft(frontActor: ActorRef[WsMsgSource]) extends Command
 
   case object ReplayOver extends Command
 
@@ -106,6 +108,7 @@ object UserActor {
       (ctx, msg) =>
         msg match {
           case UserFrontActor(frontActor) =>
+            ctx.watchWith(frontActor, FrontLeft(frontActor))
             userManager ! UserManager.UserReady(playerId, ctx.self, 0)
             switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor,mutable.HashMap[String, ActorRef[WatcherActor.Command]]()))
 
@@ -116,6 +119,11 @@ object UserActor {
           case TimeOut(m) =>
             log.debug(s"${ctx.self.path} is time out when busy,msg=$m")
             Behaviors.stopped
+
+          case FrontLeft(frontActor) =>
+            ctx.unwatch(frontActor)
+            Behaviors.stopped
+            
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when init:$x")
             Behaviors.unhandled
@@ -237,7 +245,7 @@ object UserActor {
                 //如果死亡十分钟后无操作 则杀死userActor
                 //fixme
                 if(t.id==playerId) {
-                  timer.startSingleTimer(UserDeadTimerKey, UserLeft(frontActor), 10.minutes)
+                  timer.startSingleTimer(UserDeadTimerKey, FrontLeft(frontActor), 10.minutes)
                   frontActor ! t
                   timer.startPeriodicTimer(HeartBeatKey, HeartBeat, 50.seconds)
                   switchBehavior(ctx, "wait", wait(playerId, playerName, roomId, frontActor, watcherMap))
@@ -253,17 +261,6 @@ object UserActor {
           case RestartGame =>
             Behaviors.same
 
-          case UserLeft(front) =>
-            log.info(s"get front $front, now front $frontActor")
-            if(front == frontActor) {
-              roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
-              roomActor ! RoomActor.UserLeft(playerId)
-              userManager ! UserManager.UserGone(playerId)
-              Behaviors.stopped
-            } else {
-              Behaviors.same
-            }
-
           case t:YouAreWatched =>
             watcherMap.put(t.watcherId, t.watcherRef)
             t.watcherRef ! WatcherActor.GetWatchedId(playerId)
@@ -277,11 +274,22 @@ object UserActor {
             log.debug(s"${ctx.self.path} receive an UnKnowAction when play:$unknownMsg")
             Behaviors.same
 
-          case UserFrontActor(newFrontActor) => //已经在游戏中的玩家又再次加入
+          case UserFrontActor(_) => //已经在游戏中的玩家又再次加入
             log.info("user enter again")
+            ctx.unwatch(frontActor)
 						frontActor ! YouHaveLogined
-            newFrontActor ! Protocol.JoinRoomSuccess(playerId, roomId)
-            play(playerId, playerName, roomId, newFrontActor, roomActor, watcherMap)
+            roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
+            roomActor ! RoomActor.UserLeft(playerId)
+            userManager ! UserManager.UserGone(playerId)
+            ctx.self ! msg
+            switchBehavior(ctx, "init", init(playerId, playerName), Some(3.minutes), TimeOut("init time out"))
+
+          case FrontLeft(front) =>
+            ctx.unwatch(front)
+            roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
+            roomActor ! RoomActor.UserLeft(playerId)
+            userManager ! UserManager.UserGone(playerId)
+            Behaviors.stopped
             
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when play:$x")
@@ -313,14 +321,11 @@ object UserActor {
             ctx.self ! StartGame(playerId, playerName, roomId,isNewUser = false)
             switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor, watcherMap))
 
-          case UserLeft(front) =>
-            if(front == frontActor) {
-              log.info(s"${ctx.self.path} left while wait")
-              roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
-              Behaviors.stopped
-            } else {
-              Behaviors.same
-            }
+          case FrontLeft(front) =>
+            log.info(s"${ctx.self.path} left while wait")
+            ctx.unwatch(front)
+            roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
+            Behaviors.stopped
 
           case HeartBeat =>
             frontActor ! Protocol.HeartBeat
@@ -419,7 +424,7 @@ object UserActor {
 
   private def sink(actor: ActorRef[Command], frontActor: ActorRef[WsMsgSource]) = ActorSink.actorRef[Command](
     ref = actor,
-    onCompleteMessage = UserLeft(frontActor),
+    onCompleteMessage = UserLeft,
     onFailureMessage = FailureMessage
   )
   private def watchSink(actor: ActorRef[Command]) = ActorSink.actorRef[Command](

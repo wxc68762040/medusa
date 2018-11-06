@@ -53,8 +53,6 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
       case 6 => "rgba(51, 82, 255, 1)"
       case _ => "rgba(255, 255, 255, 1)"
     }
-    println(a)
-    println(color)
     color
   }
 
@@ -207,7 +205,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
       }
     }
     if(newHead.x < 0 + square + boundaryWidth || newHead.y < 0 + square + boundaryWidth || newHead.x  > Boundary.w - square|| newHead.y > Boundary.h-square) {
-      println(s"snake[${snake.id}] hit wall.")
+      log.info(s"snake[${snake.id}] hit wall.")
       dead = Point(0, 0) :: dead
     }
   

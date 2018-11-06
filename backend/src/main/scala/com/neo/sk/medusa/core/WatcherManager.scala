@@ -62,7 +62,7 @@ object WatcherManager {
 //              ctx.self ! WatcherGone(t.watcherId)
 //              getWatcherActor(ctx, t.watcherId) ! WatcherActor.KillSelf
 //            }
-            val watcher = getWatcherActor(ctx, t.watcherId)
+            val watcher = getWatcherActor(ctx, t.watcherId, t.roomId)
             t.replyTo ! getWebSocketFlow(watcher)
             watcherMap.put(t.watcherId,("", t.roomId))
             roomManager ! RoomManager.GetPlayerByRoomId(t.playerId, t.roomId, t.watcherId, watcher)
@@ -90,10 +90,10 @@ object WatcherManager {
     }
 
 
-  private def getWatcherActor(ctx: ActorContext[Command], watcherId: String): ActorRef[WatcherActor.Command] = {
+  private def getWatcherActor(ctx: ActorContext[Command], watcherId: String, roomId:Long): ActorRef[WatcherActor.Command] = {
     val childName = s"WatcherActor-$watcherId"
     ctx.child(childName).getOrElse {
-      val actor = ctx.spawn(WatcherActor.create(watcherId), childName)
+      val actor = ctx.spawn(WatcherActor.create(watcherId, roomId), childName)
       ctx.watchWith(actor, ChildDead(childName, actor))
       actor
     }.upcast[WatcherActor.Command]
