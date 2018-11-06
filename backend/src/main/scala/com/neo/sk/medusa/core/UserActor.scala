@@ -276,7 +276,8 @@ object UserActor {
 
           case UserFrontActor(newFrontActor) => //已经在游戏中的玩家又再次加入
 						frontActor ! YouHaveLogined
-						play(playerId, playerName, roomId, newFrontActor, roomActor, watcherMap)
+            newFrontActor ! Protocol.JoinRoomSuccess(playerId, roomId)
+            play(playerId, playerName, roomId, newFrontActor, roomActor, watcherMap)
             
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when play:$x")
