@@ -64,17 +64,16 @@ object UserManager {
             if(allUser.get(playerId).isDefined){
               getUserActor(ctx, playerId, playerName) ! UserActor.KillSelf
               allUser.remove(playerId)
-              ctx.self ! msg
-            } else {
-              val user = getUserActor(ctx, playerId, playerName)
-              allUser.put(playerId, user)
-              if (userRoomMap.get(playerId).nonEmpty) {
-                userRoomMap.update(playerId, (roomId, playerName))
-              } else {
-                userRoomMap.put(playerId, (roomId, playerName))
-              }
-              replyTo ! getWebSocketFlow(user)
+              ctx.child(s"UserActor-$playerId").foreach(e => ctx.stop(e))
             }
+						val user = getUserActor(ctx, playerId, playerName)
+						allUser.put(playerId, user)
+						if (userRoomMap.get(playerId).nonEmpty) {
+							userRoomMap.update(playerId, (roomId, playerName))
+						} else {
+							userRoomMap.put(playerId, (roomId, playerName))
+						}
+						replyTo ! getWebSocketFlow(user)
             Behaviors.same
 
           case GetReplayWebSocketFlow(recordId, playerId, watchPlayerId, frame, replyTo) =>
