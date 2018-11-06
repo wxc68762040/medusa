@@ -65,7 +65,7 @@ object RecordApiProtocol {
   
   case class UserInfoInRecord(
     playerId: String,
-    nickName: String,
+    nickname: String,
     existTime: List[RecordExistTime]
   )
 
