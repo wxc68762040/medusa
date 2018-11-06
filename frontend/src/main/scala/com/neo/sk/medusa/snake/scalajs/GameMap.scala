@@ -45,17 +45,17 @@ object GameMap {
     mapCtx.restore()
 
     if (allSnakes.nonEmpty){
-      allSnakes.foreach{snake =>
+      allSnakes.foreach { snake =>
         val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
         val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
 
-        var joints = snake.joints.enqueue(Point(x.toInt,y.toInt))
-        if( snake.id != maxId && snake.id == NetGameHolder.myId){
+        val joints = snake.joints.enqueue(Point(x.toInt,y.toInt))
+        if(snake.id != maxId && snake.id == NetGameHolder.myId){
           mapCtx.beginPath()
           mapCtx.globalAlpha = 1
-          mapCtx.strokeStyle =Color.White.toString()
+          mapCtx.strokeStyle = Color.White.toString()
           mapCtx.lineWidth = 2 * scaleW
-          mapCtx.moveTo((joints.head.x * LittleMap.w) / Boundary.w, (joints.head.y * LittleMap.h ) / Boundary.h)
+          mapCtx.moveTo((joints.head.x * LittleMap.w) / Boundary.w, (joints.head.y * LittleMap.h) / Boundary.h)
           for(i <- 1 until joints.length) {
             mapCtx.lineTo((joints(i).x * LittleMap.w) / Boundary.w, (joints(i).y * LittleMap.h) / Boundary.h)
           }
@@ -64,7 +64,7 @@ object GameMap {
         }
 
       }
-    }else{
+    } else {
       mapCtx.clearRect(0,0,mapCanvas.width, mapCanvas.height )
       mapCtx.globalAlpha=0.2
       mapCtx.fillStyle= Color.Black.toString()

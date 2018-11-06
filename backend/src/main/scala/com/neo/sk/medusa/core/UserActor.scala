@@ -236,7 +236,7 @@ object UserActor {
 
           case KillSelf =>
             frontActor ! YouHaveLogined
-//            ctx.self ! UserLeft
+            ctx.self ! UserLeft
             Behaviors.same
 
           case DispatchMsg(m) =>
