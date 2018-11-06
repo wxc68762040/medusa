@@ -20,7 +20,6 @@ class GameMapCanvas(canvas: Canvas) {
   val maxImage = new Image("champion.png")
   val mapWidth = canvas.getWidth
   val mapHeight = canvas.getHeight
-  println(mapHeight)
 
 
   def drawMap(uid: String, data :GridDataSync): Unit = {
@@ -39,16 +38,28 @@ class GameMapCanvas(canvas: Canvas) {
     mapCtx.restore()
 
     if(allSnakes.nonEmpty && allSnakes.exists(_.id == uid)) {
-      val me = allSnakes.filter(_.id == uid).head
-      val max = allSnakes.filter(_.id == maxId).head
-      val targetSnake  = List(me, max)
 
       allSnakes.foreach{ snake =>
         val x = snake.head.x + snake.direction.x * snake.speed * period /Protocol.frameRate
         val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
 
         var joints = snake.joints.enqueue(Point(x.toInt,y.toInt))
-
+        var step = snake.speed.toInt * period / Protocol.frameRate - snake.extend
+        var tail = snake.tail
+        while(step > 0) {
+          val distance = tail.distance(joints.dequeue._1)
+          if(distance >= step) { //尾巴在移动到下一个节点前就需要停止。
+            val target = tail + tail.getDirection(joints.dequeue._1) * step
+            tail = target
+            step = -1
+          } else { //尾巴在移动到下一个节点后，还需要继续移动。
+            step -= distance
+            tail = joints.dequeue._1
+            joints = joints.dequeue._2
+          }
+        }
+        mapCtx.setFill(Color.WHITE)
+        joints = joints.reverse.enqueue(tail)
         if(snake.id != maxId && snake.id == grid.myId) {
           mapCtx.beginPath()
           mapCtx.setGlobalAlpha(1.0)
@@ -68,6 +79,12 @@ class GameMapCanvas(canvas: Canvas) {
       mapCtx.setFill(Color.BLACK)
       mapCtx.fillRect(0,550,mapWidth,mapHeight)
     }
+//    else {
+//      mapCtx.clearRect(0,0,mapWidth,mapHeight)
+//      mapCtx.setGlobalAlpha(0.5)
+//      mapCtx.setFill(Color.BLACK)
+//      mapCtx.fillRect(0,550,mapWidth,mapHeight - 550)
+//    }
 
 
 

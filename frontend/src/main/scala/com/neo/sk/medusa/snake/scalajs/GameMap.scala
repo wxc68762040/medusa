@@ -45,31 +45,34 @@ object GameMap {
     mapCtx.restore()
 
     if (allSnakes.nonEmpty){
-      allSnakes.foreach { snake =>
+      allSnakes.foreach{snake =>
         val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
         val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
-  
-        var step = (snake.speed * period / Protocol.frameRate - snake.extend).toInt
+
+        var step = snake.speed.toInt * period / Protocol.frameRate - snake.extend
         var tail = snake.tail
-        var joints = snake.joints.enqueue(Point(x.toInt,y.toInt))//通过在旧序列上添加元素创造一个新的队列
-        while (step > 0){//尾巴在移动到下一个节点前就要停止
-        val distance = tail.distance(joints.dequeue._1)
-          if (distance >= step){
+        var joints = snake.joints.enqueue(Point(x.toInt,y.toInt))
+        while(step > 0) {
+          val distance = tail.distance(joints.dequeue._1)
+          if(distance >= step) { //尾巴在移动到下一个节点前就需要停止。
             val target = tail + tail.getDirection(joints.dequeue._1) * step
             tail = target
             step = -1
-          } else { //尾巴在移动到下一个节点后还需要继续移动
+          } else { //尾巴在移动到下一个节点后，还需要继续移动。
             step -= distance
             tail = joints.dequeue._1
             joints = joints.dequeue._2
           }
         }
-        if(snake.id != maxId && snake.id == NetGameHolder.myId){
+        mapCtx.fillStyle = Color.White.toString()
+        joints = joints.reverse.enqueue(tail)
+
+        if( snake.id != maxId && snake.id == NetGameHolder.myId){
           mapCtx.beginPath()
           mapCtx.globalAlpha = 1
-          mapCtx.strokeStyle = Color.White.toString()
+          mapCtx.strokeStyle =Color.White.toString()
           mapCtx.lineWidth = 2 * scaleW
-          mapCtx.moveTo((joints.head.x * LittleMap.w) / Boundary.w, (joints.head.y * LittleMap.h) / Boundary.h)
+          mapCtx.moveTo((joints.head.x * LittleMap.w) / Boundary.w, (joints.head.y * LittleMap.h ) / Boundary.h)
           for(i <- 1 until joints.length) {
             mapCtx.lineTo((joints(i).x * LittleMap.w) / Boundary.w, (joints(i).y * LittleMap.h) / Boundary.h)
           }
@@ -78,7 +81,7 @@ object GameMap {
         }
 
       }
-    } else {
+    }else{
       mapCtx.clearRect(0,0,mapCanvas.width, mapCanvas.height )
       mapCtx.globalAlpha=0.2
       mapCtx.fillStyle= Color.Black.toString()
