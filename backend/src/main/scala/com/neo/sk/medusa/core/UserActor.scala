@@ -107,11 +107,11 @@ object UserActor {
         msg match {
           case UserFrontActor(frontActor) =>
             userManager ! UserManager.UserReady(playerId, ctx.self, 0)
-            switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor))
+            switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor,mutable.HashMap[String, ActorRef[WatcherActor.Command]]()))
 
           case UserWatchFrontActor(frontActor)=>
             userManager ! UserManager.UserReady(playerId, ctx.self,1)
-            switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor))
+            switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor, mutable.HashMap[String, ActorRef[WatcherActor.Command]]()))
 
           case TimeOut(m) =>
             log.debug(s"${ctx.self.path} is time out when busy,msg=$m")
@@ -123,7 +123,8 @@ object UserActor {
         }
     }
 
-  private def idle(playerId: String, playerName: String, frontActor: ActorRef[Protocol.WsMsgSource])(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
+  private def idle(playerId: String, playerName: String, frontActor: ActorRef[Protocol.WsMsgSource],
+    watcherMap: mutable.HashMap[String, ActorRef[WatcherActor.Command]])(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
@@ -145,9 +146,11 @@ object UserActor {
             }
 
           case JoinRoomSuccess(rId, roomActor) =>
+            println(watcherMap)
+            println("---------")
             roomActor ! RoomActor.UserJoinGame(playerId, playerName, ctx.self)
             frontActor ! Protocol.JoinRoomSuccess(playerId, rId)
-            switchBehavior(ctx, "play", play(playerId, playerName, rId, frontActor, roomActor, mutable.HashMap[String, ActorRef[WatcherActor.Command]]()))
+            switchBehavior(ctx, "play", play(playerId, playerName, rId, frontActor, roomActor, watcherMap))
 
           case JoinRoomFailure(rId, errorCode, reason) =>
             frontActor ! Protocol.JoinRoomFailure(playerId, rId, errorCode, reason)
@@ -246,7 +249,7 @@ object UserActor {
                   timer.startSingleTimer(UserDeadTimerKey, UserLeft, 10.minutes)
                   frontActor ! t
                   timer.startPeriodicTimer(HeartBeatKey, HeartBeat, 50.seconds)
-                  switchBehavior(ctx, "wait", wait(playerId, playerName, roomId, frontActor))
+                  switchBehavior(ctx, "wait", wait(playerId, playerName, roomId, frontActor, watcherMap))
                 }else{
                   frontActor ! t
                   Behaviors.same
@@ -260,7 +263,6 @@ object UserActor {
             Behaviors.same
 
           case UserLeft =>
-            println("+++++++++++++++++++++++++++++++++")
             roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
             roomActor ! RoomActor.UserLeft(playerId)
             userManager! UserManager.UserGone(playerId)
@@ -291,7 +293,8 @@ object UserActor {
   }
 
   private def wait(playerId: String, playerName: String, roomId: Long,
-                   frontActor: ActorRef[Protocol.WsMsgSource])
+                   frontActor: ActorRef[Protocol.WsMsgSource],
+                   watcherMap: mutable.HashMap[String, ActorRef[WatcherActor.Command]])
                   (implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] =
     Behaviors.receive[Command] {
       (ctx, msg) =>
@@ -310,7 +313,7 @@ object UserActor {
             //重新开始游戏
             timer.cancel(UserDeadTimerKey)
             ctx.self ! StartGame(playerId, playerName, roomId,isNewUser = false)
-            switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor))
+            switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor, watcherMap))
 
           case UserLeft =>
             log.info(s"${ctx.self.path} left while wait")
@@ -319,6 +322,10 @@ object UserActor {
 
           case HeartBeat =>
             frontActor ! Protocol.HeartBeat
+            Behaviors.same
+
+          case t: YouAreUnwatched =>
+            watcherMap.remove(t.watcherId)
             Behaviors.same
 
           case x =>
