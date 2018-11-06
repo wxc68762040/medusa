@@ -110,10 +110,10 @@ object UserActor {
           case UserFrontActor(frontActor) =>
             ctx.watchWith(frontActor, FrontLeft(frontActor))
             userManager ! UserManager.UserReady(playerId, ctx.self, 0)
-            switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor,mutable.HashMap[String, ActorRef[WatcherActor.Command]]()))
+            switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor, mutable.HashMap[String, ActorRef[WatcherActor.Command]]()))
 
-          case UserWatchFrontActor(frontActor)=>
-            userManager ! UserManager.UserReady(playerId, ctx.self,1)
+          case UserWatchFrontActor(frontActor) =>
+            userManager ! UserManager.UserReady(playerId, ctx.self, 1)
             switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor, mutable.HashMap[String, ActorRef[WatcherActor.Command]]()))
 
           case TimeOut(m) =>
@@ -140,11 +140,11 @@ object UserActor {
             roomManager ! RoomManager.JoinGame(playerId, playerName, roomId, isNewUser,ctx.self)
             Behaviors.same
 
-          case ReplayGame(recordId,watchPlayerId,frame)=>
+          case ReplayGame(recordId, watchPlayerId, frame)=>
             log.info(s"start replay")
             frontActor ! Protocol.Id(watchPlayerId)
             val fileName = recordPath + "medusa" + recordId
-            val tmpFile =new File(fileName)
+            val tmpFile = new File(fileName)
             if(tmpFile.exists()) {
               getGameReplay(ctx, recordId) ! GameReader.InitPlay(watchPlayerId, frame)
               Behaviors.same
@@ -163,18 +163,15 @@ object UserActor {
             Behaviors.stopped
 
           case ReplayData(message)=>
-
-             val buffer = new MiddleBufferInJvm(message)
-            //val buffer1= new MiddleBufferInJvm(frameData.stateData.get)
-              bytesDecode[List[Protocol.GameMessage]](buffer) match {
-                case Right(r)=>
-                  r.foreach{
-                    g=>
-                      frontActor ! g
-                  }
-                case Left(e)=>
-                  log.info(s"$e")
-              }
+            val buffer = new MiddleBufferInJvm(message)
+            bytesDecode[List[Protocol.GameMessage]](buffer) match {
+              case Right(r) =>
+                r.foreach { g =>
+                  frontActor ! g
+                }
+              case Left(e) =>
+                log.error(s"ReplayData error: $e")
+            }
             Behaviors.same
 
           case KillSelf =>
@@ -275,14 +272,13 @@ object UserActor {
             Behaviors.same
 
           case UserFrontActor(_) => //已经在游戏中的玩家又再次加入
-            log.info("user enter again")
             ctx.unwatch(frontActor)
 						frontActor ! YouHaveLogined
             roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
             roomActor ! RoomActor.UserLeft(playerId)
             userManager ! UserManager.UserGone(playerId)
             ctx.self ! msg
-            switchBehavior(ctx, "init", init(playerId, playerName), Some(3.minutes), TimeOut("init time out"))
+            switchBehavior(ctx, "init", init(playerId, playerName), InitTime, TimeOut("init"))
 
           case FrontLeft(front) =>
             ctx.unwatch(front)

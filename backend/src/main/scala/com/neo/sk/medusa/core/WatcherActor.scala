@@ -7,8 +7,10 @@ import akka.stream.scaladsl.{Flow, Sink, Source}
 import com.neo.sk.medusa.Boot.watchManager
 import akka.stream.typed.scaladsl.{ActorSink, ActorSource}
 import com.neo.sk.medusa.snake.Protocol
+import com.neo.sk.medusa.snake.Protocol.WsMsgSource
 import io.circe.Decoder
 import org.slf4j.LoggerFactory
+
 import scala.concurrent.duration._
 
 /**
@@ -31,8 +33,6 @@ object WatcherActor {
 
   case class UserFrontActor(actor: ActorRef[Protocol.WsMsgSource]) extends Command
 
-  case object KillSelf extends Command
-
   private case class Key(id: String, keyCode: Int, frame: Long) extends Command
 
   private case class NetTest(id: String, createTime: Long) extends Command
@@ -46,7 +46,9 @@ object WatcherActor {
   case class TransInfo(msg: Protocol.WsMsgSource) extends Command
 
   case class GetWatchedId(id:String) extends Command
-
+  
+  case class FrontLeft(frontActor: ActorRef[WsMsgSource]) extends Command
+  
   case object WatcherReady extends Command
 
 
@@ -66,6 +68,7 @@ object WatcherActor {
       (ctx, msg) =>
         msg match {
           case UserFrontActor(frontActor) =>
+            ctx.watchWith(frontActor, FrontLeft(frontActor))
             ctx.self ! WatcherReady
             switchBehavior(ctx, "idle", idle(watcherId,watchedId, roomId, frontActor))
 
@@ -92,7 +95,14 @@ object WatcherActor {
             frontActor ! Protocol.JoinRoomSuccess(watchedId, roomId)
             Behaviors.same
 
-          case UserLeft =>
+          case UserFrontActor(front) => //再次观战
+            ctx.unwatch(frontActor)
+            watchManager ! WatcherManager.WatcherGone(watcherId)
+            ctx.self ! msg
+            switchBehavior(ctx, "init", init(watcherId, watchedId, roomId), InitTime, TimeOut("Init"))
+            
+          case FrontLeft(front) =>
+            ctx.unwatch(front)
             watchManager ! WatcherManager.WatcherGone(watcherId)
             Behaviors.stopped
 
@@ -106,9 +116,7 @@ object WatcherActor {
 
           case NetTest(b, a) =>
             Behaviors.same
-
-          case KillSelf =>
-            Behaviors.stopped
+            
 
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when idle:$x}")
