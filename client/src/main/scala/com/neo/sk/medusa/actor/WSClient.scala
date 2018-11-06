@@ -142,17 +142,16 @@ object WSClient {
               log.error(s"decode esheep webmsg error! Error information:${le}")
           }
         }
+				
 			case BinaryMessage.Strict(bMsg) =>
 				//decode process.
 				val buffer = new MiddleBufferInJvm(bMsg.asByteBuffer)
-				val msg =
-					bytesDecode[WsResponse](buffer) match {
-						case Right(v) => v
-						case Left(e) =>
-							println(s"decode error: ${e.message}")
-							TextMsg("decode error")
-					}
-				msg
+				bytesDecode[WsResponse](buffer) match {
+					case Right(v) => v
+					case Left(e) =>
+						println(s"decode error: ${e.message}")
+						TextMsg("decode error")
+				}
 		}
 	}
 	

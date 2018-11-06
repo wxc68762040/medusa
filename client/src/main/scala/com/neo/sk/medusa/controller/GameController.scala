@@ -27,7 +27,7 @@ object GameController {
 	var myRoomId = -1l
 	var basicTime = 0l
 	var myPorportion = 1.0
-	var firstCome = false
+	var firstCome = true
 
 
 	val watchKeys = Set(

@@ -15,6 +15,7 @@ import com.neo.sk.medusa.Boot.{roomManager, userManager}
 import akka.stream.typed.scaladsl.{ActorSink, ActorSource}
 import com.neo.sk.medusa.common.AppSettings.recordPath
 import com.neo.sk.medusa.core.RoomActor.UserLeft
+import com.neo.sk.medusa.core.UserManager.UserGone
 import com.neo.sk.medusa.snake.Protocol
 import io.circe.Decoder
 import com.neo.sk.medusa.protocol.RecordApiProtocol
@@ -81,6 +82,8 @@ object UserActor {
   case class GetRecordFrame(recordId:Long, sender:ActorRef[RecordApiProtocol.FrameInfo]) extends Command
 
   case class ReplayShot(shot:Array[Byte]) extends Command
+  
+  case class FrontLeft(frontActor: ActorRef[WsMsgSource]) extends Command
 
   case object ReplayOver extends Command
 
@@ -105,23 +108,31 @@ object UserActor {
       (ctx, msg) =>
         msg match {
           case UserFrontActor(frontActor) =>
+            ctx.watchWith(frontActor, FrontLeft(frontActor))
             userManager ! UserManager.UserReady(playerId, ctx.self, 0)
-            switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor))
+            switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor,mutable.HashMap[String, ActorRef[WatcherActor.Command]]()))
 
           case UserWatchFrontActor(frontActor)=>
             userManager ! UserManager.UserReady(playerId, ctx.self,1)
-            switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor))
+            switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor, mutable.HashMap[String, ActorRef[WatcherActor.Command]]()))
 
           case TimeOut(m) =>
             log.debug(s"${ctx.self.path} is time out when busy,msg=$m")
             Behaviors.stopped
+
+          case FrontLeft(frontActor) =>
+            ctx.unwatch(frontActor)
+            Behaviors.stopped
+            
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when init:$x")
             Behaviors.unhandled
+
         }
     }
 
-  private def idle(playerId: String, playerName: String, frontActor: ActorRef[Protocol.WsMsgSource])(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
+  private def idle(playerId: String, playerName: String, frontActor: ActorRef[Protocol.WsMsgSource],
+    watcherMap: mutable.HashMap[String, ActorRef[WatcherActor.Command]])(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
@@ -145,7 +156,7 @@ object UserActor {
           case JoinRoomSuccess(rId, roomActor) =>
             roomActor ! RoomActor.UserJoinGame(playerId, playerName, ctx.self)
             frontActor ! Protocol.JoinRoomSuccess(playerId, rId)
-            switchBehavior(ctx, "play", play(playerId, playerName, rId, frontActor, roomActor, mutable.HashMap[String, ActorRef[WatcherActor.Command]]()))
+            switchBehavior(ctx, "play", play(playerId, playerName, rId, frontActor, roomActor, watcherMap))
 
           case JoinRoomFailure(rId, errorCode, reason) =>
             frontActor ! Protocol.JoinRoomFailure(playerId, rId, errorCode, reason)
@@ -168,7 +179,8 @@ object UserActor {
 
           case KillSelf =>
             frontActor ! YouHaveLogined
-            Behaviors.stopped
+            ctx.self ! StopReplay
+            Behaviors.same
 
           case ReplayShot(shot) =>
             val buffer = new MiddleBufferInJvm(shot)
@@ -217,9 +229,7 @@ object UserActor {
                   (implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
-
         msg match {
-
           case Key(id, keyCode, frame) =>
             roomActor ! RoomActor.Key(id, keyCode, frame)
             Behaviors.same
@@ -228,10 +238,6 @@ object UserActor {
             roomActor ! RoomActor.NetTest(id, createTime)
             Behaviors.same
 
-          case KillSelf =>
-            frontActor ! YouHaveLogined
-            Behaviors.stopped
-
           case DispatchMsg(m) =>
             watcherMap.values.foreach(t => t ! WatcherActor.TransInfo(m))
             m match {
@@ -239,10 +245,10 @@ object UserActor {
                 //如果死亡十分钟后无操作 则杀死userActor
                 //fixme
                 if(t.id==playerId) {
-                  timer.startSingleTimer(UserDeadTimerKey, UserLeft, 10.minutes)
+                  timer.startSingleTimer(UserDeadTimerKey, FrontLeft(frontActor), 10.minutes)
                   frontActor ! t
                   timer.startPeriodicTimer(HeartBeatKey, HeartBeat, 50.seconds)
-                  switchBehavior(ctx, "wait", wait(playerId, playerName, roomId, frontActor))
+                  switchBehavior(ctx, "wait", wait(playerId, playerName, roomId, frontActor, watcherMap))
                 }else{
                   frontActor ! t
                   Behaviors.same
@@ -254,16 +260,6 @@ object UserActor {
 
           case RestartGame =>
             Behaviors.same
-
-          case KillSelf =>
-            frontActor ! YouHaveLogined
-            Behaviors.stopped
-
-          case UserLeft =>
-            roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
-            roomActor ! RoomActor.UserLeft(playerId)
-            userManager! UserManager.UserGone(playerId)
-            Behaviors.stopped
 
           case t:YouAreWatched =>
             watcherMap.put(t.watcherId, t.watcherRef)
@@ -278,9 +274,22 @@ object UserActor {
             log.debug(s"${ctx.self.path} receive an UnKnowAction when play:$unknownMsg")
             Behaviors.same
 
-          case UserFrontActor(newFrontActor) => //已经在游戏中的玩家又再次加入
-            newFrontActor ! Protocol.JoinRoomFailure(playerId, roomId, 200001, "user joined game again")
-            Behaviors.same
+          case UserFrontActor(_) => //已经在游戏中的玩家又再次加入
+            log.info("user enter again")
+            ctx.unwatch(frontActor)
+						frontActor ! YouHaveLogined
+            roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
+            roomActor ! RoomActor.UserLeft(playerId)
+            userManager ! UserManager.UserGone(playerId)
+            ctx.self ! msg
+            switchBehavior(ctx, "init", init(playerId, playerName), Some(3.minutes), TimeOut("init time out"))
+
+          case FrontLeft(front) =>
+            ctx.unwatch(front)
+            roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
+            roomActor ! RoomActor.UserLeft(playerId)
+            userManager ! UserManager.UserGone(playerId)
+            Behaviors.stopped
             
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when play:$x")
@@ -290,7 +299,8 @@ object UserActor {
   }
 
   private def wait(playerId: String, playerName: String, roomId: Long,
-                   frontActor: ActorRef[Protocol.WsMsgSource])
+                   frontActor: ActorRef[Protocol.WsMsgSource],
+                   watcherMap: mutable.HashMap[String, ActorRef[WatcherActor.Command]])
                   (implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] =
     Behaviors.receive[Command] {
       (ctx, msg) =>
@@ -309,15 +319,20 @@ object UserActor {
             //重新开始游戏
             timer.cancel(UserDeadTimerKey)
             ctx.self ! StartGame(playerId, playerName, roomId,isNewUser = false)
-            switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor))
+            switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor, watcherMap))
 
-          case UserLeft =>
+          case FrontLeft(front) =>
             log.info(s"${ctx.self.path} left while wait")
+            ctx.unwatch(front)
             roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
             Behaviors.stopped
 
           case HeartBeat =>
             frontActor ! Protocol.HeartBeat
+            Behaviors.same
+
+          case t: YouAreUnwatched =>
+            watcherMap.remove(t.watcherId)
             Behaviors.same
 
           case x =>
@@ -342,22 +357,7 @@ object UserActor {
 
 
   def flow(userActor: ActorRef[Command])(implicit decoder: Decoder[UserAction]): Flow[UserAction, WsMsgSource, Any] = {
-    val in =
-      Flow[UserAction]
-        .map {
-          case Protocol.Key(id, keyCode, frame) =>
-            if (keyCode == KeyEvent.VK_SPACE) {
-              RestartGame
-            } else {
-              Key(id, keyCode, frame)
-            }
-
-          case Protocol.NetTest(id, createTime) =>
-            NetTest(id, createTime)
-          case x =>
-            UnKnowAction(x)
-        }
-        .to(sink(userActor))
+    var front: ActorRef[WsMsgSource] = null
 
     val out =
       ActorSource.actorRef[WsMsgSource](
@@ -369,7 +369,27 @@ object UserActor {
         },
         bufferSize = 64,
         overflowStrategy = OverflowStrategy.dropHead
-      ).mapMaterializedValue(frontActor => userActor ! UserFrontActor(frontActor))
+      ).mapMaterializedValue { frontActor =>
+        front = frontActor
+        userActor ! UserFrontActor(frontActor)
+      }
+    
+    val in =
+      Flow[UserAction]
+        .map {
+          case Protocol.Key(id, keyCode, frame) =>
+            if (keyCode == KeyEvent.VK_SPACE) {
+              RestartGame
+            } else {
+              Key(id, keyCode, frame)
+            }
+        
+          case Protocol.NetTest(id, createTime) =>
+            NetTest(id, createTime)
+          case x =>
+            UnKnowAction(x)
+        }
+        .to(sink(userActor, front))
 
     Flow.fromSinkAndSource(in, out)
 
@@ -402,7 +422,7 @@ object UserActor {
 
   }
 
-  private def sink(actor: ActorRef[Command]) = ActorSink.actorRef[Command](
+  private def sink(actor: ActorRef[Command], frontActor: ActorRef[WsMsgSource]) = ActorSink.actorRef[Command](
     ref = actor,
     onCompleteMessage = UserLeft,
     onFailureMessage = FailureMessage
