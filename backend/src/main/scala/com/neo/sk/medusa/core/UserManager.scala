@@ -61,14 +61,7 @@ object UserManager {
       (ctx, msg) =>
         msg match {
           case GetWebSocketFlow(playerId, playerName, roomId, replyTo) =>
-            val user =
-              if(allUser.get(playerId).isDefined){
-                getUserActor(ctx, playerId, playerName) ! UserActor.KillSelf
-                allUser.remove(playerId)
-                forceRenewUserActor(ctx, playerId, playerName)
-              } else {
-                getUserActor(ctx, playerId, playerName)
-              }
+            val user = getUserActor(ctx, playerId, playerName)
             allUser.put(playerId, user)
             if (userRoomMap.get(playerId).nonEmpty) {
               userRoomMap.update(playerId, (roomId, playerName))
@@ -137,16 +130,6 @@ object UserManager {
       actor
     }.upcast[UserActor.Command]
   }
-	
-	private def forceRenewUserActor(ctx: ActorContext[Command], playerId: String, playerName: String): ActorRef[UserActor.Command] = {
-		val childName = s"UserActor-$playerId"
-		val startTime = System.currentTimeMillis()
-		while (ctx.child(childName).nonEmpty) {}
-		log.info(s"now create user actor $childName, time: ${System.currentTimeMillis() - startTime}")
-		val actor = ctx.spawn(UserActor.create(playerId, playerName), childName)
-		ctx.watchWith(actor, ChildDead(childName, actor))
-		actor
-	}
 
   private def getWebSocketFlow(userActor: ActorRef[UserActor.Command]): Flow[Message, Message, Any] = {
     Flow[Message]
