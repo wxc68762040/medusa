@@ -223,20 +223,13 @@ object UserActor {
                   (implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
-
         msg match {
-
           case Key(id, keyCode, frame) =>
             roomActor ! RoomActor.Key(id, keyCode, frame)
             Behaviors.same
 
           case NetTest(id, createTime) =>
             roomActor ! RoomActor.NetTest(id, createTime)
-            Behaviors.same
-
-          case KillSelf =>
-            frontActor ! YouHaveLogined
-            ctx.self ! UserLeft
             Behaviors.same
 
           case DispatchMsg(m) =>
@@ -282,8 +275,8 @@ object UserActor {
             Behaviors.same
 
           case UserFrontActor(newFrontActor) => //已经在游戏中的玩家又再次加入
-            newFrontActor ! Protocol.JoinRoomFailure(playerId, roomId, 200001, "user joined game again")
-            Behaviors.same
+						frontActor ! YouHaveLogined
+						play(playerId, playerName, roomId, newFrontActor, roomActor, watcherMap)
             
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when play:$x")

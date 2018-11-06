@@ -61,12 +61,6 @@ object UserManager {
       (ctx, msg) =>
         msg match {
           case GetWebSocketFlow(playerId, playerName, roomId, replyTo) =>
-            if(allUser.get(playerId).isDefined) {
-              getUserActor(ctx, playerId, playerName) ! UserActor.KillSelf
-              allUser.remove(playerId)
-              ctx.child(s"UserActor-$playerId").foreach(e => ctx.stop(e))
-            }
-            println(ctx.child(s"UserActor-$playerId").isEmpty)
             val user = getUserActor(ctx, playerId, playerName)
             allUser.put(playerId, user)
             if (userRoomMap.get(playerId).nonEmpty) {
