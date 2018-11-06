@@ -48,8 +48,22 @@ object GameMap {
       allSnakes.foreach { snake =>
         val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
         val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
-
-        val joints = snake.joints.enqueue(Point(x.toInt,y.toInt))
+  
+        var step = (snake.speed * period / Protocol.frameRate - snake.extend).toInt
+        var tail = snake.tail
+        var joints = snake.joints.enqueue(Point(x.toInt,y.toInt))//通过在旧序列上添加元素创造一个新的队列
+        while (step > 0){//尾巴在移动到下一个节点前就要停止
+        val distance = tail.distance(joints.dequeue._1)
+          if (distance >= step){
+            val target = tail + tail.getDirection(joints.dequeue._1) * step
+            tail = target
+            step = -1
+          } else { //尾巴在移动到下一个节点后还需要继续移动
+            step -= distance
+            tail = joints.dequeue._1
+            joints = joints.dequeue._2
+          }
+        }
         if(snake.id != maxId && snake.id == NetGameHolder.myId){
           mapCtx.beginPath()
           mapCtx.globalAlpha = 1
