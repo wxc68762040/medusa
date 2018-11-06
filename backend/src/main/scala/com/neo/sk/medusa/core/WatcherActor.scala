@@ -70,7 +70,7 @@ object WatcherActor {
           case UserFrontActor(frontActor) =>
             ctx.watchWith(frontActor, FrontLeft(frontActor))
             ctx.self ! WatcherReady
-            switchBehavior(ctx, "idle", idle(watcherId,watchedId, roomId, frontActor))
+            switchBehavior(ctx, "idle", idle(watcherId, watchedId, roomId, frontActor))
 
           case GetWatchedId(id) =>
             init(watchedId, id, roomId)
@@ -90,16 +90,9 @@ object WatcherActor {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
-
           case WatcherReady =>
             frontActor ! Protocol.JoinRoomSuccess(watchedId, roomId)
             Behaviors.same
-
-          case UserFrontActor(front) => //再次观战
-            ctx.unwatch(frontActor)
-            watchManager ! WatcherManager.WatcherGone(watcherId)
-            ctx.self ! msg
-            switchBehavior(ctx, "init", init(watcherId, watchedId, roomId), InitTime, TimeOut("Init"))
             
           case FrontLeft(front) =>
             ctx.unwatch(front)
@@ -116,22 +109,24 @@ object WatcherActor {
 
           case NetTest(b, a) =>
             Behaviors.same
-            
 
           case x =>
-            log.error(s"${ctx.self.path} receive an unknown msg when idle:$x}")
+            log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")
             Behaviors.unhandled
 
         }
     }
   }
 
-  private[this] def switchBehavior(ctx: ActorContext[Command],
+  private[this] def switchBehavior (
+    ctx: ActorContext[Command],
     behaviorName: String,
     behavior: Behavior[Command],
     durationOpt: Option[FiniteDuration] = None,
-    timeOut: TimeOut = TimeOut("busy time error"))
-    (implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]) = {
+    timeOut: TimeOut = TimeOut("busy time error")
+  ) (implicit timer: TimerScheduler[Command],
+    stashBuffer: StashBuffer[Command]
+  ) = {
     log.debug(s"${ctx.self.path} becomes $behaviorName behavior.")
     timer.cancel(BehaviorChangeKey)
     durationOpt.foreach(duration => timer.startSingleTimer(BehaviorChangeKey, timeOut, duration))
