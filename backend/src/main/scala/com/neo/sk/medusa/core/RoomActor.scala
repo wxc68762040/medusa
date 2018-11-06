@@ -67,14 +67,14 @@ object RoomActor {
             if(isRecord){
               getGameRecorder(ctx, grid, roomId)
             }
-            idle(roomId, 0,ListBuffer[Protocol.GameMessage](), mutable.HashMap[String, (ActorRef[UserActor.Command], String)](),mutable.ListBuffer[String]() ,grid)
+            idle(roomId, 0,ListBuffer[Protocol.GameMessage](), mutable.HashMap[String, (ActorRef[UserActor.Command], String)](),mutable.ListBuffer[String]() ,grid,600)
         }
     }
   }
 
   private def idle(roomId: Long, tickCount: Long, eventList:ListBuffer[Protocol.GameMessage],
                    userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String)],
-                   deadUserList:mutable.ListBuffer[String] ,grid: GridOnServer)
+                   deadUserList:mutable.ListBuffer[String] ,grid: GridOnServer, roomEmptyCount:Int)
                   (implicit timer: TimerScheduler[RoomActor.Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
@@ -91,7 +91,7 @@ object RoomActor {
             if(isRecord){
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserJoinRoom(t.playerId, t.playerName, grid.frameCount)
             }
-            Behaviors.same
+           idle(roomId,tickCount,eventList,userMap,deadUserList,grid,600)
 
           case t: UserDead =>
             log.info(s"room $roomId lost a player ${t.userId}")
@@ -106,7 +106,7 @@ object RoomActor {
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserLeftRoom(t.userId, t.deadInfo.name, grid.frameCount)
             }
             if (userMap.keys.forall(u => deadUserList.contains(u))){
-              //log.info(s"test room empty")
+              //room empty
               timer.startSingleTimer(TimerKey4CloseRec,CloseRecorder,1.minutes)
             }
             Behaviors.same
@@ -202,10 +202,19 @@ object RoomActor {
               eventList.append(Protocol.Ranks(grid.currentRank, grid.historyRankList))
               dispatch(UserActor.DispatchMsg(Protocol.Ranks(grid.currentRank, grid.historyRankList)), userMap)
             }
+            var rEmptyCount=roomEmptyCount
             if(isRecord && userMap.exists(u=> ! deadUserList.contains(u._1))) {
+              //房间不空
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.GameRecord(eventList.toList, Some(grid.getGridSyncData))
+            }else if(isRecord && rEmptyCount>0){
+              //房间空了 先同步一分钟数据后不再同步
+              rEmptyCount-=1
+              getGameRecorder(ctx, grid, roomId) ! GameRecorder.GameRecord(eventList.toList, Some(grid.getGridSyncData))
+            }else if(isRecord && rEmptyCount<=0){
+              //房间空了 数据已经同步一分钟了
+              //do nothing
             }
-            idle(roomId, newTick, ListBuffer[Protocol.GameMessage](), userMap, deadUserList,grid)
+            idle(roomId, newTick, ListBuffer[Protocol.GameMessage](), userMap, deadUserList,grid,rEmptyCount)
 
           case NetTest(id, createTime) =>
             dispatchTo(id, UserActor.DispatchMsg(Protocol.NetDelayTest(createTime)), userMap)
