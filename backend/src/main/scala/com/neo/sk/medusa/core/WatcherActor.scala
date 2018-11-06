@@ -101,7 +101,6 @@ object WatcherActor {
             Behaviors.same
 
           case TransInfo(x) =>
-            println("===============")
             frontActor ! x
             Behaviors.same
 
