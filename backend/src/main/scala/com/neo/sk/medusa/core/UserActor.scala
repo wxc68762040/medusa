@@ -254,6 +254,7 @@ object UserActor {
             Behaviors.same
 
           case UserLeft(front) =>
+            log.info(s"get front $front, now front $frontActor")
             if(front == frontActor) {
               roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
               roomActor ! RoomActor.UserLeft(playerId)
