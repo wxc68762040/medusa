@@ -49,7 +49,24 @@ object GameMap {
         val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
         val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
 
+        var step = snake.speed.toInt * period / Protocol.frameRate - snake.extend
+        var tail = snake.tail
         var joints = snake.joints.enqueue(Point(x.toInt,y.toInt))
+        while(step > 0) {
+          val distance = tail.distance(joints.dequeue._1)
+          if(distance >= step) { //尾巴在移动到下一个节点前就需要停止。
+            val target = tail + tail.getDirection(joints.dequeue._1) * step
+            tail = target
+            step = -1
+          } else { //尾巴在移动到下一个节点后，还需要继续移动。
+            step -= distance
+            tail = joints.dequeue._1
+            joints = joints.dequeue._2
+          }
+        }
+        mapCtx.fillStyle = Color.White.toString()
+        joints = joints.reverse.enqueue(tail)
+
         if( snake.id != maxId && snake.id == NetGameHolder.myId){
           mapCtx.beginPath()
           mapCtx.globalAlpha = 1
