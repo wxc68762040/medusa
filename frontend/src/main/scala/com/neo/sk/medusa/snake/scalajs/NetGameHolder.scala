@@ -287,6 +287,7 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.YouHaveLogined =>
                   loginAgain = true
                   grid.snakes = Map.empty[String, SnakeInfo]
+									gameStream.close()
 
                 case Protocol.RecordNotExist =>
                   recordNotExist = true
