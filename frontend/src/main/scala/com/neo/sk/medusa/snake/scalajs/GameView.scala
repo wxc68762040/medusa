@@ -163,11 +163,7 @@ object GameView  {
           cacheCtx.fillRect(x * scaleW - 1.5 * square * scaleW + deviationX, y * scaleH - 1.5 * square * scaleH + deviationY, square * 3 * scaleW, square * 3 * scaleH)
         }
         cacheCtx.fillStyle = MyColors.myHeader
-        if (id == uid ){
-          cacheCtx.fillRect(x * scaleW - square * scaleW + deviationX , y * scaleH - square * scaleH + deviationY , square * 2 * scaleW,square * 2 * scaleH)
-        }else {
-          cacheCtx.fillRect(x * scaleW - square * scaleW + deviationX , y * scaleH - square * scaleH + deviationY , square * 2 * scaleW , square * 2 * scaleH)
-        }
+        cacheCtx.fillRect(x * scaleW - square * scaleW + deviationX, y * scaleH - square * scaleH + deviationY, square * 2 * scaleW, square * 2 * scaleH)
 
       }
 
