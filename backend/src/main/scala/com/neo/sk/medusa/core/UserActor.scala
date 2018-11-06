@@ -59,7 +59,7 @@ object UserActor {
 
   private case object RestartGame extends Command
 
-  private case object UserLeft extends Command
+  private case class UserLeft(frontActor: ActorRef[WsMsgSource]) extends Command
 
   private case object StopReplay extends Command
 
@@ -237,7 +237,7 @@ object UserActor {
                 //如果死亡十分钟后无操作 则杀死userActor
                 //fixme
                 if(t.id==playerId) {
-                  timer.startSingleTimer(UserDeadTimerKey, UserLeft, 10.minutes)
+                  timer.startSingleTimer(UserDeadTimerKey, UserLeft(frontActor), 10.minutes)
                   frontActor ! t
                   timer.startPeriodicTimer(HeartBeatKey, HeartBeat, 50.seconds)
                   switchBehavior(ctx, "wait", wait(playerId, playerName, roomId, frontActor, watcherMap))
@@ -253,11 +253,15 @@ object UserActor {
           case RestartGame =>
             Behaviors.same
 
-          case UserLeft =>
-            roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
-            roomActor ! RoomActor.UserLeft(playerId)
-            userManager! UserManager.UserGone(playerId)
-            Behaviors.stopped
+          case UserLeft(front) =>
+            if(front == frontActor) {
+              roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
+              roomActor ! RoomActor.UserLeft(playerId)
+              userManager ! UserManager.UserGone(playerId)
+              Behaviors.stopped
+            } else {
+              Behaviors.same
+            }
 
           case t:YouAreWatched =>
             watcherMap.put(t.watcherId, t.watcherRef)
@@ -308,10 +312,14 @@ object UserActor {
             ctx.self ! StartGame(playerId, playerName, roomId,isNewUser = false)
             switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor, watcherMap))
 
-          case UserLeft =>
-            log.info(s"${ctx.self.path} left while wait")
-            roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
-            Behaviors.stopped
+          case UserLeft(front) =>
+            if(front == frontActor) {
+              log.info(s"${ctx.self.path} left while wait")
+              roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
+              Behaviors.stopped
+            } else {
+              Behaviors.same
+            }
 
           case HeartBeat =>
             frontActor ! Protocol.HeartBeat
@@ -343,22 +351,7 @@ object UserActor {
 
 
   def flow(userActor: ActorRef[Command])(implicit decoder: Decoder[UserAction]): Flow[UserAction, WsMsgSource, Any] = {
-    val in =
-      Flow[UserAction]
-        .map {
-          case Protocol.Key(id, keyCode, frame) =>
-            if (keyCode == KeyEvent.VK_SPACE) {
-              RestartGame
-            } else {
-              Key(id, keyCode, frame)
-            }
-
-          case Protocol.NetTest(id, createTime) =>
-            NetTest(id, createTime)
-          case x =>
-            UnKnowAction(x)
-        }
-        .to(sink(userActor))
+    var front: ActorRef[WsMsgSource] = null
 
     val out =
       ActorSource.actorRef[WsMsgSource](
@@ -370,7 +363,27 @@ object UserActor {
         },
         bufferSize = 64,
         overflowStrategy = OverflowStrategy.dropHead
-      ).mapMaterializedValue(frontActor => userActor ! UserFrontActor(frontActor))
+      ).mapMaterializedValue { frontActor =>
+        front = frontActor
+        userActor ! UserFrontActor(frontActor)
+      }
+    
+    val in =
+      Flow[UserAction]
+        .map {
+          case Protocol.Key(id, keyCode, frame) =>
+            if (keyCode == KeyEvent.VK_SPACE) {
+              RestartGame
+            } else {
+              Key(id, keyCode, frame)
+            }
+        
+          case Protocol.NetTest(id, createTime) =>
+            NetTest(id, createTime)
+          case x =>
+            UnKnowAction(x)
+        }
+        .to(sink(userActor, front))
 
     Flow.fromSinkAndSource(in, out)
 
@@ -403,9 +416,9 @@ object UserActor {
 
   }
 
-  private def sink(actor: ActorRef[Command]) = ActorSink.actorRef[Command](
+  private def sink(actor: ActorRef[Command], frontActor: ActorRef[WsMsgSource]) = ActorSink.actorRef[Command](
     ref = actor,
-    onCompleteMessage = UserLeft,
+    onCompleteMessage = UserLeft(frontActor),
     onFailureMessage = FailureMessage
   )
   private def watchSink(actor: ActorRef[Command]) = ActorSink.actorRef[Command](
