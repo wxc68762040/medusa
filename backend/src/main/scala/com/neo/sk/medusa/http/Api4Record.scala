@@ -138,10 +138,10 @@ trait Api4Record extends ServiceUtils{
         reqFuture.map { rsp =>
           if(rsp.frame == -1) {
             complete(GetRecordFrameRsp(FrameInfo(0,0), 100098, "the user does not exist or has finished the record"))
-          }else if(rsp.frame >= 0 ){
-            complete(GetRecordFrameRsp(FrameInfo(rsp.frame, rsp.frameNum)))
-          }else{
+          }else if(rsp.frameNum == -2 ){
             complete(GetRecordFrameRsp(FrameInfo(0,0), 100099, "get record frameNum error"))
+          }else{
+            complete(GetRecordFrameRsp(FrameInfo(rsp.frame, rsp.frameNum)))
           }
         }
     }
