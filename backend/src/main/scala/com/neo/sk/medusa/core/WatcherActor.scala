@@ -7,8 +7,10 @@ import akka.stream.scaladsl.{Flow, Sink, Source}
 import com.neo.sk.medusa.Boot.watchManager
 import akka.stream.typed.scaladsl.{ActorSink, ActorSource}
 import com.neo.sk.medusa.snake.Protocol
+import com.neo.sk.medusa.snake.Protocol.WsMsgSource
 import io.circe.Decoder
 import org.slf4j.LoggerFactory
+
 import scala.concurrent.duration._
 
 /**
@@ -31,8 +33,6 @@ object WatcherActor {
 
   case class UserFrontActor(actor: ActorRef[Protocol.WsMsgSource]) extends Command
 
-  case object KillSelf extends Command
-
   private case class Key(id: String, keyCode: Int, frame: Long) extends Command
 
   private case class NetTest(id: String, createTime: Long) extends Command
@@ -46,31 +46,34 @@ object WatcherActor {
   case class TransInfo(msg: Protocol.WsMsgSource) extends Command
 
   case class GetWatchedId(id:String) extends Command
-
+  
+  case class FrontLeft(frontActor: ActorRef[WsMsgSource]) extends Command
+  
   case object WatcherReady extends Command
 
 
-  def create(watcherId: String): Behavior[Command] = {
+  def create(watcherId: String, roomId:Long): Behavior[Command] = {
     Behaviors.setup[Command] {
       ctx =>
         implicit val stashBuffer: StashBuffer[Command] = StashBuffer[Command](Int.MaxValue)
         Behaviors.withTimers[Command] {
           implicit timer =>
-            switchBehavior(ctx, "init", init(watcherId,""), InitTime, TimeOut("init"))
+            switchBehavior(ctx, "init", init(watcherId,"", roomId), InitTime, TimeOut("init"))
         }
     }
   }
 
-  private def init(watcherId: String, watchedId:String)(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]):Behavior[Command] =
+  private def init(watcherId: String, watchedId:String, roomId:Long)(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]):Behavior[Command] =
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
           case UserFrontActor(frontActor) =>
+            ctx.watchWith(frontActor, FrontLeft(frontActor))
             ctx.self ! WatcherReady
-            switchBehavior(ctx, "idle", idle(watcherId,watchedId, frontActor))
+            switchBehavior(ctx, "idle", idle(watcherId, watchedId, roomId, frontActor))
 
           case GetWatchedId(id) =>
-            init(watchedId, id)
+            init(watchedId, id, roomId)
 
           case TimeOut(m) =>
             log.debug(s"${ctx.self.path} is time out when busy,msg=$m")
@@ -83,16 +86,16 @@ object WatcherActor {
     }
 
 
-  private def idle(watcherId: String, watchedId:String, frontActor: ActorRef[Protocol.WsMsgSource])(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
+  private def idle(watcherId: String, watchedId:String, roomId:Long, frontActor: ActorRef[Protocol.WsMsgSource])(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
-
           case WatcherReady =>
-            frontActor ! Protocol.Id(watchedId)
+            frontActor ! Protocol.JoinRoomSuccess(watchedId, roomId)
             Behaviors.same
-
-          case UserLeft =>
+            
+          case FrontLeft(front) =>
+            ctx.unwatch(front)
             watchManager ! WatcherManager.WatcherGone(watcherId)
             Behaviors.stopped
 
@@ -107,23 +110,23 @@ object WatcherActor {
           case NetTest(b, a) =>
             Behaviors.same
 
-          case KillSelf =>
-            Behaviors.stopped
-
           case x =>
-            log.error(s"${ctx.self.path} receive an unknown msg when idle:$x}")
+            log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")
             Behaviors.unhandled
 
         }
     }
   }
 
-  private[this] def switchBehavior(ctx: ActorContext[Command],
+  private[this] def switchBehavior (
+    ctx: ActorContext[Command],
     behaviorName: String,
     behavior: Behavior[Command],
     durationOpt: Option[FiniteDuration] = None,
-    timeOut: TimeOut = TimeOut("busy time error"))
-    (implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]) = {
+    timeOut: TimeOut = TimeOut("busy time error")
+  ) (implicit timer: TimerScheduler[Command],
+    stashBuffer: StashBuffer[Command]
+  ) = {
     log.debug(s"${ctx.self.path} becomes $behaviorName behavior.")
     timer.cancel(BehaviorChangeKey)
     durationOpt.foreach(duration => timer.startSingleTimer(BehaviorChangeKey, timeOut, duration))
