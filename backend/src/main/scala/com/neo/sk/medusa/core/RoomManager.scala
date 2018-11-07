@@ -149,6 +149,7 @@ object RoomManager {
             }
             sender ! GetPlayerListRsp(tmpPlayerList.toList)
             Behaviors.same
+            
           case t:GetPlayerByRoomId =>
             val playerId = {
               if(t.playerId == ""){
@@ -167,6 +168,7 @@ object RoomManager {
             watchManager ! WatcherManager.GetPlayerWatchedRsp(t.watcherId, playerId)
             getRoomActor(ctx, t.roomId) ! RoomActor.YourUserIsWatched(playerId, t.watcherRef, t.watcherId)
             Behaviors.same
+            
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")
             Behaviors.unhandled

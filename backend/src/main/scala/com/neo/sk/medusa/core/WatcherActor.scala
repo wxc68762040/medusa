@@ -7,7 +7,7 @@ import akka.stream.scaladsl.{Flow, Sink, Source}
 import com.neo.sk.medusa.Boot.watchManager
 import akka.stream.typed.scaladsl.{ActorSink, ActorSource}
 import com.neo.sk.medusa.snake.Protocol
-import com.neo.sk.medusa.snake.Protocol.WsMsgSource
+import com.neo.sk.medusa.snake.Protocol.{WsMsgSource, YouHaveLogined}
 import io.circe.Decoder
 import org.slf4j.LoggerFactory
 
@@ -98,6 +98,12 @@ object WatcherActor {
             ctx.unwatch(front)
             watchManager ! WatcherManager.WatcherGone(watcherId)
             Behaviors.stopped
+
+          case UserFrontActor(newFront) =>
+            ctx.unwatch(frontActor)
+            ctx.watchWith(newFront, FrontLeft(newFront))
+            frontActor ! YouHaveLogined
+            idle(watcherId, watchedId, roomId, newFront)
 
           case GetWatchedId(id) =>
             frontActor ! Protocol.Id(id)
