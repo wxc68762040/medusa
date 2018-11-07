@@ -108,7 +108,7 @@ class GameInfoCanvas(canvas: Canvas) {
         if(j._1 != grid.myId){
           infoCtx.fillText(s"你击杀了 ${j._2}",centerX - 120,i*20)
         }else {
-          infoCtx.fillText(s"你自杀了----", centerX - 100,i*20)
+          infoCtx.fillText(s"你自杀了", centerX - 100,i*20)
         }
         i += 1
     }

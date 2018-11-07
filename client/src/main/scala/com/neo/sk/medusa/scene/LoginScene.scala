@@ -59,7 +59,7 @@ class LoginScene() {
 	canvasCtx.fillRect(0, 0, width, height)
 	canvasCtx.setFont(Font.font("Helvetica", FontWeight.BOLD ,FontPosture.ITALIC,28))
 	canvasCtx.setFill(Color.web("rgb(250, 250, 250)"))
-	canvasCtx.fillText(s"Welcome to medusa!",110,120)
+	canvasCtx.fillText(s"Welcome to medusa!",100,125)
 	group.getChildren.add(canvas)
 	group.getChildren.add(button)
 
@@ -71,7 +71,9 @@ class LoginScene() {
 		ClientBoot.addToPlatform{
 			group.getChildren.remove(button)
 			val img = new Image(imageStream)
-			canvasCtx.drawImage(img,0,0)
+			canvasCtx.drawImage(img,100,100)
+			canvasCtx.setFont(Font.font("Helvetica", FontWeight.BOLD ,FontPosture.ITALIC,28))
+			canvasCtx.fillText(s"请扫码登录！",160,70)
 		}
 	}
 	
