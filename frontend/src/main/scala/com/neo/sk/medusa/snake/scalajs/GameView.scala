@@ -26,8 +26,7 @@ object GameView  {
   private[this] val ctx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
   def drawGameOn(): Unit = {
-    ctx.drawImage(canvasPic,0,0,canvas.width,canvas.height)
-
+    ctx.drawImage(canvasPic, 0, 0, canvas.width, canvas.height)
   }
 
   def drawGameOff(): Unit = {
@@ -65,11 +64,11 @@ object GameView  {
           Point(0,0)
       }
 
-    val proportion = if (snakes.exists(_.id == uid)){
-      val length = snakes.filter(_.id == uid).head .length
-      val p = 0.0005 *length +0.975
+    val proportion = if (snakes.exists(_.id == uid)) {
+      val length = snakes.filter(_.id == uid).head.length
+      val p = 0.0005 * length + 0.975
       if (p < 1.5) p else 1.5
-    }else {
+    } else {
       1.0
     }
 
@@ -79,10 +78,10 @@ object GameView  {
     }
     // 蛇头的移动实际上是画布的移动，蛇头始终出现在屏幕的中间，
 
-    val centerX = windowWidth/2
-    val centerY = windowHeight/2
+    val centerX = windowWidth / 2
+    val centerY = windowHeight / 2
 
-    val myHead = if(snakes.exists(_.id == uid)) snakes.filter(_.id == uid).head.head + mySubFrameRevise else Point(centerX,centerY) //蛇头的绝对坐标
+    val myHead = if(snakes.exists(_.id == uid)) snakes.filter(_.id == uid).head.head + mySubFrameRevise else Point(Boundary.w/2, Boundary.h/2) //蛇头的绝对坐标
     val deviationX = centerX - myHead.x * scaleW //中心点与蛇头的偏差
     val deviationY = centerY - myHead.y * scaleH
 
@@ -90,7 +89,7 @@ object GameView  {
     cacheCtx.translate(windowWidth/2, windowHeight/2)
     cacheCtx.scale(1/myProportion, 1/myProportion)
     cacheCtx.translate(-windowWidth/2, -windowHeight/2 )
-    cacheCtx.drawImage(canvasPic,0 + deviationX,0 + deviationY, Boundary.w * scaleW, Boundary.h * scaleH)
+    cacheCtx.drawImage(canvasPic, 0 + deviationX, 0 + deviationY, Boundary.w * scaleW, Boundary.h * scaleH)
     //cacheCtx.drawImage(canvasPic,0 + deviationX ,0 + deviationY , Boundary.w * scaleW, Boundary.h * scaleH)
 
     apples.filterNot( a=>(a.x) * scaleW < (myHead.x) * scaleW - windowWidth/2 * myProportion || (a.y) * scaleH < (myHead.y) * scaleH - windowHeight/2 * myProportion || (a.x) * scaleW >(myHead.x) * scaleW + windowWidth/2 * myProportion|| (a.y) * scaleH > (myHead.y) * scaleH + windowHeight/2* myProportion).foreach{ case Ap (score,_,_,x,y,_)=>
@@ -193,7 +192,7 @@ object GameView  {
     cacheCtx.fillStyle = "rgb(250, 250, 250)"
 
     ctx.fillStyle = "#012d2d"
-    ctx.fillRect(0, 0, canvas.width,canvas.height)
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
     ctx.drawImage(cacheCanvas,0,0)
 
   }

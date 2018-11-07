@@ -35,7 +35,7 @@ object NetGameHolder extends js.JSApp {
   val initWindowWidth = windowWidth
   val initWindowHeight = windowHeight
   var canvasBoundary = Point(dom.document.documentElement.clientWidth,dom.document.documentElement.clientHeight)
-  var mapBoundary = Point(LittleMap.w ,LittleMap.h )
+  var mapBoundary = Point(LittleMap.w ,LittleMap.h)
 
 
   //override val scaleW =
