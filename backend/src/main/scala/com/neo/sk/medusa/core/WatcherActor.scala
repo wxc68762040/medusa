@@ -102,6 +102,7 @@ object WatcherActor {
           case UserFrontActor(newFront) =>
             ctx.unwatch(frontActor)
             ctx.watchWith(newFront, FrontLeft(newFront))
+            newFront ! Protocol.JoinRoomSuccess(watchedId, roomId)
             frontActor ! YouHaveLogined
             idle(watcherId, watchedId, roomId, newFront)
 
