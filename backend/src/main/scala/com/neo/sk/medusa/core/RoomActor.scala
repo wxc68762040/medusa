@@ -5,11 +5,14 @@ import org.slf4j.LoggerFactory
 import com.neo.sk.medusa.snake.GridOnServer
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors, TimerScheduler}
+
 import concurrent.duration._
 import scala.collection.mutable.ListBuffer
 import com.neo.sk.medusa.common.AppSettings._
 import com.neo.sk.medusa.snake._
 import java.awt.event.KeyEvent
+
+import com.neo.sk.medusa.common.AppSettings
 import com.neo.sk.medusa.core.RoomManager.Command
 import com.neo.sk.medusa.snake.Protocol.WsMsgSource
 import net.sf.ehcache.transaction.xa.commands.Command
@@ -21,6 +24,8 @@ object RoomActor {
   private val log = LoggerFactory.getLogger(this.getClass)
 
   private val bound = Point(boundW, bountH)
+
+  private final val emptyKeepTime=1.minutes
 
   sealed trait Command
 
@@ -67,14 +72,14 @@ object RoomActor {
             if(isRecord){
               getGameRecorder(ctx, grid, roomId)
             }
-            idle(roomId, 0,ListBuffer[Protocol.GameMessage](), mutable.HashMap[String, (ActorRef[UserActor.Command], String)](),mutable.ListBuffer[String]() ,grid,600)
+            idle(roomId, 0,ListBuffer[Protocol.GameMessage](), mutable.HashMap[String, (ActorRef[UserActor.Command], String)](),mutable.ListBuffer[String]() ,grid,emptyKeepTime.toMillis/AppSettings.frameRate)
         }
     }
   }
 
   private def idle(roomId: Long, tickCount: Long, eventList:ListBuffer[Protocol.GameMessage],
                    userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String)],
-                   deadUserList:mutable.ListBuffer[String] ,grid: GridOnServer, roomEmptyCount:Int)
+                   deadUserList:mutable.ListBuffer[String] ,grid: GridOnServer, roomEmptyCount:Long)
                   (implicit timer: TimerScheduler[RoomActor.Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
@@ -91,7 +96,7 @@ object RoomActor {
             if(isRecord){
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserJoinRoom(t.playerId, t.playerName, grid.frameCount)
             }
-           idle(roomId,tickCount,eventList,userMap,deadUserList,grid,600)
+           idle(roomId,tickCount,eventList,userMap,deadUserList,grid,emptyKeepTime.toMillis/AppSettings.frameRate)
 
           case t: UserDead =>
             log.info(s"room $roomId lost a player ${t.userId}")
@@ -107,7 +112,7 @@ object RoomActor {
             }
             if (userMap.keys.forall(u => deadUserList.contains(u))){
               //room empty
-              timer.startSingleTimer(TimerKey4CloseRec,CloseRecorder,1.minutes)
+              timer.startSingleTimer(TimerKey4CloseRec,CloseRecorder,emptyKeepTime)
             }
             Behaviors.same
 
@@ -143,7 +148,7 @@ object RoomActor {
             userMap.remove(t.playerId)
             if (userMap.isEmpty && ! deadUserList.contains(t.playerId)){
               //非正常死亡退出
-              timer.startSingleTimer(TimerKey4CloseRec,CloseRecorder,1.minutes)
+              timer.startSingleTimer(TimerKey4CloseRec,CloseRecorder,emptyKeepTime)
             }
             if(deadUserList.contains(t.playerId)) deadUserList-=t.playerId
             Behaviors.same
