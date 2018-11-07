@@ -234,6 +234,7 @@ object NetGameHolder extends js.JSApp {
                 NetTest(myId, System.currentTimeMillis())
               } else {
                 grid.addActionWithFrame(myId, e.keyCode, grid.frameCount + operateDelay)
+								println(s"input ${e.keyCode}, ${grid.frameCount + advanceFrame + operateDelay}")
                 Key(myId, e.keyCode, grid.frameCount + advanceFrame + operateDelay) //客户端自己的行为提前帧
               }
               msg.fillMiddleBuffer(sendBuffer) //encode msg
@@ -304,7 +305,10 @@ object NetGameHolder extends js.JSApp {
                     if (id != myId) {
                       grid.addActionWithFrame(id, keyCode, frame)
                     }
-                  }else grid.addActionWithFrame(id,keyCode,frame)
+                  } else {
+										println(s"watch $keyCode, $frame")
+										grid.addActionWithFrame(id, keyCode, frame)
+									}
                 case Protocol.DistinctSnakeAction(keyCode, frame ,frontFrame) =>
 //                  println(s"当前前端帧数frameCount:${grid.frameCount}")
 //                  println(s"actionMap保存最大帧数:${grid.actionMap.keySet.max}")

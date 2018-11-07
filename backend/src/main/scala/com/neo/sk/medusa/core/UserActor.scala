@@ -246,7 +246,7 @@ object UserActor {
                   frontActor ! t
                   timer.startPeriodicTimer(HeartBeatKey, HeartBeat, 50.seconds)
                   switchBehavior(ctx, "wait", wait(playerId, playerName, roomId, frontActor, watcherMap))
-                }else{
+                } else {
                   frontActor ! t
                   Behaviors.same
                 }
