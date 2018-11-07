@@ -31,6 +31,7 @@ object GameReader {
   private final case object GameLoopKey extends Command
   private final case object GameLoop extends Command
   private final case class TimeOut(msg:String) extends Command
+  private final case class GetFrameCount(frameCount:Long) extends Command
   case class GetRecordFrame(sender:ActorRef[RecordApiProtocol.FrameInfo]) extends Command
 
   def create(recordId: Long,userActor: ActorRef[UserActor.Command]): Behavior[Command] = {
@@ -45,18 +46,18 @@ object GameReader {
             val fileReader=initFileReader(fileName)
             fileReader.init()
             val userMap=userMapDecode(fileReader.getMutableInfo(essfMapKeyName).getOrElse(Array[Byte]())).right.get.m
-            try{
-              work(isFirst = true, recordId,0,userActor,fileReader,userMap)
-            }catch {
-              case e:Throwable=>
-                log.error("error---"+e.getMessage)
-                Behaviors.same
+            GameRecordDao.getFrameCount(recordId).onComplete {
+              case Success(value) =>
+                  ctx.self ! GetFrameCount(value.getOrElse(-2))
+              case Failure(exception) =>
+                log.error(s"get frameCount error: recordId-$recordId,e:$exception")
             }
+            work(isFirst = true, recordId, 0, 0, userActor, fileReader, userMap)
         }
     }
   }
 
-  def work(isFirst:Boolean, recordId:Long, frameIndex:Int,
+  def work(isFirst:Boolean, recordId:Long, frameIndex:Int, frameCount:Long,
            userActor: ActorRef[UserActor.Command],
            fileReader: FrameInputStream,
            userMap: List[(EssfMapKey, ListBuffer[EssfMapJoinLeftInfo])])(
@@ -80,44 +81,36 @@ object GameReader {
                 }else{
                   timer.startSingleTimer(BehaviorWaitKey,TimeOut("wait time out"),waitTime)
                 }
-                work(isFirst = true, recordId,frameIndex, userActor, fileReader, userMap)
+                work(isFirst = true, recordId,frameIndex,frameCount, userActor, fileReader, userMap)
               case None=>
                 log.info(s"don't have this player$watchPlayerId")
                 timer.startSingleTimer(BehaviorWaitKey,TimeOut("wait time out"),waitTime)
-                work(isFirst = true, recordId,frameIndex,  userActor, fileReader, userMap)
+                work(isFirst = true, recordId,frameIndex, frameCount, userActor, fileReader, userMap)
 
             }
+
+          case GetFrameCount(f) =>
+            work(isFirst , recordId,frameIndex, f, userActor, fileReader, userMap)
 
           case GetRecordFrame(sender) =>
-            GameRecordDao.getFrameCount(recordId).onComplete{
-              case Success(value) =>
-                if(value.isEmpty){
-                  sender ! RecordApiProtocol.FrameInfo(-2,-2)
-                }else{
-                  sender ! RecordApiProtocol.FrameInfo(frameIndex, value.get)
-                }
-
-              case Failure(exception) =>
-                log.info(s"get record($recordId) frameNum error:$exception ")
-                sender ! RecordApiProtocol.FrameInfo(-2,-2)
-            }
+            sender ! RecordApiProtocol.FrameInfo(frameIndex, frameCount)
             Behaviors.same
 
           case GameLoop=>
-            var frame = 0
             if(fileReader.hasMoreFrame){
                fileReader.readFrame() match {
                  case Some(frameData) =>
-                   frame = frameData.frameIndex
                    if(isFirst && frameData.stateData.isDefined){
                      userActor ! UserActor.ReplayShot(frameData.stateData.get)
                    }
                    if (frameData.eventsData.length>0){
                      userActor ! UserActor.ReplayData(frameData.eventsData)
                    }
+                   work(isFirst = false, recordId, frameData.frameIndex,frameCount,  userActor, fileReader, userMap)
                  case None =>
+                   work(isFirst = false, recordId, frameIndex,  frameCount, userActor, fileReader, userMap)
                }
-              work(isFirst = false, recordId, frame,  userActor, fileReader, userMap)
+
             }
             else{
               timer.cancel(GameLoopKey)
