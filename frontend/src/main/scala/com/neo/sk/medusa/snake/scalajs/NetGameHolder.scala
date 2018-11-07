@@ -136,11 +136,8 @@ object NetGameHolder extends js.JSApp {
     val scaleW = (newWindowWidth.toDouble / initWindowWidth.toDouble)
     val scaleH = (newWindowHight.toDouble / initWindowHeight.toDouble)
     draw(scaleW,scaleH)
-    println("scale=" + scaleH)
     canvasBoundary = Point(dom.document.documentElement.clientWidth,dom.document.documentElement.clientHeight)
     mapBoundary = Point((LittleMap.w * scaleW).toInt ,(LittleMap.h * scaleH).toInt )
-    println("windowWidth =" + windowWidth)
-
   }
 
   def moveEatenApple(): Unit = {

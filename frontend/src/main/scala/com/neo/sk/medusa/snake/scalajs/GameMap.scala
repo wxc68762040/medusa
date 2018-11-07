@@ -24,7 +24,6 @@ object GameMap {
     GameInfo.setStartBgOff()
 
     dom.document.getElementById("GameMap").setAttribute("style",s"position:absolute;z-index:3;left: 0px;bottom:${30}px;")
-    println(windowHeight)
     val period = (System.currentTimeMillis() - NetGameHolder.basicTime-2).toInt
     mapCanvas.width = mapBoundary.x
     mapCanvas.height = mapBoundary.y
