@@ -7,8 +7,10 @@ import akka.stream.scaladsl.{Flow, Sink, Source}
 import com.neo.sk.medusa.Boot.watchManager
 import akka.stream.typed.scaladsl.{ActorSink, ActorSource}
 import com.neo.sk.medusa.snake.Protocol
+import com.neo.sk.medusa.snake.Protocol.{WsMsgSource, YouHaveLogined}
 import io.circe.Decoder
 import org.slf4j.LoggerFactory
+
 import scala.concurrent.duration._
 
 /**
@@ -31,8 +33,6 @@ object WatcherActor {
 
   case class UserFrontActor(actor: ActorRef[Protocol.WsMsgSource]) extends Command
 
-  case object KillSelf extends Command
-
   private case class Key(id: String, keyCode: Int, frame: Long) extends Command
 
   private case class NetTest(id: String, createTime: Long) extends Command
@@ -46,7 +46,9 @@ object WatcherActor {
   case class TransInfo(msg: Protocol.WsMsgSource) extends Command
 
   case class GetWatchedId(id:String) extends Command
-
+  
+  case class FrontLeft(frontActor: ActorRef[WsMsgSource]) extends Command
+  
   case object WatcherReady extends Command
 
 
@@ -66,8 +68,9 @@ object WatcherActor {
       (ctx, msg) =>
         msg match {
           case UserFrontActor(frontActor) =>
+            ctx.watchWith(frontActor, FrontLeft(frontActor))
             ctx.self ! WatcherReady
-            switchBehavior(ctx, "idle", idle(watcherId,watchedId, roomId, frontActor))
+            switchBehavior(ctx, "idle", idle(watcherId, watchedId, roomId, frontActor))
 
           case GetWatchedId(id) =>
             init(watchedId, id, roomId)
@@ -87,14 +90,21 @@ object WatcherActor {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
-
           case WatcherReady =>
             frontActor ! Protocol.JoinRoomSuccess(watchedId, roomId)
             Behaviors.same
-
-          case UserLeft =>
+            
+          case FrontLeft(front) =>
+            ctx.unwatch(front)
             watchManager ! WatcherManager.WatcherGone(watcherId)
             Behaviors.stopped
+
+          case UserFrontActor(newFront) =>
+            ctx.unwatch(frontActor)
+            ctx.watchWith(newFront, FrontLeft(newFront))
+            newFront ! Protocol.JoinRoomSuccess(watchedId, roomId)
+            frontActor ! YouHaveLogined
+            idle(watcherId, watchedId, roomId, newFront)
 
           case GetWatchedId(id) =>
             frontActor ! Protocol.Id(id)
@@ -107,23 +117,23 @@ object WatcherActor {
           case NetTest(b, a) =>
             Behaviors.same
 
-          case KillSelf =>
-            Behaviors.stopped
-
           case x =>
-            log.error(s"${ctx.self.path} receive an unknown msg when idle:$x}")
+            log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")
             Behaviors.unhandled
 
         }
     }
   }
 
-  private[this] def switchBehavior(ctx: ActorContext[Command],
+  private[this] def switchBehavior (
+    ctx: ActorContext[Command],
     behaviorName: String,
     behavior: Behavior[Command],
     durationOpt: Option[FiniteDuration] = None,
-    timeOut: TimeOut = TimeOut("busy time error"))
-    (implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]) = {
+    timeOut: TimeOut = TimeOut("busy time error")
+  ) (implicit timer: TimerScheduler[Command],
+    stashBuffer: StashBuffer[Command]
+  ) = {
     log.debug(s"${ctx.self.path} becomes $behaviorName behavior.")
     timer.cancel(BehaviorChangeKey)
     durationOpt.foreach(duration => timer.startSingleTimer(BehaviorChangeKey, timeOut, duration))

@@ -264,12 +264,12 @@ package object snake {
 
   object MyBoundary {
     val w = 1600
-    val h = 900
+    val h = 800
   }
 
   object LittleMap {
-    val w = 320
-    val h = 180
+    val w = 400
+    val h = 200
   }
 
   object gameInfo{

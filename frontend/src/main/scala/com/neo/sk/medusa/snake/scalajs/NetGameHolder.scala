@@ -31,7 +31,7 @@ object NetGameHolder extends js.JSApp {
   var loginAgain = false
   val bounds = Point(Boundary.w, Boundary.h)
   var windowWidth = 1600
-  var windowHeight = 900
+  var windowHeight = 800
   val initWindowWidth = windowWidth
   val initWindowHeight = windowHeight
   var canvasBoundary = Point(dom.document.documentElement.clientWidth,dom.document.documentElement.clientHeight)

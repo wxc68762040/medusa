@@ -23,7 +23,7 @@ object GameMap {
 
     GameInfo.setStartBgOff()
 
-    dom.document.getElementById("GameMap").setAttribute("style",s"position:absolute;z-index:3;left: 0px;bottom:${0}px;")
+    dom.document.getElementById("GameMap").setAttribute("style",s"position:absolute;z-index:3;left: 0px;bottom:${30}px;")
     println(windowHeight)
     val period = (System.currentTimeMillis() - NetGameHolder.basicTime-2).toInt
     mapCanvas.width = mapBoundary.x
@@ -71,7 +71,7 @@ object GameMap {
           mapCtx.beginPath()
           mapCtx.globalAlpha = 1
           mapCtx.strokeStyle =Color.White.toString()
-          mapCtx.lineWidth = 2 * scaleW
+          mapCtx.lineWidth = 3 * scaleW
           mapCtx.moveTo((joints.head.x * LittleMap.w) / Boundary.w, (joints.head.y * LittleMap.h ) / Boundary.h)
           for(i <- 1 until joints.length) {
             mapCtx.lineTo((joints(i).x * LittleMap.w) / Boundary.w, (joints(i).y * LittleMap.h) / Boundary.h)
