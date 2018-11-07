@@ -231,7 +231,6 @@ object NetGameHolder extends js.JSApp {
                 NetTest(myId, System.currentTimeMillis())
               } else {
                 grid.addActionWithFrame(myId, e.keyCode, grid.frameCount + operateDelay)
-								println(s"input ${e.keyCode}, ${grid.frameCount + advanceFrame + operateDelay}")
                 Key(myId, e.keyCode, grid.frameCount + advanceFrame + operateDelay) //客户端自己的行为提前帧
               }
               msg.fillMiddleBuffer(sendBuffer) //encode msg
@@ -303,7 +302,6 @@ object NetGameHolder extends js.JSApp {
                       grid.addActionWithFrame(id, keyCode, frame)
                     }
                   } else {
-										println(s"watch $keyCode, $frame")
 										grid.addActionWithFrame(id, keyCode, frame)
 									}
                 case Protocol.DistinctSnakeAction(keyCode, frame ,frontFrame) =>
@@ -435,7 +433,7 @@ object NetGameHolder extends js.JSApp {
         }
       }
       val mySnakeOpt = grid.snakes.find(_._1 == myId)
-      if(mySnakeOpt.nonEmpty) {
+      if(mySnakeOpt.nonEmpty && state.contains("playGame")) {
         var mySnake = mySnakeOpt.get._2
         for(i <- advanceFrame to 1 by -1) {
           grid.updateASnake(mySnake, grid.actionMap.getOrElse(data.frameCount - i, Map.empty)) match {
