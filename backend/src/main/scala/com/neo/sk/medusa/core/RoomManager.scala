@@ -58,8 +58,10 @@ object RoomManager {
         }
     }
   }
-
-  private def idle(maxUserNum: Int,
+	val idGenerator = new AtomicInteger(1000001)
+	
+	
+	private def idle(maxUserNum: Int,
                    roomNumMap: mutable.HashMap[Long, Int],
                    userRoomMap: mutable.HashMap[String, (Long, String)])
                   (implicit timer: TimerScheduler[Command]) =
@@ -80,7 +82,6 @@ object RoomManager {
                 userRoomMap.put(playerId, (randomRoomId, playerName))
                 userActor ! UserActor.JoinRoomSuccess(randomRoomId, getRoomActor(ctx, randomRoomId))
               } else {
-                val idGenerator = new AtomicInteger(1000000)
                 val newRoomId = idGenerator.getAndIncrement().toLong
                 roomNumMap.put(newRoomId, 1)
                 userRoomMap.put(playerId, (newRoomId, playerName))
