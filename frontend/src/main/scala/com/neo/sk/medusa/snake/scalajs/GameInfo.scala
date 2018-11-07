@@ -71,11 +71,11 @@ object GameInfo {
           val baseLine = 1
           infoCacheCtx.font = s"${14 * scaleW}px Helvetica"
           infoCacheCtx.fillStyle = "rgb(250,250,250)"
-          drawTextLine(infoCacheCtx, s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 1, baseLine,scaleW,scaleH)
+          drawTextLine(infoCacheCtx, s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 1, baseLine, scaleW, scaleH)
           drawTextLine(infoCacheCtx, s"your kill = ${mySnake.kill}", leftBegin, 2, baseLine, scaleW, scaleH)
           drawTextLine(infoCacheCtx, s"your length = ${mySnake.length} ", leftBegin, 3, baseLine, scaleW, scaleH)
           drawTextLine(infoCacheCtx, s"fps: ${netInfoHandler.fps.formatted("%.2f")} ping:${netInfoHandler.ping.formatted("%.2f")} dataps:${netInfoHandler.dataps.formatted("%.2f")}", leftBegin, 4, baseLine, scaleW, scaleH)
-          drawTextLine(infoCacheCtx, s"drawTimeAverage: ${netInfoHandler.drawTimeAverage}", leftBegin, 5, baseLine,scaleW, scaleH)
+          drawTextLine(infoCacheCtx, s"drawTimeAverage: ${netInfoHandler.drawTimeAverage}", leftBegin, 5, baseLine, scaleW, scaleH)
           drawTextLine(infoCacheCtx, s"roomId: $myRoomId", leftBegin, 6, baseLine, scaleW, scaleH)
 
         case None =>
@@ -94,17 +94,17 @@ object GameInfo {
             myProportion = 1.0
           }
       }
-    }else if(NetGameHolder.recordNotExist){
+    } else if(NetGameHolder.recordNotExist) {
       infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
       infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
       infoCacheCtx.shadowBlur = 0
       infoCacheCtx.fillText("This record not exists",centerX - 150, centerY - 30)
-    }else if(NetGameHolder.rePlayOver && ! NetGameHolder.loginAgain){
+    } else if(NetGameHolder.rePlayOver && ! NetGameHolder.loginAgain) {
       infoCacheCtx.font = "36px Helvetica"
       infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
       infoCacheCtx.shadowBlur = 0
       infoCacheCtx.fillText("This record is Over",centerX - 150, centerY - 30)
-    }else if(!NetGameHolder.rePlayOver && NetGameHolder.loginAgain){
+    } else if(!NetGameHolder.rePlayOver && NetGameHolder.loginAgain) {
       infoCacheCtx.font = "36px Helvetica"
       infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
       infoCacheCtx.shadowBlur = 0
