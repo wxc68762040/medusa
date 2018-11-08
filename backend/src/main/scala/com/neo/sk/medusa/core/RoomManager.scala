@@ -83,6 +83,7 @@ object RoomManager {
                 userActor ! UserActor.JoinRoomSuccess(randomRoomId, getRoomActor(ctx, randomRoomId))
               } else {
                 val newRoomId = idGenerator.getAndIncrement().toLong
+                log.info(s"room full ,start a new room.. ")
                 roomNumMap.put(newRoomId, 1)
                 userRoomMap.put(playerId, (newRoomId, playerName))
                 userActor ! UserActor.JoinRoomSuccess(newRoomId, getRoomActor(ctx, newRoomId))
