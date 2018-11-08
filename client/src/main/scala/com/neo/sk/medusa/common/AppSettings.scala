@@ -32,5 +32,9 @@ object AppSettings {
   val esheepSecureKey =  "kdfd4e560mdfnx"
   val esheepProtocol = appConfig.getString("esheepServer.protocol")
   val esheepHost = appConfig.getString("esheepServer.host")
+  
+  val gameProtocol = appConfig.getString("gameServer.protocol")
+  val gameHost = appConfig.getString("gameServer.host")
+  val gameDomain = appConfig.getString("gameServer.domain")
 
 }
