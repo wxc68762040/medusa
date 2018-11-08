@@ -73,7 +73,7 @@ object GameMap {
           mapCtx.lineWidth = 3 * scaleW
           mapCtx.moveTo((joints.head.x * LittleMap.w) * scaleW / Boundary.w, (joints.head.y * LittleMap.h ) * scaleH / Boundary.h)
           for(i <- 1 until joints.length) {
-            mapCtx.lineTo((joints(i).x * LittleMap.w) * scaleW/ Boundary.w, (joints(i).y * LittleMap.h) * scaleH / Boundary.h)
+            mapCtx.lineTo((joints(i).x * LittleMap.w) * scaleW / Boundary.w, (joints(i).y * LittleMap.h) * scaleH / Boundary.h)
           }
           mapCtx.stroke()
           mapCtx.closePath()
