@@ -28,7 +28,6 @@ object NetGameHolder extends js.JSApp {
 
   var state = ""
 
-  var loginAgain = false
   val bounds = Point(Boundary.w, Boundary.h)
   var windowWidth = 1600
   var windowHeight = 800
@@ -41,7 +40,7 @@ object NetGameHolder extends js.JSApp {
   //override val scaleW =
 
   var syncData: scala.Option[Protocol.GridDataSync] = None
-
+  var infoState = "normal"
   var myId = ""
   var deadName = ""
   var deadLength=0
@@ -51,17 +50,13 @@ object NetGameHolder extends js.JSApp {
   var gameLoopControl = 0 //保存gameLoop的setInterval的ID
   var myProportion = 1.0
   var eatenApples  = Map[String, List[AppleWithFrame]]()
-  var rePlayOver = false
 
-  var recordNotExist = false
 
   val grid = new GridOnClient(bounds)
-
   var firstCome = true
   var wsSetup = false
   var justSynced = false
   var myRoomId = -1l
-  var noroom = false
 
   var yourKiller = ""
 
@@ -86,10 +81,6 @@ object NetGameHolder extends js.JSApp {
     val otherBody = "#696969"
     val speedUpHeader = "#FFFF37"
   }
-
-//  private[this] val nameExist = dom.document.getElementById("nameExist").asInstanceOf[Div]
-//  private[this] val nameField = dom.document.getElementById("name").asInstanceOf[HTMLInputElement]
- // private[this] val joinButton = dom.document.getElementById("join").asInstanceOf[HTMLButtonElement]
 
 
   @scala.scalajs.js.annotation.JSExport
@@ -274,7 +265,9 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.JoinRoomSuccess(id,roomId)=>
                   myId = id
                   myRoomId = roomId
-                case Protocol.Id(id) => myId = id
+//                  infoState = "normal"
+                case Protocol.Id(id) =>
+                  myId = id
                 case Protocol.TextMsg(message) =>
                 //                  writeToArea(s"MESSAGE: $message")
                 case Protocol.NewSnakeJoined(id, user, roomId) =>
@@ -283,15 +276,15 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.NewSnakeNameExist(id, name, roomId)=>
 
                 case Protocol.YouHaveLogined =>
-                  loginAgain = true
+                  infoState = "loginAgain"
 									gameStream.close()
                   grid.snakes = Map.empty[String, SnakeInfo]
 
                 case Protocol.RecordNotExist =>
-                  recordNotExist = true
+                  infoState = "recordNotExist"
 
                 case Protocol.ReplayOver =>
-                  rePlayOver = true
+                  infoState = "replayOver"
                   grid.snakes = Map.empty[String, SnakeInfo]
 //                  nameExist.innerHTML = "名字已存在"
                 case Protocol.SnakeLeft(id, user) =>
@@ -348,6 +341,9 @@ object NetGameHolder extends js.JSApp {
                     }
                   }
 
+                case Protocol.PlayerWaitingJion =>
+                  infoState = "playerWaitingBegin"
+
                 case Protocol.SyncApples(ap) =>
                   grid.grid = grid.grid.filter { case (_, spot) =>
                     spot match {
@@ -359,9 +355,10 @@ object NetGameHolder extends js.JSApp {
                   grid.grid = appleMap
 
                 case Protocol.NoRoom =>
-                  noroom = true
+                  infoState = "noRoom"
 
                 case data: Protocol.GridDataSync =>
+                  infoState = "normal"
                   if(!grid.init) {
                     grid.init = true
                     val timeout = 100 - (System.currentTimeMillis() - data.timestamp) % 100

@@ -120,7 +120,6 @@ object RoomManager {
               }
               userRoomMap.remove(playerId)
             }
-
             Behaviors.same
 
           case RoomEmptyKill(roomId)=>
