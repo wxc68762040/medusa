@@ -161,14 +161,20 @@ object RoomManager {
                     if(userRoomMap(key)._1 == t.roomId)
                       tmpPlayerList.append(key)
                 }
-                val a = tmpPlayerList(scala.util.Random.nextInt(tmpPlayerList.length))
-                a
+                if(tmpPlayerList.length <= 0){
+                  ""
+                }else {
+                  val a = tmpPlayerList(scala.util.Random.nextInt(tmpPlayerList.length))
+                  a
+                }
               }else{
                 t.playerId
               }
             }
             watchManager ! WatcherManager.GetPlayerWatchedRsp(t.watcherId, playerId)
-            getRoomActor(ctx, t.roomId) ! RoomActor.YourUserIsWatched(playerId, t.watcherRef, t.watcherId)
+            if(playerId != "") {
+              getRoomActor(ctx, t.roomId) ! RoomActor.YourUserIsWatched(playerId, t.watcherRef, t.watcherId)
+            }
             Behaviors.same
             
           case x =>

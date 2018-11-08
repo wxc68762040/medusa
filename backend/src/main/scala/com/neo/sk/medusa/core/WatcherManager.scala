@@ -69,7 +69,11 @@ object WatcherManager {
             Behaviors.same
 
           case t: GetPlayerWatchedRsp =>
-            watcherMap.update(t.watcherId, (t.playerId, watcherMap(t.watcherId)._2))
+            if(t.playerId == ""){
+              getWatcherActor(ctx, t.watcherId, 1 ) ! WatcherActor.NoRoom
+            }else {
+              watcherMap.update(t.watcherId, (t.playerId, watcherMap(t.watcherId)._2))
+            }
             Behaviors.same
 
           case t: WatcherGone =>

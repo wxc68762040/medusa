@@ -77,6 +77,7 @@ object Protocol {
 
   case class SnakeLeft(id: String, name: String) extends GameMessage
 
+  case object NoRoom extends GameMessage
 
   //case class DistinctSnakeAction(keyCode: Int, frame: Long, frontFrame: Long) extends GameMessage
 

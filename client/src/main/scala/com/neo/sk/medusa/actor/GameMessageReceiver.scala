@@ -178,6 +178,7 @@ object GameMessageReceiver {
 						grid.deadLength = myLength
 						grid.deadKill = myKill
 						grid.yourKiller = killer
+						grid.removeSnake(myId)
 					}
 					Behavior.same
 				
