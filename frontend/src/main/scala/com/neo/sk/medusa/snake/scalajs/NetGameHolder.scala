@@ -61,6 +61,7 @@ object NetGameHolder extends js.JSApp {
   var wsSetup = false
   var justSynced = false
   var myRoomId = -1l
+  var noroom = false
 
   var yourKiller = ""
 
@@ -356,6 +357,9 @@ object NetGameHolder extends js.JSApp {
                   }
                   val appleMap = ap.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
                   grid.grid = appleMap
+
+                case Protocol.NoRoom =>
+                  noroom = true
 
                 case data: Protocol.GridDataSync =>
                   if(!grid.init) {

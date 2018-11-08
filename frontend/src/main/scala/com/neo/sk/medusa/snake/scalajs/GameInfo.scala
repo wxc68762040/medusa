@@ -63,7 +63,7 @@ object GameInfo {
 
     val centerX = windowWidth/2
     val centerY = windowHeight/2
-    if(!NetGameHolder.rePlayOver && !NetGameHolder.loginAgain && !NetGameHolder.recordNotExist) {
+    if(!NetGameHolder.rePlayOver && !NetGameHolder.loginAgain && !NetGameHolder.recordNotExist && !NetGameHolder.noroom) {
       snakes.find(_.id == uid) match {
         case Some(mySnake) =>
           startBg.setAttribute("style", "display:none")
@@ -99,16 +99,21 @@ object GameInfo {
       infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
       infoCacheCtx.shadowBlur = 0
       infoCacheCtx.fillText("This record not exists",centerX - 150, centerY - 30)
-    } else if(NetGameHolder.rePlayOver && ! NetGameHolder.loginAgain) {
+    } else if(NetGameHolder.rePlayOver ) {
       infoCacheCtx.font = "36px Helvetica"
       infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
       infoCacheCtx.shadowBlur = 0
       infoCacheCtx.fillText("This record is Over",centerX - 150, centerY - 30)
-    } else if(!NetGameHolder.rePlayOver && NetGameHolder.loginAgain) {
+    } else if(NetGameHolder.loginAgain) {
       infoCacheCtx.font = "36px Helvetica"
       infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
       infoCacheCtx.shadowBlur = 0
       infoCacheCtx.fillText("您已在异地登陆",centerX - 150, centerY - 30)
+    }else if(NetGameHolder.noroom){
+      infoCacheCtx.font = "36px Helvetica"
+      infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
+      infoCacheCtx.shadowBlur = 0
+      infoCacheCtx.fillText("该房间不存在",centerX - 150, centerY - 30)
     }
 
     infoCacheCtx.font = s"${14 * scaleW}px Helvetica"

@@ -48,6 +48,8 @@ object WatcherActor {
   case class GetWatchedId(id:String) extends Command
   
   case class FrontLeft(frontActor: ActorRef[WsMsgSource]) extends Command
+
+  case object NoRoom extends Command
   
   case object WatcherReady extends Command
 
@@ -81,6 +83,7 @@ object WatcherActor {
 
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when init:$x")
+            stashBuffer.stash(x)
             Behaviors.same
         }
     }
@@ -98,6 +101,10 @@ object WatcherActor {
             ctx.unwatch(front)
             watchManager ! WatcherManager.WatcherGone(watcherId)
             Behaviors.stopped
+
+          case NoRoom =>
+            frontActor ! Protocol.NoRoom
+            Behaviors.same
 
           case UserFrontActor(newFront) =>
             ctx.unwatch(frontActor)
