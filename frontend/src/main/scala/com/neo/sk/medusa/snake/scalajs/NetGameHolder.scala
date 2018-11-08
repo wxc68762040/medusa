@@ -429,7 +429,7 @@ object NetGameHolder extends js.JSApp {
         }
       }
       if(data.frameCount <= presentFrame) {
-        for(_ <- presentFrame to data.frameCount) {
+        for (_ <- presentFrame until data.frameCount by -1) {
           grid.update(false)
         }
       }

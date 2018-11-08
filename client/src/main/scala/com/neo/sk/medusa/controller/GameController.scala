@@ -18,6 +18,8 @@ import javafx.scene.input.KeyCode
 
 import com.neo.sk.medusa.snake.Protocol._
 import java.awt.event.KeyEvent
+
+import org.slf4j.LoggerFactory
 /**
 	* Created by wangxicheng on 2018/10/25.
 	*/
@@ -28,7 +30,7 @@ object GameController {
 	var basicTime = 0l
 	var myProportion = 1.0
 	var firstCome = true
-
+	val log = LoggerFactory.getLogger("GameController")
 
 	val watchKeys = Set(
 		KeyCode.SPACE,

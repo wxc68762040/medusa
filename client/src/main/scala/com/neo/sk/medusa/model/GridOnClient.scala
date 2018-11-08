@@ -142,7 +142,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
 				}
 			}
 			if (data.frameCount <= presentFrame) {
-				for (_ <- presentFrame to data.frameCount) {
+				for (_ <- presentFrame until data.frameCount by -1) {
 					update(false)
 				}
 			}
