@@ -259,7 +259,7 @@ object UserActor {
             Behaviors.same
 
           case t:YouAreWatched =>
-            watcherMap.put(t.watcherId, t.watcherRef)
+              watcherMap.put(t.watcherId, t.watcherRef)
             t.watcherRef ! WatcherActor.GetWatchedId(playerId)
             Behaviors.same
 
@@ -309,6 +309,16 @@ object UserActor {
 
           case DispatchMsg(m) =>
             frontActor ! m
+            Behaviors.same
+
+          case t:YouAreWatched =>
+            watcherMap.put(t.watcherId, t.watcherRef)
+            t.watcherRef ! WatcherActor.GetWatchedId(playerId)
+            t.watcherRef ! WatcherActor.PlayerWait
+            Behaviors.same
+
+          case t: YouAreUnwatched =>
+            watcherMap.remove(t.watcherId)
             Behaviors.same
 
           case RestartGame =>

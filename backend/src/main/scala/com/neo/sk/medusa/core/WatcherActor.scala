@@ -31,6 +31,8 @@ object WatcherActor {
 
   final case class FailureMessage(ex: Throwable) extends Command
 
+  case object PlayerWait extends Command
+
   case class UserFrontActor(actor: ActorRef[Protocol.WsMsgSource]) extends Command
 
   private case class Key(id: String, keyCode: Int, frame: Long) extends Command
@@ -102,8 +104,17 @@ object WatcherActor {
             watchManager ! WatcherManager.WatcherGone(watcherId)
             Behaviors.stopped
 
+//          case UserLeft =>
+//            ctx.unwatch(frontActor)
+//            watchManager ! WatcherManager.WatcherGone(watcherId)
+//            Behaviors.same
+
           case NoRoom =>
             frontActor ! Protocol.NoRoom
+            Behaviors.same
+
+          case PlayerWait =>
+            frontActor ! Protocol.PlayerWaitingJion
             Behaviors.same
 
           case UserFrontActor(newFront) =>
@@ -120,6 +131,7 @@ object WatcherActor {
           case TransInfo(x) =>
             frontActor ! x
             Behaviors.same
+
 
           case NetTest(b, a) =>
             Behaviors.same

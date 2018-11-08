@@ -1,7 +1,7 @@
 package com.neo.sk.medusa.snake.scalajs
 
 import com.neo.sk.medusa.snake.Protocol.GridDataSync
-import com.neo.sk.medusa.snake._
+import com.neo.sk.medusa.snake.{scalajs, _}
 import com.neo.sk.medusa.snake.scalajs.NetGameHolder._
 import org.scalajs.dom
 import org.scalajs.dom.html.{Canvas, Document => _}
@@ -63,58 +63,73 @@ object GameInfo {
 
     val centerX = windowWidth/2
     val centerY = windowHeight/2
-    if(!NetGameHolder.rePlayOver && !NetGameHolder.loginAgain && !NetGameHolder.recordNotExist && !NetGameHolder.noroom) {
-      snakes.find(_.id == uid) match {
-        case Some(mySnake) =>
-          startBg.setAttribute("style", "display:none")
-          NetGameHolder.firstCome = false
-          val baseLine = 1
-          infoCacheCtx.font = s"${14 * scaleW}px Helvetica"
-          infoCacheCtx.fillStyle = "rgb(250,250,250)"
-          drawTextLine(infoCacheCtx, s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 1, baseLine, scaleW, scaleH)
-          drawTextLine(infoCacheCtx, s"your kill = ${mySnake.kill}", leftBegin, 2, baseLine, scaleW, scaleH)
-          drawTextLine(infoCacheCtx, s"your length = ${mySnake.length} ", leftBegin, 3, baseLine, scaleW, scaleH)
-          drawTextLine(infoCacheCtx, s"fps: ${netInfoHandler.fps.formatted("%.2f")} ping:${netInfoHandler.ping.formatted("%.2f")} dataps:${netInfoHandler.dataps.formatted("%.2f")}", leftBegin, 4, baseLine, scaleW, scaleH)
-          drawTextLine(infoCacheCtx, s"drawTimeAverage: ${netInfoHandler.drawTimeAverage}", leftBegin, 5, baseLine, scaleW, scaleH)
-          drawTextLine(infoCacheCtx, s"roomId: $myRoomId", leftBegin, 6, baseLine, scaleW, scaleH)
+    NetGameHolder.infoState match {
+      case "normal" =>
+        snakes.find(_.id == uid) match {
+          case Some(mySnake) =>
+            startBg.setAttribute("style", "display:none")
+            NetGameHolder.firstCome = false
+            val baseLine = 1
+            infoCacheCtx.font = s"${14 * scaleW}px Helvetica"
+            infoCacheCtx.fillStyle = "rgb(250,250,250)"
+            drawTextLine(infoCacheCtx, s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 1, baseLine, scaleW, scaleH)
+            drawTextLine(infoCacheCtx, s"your kill = ${mySnake.kill}", leftBegin, 2, baseLine, scaleW, scaleH)
+            drawTextLine(infoCacheCtx, s"your length = ${mySnake.length} ", leftBegin, 3, baseLine, scaleW, scaleH)
+            drawTextLine(infoCacheCtx, s"fps: ${netInfoHandler.fps.formatted("%.2f")} ping:${netInfoHandler.ping.formatted("%.2f")} dataps:${netInfoHandler.dataps.formatted("%.2f")}", leftBegin, 4, baseLine, scaleW, scaleH)
+            drawTextLine(infoCacheCtx, s"drawTimeAverage: ${netInfoHandler.drawTimeAverage}", leftBegin, 5, baseLine, scaleW, scaleH)
+            drawTextLine(infoCacheCtx, s"roomId: $myRoomId", leftBegin, 6, baseLine, scaleW, scaleH)
 
-        case None =>
-          if (NetGameHolder.firstCome) {
-            infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
-          } else {
-            infoCacheCtx.font = s"${26 * scaleW}px Helvetica"
-            infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
-            infoCacheCtx.shadowBlur = 0
-            infoCacheCtx.fillText(s"Your name   : $deadName", centerX - 150 * scaleW, centerY - 30 * scaleH)
-            infoCacheCtx.fillText(s"Your length  : $deadLength", centerX - 150 * scaleW, centerY)
-            infoCacheCtx.fillText(s"Your kill        : $deadKill", centerX - 150 * scaleW, centerY + 30 * scaleH)
-            infoCacheCtx.fillText(s"Killer             : $yourKiller", centerX - 150 * scaleW, centerY + 60 * scaleH)
-            infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
-            infoCacheCtx.fillText("Ops, Press Space Key To Restart!", centerX - 350 * scaleW, centerY - 150 * scaleH)
-            myProportion = 1.0
-          }
-      }
-    } else if(NetGameHolder.recordNotExist) {
-      infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
-      infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
-      infoCacheCtx.shadowBlur = 0
-      infoCacheCtx.fillText("This record not exists",centerX - 150, centerY - 30)
-    } else if(NetGameHolder.rePlayOver ) {
-      infoCacheCtx.font = "36px Helvetica"
-      infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
-      infoCacheCtx.shadowBlur = 0
-      infoCacheCtx.fillText("This record is Over",centerX - 150, centerY - 30)
-    } else if(NetGameHolder.loginAgain) {
-      infoCacheCtx.font = "36px Helvetica"
-      infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
-      infoCacheCtx.shadowBlur = 0
-      infoCacheCtx.fillText("您已在异地登陆",centerX - 150, centerY - 30)
-    }else if(NetGameHolder.noroom){
-      infoCacheCtx.font = "36px Helvetica"
-      infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
-      infoCacheCtx.shadowBlur = 0
-      infoCacheCtx.fillText("该房间不存在",centerX - 150, centerY - 30)
+          case None =>
+            if (NetGameHolder.firstCome) {
+              infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
+            } else {
+              infoCacheCtx.font = s"${26 * scaleW}px Helvetica"
+              infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
+              infoCacheCtx.shadowBlur = 0
+              infoCacheCtx.fillText(s"Your name   : $deadName", centerX - 150 * scaleW, centerY - 30 * scaleH)
+              infoCacheCtx.fillText(s"Your length  : $deadLength", centerX - 150 * scaleW, centerY)
+              infoCacheCtx.fillText(s"Your kill        : $deadKill", centerX - 150 * scaleW, centerY + 30 * scaleH)
+              infoCacheCtx.fillText(s"Killer             : $yourKiller", centerX - 150 * scaleW, centerY + 60 * scaleH)
+              infoCacheCtx.font = s"${
+                38 * scaleW
+              }px Helvetica"
+              infoCacheCtx.fillText("Ops, Press Space Key To Restart!", centerX - 350 * scaleW, centerY - 150 * scaleH)
+              myProportion = 1.0
+            }
+        }
+      case "recordNotExist" =>
+        infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
+        infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
+        infoCacheCtx.shadowBlur = 0
+        infoCacheCtx.fillText("This record not exists",centerX - 150, centerY - 30)
+
+      case "replayOver" =>
+        infoCacheCtx.font = "36px Helvetica"
+        infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
+        infoCacheCtx.shadowBlur = 0
+        infoCacheCtx.fillText("This record is Over",centerX - 150, centerY - 30)
+
+      case "loginAgain" =>
+        infoCacheCtx.font = "36px Helvetica"
+        infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
+        infoCacheCtx.shadowBlur = 0
+        infoCacheCtx.fillText("您已在异地登陆",centerX - 150, centerY - 30)
+
+      case "noRoom" =>
+        infoCacheCtx.font = "36px Helvetica"
+        infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
+        infoCacheCtx.shadowBlur = 0
+        infoCacheCtx.fillText("该房间不存在",centerX - 150, centerY - 30)
+
+      case "playerWaitingBegin" =>
+        println("------------------------")
+        infoCacheCtx.font = "36px Helvetica"
+        infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
+        infoCacheCtx.shadowBlur = 0
+        infoCacheCtx.fillText("等待玩家重新开始……",centerX - 150, centerY - 30)
     }
+
+
 
     infoCacheCtx.font = s"${14 * scaleW}px Helvetica"
 
