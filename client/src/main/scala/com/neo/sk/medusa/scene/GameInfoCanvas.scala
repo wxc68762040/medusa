@@ -37,7 +37,7 @@ class GameInfoCanvas(canvas: Canvas) {
     infoCtx.fillRect(0,0, infoWidth, infoHeight)
     val snakes = data.snakes
     val leftBegin = 10
-    val rightBegin = (infoWidth - 200).toInt
+    val rightBegin = (infoWidth - 250).toInt
 
     val centerX = infoWidth / 2
     val centerY = infoHeight / 2
@@ -71,10 +71,10 @@ class GameInfoCanvas(canvas: Canvas) {
             infoCtx.fillText(s"Killer             : ${grid.yourKiller}", centerX - 150, centerY + 60)
             infoCtx.setFont(Font.font("Verdana", 36))
             infoCtx.fillText("Ops, Press Space Key To Restart!", centerX - 250, centerY - 120)
-            myPorportion = 1.0
+            myProportion = 1.0
           }
       }
-    }else{
+    } else {
       infoCtx.setFont(Font.font("36px Helvetica"))
       infoCtx.setFill(Color.web( "rgb(250, 250, 250)"))
       infoCtx.fillText("您已在异地登陆",centerX - 150, centerY - 30)
