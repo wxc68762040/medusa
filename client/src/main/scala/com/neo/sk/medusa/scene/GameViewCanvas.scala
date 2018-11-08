@@ -99,7 +99,7 @@ class GameViewCanvas(canvas: Canvas) {
         case _ => "#e91e63ed"
       }
       ctx.setFill(Color.web(ApColor))
-      ctx.setEffect(new DropShadow(5,Color.web("#FFFFFF")))
+      ctx.setEffect(new DropShadow(5, Color.web("#FFFFFF")))
       ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2, square * 2)
     }
     ctx.setFill(Color.web(MyColors.otherHeader))
@@ -127,10 +127,10 @@ class GameViewCanvas(canvas: Canvas) {
       ctx.beginPath()
       if (id != grid.myId) {
         ctx.setStroke(Color.web(snake.color))
-        ctx.setEffect(new DropShadow(5,Color.web("#FFFFFF")))
+        ctx.setEffect(new DropShadow(5, Color.web(snake.color)))
       } else {
-        ctx.setStroke(Color.web("rgba(255, 255, 0, 1)"))
-        ctx.setEffect(new DropShadow(5,Color.web("#FFFFFF")))
+        ctx.setStroke(Color.web("rgba(0, 0, 0, 1)"))
+        ctx.setEffect(new DropShadow(5, Color.web("#FFFFFF")))
       }
       val snakeWidth = square * 2
       ctx.setLineWidth(snakeWidth)
