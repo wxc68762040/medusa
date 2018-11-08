@@ -27,14 +27,14 @@ class GameMapCanvas(canvas: Canvas) {
     mapCtx.clearRect(0, 0, mapWidth, mapHeight)
     mapCtx.setFill(Color.BLACK)
     mapCtx.setGlobalAlpha(0.5)
-    mapCtx.fillRect(0, 550, mapWidth, mapHeight - 550)
+    mapCtx.fillRect(0, 600, mapWidth, mapHeight - 600 )
 
 
     val allSnakes = data.snakes
     val maxLength = if (allSnakes.nonEmpty) allSnakes.sortBy(r =>(r.length,r.id)).reverse.head.head else Point(0,0)
     val maxId = if (allSnakes.nonEmpty) allSnakes.sortBy(r => (r.length,r.id)).reverse.head.id else 0L
     mapCtx.save()
-    mapCtx.drawImage(maxImage, (maxLength.x * LittleMap.w) / Boundary.w - 7, 550 + (maxLength.y * LittleMap.h) / Boundary.h - 7, 15, 15)
+    mapCtx.drawImage(maxImage, (maxLength.x * LittleMap.w) / Boundary.w - 7, 600 + (maxLength.y * LittleMap.h) / Boundary.h - 7, 15, 15)
     mapCtx.restore()
 
     if(allSnakes.nonEmpty && allSnakes.exists(_.id == uid)) {
@@ -60,14 +60,15 @@ class GameMapCanvas(canvas: Canvas) {
         }
         mapCtx.setFill(Color.WHITE)
         joints = joints.reverse.enqueue(tail)
+
         if(snake.id != maxId && snake.id == grid.myId) {
           mapCtx.beginPath()
-          mapCtx.setGlobalAlpha(1.0)
+          mapCtx.setGlobalAlpha(0.5)
           mapCtx.setStroke(Color.WHITE)
           mapCtx.setLineWidth(2.0)
-          mapCtx.moveTo((joints.head.x * LittleMap.w)/Boundary.w, (joints.head.y * LittleMap.h)/Boundary.h)
+          mapCtx.moveTo((joints.head.x * LittleMap.w)/Boundary.w, 600 + (joints.head.y * LittleMap.h)/Boundary.h)
           for(i<- 1 until joints.length) {
-            mapCtx.lineTo((joints(i).x * LittleMap.w) / Boundary.w, (joints(i).y * LittleMap.h)/Boundary.h)
+            mapCtx.lineTo((joints(i).x * LittleMap.w) / Boundary.w, 600 + (joints(i).y * LittleMap.h)/Boundary.h)
           }
           mapCtx.stroke()
           mapCtx.closePath()
@@ -75,16 +76,10 @@ class GameMapCanvas(canvas: Canvas) {
       }
     } else {
       mapCtx.clearRect(0,0,mapWidth,mapHeight)
-      mapCtx.setGlobalAlpha(0.2)
+      mapCtx.setGlobalAlpha(0.5)
       mapCtx.setFill(Color.BLACK)
-      mapCtx.fillRect(0,550,mapWidth,mapHeight)
+      mapCtx.fillRect(0,600 ,mapWidth,mapHeight - 600)
     }
-//    else {
-//      mapCtx.clearRect(0,0,mapWidth,mapHeight)
-//      mapCtx.setGlobalAlpha(0.5)
-//      mapCtx.setFill(Color.BLACK)
-//      mapCtx.fillRect(0,550,mapWidth,mapHeight - 550)
-//    }
 
 
 

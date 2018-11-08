@@ -12,13 +12,15 @@ import javafx.scene.paint.Color
 
 import com.neo.sk.medusa.controller.GameController._
 import javafx.scene.text.Font
+import javafx.scene.{Group, Scene}
+import javafx.scene.effect.{BoxBlur, DropShadow}
+import javafx.scene.canvas.Canvas
+
 /**
   * User: gaohan
   * Date: 2018/10/23
   * Time: 下午4:56
   */
-import javafx.scene.{Group, Scene}
-import javafx.scene.canvas.Canvas
 
 class GameViewCanvas(canvas: Canvas) {
 
@@ -97,7 +99,7 @@ class GameViewCanvas(canvas: Canvas) {
         case _ => "#e91e63ed"
       }
       ctx.setFill(Color.web(ApColor))
-      ctx.setEffect(new BoxBlur(2, 2, 1)) //模糊范围设置为10*10像素大小，模糊迭代次数设置为3
+      ctx.setEffect(new DropShadow(5,Color.web("#FFFFFF")))
       ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2, square * 2)
     }
     ctx.setFill(Color.web(MyColors.otherHeader))
@@ -125,10 +127,10 @@ class GameViewCanvas(canvas: Canvas) {
       ctx.beginPath()
       if (id != grid.myId) {
         ctx.setStroke(Color.web(snake.color))
-        ctx.setEffect(new BoxBlur(2, 2, 1)) //模糊范围设置为10*10像素大小，模糊迭代次数设置为3
+        ctx.setEffect(new DropShadow(5,Color.web("#FFFFFF")))
       } else {
         ctx.setStroke(Color.web("rgba(255, 255, 0, 1)"))
-        ctx.setEffect(new BoxBlur(2, 2, 1)) //模糊范围设置为10*10像素大小，模糊迭代次数设置为3
+        ctx.setEffect(new DropShadow(5,Color.web("#FFFFFF")))
       }
       val snakeWidth = square * 2
       ctx.setLineWidth(snakeWidth)
@@ -144,7 +146,6 @@ class GameViewCanvas(canvas: Canvas) {
       //头部信息
       if (snake.head.x >= 0 && snake.head.y >= 0 && snake.head.x <= Boundary.w && snake.head.y <= Boundary.h) {
         if (snake.speed > fSpeed + 1) {
-          ctx.setEffect(new BoxBlur(2, 2, 1))
           ctx.setFill(Color.web(MyColors.speedUpHeader))
           ctx.fillRect(x - 1.5 * square + deviationX, y - 1.5 * square + deviationY, square * 3, square * 3)
         }
@@ -167,7 +168,7 @@ class GameViewCanvas(canvas: Canvas) {
     }
 
       ctx.setFill(Color.web(MyColors.boundaryColor))
-      ctx.setEffect(new BoxBlur(2, 2, 1))
+      ctx.setEffect(new DropShadow(5,Color.web("#FFFFFF")))
       ctx.fillRect(0 + deviationX, 0 + deviationY, Boundary.w, boundaryWidth)
       ctx.fillRect(0 + deviationX, 0 + deviationY, boundaryWidth, Boundary.h)
       ctx.fillRect(0 + deviationX, Boundary.h + deviationY, Boundary.w, boundaryWidth)

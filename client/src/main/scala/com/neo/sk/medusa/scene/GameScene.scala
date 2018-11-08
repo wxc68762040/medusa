@@ -28,12 +28,12 @@ class GameScene() {
 	import GameScene._
 	var gameSceneListener: GameSceneListener = _
 
-	val widthMap = 300
-	val heightMap = 900
-	val viewWidth = 1600
-	val viewHeight = 900
-	val infoWidth = 1600
-	val infoHeight = 900
+	val widthMap = 400
+	val heightMap = 816
+	val viewWidth = 1450
+	val viewHeight = 816
+	val infoWidth = 1450
+	val infoHeight = 816
 	val group = new Group
 	val mapCanvas = new Canvas(widthMap, heightMap)
 	val viewCanvas = new Canvas(viewWidth, viewHeight)
