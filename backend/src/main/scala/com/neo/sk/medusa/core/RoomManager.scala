@@ -19,7 +19,7 @@ object RoomManager {
 
   sealed trait Command
 
-  final case class ChildDead[U](name: String, childRef: ActorRef[U]) extends Command
+  final case class ChildDead[U](roomId: Long, childRef: ActorRef[U]) extends Command
 
   case class JoinGame(playerId: String, playerName: String, roomId: Long,isNewJoin:Boolean, userActor: ActorRef[UserActor.Command]) extends Command
 
@@ -127,8 +127,9 @@ object RoomManager {
             getRoomActor(ctx,roomId) ! RoomActor.KillRoom
             Behaviors.same
 
-          case ChildDead(name, childRef) =>
-            log.info(s"Child${childRef.path}----$name is dead")
+          case ChildDead(roomId, childRef) =>
+            log.info(s"Child${childRef.path}----$roomId is dead")
+            roomNumMap.remove(roomId)
             ctx.unwatch(childRef)
             Behaviors.same
 
@@ -187,7 +188,7 @@ object RoomManager {
     val childName = s"RoomActor-$roomId"
     ctx.child(childName).getOrElse {
       val actor = ctx.spawn(RoomActor.create(roomId), childName)
-      ctx.watchWith(actor, ChildDead(childName, actor))
+      ctx.watchWith(actor, ChildDead(roomId, actor))
       actor
     }.upcast[RoomActor.Command]
   }
