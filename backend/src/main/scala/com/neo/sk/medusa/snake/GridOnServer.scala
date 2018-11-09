@@ -121,7 +121,9 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
         updatedSnakes ::= s
       case (Left(killerId),j) =>
         // fixme 击杀信息发给roomActor
-        val killerName = if (snakes.exists(_._1 == killerId)) snakes(killerId).name else "the wall"
+        val killerName = if (snakes.exists(_._1 == killerId)) {
+          snakes(killerId).name
+        } else "the wall"
         deadSnakeList ::= DeadSnakeInfo(j.id,j.name,j.length,j.kill, killerName)
         if(killerId != "0") {
           mapKillCounter += killerId -> (mapKillCounter.getOrElse(killerId, 0) + 1)
