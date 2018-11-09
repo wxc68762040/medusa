@@ -195,7 +195,7 @@ object WSClient {
 	
 	def getWebSocketUri(playerId: String, playerName: String, accessCode: String): String = {
 		val wsProtocol = AppSettings.gameProtocol
-		//val host ="10.1.29.250:" + AppSettings.httpPort
+//		val host = AppSettings.gameHost
 		val domain = AppSettings.gameDomain
 		val playerIdEncoder = URLEncoder.encode(playerId, "UTF-8")
 		val playerNameEncoder = URLEncoder.encode(playerName, "UTF-8")

@@ -81,7 +81,7 @@ class GameViewCanvas(canvas: Canvas) {
 
     val centerX = (windowWidth / 2).toInt
     val centerY = (windowHeight / 2).toInt
-    val myHead = if (snakes.exists(_.id == uid)) snakes.filter(_.id == uid).head.head + mySubFrameRevise else Point(Boundary.w, Boundary.h)
+    val myHead = if (snakes.exists(_.id == uid)) snakes.filter(_.id == uid).head.head + mySubFrameRevise else Point(Boundary.w / 2, Boundary.h / 2)
     val deviationX = centerX - myHead.x
     val deviationY = centerY - myHead.y
 

@@ -110,7 +110,7 @@ object GameMessageReceiver {
 							grid.actionMap += (frontFrame - Protocol.advanceFrame -> delAction)
 							grid.actionMap += (frame - Protocol.advanceFrame -> addAction)
 							val updateCounter = grid.frameCount - (frontFrame - Protocol.advanceFrame)
-							grid.sync(grid.savedGrid.get(frontFrame - Protocol.advanceFrame))
+							grid.loadData(grid.savedGrid.get(frontFrame - Protocol.advanceFrame))
 							for (_ <- 1 to updateCounter.toInt) {
 								grid.update(false)
 							}
@@ -155,13 +155,16 @@ object GameMessageReceiver {
 					Behavior.same
 				
 				case data: Protocol.GridDataSync =>
+					log.info(s"get sync: ${System.currentTimeMillis()}")
 					ClientBoot.addToPlatform {
 						if (!grid.init) {
 							grid.init = true
 							gameController.startGameLoop()
 						}
-						grid.syncData = Some(data)
-						grid.justSynced = true
+						if(grid.syncData.isEmpty || grid.syncData.get.frameCount < data.frameCount) {
+							grid.syncData = Some(data)
+							grid.justSynced = true
+						}
 					}
 					Behavior.same
 				

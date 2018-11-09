@@ -311,7 +311,7 @@ object NetGameHolder extends js.JSApp {
                     updateCounter = grid.frameCount-(frontFrame-Protocol.advanceFrame)
 //                    println(s"updateCounter更新次数：$updateCounter")
 //                    println(s"传输到后端的frontFrame:$frontFrame")
-                    sync(savedGrid.get(frontFrame-Protocol.advanceFrame))
+										loadData(savedGrid.get(frontFrame-Protocol.advanceFrame))
 //                    println(s"sync之后前端帧数frameCount:${grid.frameCount}")
                     for(_ <- 1 to updateCounter.toInt){
                       update(false)
@@ -414,7 +414,24 @@ object NetGameHolder extends js.JSApp {
     paragraph.innerHTML = msg
     paragraph
   }
-
+	
+	def loadData(dataOpt: scala.Option[Protocol.GridDataSync]) = {
+		if (dataOpt.nonEmpty) {
+			val data = dataOpt.get
+			grid.frameCount = data.frameCount
+			grid.snakes = data.snakes.map(s => s.id -> s).toMap
+			grid.grid = grid.grid.filter { case (_, spot) =>
+				spot match {
+					case Apple(_, life, _, _) if life >= 0 => true
+					case _ => false
+				}
+			}
+			val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
+			val gridMap = appleMap
+			grid.grid = gridMap
+		}
+	}
+	
   def sync(dataOpt: scala.Option[Protocol.GridDataSync]) = {
     if(dataOpt.nonEmpty) {
       val data = dataOpt.get
