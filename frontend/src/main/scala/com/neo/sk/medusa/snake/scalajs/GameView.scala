@@ -92,7 +92,7 @@ object GameView  {
     cacheCtx.drawImage(canvasPic, 0 + deviationX, 0 + deviationY, Boundary.w * scaleW, Boundary.h * scaleH)
     //cacheCtx.drawImage(canvasPic,0 + deviationX ,0 + deviationY , Boundary.w * scaleW, Boundary.h * scaleH)
 
-    apples.filterNot( a=> a.x * scaleW < myHead.x * scaleW - windowWidth/2 * myProportion || a.y * scaleH < myHead.y * scaleH - windowHeight/2 * myProportion || a.x * scaleW > myHead.x * scaleW + windowWidth/2 * myProportion|| a.y * scaleH > myHead.y * scaleH + windowHeight/2* myProportion).foreach{ case Ap (score,_,_,x,y,_)=>
+    apples.get.filterNot( a=> a.x * scaleW < myHead.x * scaleW - windowWidth/2 * myProportion || a.y * scaleH < myHead.y * scaleH - windowHeight/2 * myProportion || a.x * scaleW > myHead.x * scaleW + windowWidth/2 * myProportion|| a.y * scaleH > myHead.y * scaleH + windowHeight/2* myProportion).foreach{ case Ap (score,_,_,x,y,_)=>
        cacheCtx.fillStyle = score match{
          case 50 => "#ffeb3bd9"
          case 25 => "#1474c1"
@@ -113,7 +113,7 @@ object GameView  {
 
       var step = (snake.speed * period / Protocol.frameRate - snake.extend).toInt
       var tail = snake.tail
-      var joints = snake.joints.enqueue(Point(x.toInt,y.toInt))//通过在旧序列上添加元素创造一个新的队列
+      var joints = snake.joints.enqueue(Point(x.toInt, y.toInt))//通过在旧序列上添加元素创造一个新的队列
       while (step > 0){//尾巴在移动到下一个节点前就要停止
         val distance = tail.distance(joints.dequeue._1)
         if (distance >= step){
@@ -169,12 +169,12 @@ object GameView  {
       val nameLength = if(snake.name.length > 15) 15 else snake.name.length
       val snakeSpeed = snake.speed
 
-      cacheCtx.font = s"${12 * scaleW}px Helvetica"
+      cacheCtx.font = s"${12 * scaleW * myProportion}px Helvetica"
       cacheCtx.fillStyle = Color.White.toString()
       val snakeName = if(snake.name.length > 15) snake.name.substring(0,14) else snake.name
-      cacheCtx.fillText(snakeName, (x - myHead.x) * scaleW / myProportion  + centerX - nameLength * 4, (y - myHead.y ) * scaleH / myProportion + centerY- 15)
+      cacheCtx.fillText(snakeName, x * scaleW + deviationX - nameLength * 4, y * scaleH + deviationY - 15)
       if (snakeSpeed > fSpeed + 1) {
-        cacheCtx.fillText(snakeSpeed.toInt.toString, (x - myHead.x ) * scaleW/ myProportion  + centerX - nameLength * 4, (y - myHead.y) * scaleH / myProportion + centerY - 25)
+        cacheCtx.fillText(snakeSpeed.toInt.toString, x * scaleW  + deviationX - nameLength * 4, y * scaleH + deviationY - 25)
       }
     }
 

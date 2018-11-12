@@ -20,11 +20,14 @@ object Protocol {
   case class GridDataSync(
     frameCount: Long,
     snakes: List[SnakeInfo],
-    appleDetails: List[Ap],
+    appleDetails: Option[List[Ap]],
     timestamp: Long
   ) extends GameMessage
 
+
   case object YouHaveLogined extends GameMessage
+
+  case object PlayerWaitingJion extends GameMessage
 
   case object RecordNotExist extends GameMessage
 
@@ -76,6 +79,7 @@ object Protocol {
 
   case class SnakeDead(id: String, name: String) extends GameMessage
 
+  case object NoRoom extends GameMessage
 
   //case class DistinctSnakeAction(keyCode: Int, frame: Long, frontFrame: Long) extends GameMessage
 

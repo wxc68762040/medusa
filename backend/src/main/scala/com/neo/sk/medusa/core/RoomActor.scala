@@ -166,6 +166,9 @@ object RoomActor {
               dispatch(UserActor.DispatchMsg(grid.getGridSyncData), userMap)
             }
             if (grid.deadSnakeList.nonEmpty) {
+              grid.deadSnakeList.foreach{s =>
+                grid.removeSnake(s.id)
+              }
               eventList.append(Protocol.DeadList(grid.deadSnakeList.map(_.id)))
               dispatch(UserActor.DispatchMsg(Protocol.DeadList(grid.deadSnakeList.map(_.id))), userMap)
             }
@@ -186,8 +189,13 @@ object RoomActor {
               eventList.append(Protocol.SpeedUp(speedUpInfo))
             }
             if (tickCount % 20 == 5) {
-              val GridSyncData = grid.getGridSyncData
-              eventList.append(Protocol.SyncApples(GridSyncData.appleDetails))
+
+              val GridSyncData = if(tickCount > 100){
+                grid.getGridSyncDataNoApp
+              }else {
+                eventList.append(Protocol.SyncApples(grid.getGridSyncData.appleDetails.get))
+                grid.getGridSyncData
+              }
               if (!(snakeNumber > 0)) { //需要生成蛇的情况下，已经广播过一次全量数据，不再次广播
                 dispatch(UserActor.DispatchMsg(GridSyncData), userMap)
               }

@@ -42,7 +42,7 @@ trait Api4PlayInfo extends ServiceUtils{
         if(rsp.roomId != -1) {
           complete(GetRoomIdRsp(RoomInfo(rsp.roomId)))
         }else{
-          complete(GetRoomIdRsp(RoomInfo(-1), 100009, s"playerId ${req.playerId} not exist"))
+          complete(GetRoomIdRsp(RoomInfo(-1), 100009, s"playerId ${req.playerId} dose not exist"))
         }
       }
     }

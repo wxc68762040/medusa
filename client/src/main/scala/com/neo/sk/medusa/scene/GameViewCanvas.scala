@@ -27,7 +27,6 @@ class GameViewCanvas(canvas: Canvas) {
 
   val windowWidth = canvas.getWidth
   val windowHeight = canvas.getHeight
- // val bgImage = new Image("bg.png ")
   val ctx = canvas.getGraphicsContext2D
   val bgColor = new Color(0.003, 0.176, 0.176, 1.0)
   val bgImage = new Image("file:client/src/main/resources/bg.png")
@@ -36,19 +35,19 @@ class GameViewCanvas(canvas: Canvas) {
     val myHeader = "#FFFFFF"
     val myBody = "#FFFFFF"
     val boundaryColor = "#FFFFFF"
-    val otherHeader = Color.BLUE.toString()
+    val otherHeader = Color.BLUE.toString
     val otherBody = "#696969"
     val speedUpHeader = "#FFFF37"
   }
 
   def drawGameOff(): Unit = {
     if (firstCome) {
-      myPorportion = 1.0
+      myProportion = 1.0
     } else {
 
       ctx.setFont(Font.font("36px Helvetica"))
       ctx.fillText("Ops, connection lost.", windowWidth / 2 - 250, windowHeight / 2 - 200)
-      myPorportion = 1.0
+      myProportion = 1.0
     }
 
   }
@@ -76,30 +75,30 @@ class GameViewCanvas(canvas: Canvas) {
       1.0
     }
 
-    if (myPorportion < proportion) {
-      myPorportion += 0.01
+    if (myProportion < proportion) {
+      myProportion += 0.01
     }
 
     val centerX = (windowWidth / 2).toInt
     val centerY = (windowHeight / 2).toInt
-    val myHead = if (snakes.exists(_.id == uid)) snakes.filter(_.id == uid).head.head + mySubFrameRevise else Point(centerX, centerY)
+    val myHead = if (snakes.exists(_.id == uid)) snakes.filter(_.id == uid).head.head + mySubFrameRevise else Point(Boundary.w, Boundary.h)
     val deviationX = centerX - myHead.x
     val deviationY = centerY - myHead.y
 
     ctx.save()
     ctx.translate(windowWidth / 2, windowHeight / 2)
-    ctx.scale(1 / myPorportion, 1 / myPorportion)
+    ctx.scale(1 / myProportion, 1 / myProportion)
     ctx.translate(-windowWidth / 2, -windowHeight / 2)
     ctx.drawImage(bgImage, 0 + deviationX, 0 + deviationY, Boundary.w, Boundary.h)
 
-    apples.filterNot(a => a.x < myHead.x - windowWidth / 2 * myPorportion || a.y < myHead.y - windowHeight / 2 * myPorportion || a.x > myHead.x + windowWidth / 2 * myPorportion || a.y > myHead.y + windowHeight / 2 * myPorportion).foreach { case Ap(score, _, _, x, y, _) =>
+    apples.filterNot(a => a.x < myHead.x - windowWidth / 2 * myProportion || a.y < myHead.y - windowHeight / 2 * myProportion || a.x > myHead.x + windowWidth / 2 * myProportion || a.y > myHead.y + windowHeight / 2 * myProportion).foreach { case Ap(score, _, _, x, y, _) =>
       val ApColor = score match {
         case 50 => "#ffeb3bd9"
         case 25 => "#1474c1"
         case _ => "#e91e63ed"
       }
       ctx.setFill(Color.web(ApColor))
-      ctx.setEffect(new DropShadow(5,Color.web("#FFFFFF")))
+      ctx.setEffect(new DropShadow(5, Color.web("#FFFFFF")))
       ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2, square * 2)
     }
     ctx.setFill(Color.web(MyColors.otherHeader))
@@ -127,10 +126,10 @@ class GameViewCanvas(canvas: Canvas) {
       ctx.beginPath()
       if (id != grid.myId) {
         ctx.setStroke(Color.web(snake.color))
-        ctx.setEffect(new DropShadow(5,Color.web("#FFFFFF")))
+        ctx.setEffect(new DropShadow(5, Color.web(snake.color)))
       } else {
-        ctx.setStroke(Color.web("rgba(255, 255, 0, 1)"))
-        ctx.setEffect(new DropShadow(5,Color.web("#FFFFFF")))
+        ctx.setStroke(Color.web("rgba(0, 0, 0, 1)"))
+        ctx.setEffect(new DropShadow(5, Color.web("#FFFFFF")))
       }
       val snakeWidth = square * 2
       ctx.setLineWidth(snakeWidth)
@@ -158,12 +157,13 @@ class GameViewCanvas(canvas: Canvas) {
       }
 
       val nameLength = if (snake.name.length > 15) 15 else snake.name.length
-      var snakeSpeed = snake.speed
-      ctx.setFill(Color.BLACK)
-      val snakeName = if(snake.name.length > 15) snake.name.substring(0,14) else snake.name
-      ctx.fillText(snakeName, (x - myHead.x ) / myPorportion  + centerX - nameLength * 4, (y - myHead.y ) / myPorportion + centerY - 15)
+      val snakeSpeed = snake.speed
+      ctx.setFill(Color.WHITE)
+			ctx.setFont(new Font("Helvetica", 12 * myProportion))
+      val snakeName = if(snake.name.length > 15) snake.name.substring(0, 14) else snake.name
+			ctx.fillText(snakeName, x + deviationX - nameLength * 4, y + deviationY - 15)
       if (snakeSpeed > fSpeed + 1) {
-        ctx.fillText(snakeSpeed.toInt.toString, (x - myHead.x) / myPorportion + centerX- nameLength * 4, (y - myHead.y) / myPorportion + centerY - 25)
+        ctx.fillText(snakeSpeed.toInt.toString, x + deviationX - nameLength * 4, y + deviationY - 25)
       }
     }
 

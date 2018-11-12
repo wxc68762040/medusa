@@ -69,17 +69,23 @@ object WatcherManager {
             Behaviors.same
 
           case t: GetPlayerWatchedRsp =>
-            watcherMap.update(t.watcherId, (t.playerId, watcherMap(t.watcherId)._2))
+            if(t.playerId == ""){
+              getWatcherActor(ctx, t.watcherId, 1 ) ! WatcherActor.NoRoom
+            }else {
+              watcherMap.update(t.watcherId, (t.playerId, watcherMap(t.watcherId)._2))
+            }
             Behaviors.same
 
           case t: WatcherGone =>
-            val playerWatched = watcherMap(t.watcherId)._1
-            userManager ! YourUserUnwatched(playerWatched, t.watcherId)
-            watcherMap.remove(t.watcherId)
+            val playerWatched = watcherMap.get(t.watcherId).map(_._1)
+            if(playerWatched.nonEmpty) {
+              userManager ! YourUserUnwatched(playerWatched.get, t.watcherId)
+              watcherMap.remove(t.watcherId)
+            }
             Behaviors.same
 
           case ChildDead(name, childRef) =>
-            log.info(s"UserActor $name is dead ")
+            log.info(s"WatcherActor $name is dead ")
             ctx.unwatch(childRef)
             Behaviors.same
 

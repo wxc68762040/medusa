@@ -154,9 +154,9 @@ package object snake {
       if (direction.x == 0) { //竖直方向
         val (yStart, yEnd) =
           if (direction.y < 0)
-            (y + (length + squareWide) * direction.y, y - squareWide)
+            (y + (length + squareWide) * direction.y, y - squareWide / 2)
           else
-            (y + squareWide, y + (length + squareWide) * direction.y)
+            (y + squareWide / 2, y + (length + squareWide) * direction.y)
 
         (for {
           xs <- x - squareWide to x + squareWide
@@ -167,9 +167,9 @@ package object snake {
       } else { //横的方向
         val (xStart, xEnd) =
           if (direction.x < 0)
-            (x + (length + squareWide) * direction.x, x - squareWide)
+            (x + (length + squareWide) * direction.x, x - squareWide / 2)
           else
-            (x + squareWide, x + (length + squareWide) * direction.x)
+            (x + squareWide / 2, x + (length + squareWide) * direction.x)
 
         (for {
           xs <- xStart to xEnd

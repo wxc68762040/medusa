@@ -27,6 +27,7 @@ class StageContext(stage: Stage) {
 		stage.setTitle(title)
 		stage.sizeToScene()
 		stage.centerOnScreen()
+		stage.getWidth
 		stage.show()
 	}
 

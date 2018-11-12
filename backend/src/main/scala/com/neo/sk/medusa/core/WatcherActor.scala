@@ -31,6 +31,8 @@ object WatcherActor {
 
   final case class FailureMessage(ex: Throwable) extends Command
 
+  case object PlayerWait extends Command
+
   case class UserFrontActor(actor: ActorRef[Protocol.WsMsgSource]) extends Command
 
   private case class Key(id: String, keyCode: Int, frame: Long) extends Command
@@ -48,6 +50,8 @@ object WatcherActor {
   case class GetWatchedId(id:String) extends Command
   
   case class FrontLeft(frontActor: ActorRef[WsMsgSource]) extends Command
+
+  case object NoRoom extends Command
   
   case object WatcherReady extends Command
 
@@ -81,6 +85,7 @@ object WatcherActor {
 
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when init:$x")
+            stashBuffer.stash(x)
             Behaviors.same
         }
     }
@@ -99,6 +104,19 @@ object WatcherActor {
             watchManager ! WatcherManager.WatcherGone(watcherId)
             Behaviors.stopped
 
+//          case UserLeft =>
+//            ctx.unwatch(frontActor)
+//            watchManager ! WatcherManager.WatcherGone(watcherId)
+//            Behaviors.same
+
+          case NoRoom =>
+            frontActor ! Protocol.NoRoom
+            Behaviors.same
+
+          case PlayerWait =>
+            frontActor ! Protocol.PlayerWaitingJion
+            Behaviors.same
+
           case UserFrontActor(newFront) =>
             ctx.unwatch(frontActor)
             ctx.watchWith(newFront, FrontLeft(newFront))
@@ -113,6 +131,7 @@ object WatcherActor {
           case TransInfo(x) =>
             frontActor ! x
             Behaviors.same
+
 
           case NetTest(b, a) =>
             Behaviors.same

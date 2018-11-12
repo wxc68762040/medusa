@@ -26,7 +26,7 @@ object GameController {
 	val grid = new GridOnClient(bounds)
 	var myRoomId = -1l
 	var basicTime = 0l
-	var myPorportion = 1.0
+	var myProportion = 1.0
 	var firstCome = true
 
 

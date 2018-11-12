@@ -25,7 +25,7 @@ object RoomManager {
 
   sealed trait Command
 
-  final case class ChildDead[U](name: String, childRef: ActorRef[U]) extends Command
+  final case class ChildDead[U](roomId: Long, childRef: ActorRef[U]) extends Command
 
   case class JoinGame(playerId: String, playerName: String, roomId: Long,isNewJoin:Boolean, userActor: ActorRef[UserActor.Command]) extends Command
 
@@ -124,15 +124,15 @@ object RoomManager {
               }
               userRoomMap.remove(playerId)
             }
-
             Behaviors.same
 
           case RoomEmptyKill(roomId)=>
             getRoomActor(ctx,roomId) ! RoomActor.KillRoom
             Behaviors.same
 
-          case ChildDead(name, childRef) =>
-            log.info(s"Child${childRef.path}----$name is dead")
+          case ChildDead(roomId, childRef) =>
+            log.info(s"Child${childRef.path}----$roomId is dead")
+            roomNumMap.remove(roomId)
             ctx.unwatch(childRef)
             Behaviors.same
 
@@ -165,14 +165,20 @@ object RoomManager {
                     if(userRoomMap(key)._1 == t.roomId)
                       tmpPlayerList.append(key)
                 }
-                val a = tmpPlayerList(scala.util.Random.nextInt(tmpPlayerList.length))
-                a
+                if(tmpPlayerList.length <= 0){
+                  ""
+                }else {
+                  val a = tmpPlayerList(scala.util.Random.nextInt(tmpPlayerList.length))
+                  a
+                }
               }else{
                 t.playerId
               }
             }
             watchManager ! WatcherManager.GetPlayerWatchedRsp(t.watcherId, playerId)
-            getRoomActor(ctx, t.roomId) ! RoomActor.YourUserIsWatched(playerId, t.watcherRef, t.watcherId)
+            if(playerId != "") {
+              getRoomActor(ctx, t.roomId) ! RoomActor.YourUserIsWatched(playerId, t.watcherRef, t.watcherId)
+            }
             Behaviors.same
             
           case x =>
@@ -185,7 +191,7 @@ object RoomManager {
     val childName = s"RoomActor-$roomId"
     ctx.child(childName).getOrElse {
       val actor = ctx.spawn(RoomActor.create(roomId), childName)
-      ctx.watchWith(actor, ChildDead(childName, actor))
+      ctx.watchWith(actor, ChildDead(roomId, actor))
       actor
     }.upcast[RoomActor.Command]
   }

@@ -25,7 +25,6 @@ object NetGameHolder extends js.JSApp {
 
   var state = ""
 
-  var loginAgain = false
   val bounds = Point(Boundary.w, Boundary.h)
   var windowWidth = 1600
   var windowHeight = 800
@@ -38,7 +37,7 @@ object NetGameHolder extends js.JSApp {
   //override val scaleW =
 
   var syncData: scala.Option[Protocol.GridDataSync] = None
-
+  var infoState = "normal"
   var myId = ""
   //true  活着  false  死亡
   var playerState: (String, Boolean) = ("", true)
@@ -49,13 +48,10 @@ object NetGameHolder extends js.JSApp {
   var nextAnimation = 0.0 //保存requestAnimationFrame的ID
   var gameLoopControl = 0 //保存gameLoop的setInterval的ID
   var myProportion = 1.0
-  var eatenApples: Predef.Map[String, List[AppleWithFrame]] = Map[String, List[AppleWithFrame]]()
-  var rePlayOver = false
+  var eatenApples  = Map[String, List[AppleWithFrame]]()
 
-  var recordNotExist = false
 
   val grid = new GridOnClient(bounds)
-
   var firstCome = true
   var wsSetup = false
   var justSynced = false
@@ -84,10 +80,6 @@ object NetGameHolder extends js.JSApp {
     val otherBody = "#696969"
     val speedUpHeader = "#FFFF37"
   }
-
-  //  private[this] val nameExist = dom.document.getElementById("nameExist").asInstanceOf[Div]
-  //  private[this] val nameField = dom.document.getElementById("name").asInstanceOf[HTMLInputElement]
-  // private[this] val joinButton = dom.document.getElementById("join").asInstanceOf[HTMLButtonElement]
 
 
   @scala.scalajs.js.annotation.JSExport
@@ -289,15 +281,15 @@ object NetGameHolder extends js.JSApp {
                   }
 
                 case Protocol.YouHaveLogined =>
-                  loginAgain = true
-                  gameStream.close()
+                  infoState = "loginAgain"
+									gameStream.close()
                   grid.snakes = Map.empty[String, SnakeInfo]
 
                 case Protocol.RecordNotExist =>
-                  recordNotExist = true
+                  infoState = "recordNotExist"
 
                 case Protocol.ReplayOver =>
-                  rePlayOver = true
+                  infoState = "replayOver"
                   grid.snakes = Map.empty[String, SnakeInfo]
 
                 case Protocol.SnakeDead(id, _) =>
@@ -354,6 +346,9 @@ object NetGameHolder extends js.JSApp {
                     }
                   }
 
+                case Protocol.PlayerWaitingJion =>
+                  infoState = "playerWaitingBegin"
+
                 case Protocol.SyncApples(ap) =>
                   grid.grid = grid.grid.filter { case (_, spot) =>
                     spot match {
@@ -364,14 +359,19 @@ object NetGameHolder extends js.JSApp {
                   val appleMap = ap.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
                   grid.grid = appleMap
 
+                case Protocol.NoRoom =>
+                  infoState = "noRoom"
+
                 case data: Protocol.GridDataSync =>
-                  if (!grid.init) {
+                  infoState = "normal"
+                  if(!grid.init) {
                     grid.init = true
                     val timeout = 100 - (System.currentTimeMillis() - data.timestamp) % 100
                     dom.window.setTimeout(() => startLoop(), timeout)
                   }
                   syncData = Some(data)
                   justSynced = true
+
                 case Protocol.NetDelayTest(createTime) =>
                   val receiveTime = System.currentTimeMillis()
                   netInfoHandler.ping = receiveTime - createTime
@@ -445,10 +445,12 @@ object NetGameHolder extends js.JSApp {
       val presentFrame = grid.frameCount
       grid.frameCount = data.frameCount
       grid.snakes = data.snakes.map(s => s.id -> s).toMap
-      grid.grid = grid.grid.filter { case (_, spot) =>
-        spot match {
-          case Apple(_, life, _, _) if life >= 0 => true
-          case _ => false
+      if(data.appleDetails.isDefined) {
+        grid.grid = grid.grid.filter { case (_, spot) =>
+          spot match {
+            case Apple(_, life, _, _) if life >= 0 => true
+            case _ => false
+          }
         }
       }
       if (data.frameCount <= presentFrame) {
@@ -468,9 +470,11 @@ object NetGameHolder extends js.JSApp {
         }
         grid.snakes += ((mySnake.id, mySnake))
       }
-      val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
-      val gridMap = appleMap
-      grid.grid = gridMap
+      if(data.appleDetails.isDefined) {
+        val appleMap = data.appleDetails.get.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
+        val gridMap = appleMap
+        grid.grid = gridMap
+      }
     }
   }
 
