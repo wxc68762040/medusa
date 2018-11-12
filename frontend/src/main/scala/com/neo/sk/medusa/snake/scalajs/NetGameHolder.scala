@@ -366,6 +366,7 @@ object NetGameHolder extends js.JSApp {
                   }
                   syncData = Some(data)
                   justSynced = true
+
                 case Protocol.NetDelayTest(createTime) =>
                   val receiveTime = System.currentTimeMillis()
                   netInfoHandler.ping = receiveTime - createTime
@@ -422,10 +423,12 @@ object NetGameHolder extends js.JSApp {
       val presentFrame = grid.frameCount
       grid.frameCount = data.frameCount
       grid.snakes = data.snakes.map(s => s.id -> s).toMap
-      grid.grid = grid.grid.filter { case (_, spot) =>
-        spot match {
-          case Apple(_, life, _, _) if life >= 0 => true
-          case _ => false
+      if(data.appleDetails.isDefined) {
+        grid.grid = grid.grid.filter { case (_, spot) =>
+          spot match {
+            case Apple(_, life, _, _) if life >= 0 => true
+            case _ => false
+          }
         }
       }
       if(data.frameCount <= presentFrame) {
@@ -445,9 +448,11 @@ object NetGameHolder extends js.JSApp {
         }
         grid.snakes += ((mySnake.id, mySnake))
       }
-      val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
-      val gridMap = appleMap
-      grid.grid = gridMap
+      if(data.appleDetails.isDefined) {
+        val appleMap = data.appleDetails.get.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
+        val gridMap = appleMap
+        grid.grid = gridMap
+      }
     }
   }
 

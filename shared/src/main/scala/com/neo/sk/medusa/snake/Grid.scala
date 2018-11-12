@@ -187,7 +187,16 @@ trait Grid {
     Protocol.GridDataSync(
       frameCount,
       snakes.values.toList,
-      appleDetails,
+      Some(appleDetails),
+      System.currentTimeMillis()
+    )
+  }
+
+  def getGridSyncDataNoApp = {
+    Protocol.GridDataSync(
+      frameCount,
+      snakes.values.toList,
+      None,
       System.currentTimeMillis()
     )
   }
