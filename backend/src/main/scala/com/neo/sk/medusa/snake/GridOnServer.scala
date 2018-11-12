@@ -3,8 +3,10 @@ package com.neo.sk.medusa.snake
 import java.awt.event.KeyEvent
 
 import akka.actor.typed.ActorRef
+import com.neo.sk.medusa
 import com.neo.sk.medusa.core.RoomActor
 import com.neo.sk.medusa.core.RoomActor.DeadInfo
+import com.neo.sk.medusa.snake
 import com.neo.sk.medusa.snake.Protocol.{fSpeed, square}
 import org.slf4j.LoggerFactory
 
@@ -120,7 +122,6 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
       case (Right(s),_) =>
         updatedSnakes ::= s
       case (Left(killerId),j) =>
-        // fixme 击杀信息发给roomActor
         val killerName = if (snakes.exists(_._1 == killerId)) snakes(killerId).name else "the wall"
         deadSnakeList ::= DeadSnakeInfo(j.id,j.name,j.length,j.kill, killerName)
         if(killerId != "0") {
@@ -141,9 +142,14 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
     }
     val deadSnakes = dangerBodies.filter(_._2.lengthCompare(2) >= 0).flatMap { point =>
       val sorted = point._2.sortBy(_.length)
+      //长的留下  短的死亡
       val winner = sorted.head
       val deads = sorted.tail
       // fixme 死亡
+      deads.foreach{
+        snake=>
+        roomActor ! RoomActor.UserDead(snake.id, DeadInfo(snake.name, snake.length, snake.kill, winner.id, winner.name))
+      }
       deadSnakeList :::= deads.map(i=>DeadSnakeInfo(i.id,i.name,i.length,i.kill, winner.name))
       killMap += winner.id->(killMap.getOrElse(winner.id,Nil):::deads.map(i=>(i.id,i.name)))
       mapKillCounter += winner.id -> (mapKillCounter.getOrElse(winner.id, 0) + deads.length)

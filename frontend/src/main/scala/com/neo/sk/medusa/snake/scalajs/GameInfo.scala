@@ -79,20 +79,7 @@ object GameInfo {
           drawTextLine(infoCacheCtx, s"roomId: $myRoomId", leftBegin, 6, baseLine, scaleW, scaleH)
 
         case None =>
-          if (NetGameHolder.firstCome) {
-            infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
-          } else {
-            infoCacheCtx.font = s"${26 * scaleW}px Helvetica"
-            infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
-            infoCacheCtx.shadowBlur = 0
-            infoCacheCtx.fillText(s"Your name   : $deadName", centerX - 150 * scaleW, centerY - 30 * scaleH)
-            infoCacheCtx.fillText(s"Your length  : $deadLength", centerX - 150 * scaleW, centerY)
-            infoCacheCtx.fillText(s"Your kill        : $deadKill", centerX - 150 * scaleW, centerY + 30 * scaleH)
-            infoCacheCtx.fillText(s"Killer             : $yourKiller", centerX - 150 * scaleW, centerY + 60 * scaleH)
-            infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
-            infoCacheCtx.fillText("Ops, Press Space Key To Restart!", centerX - 350 * scaleW, centerY - 150 * scaleH)
-            myProportion = 1.0
-          }
+
       }
     } else if(NetGameHolder.recordNotExist) {
       infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
@@ -109,6 +96,35 @@ object GameInfo {
       infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
       infoCacheCtx.shadowBlur = 0
       infoCacheCtx.fillText("您已在异地登陆",centerX - 150, centerY - 30)
+    }
+
+    //用户死亡
+    if(!playerState._2){
+      if(state.contains("playGame")){
+        //玩游戏过程中死亡显示
+        if (NetGameHolder.firstCome) {
+          infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
+        } else {
+          infoCacheCtx.font = s"${26 * scaleW}px Helvetica"
+          infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
+          infoCacheCtx.shadowBlur = 1
+          infoCacheCtx.fillText(s"Your name   : $deadName", centerX - 150 * scaleW, centerY - 30 * scaleH)
+          infoCacheCtx.fillText(s"Your length  : $deadLength", centerX - 150 * scaleW, centerY)
+          infoCacheCtx.fillText(s"Your kill        : $deadKill", centerX - 150 * scaleW, centerY + 30 * scaleH)
+          infoCacheCtx.fillText(s"Killer            : $yourKiller", centerX - 150 * scaleW, centerY + 60 * scaleH)
+          infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
+          infoCacheCtx.fillText("Ops, Press Space Key To Restart!", centerX - 350 * scaleW, centerY - 150 * scaleH)
+          myProportion = 1.0
+        }
+      }else if(state.contains("watchRecord")&& !NetGameHolder.rePlayOver && !NetGameHolder.loginAgain && !NetGameHolder.recordNotExist ){
+        //观看记录时 观看玩家死亡
+        infoCacheCtx.font = "36px Helvetica"
+        infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
+        infoCacheCtx.shadowBlur = 0
+        infoCacheCtx.fillText("您观看的玩家已死亡",centerX - 150, centerY - 30)
+
+      }
+
     }
 
     infoCacheCtx.font = s"${14 * scaleW}px Helvetica"

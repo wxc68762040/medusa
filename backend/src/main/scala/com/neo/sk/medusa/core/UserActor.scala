@@ -34,6 +34,10 @@ object UserActor {
 
   private final val InitTime = Some(5.minutes)
 
+  private final val UserLeftTime = 10.minutes
+
+  private final val HeartBeatTime = 50.seconds
+
   private final case object BehaviorChangeKey
   private final case object HeartBeatKey
 
@@ -142,7 +146,7 @@ object UserActor {
 
           case ReplayGame(recordId, watchPlayerId, frame)=>
             log.info(s"start replay")
-            frontActor ! Protocol.Id(watchPlayerId)
+            frontActor ! Protocol.JoinRoomSuccess(watchPlayerId,-1)
             val fileName = recordPath + "medusa" + recordId
             val tmpFile = new File(fileName)
             if(tmpFile.exists()) {
@@ -238,13 +242,13 @@ object UserActor {
           case DispatchMsg(m) =>
             watcherMap.values.foreach(t => t ! WatcherActor.TransInfo(m))
             m match {
-              case t: Protocol.SnakeLeft =>
+              case t: Protocol.SnakeDead =>
                 //如果死亡十分钟后无操作 则杀死userActor
                 //fixme
                 if(t.id==playerId) {
-                  timer.startSingleTimer(UserDeadTimerKey, FrontLeft(frontActor), 10.minutes)
+                  timer.startSingleTimer(UserDeadTimerKey, FrontLeft(frontActor), UserLeftTime)
                   frontActor ! t
-                  timer.startPeriodicTimer(HeartBeatKey, HeartBeat, 50.seconds)
+                  timer.startPeriodicTimer(HeartBeatKey, HeartBeat,HeartBeatTime )
                   switchBehavior(ctx, "wait", wait(playerId, playerName, roomId, frontActor, watcherMap))
                 } else {
                   frontActor ! t

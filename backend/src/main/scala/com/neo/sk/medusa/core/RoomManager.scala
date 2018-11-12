@@ -17,6 +17,12 @@ object RoomManager {
 
   private val log = LoggerFactory.getLogger(this.getClass)
 
+  private final val UserLeftRoomTime= 5.minutes
+
+  private final val maxUserNum = 30
+
+  private val idGenerator = new AtomicInteger(1000001)
+
   sealed trait Command
 
   final case class ChildDead[U](name: String, childRef: ActorRef[U]) extends Command
@@ -49,20 +55,18 @@ object RoomManager {
       _ =>
         Behaviors.withTimers[Command] {
           implicit timer =>
-            val maxUserNum = 30
             //roomId->userNum
             val roomNumMap = mutable.HashMap.empty[Long, Int]
             //userId->(roomId,userName)
             val userRoomMap = mutable.HashMap.empty[String, (Long, String)]
-            idle(maxUserNum, roomNumMap, userRoomMap)
+            idle(roomNumMap, userRoomMap)
         }
     }
   }
-	val idGenerator = new AtomicInteger(1000001)
+
 	
 	
-	private def idle(maxUserNum: Int,
-                   roomNumMap: mutable.HashMap[Long, Int],
+	private def idle(roomNumMap: mutable.HashMap[Long, Int],
                    userRoomMap: mutable.HashMap[String, (Long, String)])
                   (implicit timer: TimerScheduler[Command]) =
     Behaviors.receive[Command] {
@@ -114,7 +118,7 @@ object RoomManager {
             if(userRoomMap.get(playerId).nonEmpty){
               if(roomNumMap(roomId)-1<=0){
                 roomNumMap.update(roomId,roomNumMap(roomId)-1)
-                timer.startSingleTimer(RoomEmptyTimerKey(roomId),RoomEmptyKill(roomId),5.minutes)
+                timer.startSingleTimer(RoomEmptyTimerKey(roomId),RoomEmptyKill(roomId),UserLeftRoomTime)
               }else{
                 roomNumMap.update(roomId,roomNumMap(roomId)-1)
               }
