@@ -91,7 +91,7 @@ class GameViewCanvas(canvas: Canvas) {
     ctx.translate(-windowWidth / 2, -windowHeight / 2)
     ctx.drawImage(bgImage, 0 + deviationX, 0 + deviationY, Boundary.w, Boundary.h)
 
-    apples.filterNot(a => a.x < myHead.x - windowWidth / 2 * myProportion || a.y < myHead.y - windowHeight / 2 * myProportion || a.x > myHead.x + windowWidth / 2 * myProportion || a.y > myHead.y + windowHeight / 2 * myProportion).foreach { case Ap(score, _, _, x, y, _) =>
+    apples.get.filterNot(a => a.x < myHead.x - windowWidth / 2 * myProportion || a.y < myHead.y - windowHeight / 2 * myProportion || a.x > myHead.x + windowWidth / 2 * myProportion || a.y > myHead.y + windowHeight / 2 * myProportion).foreach { case Ap(score, _, _, x, y, _) =>
       val ApColor = score match {
         case 50 => "#ffeb3bd9"
         case 25 => "#1474c1"
