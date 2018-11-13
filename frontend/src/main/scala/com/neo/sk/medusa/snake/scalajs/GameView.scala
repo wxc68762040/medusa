@@ -130,15 +130,15 @@ object GameView  {
       joints = joints.reverse.enqueue(tail)
 
       cacheCtx.beginPath()
-      if(id != myId || !playerState._2){
+//      if(id != myId || !playerState._2){
         cacheCtx.strokeStyle = snake.color
         cacheCtx.shadowBlur = 20
         cacheCtx.shadowColor = snake.color
-      } else {
-        cacheCtx.strokeStyle = "rgba(0,0,0,1)"
-        cacheCtx.shadowBlur = 20
-        cacheCtx.shadowColor = "rgba(255,255,255,1)"
-      }
+//      } else {
+//        cacheCtx.strokeStyle = "rgba(0,0,0,1)"
+//        cacheCtx.shadowBlur = 20
+//        cacheCtx.shadowColor = "rgba(255,255,255,1)"
+//      }
       val snakeWidth = square * 2 * scaleW
       cacheCtx.lineWidth = snakeWidth
       cacheCtx.moveTo(joints.head.x * scaleW + deviationX, joints.head.y * scaleH + deviationY)

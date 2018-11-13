@@ -212,7 +212,6 @@ object NetGameHolder extends js.JSApp {
       case _ => KeyCode.Up
     }
     keyCount = (keyCount + 1) % 4
-    println(key)
     grid.addActionWithFrame(myId, key, grid.frameCount + operateDelay)
     val msg:Protocol.UserAction = Key(myId, key, grid.frameCount + advanceFrame + operateDelay) //客户端自己的行为提前帧
     msg.fillMiddleBuffer(sendBuffer) //encode msg
