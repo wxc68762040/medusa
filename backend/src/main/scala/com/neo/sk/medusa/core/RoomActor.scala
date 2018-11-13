@@ -178,18 +178,11 @@ object RoomActor {
                 dispatchTo(g._1, UserActor.DispatchMsg(Protocol.KillList(g._2)), userMap)
             }
 
-            if (feedApples.nonEmpty) {
-              eventList.append(Protocol.FeedApples(feedApples))
-            }
-            if (eatenApples.nonEmpty) {
-              val tmp = Protocol.EatApples(eatenApples.map(r => EatFoodInfo(r._1, r._2)).toList)
-              eventList.append(tmp)
-            }
             if (speedUpInfo.nonEmpty) {
               eventList.append(Protocol.SpeedUp(speedUpInfo))
+              dispatch(UserActor.DispatchMsg(Protocol.SpeedUp(speedUpInfo)), userMap)
             }
             if (tickCount % 20 == 5) {
-
               val GridSyncData = if(tickCount > 100){
                 grid.getGridSyncDataNoApp
               }else {
@@ -199,16 +192,19 @@ object RoomActor {
               if (!(snakeNumber > 0)) { //需要生成蛇的情况下，已经广播过一次全量数据，不再次广播
                 dispatch(UserActor.DispatchMsg(GridSyncData), userMap)
               }
-            } else {
+            }
+            if(tickCount % 200 == 1){
+              dispatch(UserActor.DispatchMsg(Protocol.SyncApples(grid.getGridSyncData.appleDetails.get)),userMap)
+              eventList.append(Protocol.SyncApples(grid.getGridSyncData.appleDetails.get))
+            }else{
               if (feedApples.nonEmpty) {
+                eventList.append(Protocol.FeedApples(feedApples))
                 dispatch(UserActor.DispatchMsg(Protocol.FeedApples(feedApples)), userMap)
               }
               if (eatenApples.nonEmpty) {
                 val tmp = Protocol.EatApples(eatenApples.map(r => EatFoodInfo(r._1, r._2)).toList)
                 dispatch(UserActor.DispatchMsg(tmp), userMap)
-              }
-              if (speedUpInfo.nonEmpty) {
-                dispatch(UserActor.DispatchMsg(Protocol.SpeedUp(speedUpInfo)), userMap)
+                eventList.append(tmp)
               }
             }
             if (tickCount % 20 == 1) {
