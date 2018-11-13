@@ -44,14 +44,14 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
   def randomColor() = {
     val a = random.nextInt(7)
     val color = a match {
-      case 0 => "rgba(255, 20, 63, 1)"
-      case 1 => "rgba(235, 181, 51,1)"
-      case 2 => "rgba(255, 51, 153, 1)"
-      case 3 => "rgba(255, 255, 51, 1)"
-      case 4 => "rgba(102, 204, 255, 1)"
-      case 5 => "rgba(51, 255, 204, 1)"
-      case 6 => "rgba(51, 82, 255, 1)"
-      case _ => "rgba(255, 255, 255, 1)"
+      case 0 => (255, 20, 63, 1)
+      case 1 => (235, 181, 51,1)
+      case 2 => (255, 51, 153, 1)
+      case 3 => (255, 255, 51, 1)
+      case 4 => (102, 204, 255, 1)
+      case 5 => (51, 255, 204, 1)
+      case 6 => (51, 82, 255, 1)
+      case _ => (255, 255, 255, 1)
     }
     color
   }
@@ -60,7 +60,9 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
   def genWaitingSnake() = {
     val snakeNumber = waitingJoin.size
     waitingJoin.filterNot(kv => snakes.contains(kv._1)).foreach { case (id, name) =>
-      val color = randomColor()
+      val tmp = randomColor()
+      val color = "rgba(" + Math.min(tmp._1 + random.nextInt(100) - 35,255 )+ "," + Math.min(tmp._2 + random.nextInt(30), 255 )+
+      ", "+ Math.min(tmp._3 + random.nextInt(60) - 45, 255) + ", 1)"
       val head = randomHeadEmptyPoint()
       val direction = getSafeDirection(head)
       grid += head -> Body(id, color)
@@ -176,9 +178,13 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
     val newDirection = {
       val keyDirection = keyCode match {
         case Some(KeyEvent.VK_LEFT) => Point(-1, 0)
+        case Some(KeyEvent.VK_A) => Point(-1, 0)
         case Some(KeyEvent.VK_RIGHT) => Point(1, 0)
+        case Some(KeyEvent.VK_D) => Point(1, 0)
         case Some(KeyEvent.VK_UP) => Point(0, -1)
+        case Some(KeyEvent.VK_W) => Point(0, -1)
         case Some(KeyEvent.VK_DOWN) => Point(0, 1)
+        case Some(KeyEvent.VK_S) => Point(0, 1)
         case _ => snake.direction
       }
       if (keyDirection + snake.direction != Point(0, 0)) {
