@@ -48,11 +48,12 @@ object Protocol {
   ) extends GameMessage
 
   case class DeadInfo(
-    name: String,
-    length: Int,
-    kill: Int,
-    killerId: String,
-    killer: String
+                       id: String,
+                       name: String,
+                       length: Int,
+                       kill: Int,
+                       killerId: String,
+                       killer: String
   ) extends GameMessage
 
   case class DeadList(
@@ -66,9 +67,7 @@ object Protocol {
 
   case class TextMsg(msg: String) extends GameMessage
 
-  case class Id(id: String) extends GameMessage
-
-  case class NewSnakeNameExist(id: Long, name:String, roomId: Long) extends GameMessage
+  //case class Id(id: String) extends GameMessage
 
   case class NewSnakeJoined(id: String, name: String, roomId: Long) extends GameMessage
 
@@ -78,7 +77,7 @@ object Protocol {
 
   case object ReplayOver extends GameMessage
 
-  case class SnakeLeft(id: String, name: String) extends GameMessage
+  case class SnakeDead(id: String, name: String) extends GameMessage
 
   case object NoRoom extends GameMessage
 

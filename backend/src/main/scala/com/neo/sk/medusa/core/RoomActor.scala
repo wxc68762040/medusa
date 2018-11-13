@@ -90,7 +90,7 @@ object RoomActor {
             userMap.put(t.playerId, (t.userActor, t.playerName))
             deadUserList-=t.playerId
             grid.addSnake(t.playerId, t.playerName)
-            dispatchTo(t.playerId, UserActor.DispatchMsg(Protocol.Id(t.playerId)), userMap)
+            //dispatchTo(t.playerId, UserActor.DispatchMsg(Protocol.Id(t.playerId)), userMap)
             eventList.append(Protocol.NewSnakeJoined(t.playerId, t.playerName, roomId))
             dispatch(UserActor.DispatchMsg(Protocol.NewSnakeJoined(t.playerId, t.playerName, roomId)), userMap)
             if(isRecord){
@@ -100,11 +100,11 @@ object RoomActor {
 
           case t: UserDead =>
             log.info(s"room $roomId lost a player ${t.userId}")
-//            grid.removeSnake(t.userId)
-            dispatchTo(t.userId, UserActor.DispatchMsg(Protocol.DeadInfo(t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer)), userMap)
-            dispatch(UserActor.DispatchMsg(Protocol.SnakeLeft(t.userId, t.deadInfo.name)), userMap)
-            eventList.append(Protocol.DeadInfo(t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer))
-            eventList.append(Protocol.SnakeLeft(t.userId, t.deadInfo.name))
+            //grid.removeSnake(t.userId)
+            dispatchTo(t.userId, UserActor.DispatchMsg(Protocol.DeadInfo( t.userId,t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer)), userMap)
+            dispatch(UserActor.DispatchMsg(Protocol.SnakeDead(t.userId, t.deadInfo.name)), userMap)
+            eventList.append(Protocol.DeadInfo(t.userId,t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer))
+            eventList.append(Protocol.SnakeDead(t.userId, t.deadInfo.name))
             //userMap.remove(t.userId)
             deadUserList += t.userId
             if(isRecord){
@@ -140,8 +140,8 @@ object RoomActor {
           case t:UserLeft =>
             grid.removeSnake(t.playerId)
             val userName=userMap(t.playerId)._2
-            dispatch(UserActor.DispatchMsg(Protocol.SnakeLeft(t.playerId,userName)),userMap)
-            eventList.append(Protocol.SnakeLeft(t.playerId,userName))
+            dispatch(UserActor.DispatchMsg(Protocol.SnakeDead(t.playerId,userName)),userMap)
+            eventList.append(Protocol.SnakeDead(t.playerId,userName))
             if(isRecord) {
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserLeftRoom(t.playerId, userMap(t.playerId)._2, grid.frameCount)
             }
