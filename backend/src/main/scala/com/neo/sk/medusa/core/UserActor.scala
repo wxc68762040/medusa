@@ -244,11 +244,9 @@ object UserActor {
             m match {
               case t: Protocol.SnakeDead =>
                 //如果死亡十分钟后无操作 则杀死userActor
-                //fixme
                 if(t.id==playerId) {
                   timer.startSingleTimer(UserDeadTimerKey, FrontLeft(frontActor), UserLeftTime)
                   frontActor ! t
-                  timer.startPeriodicTimer(HeartBeatKey, HeartBeat,HeartBeatTime )
                   switchBehavior(ctx, "wait", wait(playerId, playerName, roomId, frontActor, watcherMap))
                 } else {
                   frontActor ! t
@@ -336,10 +334,6 @@ object UserActor {
             ctx.unwatch(front)
             roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
             Behaviors.stopped
-
-          case HeartBeat =>
-            frontActor ! Protocol.HeartBeat
-            Behaviors.same
 
           case t: YouAreUnwatched =>
             watcherMap.remove(t.watcherId)
