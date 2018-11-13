@@ -62,9 +62,13 @@ object NetGameHolder extends js.JSApp {
   val watchKeys = Set(
     KeyCode.Space,
     KeyCode.Left,
+    KeyCode.A,
     KeyCode.Up,
+    KeyCode.W,
     KeyCode.Right,
+    KeyCode.D,
     KeyCode.Down,
+    KeyCode.S,
     KeyCode.F2
   )
 
@@ -297,7 +301,7 @@ object NetGameHolder extends js.JSApp {
 
                 case Protocol.SnakeAction(id, keyCode, frame) =>
                   if (state.contains("playGame")) {
-                    if (id != myId) {
+                    if (id != myId || !playerState._2) {
                       grid.addActionWithFrame(id, keyCode, frame)
                     }
                   } else {
@@ -380,7 +384,6 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.DeadInfo(id, myName, myLength, myKill, killerId, killer) =>
                   if(playerState._2 && id==playerState._1){
                     grid.removeSnake(myId)
-                    //todo  观看录像时有问题
                     playerState = (myId, false)
                     if (state.contains("playGame")) {
                       println("when  play game  user dead ")
