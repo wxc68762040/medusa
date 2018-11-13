@@ -193,7 +193,7 @@ object RoomActor {
                 dispatch(UserActor.DispatchMsg(GridSyncData), userMap)
               }
             }
-            if(tickCount % 200 == 1){
+            if(tickCount % 300 == 1){
               dispatch(UserActor.DispatchMsg(Protocol.SyncApples(grid.getGridSyncData.appleDetails.get)),userMap)
               eventList.append(Protocol.SyncApples(grid.getGridSyncData.appleDetails.get))
             }else{

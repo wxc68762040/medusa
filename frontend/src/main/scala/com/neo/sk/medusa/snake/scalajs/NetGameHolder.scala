@@ -50,7 +50,7 @@ object NetGameHolder extends js.JSApp {
   var myProportion = 1.0
   var eatenApples  = Map[String, List[AppleWithFrame]]()
 
-
+  var isTest = false
   val grid = new GridOnClient(bounds)
   var firstCome = true
   var wsSetup = false
@@ -89,6 +89,12 @@ object NetGameHolder extends js.JSApp {
     GameView.canvas.height = canvasBoundary.y
 
     GameInfo.setStartBg()
+    dom.window.location.search.split("&").foreach {
+      s =>
+        if(s.contains("playerId") && s.contains("test")){
+          isTest = true
+        }
+    }
 
     state = dom.window.location.pathname.replace("medusa", "").drop(1)
     joinGame(state, dom.window.location.search)
@@ -193,9 +199,26 @@ object NetGameHolder extends js.JSApp {
   }
 
 
-  val sendBuffer = new MiddleBufferInJs(409600) //sender buffer
+  val sendBuffer = new MiddleBufferInJs(40960) //sender buffer
   val netInfoHandler = new NetInfoHandler()
 
+  var keyCount = 0
+  def testSend() = {
+    val key = keyCount match {
+      case 0 => KeyCode.Up
+      case 1 => KeyCode.Left
+      case 2 => KeyCode.Down
+      case 3 => KeyCode.Right
+      case _ => KeyCode.Up
+    }
+    keyCount = (keyCount + 1) % 4
+    println(key)
+    grid.addActionWithFrame(myId, key, grid.frameCount + operateDelay)
+    val msg:Protocol.UserAction = Key(myId, key, grid.frameCount + advanceFrame + operateDelay) //客户端自己的行为提前帧
+    msg.fillMiddleBuffer(sendBuffer) //encode msg
+    val ab: ArrayBuffer = sendBuffer.result() //get encoded data.
+    ab
+  }
 
   def joinGame(path: String, parameters: String): Unit = {
     val gameStream = new WebSocket(getWebSocketUri(dom.document, path, parameters))
@@ -209,7 +232,7 @@ object NetGameHolder extends js.JSApp {
       GameView.drawGameOn()
 
       wsSetup = true
-      if (state.contains("playGame")) {
+      if (state.contains("playGame") && !isTest) {
         //GameView.canvas.focus()
         GameView.canvas.onkeydown = {
           (e: dom.KeyboardEvent) =>
@@ -235,12 +258,16 @@ object NetGameHolder extends js.JSApp {
               }
 
             }
-
-
         }
         GameInfo.canvas.onclick = {
           _ => GameView.canvas.focus()
         }
+      }else if(isTest) {
+        dom.window.setTimeout(() =>
+          dom.window.setInterval(() => {
+            val msg = testSend()
+            gameStream.send(msg)
+          }, 2000), 3000)
       }
       event0
     }
