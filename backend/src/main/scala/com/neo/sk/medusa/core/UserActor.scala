@@ -269,10 +269,6 @@ object UserActor {
             watcherMap.remove(t.watcherId)
             Behaviors.same
 
-          case UnKnowAction(unknownMsg) =>
-            log.debug(s"${ctx.self.path} receive an UnKnowAction when play:$unknownMsg")
-            Behaviors.same
-
           case UserFrontActor(_) => //已经在游戏中的玩家又再次加入
             ctx.unwatch(frontActor)
 						frontActor ! YouHaveLogined
@@ -288,6 +284,10 @@ object UserActor {
             roomActor ! RoomActor.UserLeft(playerId)
             userManager ! UserManager.UserGone(playerId)
             Behaviors.stopped
+
+          case UnKnowAction(unknownMsg) =>
+            log.debug(s"${ctx.self.path} receive an UnKnowAction when play:$unknownMsg")
+            Behaviors.same
             
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when play:$x")
