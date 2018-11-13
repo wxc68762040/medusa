@@ -61,6 +61,7 @@ object Protocol {
   ) extends GameMessage
 
   case class KillList(
+    playerID: String,
     killList: List[(String, String)]
   ) extends GameMessage
 
