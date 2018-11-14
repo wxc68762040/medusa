@@ -170,8 +170,13 @@ object UserActor {
             val buffer = new MiddleBufferInJvm(message)
             bytesDecode[List[Protocol.GameMessage]](buffer) match {
               case Right(r) =>
-                r.foreach { g =>
-                  frontActor ! g
+                r.foreach { g:Protocol.GameMessage =>
+                  g match {
+                    case Protocol.KillList(rId,_) =>
+                      if(playerId == rId)  frontActor ! g
+                    case x =>
+                      frontActor ! x
+                  }
                 }
               case Left(e) =>
                 log.error(s"ReplayData error: $e")

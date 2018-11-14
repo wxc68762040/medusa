@@ -174,8 +174,8 @@ object RoomActor {
             }
             grid.killMap.foreach {
               g =>
-                eventList.append(Protocol.KillList(g._2))
-                dispatchTo(g._1, UserActor.DispatchMsg(Protocol.KillList(g._2)), userMap)
+                eventList.append(Protocol.KillList(g._1, g._2))
+                dispatchTo(g._1, UserActor.DispatchMsg(Protocol.KillList(g._1, g._2)), userMap)
             }
 
             if (speedUpInfo.nonEmpty) {
