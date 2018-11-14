@@ -124,7 +124,7 @@ object Protocol {
 
   val square = 4
 
-  val fSpeed = 10
+  val fSpeed = 30
 
   val foodRate = 0.067 //尸体生成食物的倍率
 
