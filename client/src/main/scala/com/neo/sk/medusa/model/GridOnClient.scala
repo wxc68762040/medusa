@@ -119,12 +119,12 @@ class GridOnClient(override val boundary: Point) extends Grid {
   var init: Boolean = false
 	var justSynced: Boolean = false
 	var myId = ""
-	
+
 	var deadName = ""
 	var deadLength = 0
 	var deadKill = 0
 	var yourKiller = ""
-	
+
 	
 	var eatenApples  = Map[String, List[AppleWithFrame]]()
 	var savedGrid = Map[Long,Protocol.GridDataSync]()
@@ -139,10 +139,18 @@ class GridOnClient(override val boundary: Point) extends Grid {
 			val presentFrame = frameCount
 			frameCount = data.frameCount
 			snakes = data.snakes.map(s => s.id -> s).toMap
-			grid = grid.filter { case (_, spot) =>
-				spot match {
-					case Apple(_, life, _, _) if life >= 0 => true
-					case _ => false
+//			grid = grid.filter { case (_, spot) =>
+//				spot match {
+//					case Apple(_, life, _, _) if life >= 0 => true
+//					case _ => false
+//				}
+//			}
+			if(data.appleDetails.isDefined) {
+				grid = grid.filter{ case (_, spot) =>
+						spot match {
+							case Apple(_, life, _, _) if life >= 0 => true
+							case _ => false
+						}
 				}
 			}
 			if (data.frameCount <= presentFrame) {
@@ -162,9 +170,13 @@ class GridOnClient(override val boundary: Point) extends Grid {
 				}
 				snakes += ((mySnake.id, mySnake))
 			}
-			val appleMap = data.appleDetails.get.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
-			val gridMap = appleMap
-			grid = gridMap
+			if (data.appleDetails.isDefined) {
+				val appleMap = data.appleDetails.get.map(a => Point(a.x,a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
+				val gridMap = appleMap
+				grid = gridMap
+			}
+		//	val appleMap = data.appleDetails.get.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
+
 		}
 	}
 	

@@ -22,14 +22,13 @@ import javafx.scene.canvas.Canvas
   * Time: 下午4:56
   */
 
-class GameViewCanvas(canvas: Canvas) {
+class GameViewCanvas(canvas: Canvas, gameScene: GameScene) {
 
-
-  val windowWidth = canvas.getWidth
-  val windowHeight = canvas.getHeight
   val ctx = canvas.getGraphicsContext2D
   val bgColor = new Color(0.003, 0.176, 0.176, 1.0)
   val bgImage = new Image("file:client/src/main/resources/bg.png")
+
+
 
   object MyColors {
     val myHeader = "#FFFFFF"
@@ -39,25 +38,34 @@ class GameViewCanvas(canvas: Canvas) {
     val otherBody = "#696969"
     val speedUpHeader = "#FFFF37"
   }
+//
+//  def drawGameOff(): Unit = {
+//    if (firstCome) {
+//      myProportion = 1.0
+//    } else {
+//
+//      ctx.setFont(Font.font("36px Helvetica"))
+//      ctx.fillText("Ops, connection lost.", windowWidth / 2 - 250, windowHeight / 2 - 200)
+//      myProportion = 1.0
+//    }
+//
+//  }
 
-  def drawGameOff(): Unit = {
-    if (firstCome) {
-      myProportion = 1.0
-    } else {
+  def drawSnake(uid: String, data: GridDataSync, scaleW: Double, scaleH: Double):Unit = {
 
-      ctx.setFont(Font.font("36px Helvetica"))
-      ctx.fillText("Ops, connection lost.", windowWidth / 2 - 250, windowHeight / 2 - 200)
-      myProportion = 1.0
-    }
+    val windowWidth = gameScene.viewWidth
+    val windowHeight = gameScene.viewHeight
+    canvas.setWidth(windowWidth)
+    canvas.setHeight(windowHeight)
 
-  }
-
-  def drawSnake(uid: String, data:GridDataSync):Unit = {
     ctx.setFill(bgColor)
     ctx.fillRect(0, 0, windowWidth, windowWidth)
+
     val period = (System.currentTimeMillis() - basicTime).toInt
     val snakes = data.snakes
     val apples = data.appleDetails
+
+    val scale = if(scaleW >= scaleH) scaleH  else scaleW // 长款变化比例不同时，取小比例
 
     val mySubFrameRevise =
       try {
@@ -81,25 +89,25 @@ class GameViewCanvas(canvas: Canvas) {
 
     val centerX = (windowWidth / 2).toInt
     val centerY = (windowHeight / 2).toInt
-    val myHead = if (snakes.exists(_.id == uid)) snakes.filter(_.id == uid).head.head + mySubFrameRevise else Point(Boundary.w, Boundary.h)
-    val deviationX = centerX - myHead.x
-    val deviationY = centerY - myHead.y
+    val myHead = if (snakes.exists(_.id == uid)) snakes.filter(_.id == uid).head.head + mySubFrameRevise else Point(Boundary.w / 2, Boundary.h / 2)
+    val deviationX = centerX - myHead.x * scaleW
+    val deviationY = centerY - myHead.y * scaleH
 
     ctx.save()
     ctx.translate(windowWidth / 2, windowHeight / 2)
     ctx.scale(1 / myProportion, 1 / myProportion)
     ctx.translate(-windowWidth / 2, -windowHeight / 2)
-    ctx.drawImage(bgImage, 0 + deviationX, 0 + deviationY, Boundary.w, Boundary.h)
+    ctx.drawImage(bgImage, 0 + deviationX, 0 + deviationY, Boundary.w * scaleW, Boundary.h * scaleH)
 
-    apples.get.filterNot(a => a.x < myHead.x - windowWidth / 2 * myProportion || a.y < myHead.y - windowHeight / 2 * myProportion || a.x > myHead.x + windowWidth / 2 * myProportion || a.y > myHead.y + windowHeight / 2 * myProportion).foreach { case Ap(score, _, _, x, y, _) =>
+    apples.get.filterNot(a => a.x * scaleW < myHead.x * scaleW - windowWidth / 2 * myProportion || a.y * scaleH < myHead.y * scaleH - windowHeight / 2 * myProportion || a.x * scaleW > myHead.x * scaleW + windowWidth / 2 * myProportion || a.y * scaleH > myHead.y * scaleH + windowHeight / 2 * myProportion).foreach { case Ap(score, _, _, x, y, _) =>
       val ApColor = score match {
         case 50 => "#ffeb3bd9"
         case 25 => "#1474c1"
         case _ => "#e91e63ed"
       }
       ctx.setFill(Color.web(ApColor))
-      ctx.setEffect(new DropShadow(5, Color.web("#FFFFFF")))
-      ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2, square * 2)
+      ctx.setEffect(new DropShadow(5 * scale, Color.web("#FFFFFF")))
+      ctx.fillRect(x * scaleW - square * scaleW + deviationX, y * scaleH - square * scaleH + deviationY, square * 2 * scaleW, square * 2 * scaleH)
     }
     ctx.setFill(Color.web(MyColors.otherHeader))
 
@@ -126,16 +134,16 @@ class GameViewCanvas(canvas: Canvas) {
       ctx.beginPath()
       if (id != grid.myId) {
         ctx.setStroke(Color.web(snake.color))
-        ctx.setEffect(new DropShadow(5, Color.web(snake.color)))
+        ctx.setEffect(new DropShadow(5 * scale, Color.web(snake.color)))
       } else {
         ctx.setStroke(Color.web("rgba(0, 0, 0, 1)"))
-        ctx.setEffect(new DropShadow(5, Color.web("#FFFFFF")))
+        ctx.setEffect(new DropShadow(5 * scale, Color.web("#FFFFFF")))
       }
-      val snakeWidth = square * 2
+      val snakeWidth = square * 2 * scale
       ctx.setLineWidth(snakeWidth)
-      ctx.moveTo(joints.head.x + deviationX, joints.head.y + deviationY)
+      ctx.moveTo(joints.head.x * scaleW + deviationX, joints.head.y * scaleH + deviationY)
       for (i <- 1 until joints.length) {
-        ctx.lineTo(joints(i).x + deviationX, joints(i).y + deviationY)
+        ctx.lineTo(joints(i).x * scaleW + deviationX, joints(i).y * scaleH + deviationY)
       }
       ctx.stroke()
       ctx.closePath()
@@ -146,33 +154,30 @@ class GameViewCanvas(canvas: Canvas) {
       if (snake.head.x >= 0 && snake.head.y >= 0 && snake.head.x <= Boundary.w && snake.head.y <= Boundary.h) {
         if (snake.speed > fSpeed + 1) {
           ctx.setFill(Color.web(MyColors.speedUpHeader))
-          ctx.fillRect(x - 1.5 * square + deviationX, y - 1.5 * square + deviationY, square * 3, square * 3)
+          ctx.setEffect(new DropShadow(5 * scale, Color.web(snake.color)))
+          ctx.fillRect(x * scaleW - 1.5 * square * scaleW + deviationX, y * scaleH - 1.5 * square * scaleH + deviationY, square * 3 * scaleW, square * 3 * scaleH)
         }
         ctx.setFill(Color.web(MyColors.myHeader))
-        if (id == uid) {
-          ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2, square * 2)
-        } else {
-          ctx.fillRect(x - square + deviationX, y - square + deviationY, square * 2, square * 2)
-        }
+        ctx.fillRect(x * scaleW - square * scaleW + deviationX, y * scaleH - square * scaleH + deviationY, square * 2 * scaleW, square * 2 * scaleH)
       }
 
       val nameLength = if (snake.name.length > 15) 15 else snake.name.length
       val snakeSpeed = snake.speed
       ctx.setFill(Color.WHITE)
-			ctx.setFont(new Font("Helvetica", 12 * myProportion))
+			ctx.setFont(new Font("Helvetica", 12 * myProportion * scale))
       val snakeName = if(snake.name.length > 15) snake.name.substring(0, 14) else snake.name
-			ctx.fillText(snakeName, x + deviationX - nameLength * 4, y + deviationY - 15)
+			ctx.fillText(snakeName, x * scaleW + deviationX - nameLength * 4, y * scaleH + deviationY - 15)
       if (snakeSpeed > fSpeed + 1) {
-        ctx.fillText(snakeSpeed.toInt.toString, x + deviationX - nameLength * 4, y + deviationY - 25)
+        ctx.fillText(snakeSpeed.toInt.toString, x * scaleW + deviationX - nameLength * 4, y * scaleH + deviationY - 25)
       }
     }
 
       ctx.setFill(Color.web(MyColors.boundaryColor))
       ctx.setEffect(new DropShadow(5,Color.web("#FFFFFF")))
-      ctx.fillRect(0 + deviationX, 0 + deviationY, Boundary.w, boundaryWidth)
-      ctx.fillRect(0 + deviationX, 0 + deviationY, boundaryWidth, Boundary.h)
-      ctx.fillRect(0 + deviationX, Boundary.h + deviationY, Boundary.w, boundaryWidth)
-      ctx.fillRect(Boundary.w + deviationX, 0 + deviationY, boundaryWidth, Boundary.h)
+      ctx.fillRect(0 + deviationX, 0 + deviationY, Boundary.w * scaleW, boundaryWidth * scaleH)
+      ctx.fillRect(0 + deviationX, 0 + deviationY, boundaryWidth * scaleW, Boundary.h * scaleH)
+      ctx.fillRect(0 + deviationX, Boundary.h * scaleH + deviationY, Boundary.w * scaleW, boundaryWidth * scaleH)
+      ctx.fillRect(Boundary.w * scaleW + deviationX, 0 + deviationY, boundaryWidth * scaleW, Boundary.h * scaleH)
       ctx.restore()
 
       ctx.setFill(Color.web("rgb(250, 250, 250)"))

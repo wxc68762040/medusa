@@ -166,7 +166,8 @@ object GameMessageReceiver {
 					Behavior.same
 				
 				case Protocol.DeadInfo(id,myName, myLength, myKill, killerId, killer) =>
-					if(id==myId){
+					if(id == myId){
+						log.info(myName)
             ClientBoot.addToPlatform {
             grid.deadName = myName
             grid.deadLength = myLength
@@ -182,7 +183,7 @@ object GameMessageReceiver {
 					}
 					Behavior.same
 				
-				case Protocol.KillList(killList) =>
+				case Protocol.KillList(_,killList) =>
 					ClientBoot.addToPlatform {
 						grid.waitingShowKillList :::= killList.map(e => (e._1, e._2, System.currentTimeMillis()))
 					}
