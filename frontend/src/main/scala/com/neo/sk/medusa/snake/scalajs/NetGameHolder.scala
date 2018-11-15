@@ -421,16 +421,19 @@ object NetGameHolder extends js.JSApp {
                   val receiveTime = System.currentTimeMillis()
                   netInfoHandler.ping = receiveTime - createTime
 
-                case Protocol.DeadInfo(id,myName, myLength, myKill, killerId, killer) =>if(playerState._2 && id==playerState._1){
-                  grid.removeSnake(myId)
-                  playerState = (myId, false)
+                case Protocol.DeadInfo(id,myName, myLength, myKill, killerId, killer) =>
+                  if(playerState._2 && id==playerState._1) {
+                    grid.removeSnake(myId)
+                    playerState = (myId, false)
                     if (state.contains("playGame")) {
-                      println("when  play game  user dead ")
+                      println("when play game user dead ")
                       myId = killerId
-                    }deadName = myName
-                  deadLength = myLength
-                  deadKill = myKill
-                  yourKiller = killer}
+                    }
+                    deadName = myName
+                    deadLength = myLength
+                    deadKill = myKill
+                    yourKiller = killer
+                  }
                 case Protocol.DeadList(deadList) =>
                   //其他蛇死亡
                   deadList.filter(_ != playerState._1).foreach(i => grid.snakes -= i)
