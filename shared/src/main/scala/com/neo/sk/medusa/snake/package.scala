@@ -211,7 +211,7 @@ package object snake {
                         color: String,
                         direction: Point = Point(1, 0),
                         joints: Queue[Point] = Queue(),
-                        speed: Double = 10.0,
+                        speed: Double = 25.0,
                         freeFrame: Int = 0,
                         length: Int = 100,
                         extend: Int = 100, //需要伸长的量

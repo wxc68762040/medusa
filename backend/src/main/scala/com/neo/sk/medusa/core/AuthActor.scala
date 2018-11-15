@@ -7,10 +7,11 @@ import org.slf4j.LoggerFactory
 import com.neo.sk.medusa.snake.GridOnServer
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors, TimerScheduler}
+
 import scala.concurrent.duration._
 import scala.collection.mutable.ListBuffer
 import com.neo.sk.utils.AuthUtils.PlayerInfo
-import com.neo.sk.utils.AuthUtils
+import com.neo.sk.utils.{AuthUtils, BatRecordUtils}
 import com.neo.sk.medusa.Boot.executor
 /**
   *
@@ -33,6 +34,7 @@ object AuthActor {
   private case object RenewToken extends Command
 
   case class VerifyAccessCode(accessCode:String, sender:ActorRef[AuthUtils.VerifyRsp]) extends Command
+  case class GameResultUpload(gameResult: BatRecordUtils.PlayerRecordWrap) extends Command
 
   val behaviors: Behavior[Command] = {
     log.debug(s"WatchManager start...")
@@ -72,9 +74,17 @@ object AuthActor {
                 ctx.self ! RenewToken
                 log.info("-----AuthActor verify accessCode error-----")
             }
-
             Behaviors.same
 
+          case GameResultUpload(gameResult) =>
+            BatRecordUtils.outputBatRecord(gameResult, token).map {
+              case Right(_) =>
+                log.info(s"${gameResult.playerRecord.playerId} result upload success")
+              case Left(e) =>
+                log.error(s"${gameResult.playerRecord.playerId} result upload failed: $e")
+            }
+            Behaviors.same
+            
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")
             Behaviors.unhandled

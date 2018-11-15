@@ -1,5 +1,6 @@
 package com.neo.sk.medusa.common
 
+import com.neo.sk.medusa.scene.GameScene
 import javafx.event.EventHandler
 import javafx.scene.Scene
 import javafx.stage.{Stage, WindowEvent}
@@ -21,12 +22,22 @@ class StageContext(stage: Stage) {
 	var stageListener: StageListener = _
 	
 	stage.setOnCloseRequest(_ => stageListener.onCloseRequest())
+
+	case class syncWindowSize(windowWidth: Double, windowHeight: Double)
+	def getWindowSize = {
+		val windowWidth = stage.getWidth
+		val windowHeight = stage.getHeight
+		syncWindowSize(windowWidth, windowHeight)
+	}
 	
-	def switchScene(scene: Scene, title: String = "Medusa") = {
+	def switchScene(scene: Scene, title: String = "Medusa", flag: Boolean) = {
 		stage.setScene(scene)
 		stage.setTitle(title)
 		stage.sizeToScene()
 		stage.centerOnScreen()
+		if(flag) {
+			stage.setFullScreen(true)
+		}
 		stage.getWidth
 		stage.show()
 	}

@@ -4,6 +4,7 @@ import com.neo.sk.medusa.snake.Protocol.GridDataSync
 import com.neo.sk.medusa.snake.{scalajs, _}
 import com.neo.sk.medusa.snake.scalajs.NetGameHolder._
 import org.scalajs.dom
+import org.scalajs.dom.ext.Color
 import org.scalajs.dom.html.{Canvas, Document => _}
 
 /**
@@ -82,35 +83,35 @@ object GameInfo {
           case None =>
         }
       case "recordNotExist" =>
-        infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
+        infoCacheCtx.font = s"${36 * scaleW}px Helvetica"
         infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
         infoCacheCtx.shadowBlur = 0
-        infoCacheCtx.fillText("This record not exists",centerX - 150, centerY - 30)
+        infoCacheCtx.fillText("This record not exists",centerX - 150 * scaleW, centerY - 30 * scaleH)
 
       case "replayOver" =>
-        infoCacheCtx.font = "36px Helvetica"
+        infoCacheCtx.font = s"${36 * scaleW}px Helvetica"
         infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
         infoCacheCtx.shadowBlur = 0
-        infoCacheCtx.fillText("This record is Over",centerX - 150, centerY - 30)
+        infoCacheCtx.fillText("This record is Over",centerX - 150 * scaleW, centerY - 30 * scaleH)
 
       case "loginAgain" =>
-        infoCacheCtx.font = "36px Helvetica"
+        infoCacheCtx.font = s"${36 * scaleW}px Helvetica"
         infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
         infoCacheCtx.shadowBlur = 0
-        infoCacheCtx.fillText("您已在异地登陆",centerX - 150, centerY - 30)
+        infoCacheCtx.fillText("您已在异地登陆",centerX - 150 * scaleW, centerY - 30 * scaleH)
 
       case "noRoom" =>
-        infoCacheCtx.font = "36px Helvetica"
+        infoCacheCtx.font = s"${36 * scaleW}px Helvetica"
         infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
         infoCacheCtx.shadowBlur = 0
-        infoCacheCtx.fillText("该房间不存在",centerX - 150, centerY - 30)
+        infoCacheCtx.fillText("该房间不存在",centerX - 150 * scaleW, centerY - 30 * scaleH)
 
       case "playerWaitingBegin" =>
         println("------------------------")
-        infoCacheCtx.font = "36px Helvetica"
+        infoCacheCtx.font = s"${36 * scaleW}px Helvetica"
         infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
         infoCacheCtx.shadowBlur = 0
-        infoCacheCtx.fillText("等待玩家重新开始……",centerX - 150, centerY - 30)
+        infoCacheCtx.fillText("等待玩家重新开始……",centerX - 150 * scaleW, centerY - 30 * scaleH)
     }
 
     //用户死亡
@@ -120,6 +121,11 @@ object GameInfo {
         if (NetGameHolder.firstCome) {
           infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
         } else {
+          /*infoCacheCtx.clearRect(centerX - 350 * scaleW,centerX - 150 * scaleW,400,200)
+          infoCacheCtx.globalAlpha=0.2
+          infoCacheCtx.fillStyle= Color.Black.toString()
+          infoCacheCtx.fillRect(centerX - 350 * scaleW,centerX - 150 * scaleW,400,200)*/
+
           infoCacheCtx.font = s"${26 * scaleW}px Helvetica"
           infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
           infoCacheCtx.shadowBlur = 1
