@@ -149,11 +149,10 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
       val winner = sorted.head
       val deads = sorted.tail
       // fixme 死亡
-      deads.foreach{
-        snake=>
+      deads.foreach { snake=>
         roomActor ! RoomActor.UserDead(snake.id, DeadInfo(snake.name, snake.length, snake.kill, winner.id, winner.name))
       }
-      deadSnakeList :::= deads.map(i=>DeadSnakeInfo(i.id,i.name,i.length,i.kill, winner.name))
+      deadSnakeList :::= deads.map(i=>DeadSnakeInfo(i.id, i.name, i.length, i.kill, winner.name))
       killMap += winner.id->(killMap.getOrElse(winner.id,Nil):::deads.map(i=>(i.id,i.name)))
       mapKillCounter += winner.id -> (mapKillCounter.getOrElse(winner.id, 0) + deads.length)
       deads.foreach { snake =>

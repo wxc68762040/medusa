@@ -4,6 +4,7 @@ import com.neo.sk.medusa.snake.Protocol.GridDataSync
 import com.neo.sk.medusa.snake.{scalajs, _}
 import com.neo.sk.medusa.snake.scalajs.NetGameHolder._
 import org.scalajs.dom
+import org.scalajs.dom.ext.Color
 import org.scalajs.dom.html.{Canvas, Document => _}
 
 /**
@@ -120,6 +121,11 @@ object GameInfo {
         if (NetGameHolder.firstCome) {
           infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
         } else {
+          /*infoCacheCtx.clearRect(centerX - 350 * scaleW,centerX - 150 * scaleW,400,200)
+          infoCacheCtx.globalAlpha=0.2
+          infoCacheCtx.fillStyle= Color.Black.toString()
+          infoCacheCtx.fillRect(centerX - 350 * scaleW,centerX - 150 * scaleW,400,200)*/
+
           infoCacheCtx.font = s"${26 * scaleW}px Helvetica"
           infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
           infoCacheCtx.shadowBlur = 1

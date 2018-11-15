@@ -119,24 +119,41 @@ class GridOnClient(override val boundary: Point) extends Grid {
   var init: Boolean = false
 	var justSynced: Boolean = false
 	var myId = ""
-
+	
 	var deadName = ""
 	var deadLength = 0
 	var deadKill = 0
 	var yourKiller = ""
-
+	
 	
 	var eatenApples  = Map[String, List[AppleWithFrame]]()
 	var savedGrid = Map[Long,Protocol.GridDataSync]()
 	var syncData: scala.Option[Protocol.GridDataSync] = None
 	var waitingShowKillList = List.empty[(String, String, Long)] //ID, Name, timestamp
 	
-	
+	def loadData(dataOpt: scala.Option[Protocol.GridDataSync]) = {
+		if (dataOpt.nonEmpty) {
+			val data = dataOpt.get
+			frameCount = data.frameCount
+			snakes = data.snakes.map(s => s.id -> s).toMap
+			grid = grid.filter { case (_, spot) =>
+				spot match {
+					case Apple(_, life, _, _) if life >= 0 => true
+					case _ => false
+				}
+			}
+			if(data.appleDetails.isDefined) {
+				val appleMap = data.appleDetails.get.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
+				val gridMap = appleMap
+				grid = gridMap
+			}
+		}
+	}
+
 	def sync(dataOpt: scala.Option[Protocol.GridDataSync]) = {
 		if (dataOpt.nonEmpty) {
 			val data = dataOpt.get
 //      grid.actionMap = grid.actionMap.filterKeys(_ >= data.frameCount - 1 - advanceFrame)
-			val presentFrame = frameCount
 			frameCount = data.frameCount
 			snakes = data.snakes.map(s => s.id -> s).toMap
 //			grid = grid.filter { case (_, spot) =>
@@ -153,11 +170,6 @@ class GridOnClient(override val boundary: Point) extends Grid {
 						}
 				}
 			}
-			if (data.frameCount <= presentFrame) {
-				for (_ <- presentFrame to data.frameCount) {
-					update(false)
-				}
-			}
 			val mySnakeOpt = snakes.find(_._1 == myId)
 			if (mySnakeOpt.nonEmpty) {
 				var mySnake = mySnakeOpt.get._2
@@ -170,20 +182,17 @@ class GridOnClient(override val boundary: Point) extends Grid {
 				}
 				snakes += ((mySnake.id, mySnake))
 			}
-			if (data.appleDetails.isDefined) {
-				val appleMap = data.appleDetails.get.map(a => Point(a.x,a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
+			if(data.appleDetails.isDefined) {
+				val appleMap = data.appleDetails.get.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
 				val gridMap = appleMap
 				grid = gridMap
 			}
-		//	val appleMap = data.appleDetails.get.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
-
 		}
 	}
 	
 	def moveEatenApple(): Unit = {
 		val invalidApple = Ap(0, 0, 0, 0, 0)
 		eatenApples = eatenApples.filterNot { apple => !snakes.exists(_._2.id == apple._1) }
-		
 		eatenApples.foreach { info =>
 			val snakeOpt = snakes.get(info._1)
 			if (snakeOpt.isDefined) {

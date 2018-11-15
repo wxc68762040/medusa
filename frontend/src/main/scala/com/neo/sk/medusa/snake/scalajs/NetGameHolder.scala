@@ -265,7 +265,7 @@ object NetGameHolder extends js.JSApp {
         GameInfo.canvas.onclick = {
           _ => GameView.canvas.focus()
         }
-      }else if(isTest) {
+      } else if(isTest) {
         dom.window.setTimeout(() =>
           dom.window.setInterval(() => {
             val msg = testSend()
@@ -301,7 +301,11 @@ object NetGameHolder extends js.JSApp {
                   myId = id
                   myRoomId = roomId
                   playerState = (id, true)
-                  println(s"user JoinRoomSuccess $id")
+                  println(s"$id JoinRoomSuccess ")
+									
+								case Protocol.JoinRoomFailure(id, _, errCode, msg) =>
+									println(s"$id JoinRoomFailure: $msg")
+									
                 case Protocol.TextMsg(_) =>
 
                 case Protocol.NewSnakeJoined(id, _, _) =>
@@ -346,7 +350,7 @@ object NetGameHolder extends js.JSApp {
                     updateCounter = grid.frameCount - (frontFrame - Protocol.advanceFrame)
                     //                    println(s"updateCounter更新次数：$updateCounter")
                     //                    println(s"传输到后端的frontFrame:$frontFrame")
-                    sync(savedGrid.get(frontFrame - Protocol.advanceFrame))
+										loadData(savedGrid.get(frontFrame - Protocol.advanceFrame))
                     //                    println(s"sync之后前端帧数frameCount:${grid.frameCount}")
                     for (_ <- 1 to updateCounter.toInt) {
                       update(false)
@@ -466,7 +470,26 @@ object NetGameHolder extends js.JSApp {
     paragraph.innerHTML = msg
     paragraph
   }
-
+	
+	def loadData(dataOpt: scala.Option[Protocol.GridDataSync]) = {
+		if (dataOpt.nonEmpty) {
+			val data = dataOpt.get
+			grid.frameCount = data.frameCount
+			grid.snakes = data.snakes.map(s => s.id -> s).toMap
+			grid.grid = grid.grid.filter { case (_, spot) =>
+				spot match {
+					case Apple(_, life, _, _) if life >= 0 => true
+					case _ => false
+				}
+			}
+			if(data.appleDetails.isDefined) {
+				val appleMap = data.appleDetails.get.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
+				val gridMap = appleMap
+				grid.grid = gridMap
+			}
+		}
+	}
+	
   def sync(dataOpt: scala.Option[Protocol.GridDataSync]) = {
     if (dataOpt.nonEmpty) {
       val data = dataOpt.get
@@ -483,7 +506,7 @@ object NetGameHolder extends js.JSApp {
         }
       }
       if (data.frameCount <= presentFrame) {
-        for (_ <- presentFrame to data.frameCount) {
+        for (_ <- presentFrame until data.frameCount by -1) {
           grid.update(false)
         }
       }

@@ -1,36 +1,36 @@
 package com.neo.sk.medusa.controller
 
-import javafx.animation.{Animation, AnimationTimer, KeyFrame, Timeline}
-import javafx.scene.input.KeyCode
+import javafx.animation.{AnimationTimer, KeyFrame}
 import javafx.util.Duration
 
 import akka.actor.typed.ActorRef
 import com.neo.sk.medusa.ClientBoot
 import com.neo.sk.medusa.ClientBoot.gameMessageReceiver
 import com.neo.sk.medusa.actor.GameMessageReceiver.ControllerInitial
-import com.neo.sk.medusa.actor.WSClient
 import com.neo.sk.medusa.common.StageContext
 import com.neo.sk.medusa.model.GridOnClient
 import com.neo.sk.medusa.scene.GameScene
 import com.neo.sk.medusa.snake.Protocol.{Key, NetTest}
 import com.neo.sk.medusa.snake.{Boundary, Point, Protocol}
 import com.neo.sk.medusa.common.StageContext._
+import com.neo.sk.medusa.ClientBoot.{executor, scheduler}
 import javafx.scene.input.KeyCode
-
+import scala.concurrent.duration._
 import com.neo.sk.medusa.snake.Protocol._
 import java.awt.event.KeyEvent
+
+import org.slf4j.LoggerFactory
 /**
 	* Created by wangxicheng on 2018/10/25.
 	*/
 object GameController {
-
 	val bounds = Point(Boundary.w, Boundary.h)
 	val grid = new GridOnClient(bounds)
 	var myRoomId = -1l
 	var basicTime = 0l
 	var myProportion = 1.0
 	var firstCome = true
-
+	val log = LoggerFactory.getLogger("GameController")
 
 	val watchKeys = Set(
 		KeyCode.SPACE,
@@ -81,15 +81,10 @@ class GameController(id: String,
 				gameScene.draw(grid.myId, grid.getGridSyncData, grid.historyRank, grid.currentRank, grid.loginAgain, scaleW, scaleH)
 			}
 		}
-		val timeline = new Timeline()
-		timeline.setCycleCount(Animation.INDEFINITE)
-		val keyFrame = new KeyFrame(Duration.millis(100), { _ =>
+		scheduler.schedule(10.millis, 100.millis) {
 			logicLoop()
-		})
-
-		timeline.getKeyFrames.add(keyFrame)
+		}
 		animationTimer.start()
-		timeline.play()
 	}
 	
 	def gameStop() = {
@@ -101,6 +96,7 @@ class GameController(id: String,
 		if (!grid.justSynced) {
 			grid.update(false)
 		} else {
+			log.info(s"now sync: ${System.currentTimeMillis()}")
 			grid.sync(grid.syncData)
 			grid.syncData = None
 			grid.update(true)

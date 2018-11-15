@@ -5,7 +5,7 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors, StashBuffer, TimerSch
 import com.neo.sk.medusa.ClientBoot
 import com.neo.sk.medusa.controller.GameController
 import com.neo.sk.medusa.model.GridOnClient
-import com.neo.sk.medusa.snake.Protocol.{FailMsgServer, GameMessageBeginning, HeartBeat, WsMsgSource}
+import com.neo.sk.medusa.snake.Protocol.{FailMsgServer, GameMessageBeginning, WsMsgSource}
 import com.neo.sk.medusa.snake.{Apple, Point, Protocol}
 import org.slf4j.LoggerFactory
 
@@ -57,8 +57,8 @@ object GameMessageReceiver {
 					}
 					running(id, roomId, gameController)
 					
-				case Protocol.JoinRoomFailure(_, _, errCode, msg) =>
-					log.error(s"join room failed $errCode: $msg")
+				case Protocol.JoinRoomFailure(_, _, errCode, errMsg) =>
+					log.error(s"join room failed $errCode: $errMsg")
 					ClientBoot.addToPlatform {
 						gameController.gameStop()
 					}
@@ -103,7 +103,7 @@ object GameMessageReceiver {
 							grid.actionMap += (frontFrame - Protocol.advanceFrame -> delAction)
 							grid.actionMap += (frame - Protocol.advanceFrame -> addAction)
 							val updateCounter = grid.frameCount - (frontFrame - Protocol.advanceFrame)
-							grid.sync(grid.savedGrid.get(frontFrame - Protocol.advanceFrame))
+							grid.loadData(grid.savedGrid.get(frontFrame - Protocol.advanceFrame))
 							for (_ <- 1 to updateCounter.toInt) {
 								grid.update(false)
 							}
@@ -148,13 +148,16 @@ object GameMessageReceiver {
 					Behavior.same
 				
 				case data: Protocol.GridDataSync =>
+					log.info(s"get sync: ${System.currentTimeMillis()}")
 					ClientBoot.addToPlatform {
 						if (!grid.init) {
 							grid.init = true
 							gameController.startGameLoop()
 						}
-						grid.syncData = Some(data)
-						grid.justSynced = true
+						if(grid.syncData.isEmpty || grid.syncData.get.frameCount < data.frameCount) {
+							grid.syncData = Some(data)
+							grid.justSynced = true
+						}
 					}
 					Behavior.same
 				
@@ -166,15 +169,15 @@ object GameMessageReceiver {
 					Behavior.same
 				
 				case Protocol.DeadInfo(id,myName, myLength, myKill, killerId, killer) =>
-					if(id == myId){
-						log.info(myName)
-            ClientBoot.addToPlatform {
-            grid.deadName = myName
-            grid.deadLength = myLength
-            grid.deadKill = myKill
-            grid.yourKiller = killer
-          }
-          }
+					ClientBoot.addToPlatform {
+						log.info(s"receive DeadInfo")
+						if (id == myId) {
+							grid.deadName = myName
+							grid.deadLength = myLength
+							grid.deadKill = myKill
+							grid.yourKiller = killer
+						}
+					}
 					Behavior.same
 				
 				case Protocol.DeadList(deadList) =>
@@ -183,7 +186,7 @@ object GameMessageReceiver {
 					}
 					Behavior.same
 				
-				case Protocol.KillList(_,killList) =>
+				case Protocol.KillList(_, killList) =>
 					ClientBoot.addToPlatform {
 						grid.waitingShowKillList :::= killList.map(e => (e._1, e._2, System.currentTimeMillis()))
 					}
@@ -191,10 +194,6 @@ object GameMessageReceiver {
 				
 				case FailMsgServer(_) =>
 					log.info("fail msg server")
-					Behavior.same
-					
-				case HeartBeat =>
-					log.info(s"get HeartBeat")
 					Behavior.same
 					
 				case x =>
