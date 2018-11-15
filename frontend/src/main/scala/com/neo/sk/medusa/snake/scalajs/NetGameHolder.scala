@@ -46,14 +46,15 @@ object NetGameHolder extends js.JSApp {
   var deadKill = 0
   var basicTime = 0L
   var nextAnimation = 0.0 //保存requestAnimationFrame的ID
-  var gameLoopControl = 0 //保存gameLoop的setInterval的ID
+  var lagControl = 0 //保存lag开关的setInterval的ID
   var myProportion = 1.0
   var eatenApples  = Map[String, List[AppleWithFrame]]()
 
   var isTest = false
   val grid = new GridOnClient(bounds)
   var firstCome = true
-  var wsSetup = false
+  var wsSetup = false // WebSocket是否连接中
+  var lagging = true // 是否严重延迟中
   var justSynced = false
   var myRoomId: Long = -1l
 
@@ -105,15 +106,22 @@ object NetGameHolder extends js.JSApp {
     dom.window.requestAnimationFrame(drawLoop())
   }
 
-
+  def setLagTrigger(): Unit = {
+    if(!lagging) {
+      dom.window.clearTimeout(lagControl)
+    }
+    lagging = false
+    lagControl = dom.window.setTimeout(() => lagging = true, Protocol.lagLimitTime)
+  }
+  
   def startLoop(): Unit = {
     gameLoop()
-    gameLoopControl = dom.window.setInterval(() => gameLoop(), Protocol.frameRate)
+    dom.window.setInterval(() => gameLoop(), Protocol.frameRate)
   }
 
   def gameLoop(): Unit = {
     basicTime = System.currentTimeMillis()
-    if (wsSetup) {
+    if (wsSetup && !lagging) {
       if (!justSynced) {
         update(false)
       } else {
@@ -122,23 +130,24 @@ object NetGameHolder extends js.JSApp {
         update(true)
         justSynced = false
       }
+      savedGrid += (grid.frameCount -> grid.getGridSyncData)
+      savedGrid -= (grid.frameCount - Protocol.savingFrame - Protocol.advanceFrame)
     }
-    savedGrid += (grid.frameCount -> grid.getGridSyncData)
-    savedGrid -= (grid.frameCount - Protocol.savingFrame - Protocol.advanceFrame)
   }
 
   def drawLoop(): Double => Unit = { _ =>
     nextAnimation = dom.window.requestAnimationFrame(drawLoop())
-
-    windowWidth = dom.document.documentElement.clientWidth
-    windowHeight = dom.document.documentElement.clientHeight
-    val newWindowWidth = windowWidth
-    val newWindowHeight = windowHeight
-    val scaleW = newWindowWidth.toDouble / initWindowWidth.toDouble
-    val scaleH = newWindowHeight.toDouble / initWindowHeight.toDouble
-    draw(scaleW, scaleH)
-    canvasBoundary = Point(dom.document.documentElement.clientWidth, dom.document.documentElement.clientHeight)
-    mapBoundary = Point((LittleMap.w * scaleW).toInt, (LittleMap.h * scaleH).toInt)
+    if (!lagging) {
+      windowWidth = dom.document.documentElement.clientWidth
+      windowHeight = dom.document.documentElement.clientHeight
+      val newWindowWidth = windowWidth
+      val newWindowHeight = windowHeight
+      val scaleW = newWindowWidth.toDouble / initWindowWidth.toDouble
+      val scaleH = newWindowHeight.toDouble / initWindowHeight.toDouble
+      draw(scaleW, scaleH)
+      canvasBoundary = Point(dom.document.documentElement.clientWidth, dom.document.documentElement.clientHeight)
+      mapBoundary = Point((LittleMap.w * scaleW).toInt, (LittleMap.h * scaleH).toInt)
+    }
   }
 
   def moveEatenApple(): Unit = {
@@ -328,7 +337,6 @@ object NetGameHolder extends js.JSApp {
 
                 case Protocol.SnakeDead(id, _) =>
                   grid.removeSnake(id)
-
                 case Protocol.SnakeAction(id, keyCode, frame) =>
                   if (state.contains("playGame")) {
                     if (id != myId || !playerState._2) {
@@ -337,6 +345,7 @@ object NetGameHolder extends js.JSApp {
                   } else {
                     grid.addActionWithFrame(id, keyCode, frame)
                   }
+                
                 case Protocol.DistinctSnakeAction(keyCode, frame, frontFrame) =>
                   //                  println(s"当前前端帧数frameCount:${grid.frameCount}")
                   //                  println(s"actionMap保存最大帧数:${grid.actionMap.keySet.max}")
@@ -359,6 +368,7 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.Ranks(current, history) =>
                   GameInfo.currentRank = current
                   GameInfo.historyRank = history
+                  
                 case Protocol.FeedApples(apples) =>
 
                   grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt))
@@ -403,28 +413,24 @@ object NetGameHolder extends js.JSApp {
                     val timeout = 100 - (System.currentTimeMillis() - data.timestamp) % 100
                     dom.window.setTimeout(() => startLoop(), timeout)
                   }
+                  setLagTrigger()
                   syncData = Some(data)
                   justSynced = true
-
+                  
                 case Protocol.NetDelayTest(createTime) =>
                   val receiveTime = System.currentTimeMillis()
                   netInfoHandler.ping = receiveTime - createTime
-                //                  val m = s"Net Delay Test: createTime=$createTime, receiveTime=$receiveTime, twoWayDelay=${receiveTime - createTime}, ping: ${netInfoHandler.ping}"
-                //                  writeToArea(m)
-                case Protocol.DeadInfo(id, myName, myLength, myKill, killerId, killer) =>
-                  if(playerState._2 && id==playerState._1){
-                    grid.removeSnake(myId)
-                    playerState = (myId, false)
+
+                case Protocol.DeadInfo(id,myName, myLength, myKill, killerId, killer) =>if(playerState._2 && id==playerState._1){
+                  grid.removeSnake(myId)
+                  playerState = (myId, false)
                     if (state.contains("playGame")) {
                       println("when  play game  user dead ")
                       myId = killerId
-                    }
-                    deadName = myName
-                    deadLength = myLength
-                    deadKill = myKill
-                    yourKiller = killer
-                  }
-
+                    }deadName = myName
+                  deadLength = myLength
+                  deadKill = myKill
+                  yourKiller = killer}
                 case Protocol.DeadList(deadList) =>
                   //其他蛇死亡
                   deadList.filter(_ != playerState._1).foreach(i => grid.snakes -= i)

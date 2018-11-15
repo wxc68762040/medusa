@@ -29,6 +29,7 @@ object GameController {
 	var basicTime = 0l
 	var myProportion = 1.0
 	var firstCome = true
+	var lagging = true
 	val log = LoggerFactory.getLogger("GameController")
 
 	val watchKeys = Set(
@@ -88,17 +89,19 @@ class GameController(id: String,
 
 	private def logicLoop() = {
 		basicTime = System.currentTimeMillis()
-		if (!grid.justSynced) {
-			grid.update(false)
-		} else {
-			log.info(s"now sync: ${System.currentTimeMillis()}")
-			grid.sync(grid.syncData)
-			grid.syncData = None
-			grid.update(true)
-			grid.justSynced = false
+		if(!lagging) {
+			if (!grid.justSynced) {
+				grid.update(false)
+			} else {
+				log.info(s"now sync: ${System.currentTimeMillis()}")
+				grid.sync(grid.syncData)
+				grid.syncData = None
+				grid.update(true)
+				grid.justSynced = false
+			}
+			grid.savedGrid += (grid.frameCount -> grid.getGridSyncData)
+			grid.savedGrid -= (grid.frameCount - Protocol.savingFrame - Protocol.advanceFrame)
 		}
-		grid.savedGrid += (grid.frameCount -> grid.getGridSyncData)
-		grid.savedGrid -= (grid.frameCount - Protocol.savingFrame - Protocol.advanceFrame)
 	}
 
 	gameScene.setGameSceneListener(new GameScene.GameSceneListener {

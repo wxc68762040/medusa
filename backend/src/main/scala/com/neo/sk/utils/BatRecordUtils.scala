@@ -39,11 +39,11 @@ object BatRecordUtils extends HttpUtil {
           case Right(rsp) =>
             Right(rsp)
           case Left(error) =>
-            log.warn(s"get token parse error:${error.getMessage}")
+            log.error(s"get token parse error:${error.getMessage}")
             Left(error.getMessage)
         }
       case Left(error) =>
-        log.debug(s"get token failed,error:${error.getMessage}")
+        log.error(s"get token failed, error:${error.getMessage}")
         Left(error.getMessage)
     }
   }
