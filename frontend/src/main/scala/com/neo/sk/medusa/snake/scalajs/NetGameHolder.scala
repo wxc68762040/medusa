@@ -422,6 +422,7 @@ object NetGameHolder extends js.JSApp {
                   netInfoHandler.ping = receiveTime - createTime
 
                 case Protocol.DeadInfo(id,myName, myLength, myKill, killerId, killer) =>
+                  println(DeadInfo)
                   if(playerState._2 && id==playerState._1) {
                     grid.removeSnake(myId)
                     playerState = (myId, false)

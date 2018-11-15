@@ -261,6 +261,7 @@ object UserActor {
                 val gameResult = BatRecordUtils.PlayerRecordWrap(BatRecordUtils.PlayerRecord(
                   t.id, AppSettings.gameId, t.name, t.kill, 1, t.length, "", startTime, System.currentTimeMillis()))
                 authActor ! AuthActor.GameResultUpload(gameResult)
+                frontActor ! t
                 Behaviors.same
 							
 //							//测试同步帧丢失用
@@ -334,7 +335,8 @@ object UserActor {
                 val gameResult = BatRecordUtils.PlayerRecordWrap(BatRecordUtils.PlayerRecord(
                   t.id, AppSettings.gameId, t.name, t.kill, 1, t.length, "", startTime, System.currentTimeMillis()))
                 authActor ! AuthActor.GameResultUpload(gameResult)
-                
+                frontActor ! t
+
               case _ =>
                 frontActor ! m
             }
