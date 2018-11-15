@@ -21,9 +21,10 @@ object Protocol {
   case class GridDataSync(
     frameCount: Long,
     snakes: List[SnakeInfo],
-    appleDetails: List[Ap],
+    appleDetails: Option[List[Ap]],
     timestamp: Long
   ) extends GameMessage
+
 
   case object YouHaveLogined extends GameMessage
 
@@ -48,11 +49,12 @@ object Protocol {
   ) extends GameMessage
 
   case class DeadInfo(
-    name: String,
-    length: Int,
-    kill: Int,
-    killerId: String,
-    killer: String
+                       id: String,
+                       name: String,
+                       length: Int,
+                       kill: Int,
+                       killerId: String,
+                       killer: String
   ) extends GameMessage
 
   case class DeadList(
@@ -60,15 +62,14 @@ object Protocol {
   ) extends GameMessage
 
   case class KillList(
+    playerID: String,
     killList: List[(String, String)]
   ) extends GameMessage
 
 
   case class TextMsg(msg: String) extends GameMessage
 
-  case class Id(id: String) extends GameMessage
-
-  case class NewSnakeNameExist(id: Long, name:String, roomId: Long) extends GameMessage
+  //case class Id(id: String) extends GameMessage
 
   case class NewSnakeJoined(id: String, name: String, roomId: Long) extends GameMessage
 
@@ -78,7 +79,7 @@ object Protocol {
 
   case object ReplayOver extends GameMessage
 
-  case class SnakeLeft(id: String, name: String) extends GameMessage
+  case class SnakeDead(id: String, name: String) extends GameMessage
 
   case object NoRoom extends GameMessage
 
@@ -125,7 +126,7 @@ object Protocol {
 
   val square = 4
 
-  val fSpeed = 10
+  val fSpeed = 30
 
   val foodRate = 0.067 //尸体生成食物的倍率
 

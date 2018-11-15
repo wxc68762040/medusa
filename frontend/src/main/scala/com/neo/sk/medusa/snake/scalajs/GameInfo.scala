@@ -4,6 +4,7 @@ import com.neo.sk.medusa.snake.Protocol.GridDataSync
 import com.neo.sk.medusa.snake.{scalajs, _}
 import com.neo.sk.medusa.snake.scalajs.NetGameHolder._
 import org.scalajs.dom
+import org.scalajs.dom.ext.Color
 import org.scalajs.dom.html.{Canvas, Document => _}
 
 /**
@@ -80,22 +81,6 @@ object GameInfo {
             drawTextLine(infoCacheCtx, s"roomId: $myRoomId", leftBegin, 6, baseLine, scaleW, scaleH)
 
           case None =>
-            if (NetGameHolder.firstCome) {
-              infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
-            } else {
-              infoCacheCtx.font = s"${26 * scaleW}px Helvetica"
-              infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
-              infoCacheCtx.shadowBlur = 0
-              infoCacheCtx.fillText(s"Your name   : $deadName", centerX - 150 * scaleW, centerY - 30 * scaleH)
-              infoCacheCtx.fillText(s"Your length  : $deadLength", centerX - 150 * scaleW, centerY)
-              infoCacheCtx.fillText(s"Your kill        : $deadKill", centerX - 150 * scaleW, centerY + 30 * scaleH)
-              infoCacheCtx.fillText(s"Killer             : $yourKiller", centerX - 150 * scaleW, centerY + 60 * scaleH)
-              infoCacheCtx.font = s"${
-                38 * scaleW
-              }px Helvetica"
-              infoCacheCtx.fillText("Ops, Press Space Key To Restart!", centerX - 350 * scaleW, centerY - 150 * scaleH)
-              myProportion = 1.0
-            }
         }
       case "recordNotExist" =>
         infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
@@ -129,7 +114,39 @@ object GameInfo {
         infoCacheCtx.fillText("等待玩家重新开始……",centerX - 150, centerY - 30)
     }
 
+    //用户死亡
+    if(!playerState._2){
+      if(state.contains("playGame")){
+        //玩游戏过程中死亡显示
+        if (NetGameHolder.firstCome) {
+          infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
+        } else {
+          /*infoCacheCtx.clearRect(centerX - 350 * scaleW,centerX - 150 * scaleW,400,200)
+          infoCacheCtx.globalAlpha=0.2
+          infoCacheCtx.fillStyle= Color.Black.toString()
+          infoCacheCtx.fillRect(centerX - 350 * scaleW,centerX - 150 * scaleW,400,200)*/
 
+          infoCacheCtx.font = s"${26 * scaleW}px Helvetica"
+          infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
+          infoCacheCtx.shadowBlur = 1
+          infoCacheCtx.fillText(s"Your name   : $deadName", centerX - 150 * scaleW, centerY - 30 * scaleH)
+          infoCacheCtx.fillText(s"Your length  : $deadLength", centerX - 150 * scaleW, centerY)
+          infoCacheCtx.fillText(s"Your kill        : $deadKill", centerX - 150 * scaleW, centerY + 30 * scaleH)
+          infoCacheCtx.fillText(s"Killer            : $yourKiller", centerX - 150 * scaleW, centerY + 60 * scaleH)
+          infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
+          infoCacheCtx.fillText("Ops, Press Space Key To Restart!", centerX - 350 * scaleW, centerY - 150 * scaleH)
+          myProportion = 1.0
+        }
+      }else if(state.contains("watchRecord")&& NetGameHolder.infoState == "normal"  ){
+        //观看记录时 观看玩家死亡
+        infoCacheCtx.font = "36px Helvetica"
+        infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
+        infoCacheCtx.shadowBlur = 0
+        infoCacheCtx.fillText("您观看的玩家已死亡",centerX - 150, centerY - 30)
+
+      }
+
+    }
 
     infoCacheCtx.font = s"${14 * scaleW}px Helvetica"
 

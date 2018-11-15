@@ -72,13 +72,13 @@ object RoomActor {
             if(isRecord){
               getGameRecorder(ctx, grid, roomId)
             }
-            idle(roomId, 0,ListBuffer[Protocol.GameMessage](), mutable.HashMap[String, (ActorRef[UserActor.Command], String)](),mutable.ListBuffer[String]() ,grid,emptyKeepTime.toMillis/AppSettings.frameRate)
+            idle(roomId, 0,ListBuffer[Protocol.GameMessage](), mutable.HashMap[String, (ActorRef[UserActor.Command], String, Long)](),mutable.ListBuffer[String]() ,grid,emptyKeepTime.toMillis/AppSettings.frameRate)
         }
     }
   }
 
   private def idle(roomId: Long, tickCount: Long, eventList:ListBuffer[Protocol.GameMessage],
-                   userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String)],
+                   userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String, Long)],
                    deadUserList:mutable.ListBuffer[String], grid: GridOnServer, roomEmptyCount: Long)
                   (implicit timer: TimerScheduler[RoomActor.Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
@@ -87,27 +87,29 @@ object RoomActor {
           case t: UserJoinGame =>
             log.info(s"room $roomId got a new player: ${t.playerId}")
             timer.cancel(TimerKey4CloseRec)
-            userMap.put(t.playerId, (t.userActor, t.playerName))
+            userMap.put(t.playerId, (t.userActor, t.playerName, tickCount))
             deadUserList -= t.playerId
             grid.addSnake(t.playerId, t.playerName)
+            //dispatchTo(t.playerId, UserActor.DispatchMsg(Protocol.Id(t.playerId)), userMap)
             eventList.append(Protocol.NewSnakeJoined(t.playerId, t.playerName, roomId))
             dispatch(UserActor.DispatchMsg(Protocol.NewSnakeJoined(t.playerId, t.playerName, roomId)), userMap)
-            if(isRecord){
+            if (isRecord) {
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserJoinRoom(t.playerId, t.playerName, grid.frameCount)
             }
-            idle(roomId,tickCount,eventList,userMap,deadUserList,grid,emptyKeepTime.toMillis/AppSettings.frameRate)
+            idle(roomId, tickCount, eventList, userMap, deadUserList, grid, emptyKeepTime.toMillis / AppSettings.frameRate)
 
           case t: UserDead =>
-            log.info(s"room $roomId, a player ${t.userId} dead")
-            dispatchTo(t.userId, UserActor.DispatchMsg(Protocol.DeadInfo(t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer)), userMap)
-            dispatch(UserActor.DispatchMsg(Protocol.SnakeLeft(t.userId, t.deadInfo.name)), userMap)
-            eventList.append(Protocol.DeadInfo(t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer))
-            eventList.append(Protocol.SnakeLeft(t.userId, t.deadInfo.name))
+            log.info(s"room $roomId , a player ${t.userId}dead")
+            dispatchTo(t.userId, UserActor.DispatchMsg(Protocol.DeadInfo(t.userId, t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer)), userMap)
+            dispatch(UserActor.DispatchMsg(Protocol.SnakeDead(t.userId, t.deadInfo.name)), userMap)
+            eventList.append(Protocol.DeadInfo(t.userId,t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer))
+            eventList.append(Protocol.SnakeDead(t.userId, t.deadInfo.name))
+            
             deadUserList += t.userId
-            if(isRecord){
+            if (isRecord) {
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserLeftRoom(t.userId, t.deadInfo.name, grid.frameCount)
             }
-            if (userMap.keys.forall(u => deadUserList.contains(u))){
+            if (userMap.keys.forall(u => deadUserList.contains(u))) {
               //room empty
               timer.startSingleTimer(TimerKey4CloseRec, CloseRecorder, emptyKeepTime)
             }
@@ -134,20 +136,21 @@ object RoomActor {
             timer.startPeriodicTimer(TimerKey4SyncLoop, Sync, frameRate.millis)
             Behaviors.same
 
-          case t:UserLeft =>
+          case t: UserLeft =>
             grid.removeSnake(t.playerId)
             val userName = userMap(t.playerId)._2
-            dispatch(UserActor.DispatchMsg(Protocol.SnakeLeft(t.playerId, userName)), userMap)
-            eventList.append(Protocol.SnakeLeft(t.playerId, userName))
+            dispatch(UserActor.DispatchMsg(Protocol.SnakeDead(t.playerId, userName)), userMap)
+            eventList.append(Protocol.SnakeDead(t.playerId, userName))
             if (isRecord) {
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserLeftRoom(t.playerId, userMap(t.playerId)._2, grid.frameCount)
             }
             userMap.remove(t.playerId)
             deadUserList -= t.playerId
-            if (userMap.isEmpty && ! deadUserList.contains(t.playerId)){
+            if (userMap.isEmpty && !deadUserList.contains(t.playerId)) {
               //非正常死亡退出
               timer.startSingleTimer(TimerKey4CloseRec, CloseRecorder, emptyKeepTime)
             }
+            if (deadUserList.contains(t.playerId)) deadUserList -= t.playerId
             Behaviors.same
 
           case Sync =>
@@ -158,12 +161,12 @@ object RoomActor {
             val speedUpInfo = grid.getSpeedUpInfo
             grid.resetFoodData()
             val snakeNumber = grid.genWaitingSnake()
-            if(snakeNumber > 0) {
+            if (snakeNumber > 0) {
               eventList.append(grid.getGridSyncData)
               dispatch(UserActor.DispatchMsg(grid.getGridSyncData), userMap)
             }
             if (grid.deadSnakeList.nonEmpty) {
-              grid.deadSnakeList.foreach{s =>
+              grid.deadSnakeList.foreach { s =>
                 grid.removeSnake(s.id)
               }
               eventList.append(Protocol.DeadList(grid.deadSnakeList.map(_.id)))
@@ -171,55 +174,62 @@ object RoomActor {
             }
             grid.killMap.foreach {
               g =>
-                eventList.append(Protocol.KillList(g._2))
-                dispatchTo(g._1, UserActor.DispatchMsg(Protocol.KillList(g._2)), userMap)
+                eventList.append(Protocol.KillList(g._1, g._2))
+                dispatchTo(g._1, UserActor.DispatchMsg(Protocol.KillList(g._1, g._2)), userMap)
+            }
+
+            if (speedUpInfo.nonEmpty) {
+              eventList.append(Protocol.SpeedUp(speedUpInfo))
+              dispatch(UserActor.DispatchMsg(Protocol.SpeedUp(speedUpInfo)), userMap)
+            }
+            if (tickCount % 20 == 5) {
+              val GridSyncData = if (tickCount > 100) {
+                grid.getGridSyncDataNoApp
+              } else {
+                eventList.append(Protocol.SyncApples(grid.getGridSyncData.appleDetails.get))
+                grid.getGridSyncData
+              }
+              if (!(snakeNumber > 0)) { //需要生成蛇的情况下，已经广播过一次全量数据，不再次广播
+                dispatch(UserActor.DispatchMsg(GridSyncData), userMap)
+              }
+            }
+            if (tickCount % 300 == 1) {
+//              dispatch(UserActor.DispatchMsg(Protocol.SyncApples(grid.getGridSyncData.appleDetails.get)), userMap)
+              eventList.append(Protocol.SyncApples(grid.getGridSyncData.appleDetails.get))
+            }
+            userMap.keys.foreach{
+              user =>
+                if((tickCount - userMap(user)._3) % 200 == 1){
+                  dispatchTo(user, UserActor.DispatchMsg(Protocol.SyncApples(grid.getGridSyncData.appleDetails.get)), userMap)
+                }
             }
 
             if (feedApples.nonEmpty) {
               eventList.append(Protocol.FeedApples(feedApples))
+              dispatch(UserActor.DispatchMsg(Protocol.FeedApples(feedApples)), userMap)
             }
             if (eatenApples.nonEmpty) {
               val tmp = Protocol.EatApples(eatenApples.map(r => EatFoodInfo(r._1, r._2)).toList)
+              dispatch(UserActor.DispatchMsg(tmp), userMap)
               eventList.append(tmp)
-            }
-            if (speedUpInfo.nonEmpty) {
-              eventList.append(Protocol.SpeedUp(speedUpInfo))
-            }
-            if (tickCount % 20 == 5) {
-              val GridSyncData = grid.getGridSyncData
-              eventList.append(Protocol.SyncApples(GridSyncData.appleDetails))
-              if (!(snakeNumber > 0)) { //需要生成蛇的情况下，已经广播过一次全量数据，不再次广播
-                dispatch(UserActor.DispatchMsg(GridSyncData), userMap)
-              }
-            } else {
-              if (feedApples.nonEmpty) {
-                dispatch(UserActor.DispatchMsg(Protocol.FeedApples(feedApples)), userMap)
-              }
-              if (eatenApples.nonEmpty) {
-                val tmp = Protocol.EatApples(eatenApples.map(r => EatFoodInfo(r._1, r._2)).toList)
-                dispatch(UserActor.DispatchMsg(tmp), userMap)
-              }
-              if (speedUpInfo.nonEmpty) {
-                dispatch(UserActor.DispatchMsg(Protocol.SpeedUp(speedUpInfo)), userMap)
-              }
             }
             if (tickCount % 20 == 1) {
               eventList.append(Protocol.Ranks(grid.currentRank, grid.historyRankList))
               dispatch(UserActor.DispatchMsg(Protocol.Ranks(grid.currentRank, grid.historyRankList)), userMap)
             }
-            var rEmptyCount=roomEmptyCount
+            var rEmptyCount = roomEmptyCount
             if (isRecord && userMap.exists(u => !deadUserList.contains(u._1))) {
               //房间不空
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.GameRecord(eventList.toList, Some(grid.getGridSyncData))
-            } else if(isRecord && rEmptyCount>0) {
+            } else if (isRecord && rEmptyCount > 0) {
               //房间空了 先同步一分钟数据后不再同步
               rEmptyCount -= 1
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.GameRecord(eventList.toList, Some(grid.getGridSyncData))
-            } else if(isRecord && rEmptyCount<=0) {
+            } else if (isRecord && rEmptyCount <= 0) {
               //房间空了 数据已经同步一分钟了
               //do nothing
             }
-            idle(roomId, newTick, ListBuffer[Protocol.GameMessage](), userMap, deadUserList,grid,rEmptyCount)
+            idle(roomId, newTick, ListBuffer[Protocol.GameMessage](), userMap, deadUserList, grid, rEmptyCount)
 
           case NetTest(id, createTime) =>
             dispatchTo(id, UserActor.DispatchMsg(Protocol.NetDelayTest(createTime)), userMap)
@@ -234,7 +244,7 @@ object RoomActor {
 
           case t: YourUserIsWatched =>
             userMap.get(t.playerId).foreach(a => a._1 ! UserActor.YouAreWatched(t.watcherId, t.watcherRef))
-//            t.watcherRef ! WatcherActor.TransInfo(Protocol.Id(t.playerId))
+            //            t.watcherRef ! WatcherActor.TransInfo(Protocol.Id(t.playerId))
             Behaviors.same
 
           case ChildDead(name, childRef) =>
@@ -252,15 +262,15 @@ object RoomActor {
 
   }
 
-  def dispatchTo(id: String, gameOutPut: UserActor.DispatchMsg, userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String)]): Unit = {
+  def dispatchTo(id: String, gameOutPut: UserActor.DispatchMsg, userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String, Long)]): Unit = {
     userMap.get(id).foreach { t => t._1 ! gameOutPut }
   }
 
-  def dispatch(gameOutPut: UserActor.Command, userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String)]) = {
+  def dispatch(gameOutPut: UserActor.Command, userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String, Long)]) = {
     userMap.values.foreach { t => t._1 ! gameOutPut }
   }
 
-  def dispatchDistinct(distinctId: String, distinctGameOutPut: UserActor.DispatchMsg, gameOutPut: UserActor.DispatchMsg, userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String)]): Unit = {
+  def dispatchDistinct(distinctId: String, distinctGameOutPut: UserActor.DispatchMsg, gameOutPut: UserActor.DispatchMsg, userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String, Long)]): Unit = {
     userMap.foreach {
       case (id, t) =>
         if (id != distinctId) {

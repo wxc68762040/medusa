@@ -55,7 +55,7 @@ object AuthUtils extends HttpUtil with ServiceUtils {
             Left(error.getMessage)
         }
       case Left(error) =>
-        log.error(s"get token failed,error:${error.getMessage}")
+        //log.error(s"get token failed,error:${error.getMessage}")
         Left(error.getMessage)
     }
   }
