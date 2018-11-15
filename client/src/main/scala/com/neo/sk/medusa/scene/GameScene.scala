@@ -1,6 +1,6 @@
 package com.neo.sk.medusa.scene
 
-//import com.neo.sk.medusa.common.InfoHandler
+import com.neo.sk.medusa.common.InfoHandler
 import javafx.animation.{Animation, KeyFrame, Timeline}
 import javafx.event.{ActionEvent, EventHandler}
 import javafx.scene.{Group, Scene}
@@ -54,16 +54,19 @@ class GameScene() {
   viewCanvas.requestFocus()
 	viewCanvas.setOnKeyPressed(event => gameSceneListener.onKeyPressed(event.getCode))
 
-	//val infoHandler = new InfoHandler
+	val infoHandler = new InfoHandler
 
 	def draw(myId:String, data: Protocol.GridDataSync,historyRank:List[Score], currentRank:List[Score], loginAgain:Boolean, scaleW:Double, scaleH:Double): Unit = {
-		//infoHandler.fpsCounter += 1
+		infoHandler.refreshInfo()
+		infoHandler.fpsCounter += 1
+		infoHandler.dataCounter += 1
 		val timeNow = System.currentTimeMillis()
 		view.drawSnake(myId, data, scaleW, scaleH)
     map.drawMap(myId, data, scaleW, scaleH)
 		info.drawInfo(myId, data, historyRank, currentRank,loginAgain, scaleW, scaleH)
 		val drawOnceTime = System.currentTimeMillis() - timeNow
-	  //infoHandler.drawTimeAverage = drawOnceTime.toInt
+	  infoHandler.drawTimeAverage = drawOnceTime.toInt
+
   }
 	def setGameSceneListener(listener: GameSceneListener) {
 		gameSceneListener = listener

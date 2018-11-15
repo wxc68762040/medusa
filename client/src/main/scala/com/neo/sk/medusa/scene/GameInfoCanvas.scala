@@ -59,9 +59,9 @@ class GameInfoCanvas(canvas: Canvas, gameScene: GameScene) {
           drawTextLine(infoCtx, s"your kill = ${mySnake.kill}", leftBegin, 3, baseLine, scale)
           drawTextLine(infoCtx, s"your length = ${mySnake.length} ", leftBegin, 4, baseLine, scale)
          // drawTextLine(infoCtx, s"fps: ${netInfoHandler.fps.formatted("%.2f")} ping:${netInfoHandler.ping.formatted("%.2f")} dataps:${netInfoHandler.dataps.formatted("%.2f")}", leftBegin, 4, baseLine)
-//          drawTextLine(infoCtx, s"fps: ${GameScene.infoHandler.fps.formatted("%.2f")} ping:${InfoHandler.ping.formatted("%.2f")} dataps:${netInfoHandler.dataps.formatted("%.2f")}", leftBegin, 4, baseLine)
-//          drawTextLine(infoCtx, s"drawTimeAverage: ${netInfoHandler.drawTimeAverage}", leftBegin, 5, baseLine)
-          drawTextLine(infoCtx, s"roomId: $myRoomId", leftBegin, 5, baseLine, scale)
+          drawTextLine(infoCtx, s"fps: ${gameScene.infoHandler.fps.formatted("%.2f")}  dataps:${gameScene.infoHandler.dataps.formatted("%.2f")}", leftBegin, 5, baseLine, scale)
+          drawTextLine(infoCtx, s"drawTimeAverage: ${gameScene.infoHandler.drawTimeAverage}", leftBegin, 6, baseLine, scale)
+          drawTextLine(infoCtx, s"roomId: $myRoomId", leftBegin, 7, baseLine, scale)
 
         case None =>
           if (firstCome) {

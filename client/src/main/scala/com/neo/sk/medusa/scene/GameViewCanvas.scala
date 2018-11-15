@@ -132,13 +132,13 @@ class GameViewCanvas(canvas: Canvas, gameScene: GameScene) {
       }
       joints = joints.reverse.enqueue(tail)
       ctx.beginPath()
-      if (id != grid.myId) {
-        ctx.setStroke(Color.web(snake.color))
-        ctx.setEffect(new DropShadow(5 * scale, Color.web(snake.color)))
-      } else {
-        ctx.setStroke(Color.web("rgba(0, 0, 0, 1)"))
-        ctx.setEffect(new DropShadow(5 * scale, Color.web("#FFFFFF")))
-      }
+      //if (id != grid.myId) {
+      ctx.setStroke(Color.web(snake.color))
+      ctx.setEffect(new DropShadow(5 * scale, Color.web(snake.color)))
+//      } else {
+//        ctx.setStroke(Color.web("rgba(0, 0, 0, 1)"))
+//        ctx.setEffect(new DropShadow(5 * scale, Color.web("#FFFFFF")))
+//      }
       val snakeWidth = square * 2 * scale
       ctx.setLineWidth(snakeWidth)
       ctx.moveTo(joints.head.x * scaleW + deviationX, joints.head.y * scaleH + deviationY)
