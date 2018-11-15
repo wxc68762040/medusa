@@ -23,6 +23,8 @@ object GameView  {
 
   val canvas: Canvas = dom.document.getElementById("GameView").asInstanceOf[Canvas]
   private[this] val canvasPic = dom.document.getElementById("canvasPic").asInstanceOf[HTMLElement]
+  private[this] val killerImg = dom.document.getElementById("killerImg").asInstanceOf[HTMLElement]
+  private[this] val championSnake = dom.document.getElementById("championSnake").asInstanceOf[HTMLElement]
   private[this] val ctx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
   def drawGameOn(): Unit = {
@@ -173,6 +175,12 @@ object GameView  {
       cacheCtx.fillStyle = Color.White.toString()
       val snakeName = if(snake.name.length > 15) snake.name.substring(0,14) else snake.name
       cacheCtx.fillText(snakeName, x * scaleW + deviationX - nameLength * 4, y * scaleH + deviationY - 15)
+      if (!playerState._2 && id == myId) {
+        cacheCtx.drawImage(killerImg, x * scaleW + deviationX - nameLength * 4, y * scaleH + deviationY - 15)
+      }
+      if (snake.length >= snakes.maxBy(_.length).length) {
+        cacheCtx.drawImage(championSnake, x * scaleW + deviationX - nameLength * 4 + cacheCtx.measureText(snake.name + " ").width, y * scaleH + deviationY - 15 - 13 * scaleW * myProportion)
+      }
       if (snakeSpeed > fSpeed + 1) {
         cacheCtx.fillText(snakeSpeed.toInt.toString, x * scaleW  + deviationX - nameLength * 4, y * scaleH + deviationY - 25)
       }
