@@ -11,14 +11,16 @@ import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import com.neo.sk.medusa.snake.Protocol._
-import com.neo.sk.medusa.Boot.{roomManager, userManager}
+import com.neo.sk.medusa.Boot.{roomManager, userManager, authActor}
 import akka.stream.typed.scaladsl.{ActorSink, ActorSource}
+import com.neo.sk.medusa.common.AppSettings
 import com.neo.sk.medusa.common.AppSettings.recordPath
 import com.neo.sk.medusa.core.RoomActor.UserLeft
 import com.neo.sk.medusa.core.UserManager.UserGone
 import com.neo.sk.medusa.snake.Protocol
 import io.circe.Decoder
 import com.neo.sk.medusa.protocol.RecordApiProtocol
+import com.neo.sk.utils.BatRecordUtils
 import net.sf.ehcache.transaction.xa.commands.Command
 import org.seekloud.byteobject.MiddleBufferInJvm
 import org.seekloud.byteobject.ByteObject._
@@ -157,7 +159,7 @@ object UserActor {
           case JoinRoomSuccess(rId, roomActor) =>
             roomActor ! RoomActor.UserJoinGame(playerId, playerName, ctx.self)
             frontActor ! Protocol.JoinRoomSuccess(playerId, rId)
-            switchBehavior(ctx, "play", play(playerId, playerName, rId, frontActor, roomActor, watcherMap))
+            switchBehavior(ctx, "play", play(playerId, playerName, rId, System.currentTimeMillis(), frontActor, roomActor, watcherMap))
 
           case JoinRoomFailure(rId, errorCode, reason) =>
             frontActor ! Protocol.JoinRoomFailure(playerId, rId, errorCode, reason)
@@ -225,7 +227,7 @@ object UserActor {
   }
 
 
-  private def play(playerId: String, playerName: String, roomId: Long,
+  private def play(playerId: String, playerName: String, roomId: Long, startTime: Long,
                    frontActor: ActorRef[Protocol.WsMsgSource],
                    roomActor: ActorRef[RoomActor.Command],
                    watcherMap: mutable.HashMap[String, ActorRef[WatcherActor.Command]])
@@ -249,11 +251,17 @@ object UserActor {
                 if(t.id == playerId) {
                   timer.startSingleTimer(UserDeadTimerKey, FrontLeft(frontActor), UserLeftTime)
                   frontActor ! t
-                  switchBehavior(ctx, "wait", wait(playerId, playerName, roomId, frontActor, watcherMap))
+                  switchBehavior(ctx, "wait", wait(playerId, playerName, roomId, startTime, frontActor, watcherMap))
                 } else {
                   frontActor ! t
                   Behaviors.same
                 }
+
+              case t: Protocol.DeadInfo =>
+                val gameResult = BatRecordUtils.PlayerRecordWrap(BatRecordUtils.PlayerRecord(
+                  t.id, AppSettings.gameId, t.name, t.kill, 1, t.length, "", startTime, System.currentTimeMillis()))
+                authActor ! AuthActor.GameResultUpload(gameResult)
+                Behaviors.same
 							
 //							//测试同步帧丢失用
 //              case t: Protocol.GridDataSync =>
@@ -307,7 +315,7 @@ object UserActor {
     }
   }
 
-  private def wait(playerId: String, playerName: String, roomId: Long,
+  private def wait(playerId: String, playerName: String, roomId: Long, startTime: Long,
                    frontActor: ActorRef[Protocol.WsMsgSource],
                    watcherMap: mutable.HashMap[String, ActorRef[WatcherActor.Command]])
                   (implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] =
@@ -321,7 +329,15 @@ object UserActor {
             Behaviors.same
 
           case DispatchMsg(m) =>
-            frontActor ! m
+            m match {
+              case t: Protocol.DeadInfo =>
+                val gameResult = BatRecordUtils.PlayerRecordWrap(BatRecordUtils.PlayerRecord(
+                  t.id, AppSettings.gameId, t.name, t.kill, 1, t.length, "", startTime, System.currentTimeMillis()))
+                authActor ! AuthActor.GameResultUpload(gameResult)
+                
+              case _ =>
+                frontActor ! m
+            }
             Behaviors.same
 
           case t:YouAreWatched =>

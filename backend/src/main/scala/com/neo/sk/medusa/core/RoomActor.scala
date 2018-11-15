@@ -197,7 +197,7 @@ object RoomActor {
 //              dispatch(UserActor.DispatchMsg(Protocol.SyncApples(grid.getGridSyncData.appleDetails.get)), userMap)
               eventList.append(Protocol.SyncApples(grid.getGridSyncData.appleDetails.get))
             }
-            userMap.keys.foreach{
+            userMap.keys.foreach {
               user =>
                 if((tickCount - userMap(user)._3) % 200 == 1){
                   dispatchTo(user, UserActor.DispatchMsg(Protocol.SyncApples(grid.getGridSyncData.appleDetails.get)), userMap)
