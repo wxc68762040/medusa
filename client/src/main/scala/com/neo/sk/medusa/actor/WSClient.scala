@@ -147,10 +147,9 @@ object WSClient {
 				//decode process.
 				val buffer = new MiddleBufferInJvm(bMsg.asByteBuffer)
 				bytesDecode[WsResponse](buffer) match {
-					case Right(v) => v
+					case Right(v) =>
 					case Left(e) =>
 						println(s"decode error: ${e.message}")
-						TextMsg("decode error")
 				}
 		}
 	}

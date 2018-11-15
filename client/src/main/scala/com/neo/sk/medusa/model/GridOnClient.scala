@@ -142,9 +142,11 @@ class GridOnClient(override val boundary: Point) extends Grid {
 					case _ => false
 				}
 			}
-			val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
-			val gridMap = appleMap
-			grid = gridMap
+			if(data.appleDetails.isDefined) {
+				val appleMap = data.appleDetails.get.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
+				val gridMap = appleMap
+				grid = gridMap
+			}
 		}
 	}
 	

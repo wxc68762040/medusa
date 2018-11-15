@@ -340,10 +340,6 @@ object UserActor {
             roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
             Behaviors.stopped
 
-          case t: YouAreUnwatched =>
-            watcherMap.remove(t.watcherId)
-            Behaviors.same
-
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when wait:$x")
             Behaviors.unhandled
