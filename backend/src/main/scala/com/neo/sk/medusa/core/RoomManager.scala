@@ -68,7 +68,7 @@ object RoomManager {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
-          case JoinGame(playerId, playerName, roomId, isNewJoin,userActor) =>
+          case JoinGame(playerId, playerName, roomId, isNewJoin, userActor) =>
             //分配房间 启动相应actor
             if (roomId == -1) {
               //未指定房间
@@ -98,7 +98,9 @@ object RoomManager {
                 } else {
                   //房间未满
                   timer.cancel(RoomEmptyTimerKey(roomId))
-                  if(isNewJoin) roomNumMap.update(roomId, roomNumMap(roomId) + 1)
+                  if(isNewJoin) {
+                    roomNumMap.update(roomId, roomNumMap(roomId) + 1)
+                  }
                   userRoomMap.put(playerId, (roomId, playerName))
                   userActor ! UserActor.JoinRoomSuccess(roomId, getRoomActor(ctx, roomId))
                 }
@@ -111,12 +113,12 @@ object RoomManager {
             Behaviors.same
 
           case UserLeftRoom(playerId, roomId) =>
-            if(userRoomMap.get(playerId).nonEmpty){
-              if(roomNumMap(roomId)-1<=0){
-                roomNumMap.update(roomId,roomNumMap(roomId)-1)
-                timer.startSingleTimer(RoomEmptyTimerKey(roomId),RoomEmptyKill(roomId),5.minutes)
-              }else{
-                roomNumMap.update(roomId,roomNumMap(roomId)-1)
+            if(userRoomMap.get(playerId).nonEmpty) {
+              if (roomNumMap(roomId) - 1 <= 0) {
+                roomNumMap.update(roomId, 0)
+                timer.startSingleTimer(RoomEmptyTimerKey(roomId), RoomEmptyKill(roomId), 5.minutes)
+              } else {
+                roomNumMap.update(roomId, roomNumMap(roomId) - 1)
               }
               userRoomMap.remove(playerId)
             }

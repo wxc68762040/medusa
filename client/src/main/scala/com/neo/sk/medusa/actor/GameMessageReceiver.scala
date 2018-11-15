@@ -5,11 +5,10 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors, StashBuffer, TimerSch
 import com.neo.sk.medusa.ClientBoot
 import com.neo.sk.medusa.controller.GameController
 import com.neo.sk.medusa.model.GridOnClient
-import com.neo.sk.medusa.snake.Protocol.{FailMsgServer, GameMessageBeginning, HeartBeat, WsMsgSource}
+import com.neo.sk.medusa.snake.Protocol._
 import com.neo.sk.medusa.snake.{Apple, Point, Protocol}
 import org.slf4j.LoggerFactory
-
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
 
 /**
 	* Created by wangxicheng on 2018/10/19.
@@ -17,19 +16,25 @@ import scala.concurrent.duration.FiniteDuration
 object GameMessageReceiver {
 	
 	case class ControllerInitial(controller: GameController) extends GameMessageBeginning
+	case object TimerKeyForLagControl
 	
 	private[this] val log = LoggerFactory.getLogger(this.getClass)
 	private[this] var grid: GridOnClient = _
 	
 	def create(): Behavior[WsMsgSource] = {
 		Behaviors.setup[WsMsgSource] { ctx =>
-			implicit val stashBuffer: StashBuffer[WsMsgSource] = StashBuffer[WsMsgSource](Int.MaxValue)
-			switchBehavior(ctx, "waiting", waiting("", -1L))
+			Behaviors.withTimers[WsMsgSource] { t =>
+				implicit val stashBuffer: StashBuffer[WsMsgSource] = StashBuffer[WsMsgSource](Int.MaxValue)
+				implicit val timer: TimerScheduler[WsMsgSource] = t
+				switchBehavior(ctx, "waiting", waiting("", -1L))
+			}
 		}
 	}
 	
 	private def waiting(myId: String, myRoomId: Long)
-										 (implicit stashBuffer: StashBuffer[WsMsgSource]): Behavior[WsMsgSource] = {
+										 (implicit 	stashBuffer: StashBuffer[WsMsgSource],
+																timer: TimerScheduler[WsMsgSource]
+										 ): Behavior[WsMsgSource] = {
 		Behaviors.receive { (ctx, msg) =>
 			msg match {
 				case m: GameMessageBeginning =>
@@ -47,7 +52,9 @@ object GameMessageReceiver {
 	}
 	
 	private def running(myId: String, myRoomId: Long, gameController: GameController)
-										 (implicit stashBuffer: StashBuffer[WsMsgSource]): Behavior[WsMsgSource] = {
+										 (implicit 	stashBuffer: StashBuffer[WsMsgSource],
+																timer: TimerScheduler[WsMsgSource]
+										 ): Behavior[WsMsgSource] = {
 		Behaviors.receive[WsMsgSource] { (ctx, msg) =>
 			msg match {
 				case Protocol.JoinRoomSuccess(id, roomId)=>
@@ -157,6 +164,7 @@ object GameMessageReceiver {
 				case data: Protocol.GridDataSync =>
 					log.info(s"get sync: ${System.currentTimeMillis()}")
 					ClientBoot.addToPlatform {
+						setLagTrigger
 						if (!grid.init) {
 							grid.init = true
 							gameController.startGameLoop()
@@ -205,6 +213,12 @@ object GameMessageReceiver {
 					log.info(s"get HeartBeat")
 					Behavior.same
 					
+				case LagSet =>
+					ClientBoot.addToPlatform {
+						GameController.lagging = true
+					}
+					Behaviors.same
+					
 				case x =>
 					Behavior.same
 			}
@@ -217,5 +231,13 @@ object GameMessageReceiver {
 																	(implicit stashBuffer: StashBuffer[WsMsgSource]) = {
 		log.debug(s"${ctx.self.path} becomes $behaviorName behavior.")
 		stashBuffer.unstashAll(ctx, behavior)
+	}
+	
+	private[this] def setLagTrigger(implicit timer: TimerScheduler[WsMsgSource]): Unit = {
+		if(!GameController.lagging) {
+			timer.cancel(TimerKeyForLagControl)
+		}
+		GameController.lagging = false
+		timer.startSingleTimer(TimerKeyForLagControl, LagSet, Protocol.lagLimitTime.millis)
 	}
 }

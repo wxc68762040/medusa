@@ -31,7 +31,7 @@ import scala.concurrent.duration._
 
 object UserActor {
   private val log = LoggerFactory.getLogger(this.getClass)
-
+  private var counter = 0
   private final val InitTime = Some(5.minutes)
 
   private final case object BehaviorChangeKey
@@ -137,7 +137,7 @@ object UserActor {
       (ctx, msg) =>
         msg match {
           case StartGame(_, _, roomId,isNewUser) =>
-            roomManager ! RoomManager.JoinGame(playerId, playerName, roomId, isNewUser,ctx.self)
+            roomManager ! RoomManager.JoinGame(playerId, playerName, roomId, isNewUser, ctx.self)
             Behaviors.same
 
           case ReplayGame(recordId, watchPlayerId, frame)=>
@@ -239,9 +239,7 @@ object UserActor {
             watcherMap.values.foreach(t => t ! WatcherActor.TransInfo(m))
             m match {
               case t: Protocol.SnakeLeft =>
-                //如果死亡十分钟后无操作 则杀死userActor
-                //fixme
-                if(t.id==playerId) {
+                if(t.id == playerId) {
                   timer.startSingleTimer(UserDeadTimerKey, FrontLeft(frontActor), 10.minutes)
                   frontActor ! t
                   timer.startPeriodicTimer(HeartBeatKey, HeartBeat, 50.seconds)
@@ -250,6 +248,14 @@ object UserActor {
                   frontActor ! t
                   Behaviors.same
                 }
+
+              case t: Protocol.GridDataSync =>
+                counter += 1
+                if(counter % 30 <= 20) {
+                  frontActor ! t
+                }
+                Behaviors.same
+                
               case x =>
                 frontActor ! x
                 Behaviors.same
@@ -324,7 +330,8 @@ object UserActor {
           case RestartGame =>
             //重新开始游戏
             timer.cancel(UserDeadTimerKey)
-            ctx.self ! StartGame(playerId, playerName, roomId,isNewUser = false)
+            timer.cancel(HeartBeatKey)
+            ctx.self ! StartGame(playerId, playerName, roomId, isNewUser = false)
             switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor, watcherMap))
 
           case FrontLeft(front) =>
@@ -363,8 +370,22 @@ object UserActor {
 
 
   def flow(userActor: ActorRef[Command])(implicit decoder: Decoder[UserAction]): Flow[UserAction, WsMsgSource, Any] = {
-    var front: ActorRef[WsMsgSource] = null
-
+    val in =
+      Flow[UserAction]
+        .map {
+          case Protocol.Key(id, keyCode, frame) =>
+            if (keyCode == KeyEvent.VK_SPACE) {
+              RestartGame
+            } else {
+              Key(id, keyCode, frame)
+            }
+          case Protocol.NetTest(id, createTime) =>
+            NetTest(id, createTime)
+          case x =>
+            UnKnowAction(x)
+        }
+        .to(sink(userActor))
+    
     val out =
       ActorSource.actorRef[WsMsgSource](
         completionMatcher = {
@@ -376,29 +397,10 @@ object UserActor {
         bufferSize = 64,
         overflowStrategy = OverflowStrategy.dropHead
       ).mapMaterializedValue { frontActor =>
-        front = frontActor
         userActor ! UserFrontActor(frontActor)
       }
-    
-    val in =
-      Flow[UserAction]
-        .map {
-          case Protocol.Key(id, keyCode, frame) =>
-            if (keyCode == KeyEvent.VK_SPACE) {
-              RestartGame
-            } else {
-              Key(id, keyCode, frame)
-            }
-        
-          case Protocol.NetTest(id, createTime) =>
-            NetTest(id, createTime)
-          case x =>
-            UnKnowAction(x)
-        }
-        .to(sink(userActor, front))
-
+  
     Flow.fromSinkAndSource(in, out)
-
   }
 
   def watchFlow(userActor: ActorRef[Command])(implicit decoder: Decoder[UserAction]): Flow[UserAction, WsMsgSource, Any] = {
@@ -428,7 +430,7 @@ object UserActor {
 
   }
 
-  private def sink(actor: ActorRef[Command], frontActor: ActorRef[WsMsgSource]) = ActorSink.actorRef[Command](
+  private def sink(actor: ActorRef[Command]) = ActorSink.actorRef[Command](
     ref = actor,
     onCompleteMessage = UserLeft,
     onFailureMessage = FailureMessage

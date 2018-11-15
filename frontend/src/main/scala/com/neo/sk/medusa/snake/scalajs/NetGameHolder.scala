@@ -47,14 +47,15 @@ object NetGameHolder extends js.JSApp {
   var deadKill=0
   var basicTime = 0L
   var nextAnimation = 0.0 //保存requestAnimationFrame的ID
-  var gameLoopControl = 0 //保存gameLoop的setInterval的ID
+  var lagControl = 0 //保存lag开关的setInterval的ID
   var myProportion = 1.0
   var eatenApples  = Map[String, List[AppleWithFrame]]()
 
 
   val grid = new GridOnClient(bounds)
   var firstCome = true
-  var wsSetup = false
+  var wsSetup = false // WebSocket是否连接中
+  var lagging = true // 是否严重延迟中
   var justSynced = false
   var myRoomId = -1l
 
@@ -96,15 +97,22 @@ object NetGameHolder extends js.JSApp {
     dom.window.requestAnimationFrame(drawLoop())
   }
 
-
+  def setLagTrigger(): Unit = {
+    if(!lagging) {
+      dom.window.clearTimeout(lagControl)
+    }
+    lagging = false
+    lagControl = dom.window.setTimeout(() => lagging = true, Protocol.lagLimitTime)
+  }
+  
   def startLoop(): Unit = {
     gameLoop()
-    gameLoopControl = dom.window.setInterval(() => gameLoop(), Protocol.frameRate)
+    dom.window.setInterval(() => gameLoop(), Protocol.frameRate)
   }
 
   def gameLoop(): Unit = {
     basicTime = System.currentTimeMillis()
-    if (wsSetup) {
+    if (wsSetup && !lagging) {
       if (!justSynced) {
         update(false)
       } else {
@@ -113,23 +121,24 @@ object NetGameHolder extends js.JSApp {
         update(true)
         justSynced = false
       }
+      savedGrid += (grid.frameCount -> grid.getGridSyncData)
+      savedGrid -= (grid.frameCount-Protocol.savingFrame-Protocol.advanceFrame)
     }
-    savedGrid += (grid.frameCount -> grid.getGridSyncData)
-    savedGrid -= (grid.frameCount-Protocol.savingFrame-Protocol.advanceFrame)
   }
 
   def drawLoop(): Double => Unit = { _ =>
     nextAnimation = dom.window.requestAnimationFrame(drawLoop())
-
-    windowWidth = dom.document.documentElement.clientWidth
-    windowHeight = dom.document.documentElement.clientHeight
-    val newWindowWidth = windowWidth
-    val newWindowHight = windowHeight
-    val scaleW = (newWindowWidth.toDouble / initWindowWidth.toDouble)
-    val scaleH = (newWindowHight.toDouble / initWindowHeight.toDouble)
-    draw(scaleW,scaleH)
-    canvasBoundary = Point(dom.document.documentElement.clientWidth,dom.document.documentElement.clientHeight)
-    mapBoundary = Point((LittleMap.w * scaleW).toInt ,(LittleMap.h * scaleH).toInt )
+    if (!lagging) {
+      windowWidth = dom.document.documentElement.clientWidth
+      windowHeight = dom.document.documentElement.clientHeight
+      val newWindowWidth = windowWidth
+      val newWindowHight = windowHeight
+      val scaleW = newWindowWidth.toDouble / initWindowWidth.toDouble
+      val scaleH = newWindowHight.toDouble / initWindowHeight.toDouble
+      draw(scaleW, scaleH)
+      canvasBoundary = Point(dom.document.documentElement.clientWidth, dom.document.documentElement.clientHeight)
+      mapBoundary = Point((LittleMap.w * scaleW).toInt, (LittleMap.h * scaleH).toInt)
+    }
   }
 
   def moveEatenApple(): Unit = {
@@ -178,7 +187,7 @@ object NetGameHolder extends js.JSApp {
     grid.update(isSynced: Boolean)
   }
 
-  def draw(scaleW: Double,scaleH: Double ): Unit = {
+  def draw(scaleW: Double, scaleH: Double): Unit = {
     netInfoHandler.fpsCounter += 1
     if (wsSetup) {
       val data = grid.getGridSyncData
@@ -199,9 +208,6 @@ object NetGameHolder extends js.JSApp {
 
 
   def joinGame(path:String, parameters:String): Unit = {
-    //joinButton.disabled = true
-    val playground = dom.document.getElementById("playground")
-    //playground.innerHTML = s"Trying to join game ."
     val gameStream = new WebSocket(getWebSocketUri(dom.document, path, parameters))
 
     gameStream.onopen = { (event0: Event) =>
@@ -209,9 +215,7 @@ object NetGameHolder extends js.JSApp {
         val pingMsg = netInfoHandler.refreshNetInfo()
         gameStream.send(pingMsg)
       }, Protocol.netInfoRate)
-      //      dom.window.setInterval(() => netInfoHandler.refreshDataInfo(),Protocol.dataCounterRate)
       GameView.drawGameOn()
-      //playground.insertBefore(p("Game connection was successful!"), playground.firstChild)
       wsSetup = true
       if(state.contains("playGame")) {
         //GameView.canvas.focus()
@@ -268,11 +272,12 @@ object NetGameHolder extends js.JSApp {
 //                  infoState = "normal"
                 case Protocol.Id(id) =>
                   myId = id
+                  
                 case Protocol.TextMsg(message) =>
-                //                  writeToArea(s"MESSAGE: $message")
+                
                 case Protocol.NewSnakeJoined(id, user, roomId) =>
                   myRoomId = roomId
-                //                  writeToArea(s"$user joined!")
+                  
                 case Protocol.NewSnakeNameExist(id, name, roomId)=>
 
                 case Protocol.YouHaveLogined =>
@@ -286,10 +291,10 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.ReplayOver =>
                   infoState = "replayOver"
                   grid.snakes = Map.empty[String, SnakeInfo]
-//                  nameExist.innerHTML = "名字已存在"
+                  
                 case Protocol.SnakeLeft(id, user) =>
                   grid.removeSnake(id)
-//                  writeToArea(s"$user left!")
+                  
                 case Protocol.SnakeAction(id, keyCode, frame) =>
                   if(state.contains("playGame")) {
                     if (id != myId) {
@@ -298,6 +303,7 @@ object NetGameHolder extends js.JSApp {
                   } else {
 										grid.addActionWithFrame(id, keyCode, frame)
 									}
+                
                 case Protocol.DistinctSnakeAction(keyCode, frame ,frontFrame) =>
 //                  println(s"当前前端帧数frameCount:${grid.frameCount}")
 //                  println(s"actionMap保存最大帧数:${grid.actionMap.keySet.max}")
@@ -320,8 +326,8 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.Ranks(current, history) =>
                   GameInfo.currentRank = current
                   GameInfo.historyRank = history
+                  
                 case Protocol.FeedApples(apples) =>
-                  //                  writeToArea(s"apple feeded = $apples") //for debug.
                   grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt))
 
                 case Protocol.EatApples(apples) =>
@@ -364,13 +370,14 @@ object NetGameHolder extends js.JSApp {
                     val timeout = 100 - (System.currentTimeMillis() - data.timestamp) % 100
                     dom.window.setTimeout(() => startLoop(), timeout)
                   }
+                  setLagTrigger()
                   syncData = Some(data)
                   justSynced = true
+                  
                 case Protocol.NetDelayTest(createTime) =>
                   val receiveTime = System.currentTimeMillis()
                   netInfoHandler.ping = receiveTime - createTime
-//                  val m = s"Net Delay Test: createTime=$createTime, receiveTime=$receiveTime, twoWayDelay=${receiveTime - createTime}, ping: ${netInfoHandler.ping}"
-//                  writeToArea(m)
+
                 case Protocol.DeadInfo(myName, myLength, myKill, killerId, killer) =>
                   grid.removeSnake(myId)
                   deadName = myName
