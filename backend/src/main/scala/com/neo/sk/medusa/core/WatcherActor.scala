@@ -125,7 +125,7 @@ object WatcherActor {
             idle(watcherId, watchedId, roomId, newFront)
 
           case GetWatchedId(id) =>
-            frontActor ! Protocol.Id(id)
+            frontActor ! Protocol.JoinRoomSuccess(id,roomId)
             Behaviors.same
 
           case TransInfo(x) =>

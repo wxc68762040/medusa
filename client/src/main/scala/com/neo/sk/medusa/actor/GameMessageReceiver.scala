@@ -63,12 +63,7 @@ object GameMessageReceiver {
 						gameController.gameStop()
 					}
 					Behavior.stopped
-					
-				case Protocol.Id(id) =>
-					ClientBoot.addToPlatform {
-						grid.myId = id
-					}
-					running(id, myRoomId, gameController)
+
 				
 				case Protocol.TextMsg(message) =>
 					log.info(s"get TextMsg: $message")
@@ -83,11 +78,9 @@ object GameMessageReceiver {
 				case Protocol.NewSnakeJoined(id, user, roomId) =>
 					log.info(s"new user $user joined")
 					Behavior.same
-					
-				case Protocol.NewSnakeNameExist(id, name, roomId)=>
-					Behavior.same
+
 				
-				case Protocol.SnakeLeft(id, user) =>
+				case Protocol.SnakeDead(id, user) =>
 					ClientBoot.addToPlatform {
 						grid.removeSnake(id)
 					}
@@ -175,14 +168,15 @@ object GameMessageReceiver {
 					//					netInfoHandler.ping = receiveTime - createTime
 					Behavior.same
 				
-				case Protocol.DeadInfo(myName, myLength, myKill, killerId, killer) =>
-					ClientBoot.addToPlatform {
-						grid.deadName = myName
-						grid.deadLength = myLength
-						grid.deadKill = myKill
-						grid.yourKiller = killer
-						grid.removeSnake(myId)
-					}
+				case Protocol.DeadInfo(id,myName, myLength, myKill, killerId, killer) =>
+					if(id==myId){
+            ClientBoot.addToPlatform {
+            grid.deadName = myName
+            grid.deadLength = myLength
+            grid.deadKill = myKill
+            grid.yourKiller = killer
+          }
+          }
 					Behavior.same
 				
 				case Protocol.DeadList(deadList) =>

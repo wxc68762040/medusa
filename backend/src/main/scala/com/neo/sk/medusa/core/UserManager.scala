@@ -94,7 +94,8 @@ object UserManager {
             Behaviors.same
 
           case GetRecordFrame(recordId, playerId, sender) =>
-            if(allUser.get(playerId).isEmpty){
+            val childName = s"UserActor-$playerId"
+            if(ctx.child(childName).isEmpty){
               sender ! RecordApiProtocol.FrameInfo( -1, -1)
             }else{
               getUserActor(ctx, playerId, "player4watch") ! UserActor.GetRecordFrame(recordId, sender)
@@ -130,6 +131,7 @@ object UserManager {
       actor
     }.upcast[UserActor.Command]
   }
+
 
   private def getWebSocketFlow(userActor: ActorRef[UserActor.Command]): Flow[Message, Message, Any] = {
     Flow[Message]

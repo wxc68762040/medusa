@@ -39,10 +39,14 @@ class GridOnClient(override val boundary: Point) extends Grid {
     val keyCode = actMap.get(snake.id)
     val newDirection = {
       val keyDirection = keyCode match {
-        case Some(KeyEvent.VK_LEFT) => Point(-1, 0)
-        case Some(KeyEvent.VK_RIGHT) => Point(1, 0)
-        case Some(KeyEvent.VK_UP) => Point(0, -1)
-        case Some(KeyEvent.VK_DOWN) => Point(0, 1)
+				case Some(KeyEvent.VK_LEFT) => Point(-1, 0)
+				case Some(KeyEvent.VK_A) => Point(-1, 0)
+				case Some(KeyEvent.VK_RIGHT) => Point(1, 0)
+				case Some(KeyEvent.VK_D) => Point(1, 0)
+				case Some(KeyEvent.VK_UP) => Point(0, -1)
+				case Some(KeyEvent.VK_W) => Point(0, -1)
+				case Some(KeyEvent.VK_DOWN) => Point(0, 1)
+				case Some(KeyEvent.VK_S) => Point(0, 1)
         case _ => snake.direction
       }
       if (keyDirection + snake.direction != Point(0, 0)) {
@@ -168,7 +172,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
 				}
 				snakes += ((mySnake.id, mySnake))
 			}
-			val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
+			val appleMap = data.appleDetails.get.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
 			val gridMap = appleMap
 			grid = gridMap
 		}
