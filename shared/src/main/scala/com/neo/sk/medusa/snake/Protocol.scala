@@ -12,6 +12,7 @@ object Protocol {
   case object CompleteMsgServer extends WsMsgSource
   case class FailMsgServer(ex: Throwable) extends WsMsgSource
   case object HeartBeat extends WsMsgSource
+  case object LagSet extends WsMsgSource
 
 	trait GameMessageBeginning extends WsMsgSource
 	
@@ -138,4 +139,6 @@ object Protocol {
   //val savingFrame = 5 //保存的帧数
 
   val netInfoRate = 1000
+  
+  val lagLimitTime = 6 * 1000 //距离上次接受同步帧超过6秒，停止绘制及前端更新
 }
