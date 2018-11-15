@@ -117,7 +117,6 @@ object WSClient {
 			case TextMessage.Strict(msg) =>
 				import io.circe.generic.auto._
 				import scala.concurrent.ExecutionContext.Implicits.global
-
 				log.debug(s"msg from webSocket: $msg")
 				val gameId = AppSettings.gameId
         if(msg.length > 50) {
