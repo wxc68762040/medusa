@@ -193,7 +193,7 @@ object GameMessageReceiver {
 					}
 					Behavior.same
 				
-				case Protocol.KillList(killList) =>
+				case Protocol.KillList(playerID, killList) =>
 					ClientBoot.addToPlatform {
 						grid.waitingShowKillList :::= killList.map(e => (e._1, e._2, System.currentTimeMillis()))
 					}

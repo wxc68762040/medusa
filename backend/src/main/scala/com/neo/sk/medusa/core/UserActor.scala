@@ -31,15 +31,14 @@ import scala.concurrent.duration._
 
 object UserActor {
   private val log = LoggerFactory.getLogger(this.getClass)
-  private var counter = 0
+  
+//	private var counter = 0
+	
   private final val InitTime = Some(5.minutes)
 
   private final val UserLeftTime = 10.minutes
 
-  private final val HeartBeatTime = 50.seconds
-
   private final case object BehaviorChangeKey
-  private final case object HeartBeatKey
 
   sealed trait Command
 
@@ -92,8 +91,6 @@ object UserActor {
   case object ReplayOver extends Command
 
   case object KillSelf extends Command
-  
-  case object HeartBeat extends Command //wait 状态下保持websocket用
 
   def create(playerId: String, playerName: String): Behavior[Command] = {
     Behaviors.setup[Command] {
@@ -249,7 +246,7 @@ object UserActor {
             m match {
               case t: Protocol.SnakeDead =>
                 //如果死亡十分钟后无操作 则杀死userActor
-                if(t.id==playerId) {
+                if(t.id == playerId) {
                   timer.startSingleTimer(UserDeadTimerKey, FrontLeft(frontActor), UserLeftTime)
                   frontActor ! t
                   switchBehavior(ctx, "wait", wait(playerId, playerName, roomId, frontActor, watcherMap))
@@ -257,14 +254,15 @@ object UserActor {
                   frontActor ! t
                   Behaviors.same
                 }
-
-              case t: Protocol.GridDataSync =>
-                counter += 1
-                if(counter % 30 <= 20) {
-                  frontActor ! t
-                }
-                Behaviors.same
-                
+							
+//							//测试同步帧丢失用
+//              case t: Protocol.GridDataSync =>
+//                counter += 1
+//                if(counter % 30 <= 20) {
+//                  frontActor ! t
+//                }
+//                Behaviors.same
+              
               case x =>
                 frontActor ! x
                 Behaviors.same
@@ -339,7 +337,6 @@ object UserActor {
           case RestartGame =>
             //重新开始游戏
             timer.cancel(UserDeadTimerKey)
-            timer.cancel(HeartBeatKey)
             ctx.self ! StartGame(playerId, playerName, roomId, isNewUser = false)
             switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor, watcherMap))
 
