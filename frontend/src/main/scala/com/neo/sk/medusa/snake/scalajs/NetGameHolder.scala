@@ -378,7 +378,8 @@ object NetGameHolder extends js.JSApp {
                 //                  val m = s"Net Delay Test: createTime=$createTime, receiveTime=$receiveTime, twoWayDelay=${receiveTime - createTime}, ping: ${netInfoHandler.ping}"
                 //                  writeToArea(m)
                 case Protocol.DeadInfo(id, myName, myLength, myKill, killerId, killer) =>
-                  if(playerState._2 && id==playerState._1){
+                  println(Protocol.DeadInfo(id, myName, myLength, myKill, killerId, killer)+"   "+playerState._2)
+                    if(playerState._2 && id==playerState._1){
                     grid.removeSnake(myId)
                     //todo  观看录像时有问题
                     playerState = (myId, false)
@@ -391,7 +392,7 @@ object NetGameHolder extends js.JSApp {
                     deadKill = myKill
                     yourKiller = killer
                   }
-
+                  println("--"+playerState._1)
                 case Protocol.DeadList(deadList) =>
                   //其他蛇死亡
                   deadList.filter(_ != playerState._1).foreach(i => grid.snakes -= i)

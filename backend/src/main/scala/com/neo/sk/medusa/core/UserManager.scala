@@ -32,7 +32,13 @@ object UserManager {
 
   final case class GetReplayWebSocketFlow(recordId: Long, playerId: String, watchPlayerId: String, frame: Long, replyTo: ActorRef[Flow[Message, Message, Any]]) extends Command
 
-  case class YourUserUnwatched(playerId: String, watcherId: String) extends Command
+  /**
+    *
+    * @param playerId
+    * @param watcherId
+    * @param roomId
+    */
+  case class YourUserUnwatched(playerId: String, watcherId: String,roomId:Long) extends Command
 
   case class GetRecordFrame(recordId:Long, playerId:String, sender:ActorRef[RecordApiProtocol.FrameInfo]) extends Command
 
@@ -102,9 +108,9 @@ object UserManager {
             }
             Behaviors.same
 
-          case t: YourUserUnwatched =>
-            getUserActor(ctx, t.playerId, "") ! UserActor.YouAreUnwatched(t.watcherId)
-            Behaviors.same
+//          case t: YourUserUnwatched =>
+//            getUserActor(ctx, t.playerId, "") ! UserActor.YouAreUnwatched(t.watcherId)
+//            Behaviors.same
 
           case UserGone(playerId) =>
             allUser.remove(playerId)

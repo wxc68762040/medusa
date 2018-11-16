@@ -114,11 +114,11 @@ object UserActor {
           case UserFrontActor(frontActor) =>
             ctx.watchWith(frontActor, FrontLeft(frontActor))
             userManager ! UserManager.UserReady(playerId, ctx.self, 0)
-            switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor, mutable.HashMap[String, ActorRef[WatcherActor.Command]]()))
+            switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor)) //, mutable.HashMap[String, ActorRef[WatcherActor.Command]]()
 
           case UserWatchFrontActor(frontActor) =>
             userManager ! UserManager.UserReady(playerId, ctx.self, 1)
-            switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor, mutable.HashMap[String, ActorRef[WatcherActor.Command]]()))
+            switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor))//--, mutable.HashMap[String, ActorRef[WatcherActor.Command]]()
 
           case TimeOut(m) =>
             log.debug(s"${ctx.self.path} is time out when busy,msg=$m")
@@ -135,8 +135,9 @@ object UserActor {
         }
     }
 
-  private def idle(playerId: String, playerName: String, frontActor: ActorRef[Protocol.WsMsgSource],
-    watcherMap: mutable.HashMap[String, ActorRef[WatcherActor.Command]])(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
+  private def idle(playerId: String, playerName: String, frontActor: ActorRef[Protocol.WsMsgSource]
+//                   ,watcherMap: mutable.HashMap[String, ActorRef[WatcherActor.Command]]
+                  )(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
@@ -160,7 +161,7 @@ object UserActor {
           case JoinRoomSuccess(rId, roomActor) =>
             roomActor ! RoomActor.UserJoinGame(playerId, playerName, ctx.self)
             frontActor ! Protocol.JoinRoomSuccess(playerId, rId)
-            switchBehavior(ctx, "play", play(playerId, playerName, rId, frontActor, roomActor, watcherMap))
+            switchBehavior(ctx, "play", play(playerId, playerName, rId, frontActor, roomActor)) //----------------
 
           case JoinRoomFailure(rId, errorCode, reason) =>
             frontActor ! Protocol.JoinRoomFailure(playerId, rId, errorCode, reason)
@@ -225,8 +226,9 @@ object UserActor {
 
   private def play(playerId: String, playerName: String, roomId: Long,
                    frontActor: ActorRef[Protocol.WsMsgSource],
-                   roomActor: ActorRef[RoomActor.Command],
-                   watcherMap: mutable.HashMap[String, ActorRef[WatcherActor.Command]])
+                   roomActor: ActorRef[RoomActor.Command]
+//                   watcherMap: mutable.HashMap[String, ActorRef[WatcherActor.Command]]
+                  )
                   (implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
@@ -240,7 +242,13 @@ object UserActor {
             Behaviors.same
 
           case DispatchMsg(m) =>
-            watcherMap.values.foreach(t => t ! WatcherActor.TransInfo(m))
+
+            /**
+              * prepare to delete
+              */
+//            watcherMap.values.foreach(t => t ! WatcherActor.TransInfo(m))
+
+
             m match {
               case t: Protocol.SnakeDead =>
                 //如果死亡十分钟后无操作 则杀死userActor
@@ -249,7 +257,7 @@ object UserActor {
                   timer.startSingleTimer(UserDeadTimerKey, FrontLeft(frontActor), UserLeftTime)
                   frontActor ! t
                   timer.startPeriodicTimer(HeartBeatKey, HeartBeat,HeartBeatTime )
-                  switchBehavior(ctx, "wait", wait(playerId, playerName, roomId, frontActor, watcherMap))
+                  switchBehavior(ctx, "wait", wait(playerId, playerName, roomId, frontActor)) //------------
                 } else {
                   frontActor ! t
                   Behaviors.same
@@ -262,14 +270,14 @@ object UserActor {
           case RestartGame =>
             Behaviors.same
 
-          case t:YouAreWatched =>
-              watcherMap.put(t.watcherId, t.watcherRef)
-            t.watcherRef ! WatcherActor.GetWatchedId(playerId)
-            Behaviors.same
+//          case t:YouAreWatched =>
+//            watcherMap.put(t.watcherId, t.watcherRef)
 
-          case t: YouAreUnwatched =>
-            watcherMap.remove(t.watcherId)
-            Behaviors.same
+//            Behaviors.same
+
+//          case t: YouAreUnwatched =>
+//            watcherMap.remove(t.watcherId)
+//            Behaviors.same
 
           case UnKnowAction(unknownMsg) =>
             log.debug(s"${ctx.self.path} receive an UnKnowAction when play:$unknownMsg")
@@ -299,8 +307,9 @@ object UserActor {
   }
 
   private def wait(playerId: String, playerName: String, roomId: Long,
-                   frontActor: ActorRef[Protocol.WsMsgSource],
-                   watcherMap: mutable.HashMap[String, ActorRef[WatcherActor.Command]])
+                   frontActor: ActorRef[Protocol.WsMsgSource]
+//                   watcherMap: mutable.HashMap[String, ActorRef[WatcherActor.Command]]
+                  )
                   (implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] =
     Behaviors.receive[Command] {
       (ctx, msg) =>
@@ -315,21 +324,26 @@ object UserActor {
             frontActor ! m
             Behaviors.same
 
-          case t:YouAreWatched =>
-            watcherMap.put(t.watcherId, t.watcherRef)
-            t.watcherRef ! WatcherActor.GetWatchedId(playerId)
-            t.watcherRef ! WatcherActor.PlayerWait
-            Behaviors.same
-
-          case t: YouAreUnwatched =>
-            watcherMap.remove(t.watcherId)
-            Behaviors.same
+//          /**
+//            * delete 1
+//            */
+//          case t:YouAreWatched =>
+//            watcherMap.put(t.watcherId, t.watcherRef)
+//            t.watcherRef ! WatcherActor.GetWatchedId(playerId)
+//            t.watcherRef ! WatcherActor.PlayerWait
+//            Behaviors.same
+//          /**
+//            * delete 2
+//            */
+//          case t: YouAreUnwatched =>
+//            watcherMap.remove(t.watcherId)
+//            Behaviors.same
 
           case RestartGame =>
             //重新开始游戏
             timer.cancel(UserDeadTimerKey)
             ctx.self ! StartGame(playerId, playerName, roomId,isNewUser = false)
-            switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor, watcherMap))
+            switchBehavior(ctx, "idle", idle(playerId, playerName, frontActor))   //--------------
 
           case FrontLeft(front) =>
             log.info(s"${ctx.self.path} left while wait")
@@ -341,9 +355,6 @@ object UserActor {
             frontActor ! Protocol.HeartBeat
             Behaviors.same
 
-          case t: YouAreUnwatched =>
-            watcherMap.remove(t.watcherId)
-            Behaviors.same
 
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when wait:$x")

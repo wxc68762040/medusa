@@ -106,7 +106,6 @@ object GameInfo {
         infoCacheCtx.fillText("该房间不存在",centerX - 150, centerY - 30)
 
       case "playerWaitingBegin" =>
-        println("------------------------")
         infoCacheCtx.font = "36px Helvetica"
         infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
         infoCacheCtx.shadowBlur = 0
@@ -115,7 +114,7 @@ object GameInfo {
 
     //用户死亡
     if(!playerState._2){
-      if(state.contains("playGame")){
+      if(state.contains("playGame") || state.contains("watchGame")){
         //玩游戏过程中死亡显示
         if (NetGameHolder.firstCome) {
           infoCacheCtx.font = s"${38 * scaleW}px Helvetica"

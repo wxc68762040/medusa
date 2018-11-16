@@ -9,7 +9,7 @@ import akka.util.ByteString
 import org.seekloud.byteobject.ByteObject
 import org.slf4j.LoggerFactory
 import com.neo.sk.medusa.Boot.{roomManager, userManager}
-import com.neo.sk.medusa.core.UserManager.YourUserUnwatched
+import com.neo.sk.medusa.core.RoomManager.YourUserUnwatched
 
 import scala.collection._
 import scala.language.implicitConversions
@@ -39,7 +39,7 @@ object WatcherManager {
 
   case class GetPlayerWatchedRsp(watcherId:String, playerId:String) extends Command
 
-  case class WatcherGone(watcherId:String) extends Command
+  case class WatcherGone(watcherId:String,roomId:Long) extends Command
 
   val behaviors: Behavior[Command] = {
     log.debug(s"WatchManager start...")
@@ -79,7 +79,9 @@ object WatcherManager {
           case t: WatcherGone =>
             val playerWatched = watcherMap.get(t.watcherId).map(_._1)
             if(playerWatched.nonEmpty) {
-              userManager ! YourUserUnwatched(playerWatched.get, t.watcherId)
+//              userManager ! YourUserUnwatched(playerWatched.get, t.watcherId)
+
+              roomManager ! YourUserUnwatched(playerWatched.get, t.watcherId,t.roomId)
               watcherMap.remove(t.watcherId)
             }
             Behaviors.same

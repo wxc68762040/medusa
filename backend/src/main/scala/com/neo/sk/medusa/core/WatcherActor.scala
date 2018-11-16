@@ -70,6 +70,7 @@ object WatcherActor {
   private def init(watcherId: String, watchedId:String, roomId:Long)(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]):Behavior[Command] =
     Behaviors.receive[Command] {
       (ctx, msg) =>
+        println("the state is init")
         msg match {
           case UserFrontActor(frontActor) =>
             ctx.watchWith(frontActor, FrontLeft(frontActor))
@@ -90,7 +91,7 @@ object WatcherActor {
         }
     }
 
-
+  private var s= false
   private def idle(watcherId: String, watchedId:String, roomId:Long, frontActor: ActorRef[Protocol.WsMsgSource])(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
@@ -101,13 +102,14 @@ object WatcherActor {
             
           case FrontLeft(front) =>
             ctx.unwatch(front)
-            watchManager ! WatcherManager.WatcherGone(watcherId)
-            Behaviors.stopped
+            println("action occur when you refresh page")
+            watchManager ! WatcherManager.WatcherGone(watcherId,roomId)
+            Behaviors.same
 
-//          case UserLeft =>
-//            ctx.unwatch(frontActor)
-//            watchManager ! WatcherManager.WatcherGone(watcherId)
-//            Behaviors.same
+          case UserLeft =>
+            ctx.unwatch(frontActor)
+            watchManager ! WatcherManager.WatcherGone(watcherId,roomId)
+            Behaviors.same
 
           case NoRoom =>
             frontActor ! Protocol.NoRoom
@@ -115,14 +117,20 @@ object WatcherActor {
 
           case PlayerWait =>
             frontActor ! Protocol.PlayerWaitingJion
+            println("---- "+Protocol.PlayerWaitingJion)
+            s = true
             Behaviors.same
 
           case UserFrontActor(newFront) =>
+            println("just test !")
             ctx.unwatch(frontActor)
             ctx.watchWith(newFront, FrontLeft(newFront))
             newFront ! Protocol.JoinRoomSuccess(watchedId, roomId)
             frontActor ! YouHaveLogined
+
+            println("this information will print: watcherId: "+watcherId+" watchedId: "+watchedId+" roomId: "+roomId+ "  "+newFront)
             idle(watcherId, watchedId, roomId, newFront)
+
 
           case GetWatchedId(id) =>
             frontActor ! Protocol.JoinRoomSuccess(id,roomId)
