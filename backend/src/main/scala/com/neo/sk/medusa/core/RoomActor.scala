@@ -183,7 +183,7 @@ object RoomActor {
               dispatch(UserActor.DispatchMsg(Protocol.SpeedUp(speedUpInfo)), userMap)
             }
             if (tickCount % 20 == 5) {
-              val GridSyncData = if (tickCount > 100) {
+              val GridSyncData = if (tickCount > 300) {
                 grid.getGridSyncDataNoApp
               } else {
                 eventList.append(Protocol.SyncApples(grid.getGridSyncData.appleDetails.get))
