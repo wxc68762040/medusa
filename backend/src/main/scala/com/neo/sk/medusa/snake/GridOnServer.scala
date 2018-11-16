@@ -296,8 +296,8 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
             case x if x > 0.8 => 25
             case x => 5
           }
-          val apple = Apple(score, appleLife, appleType)
-          feededApples ::= Ap(score, appleLife, appleType, p.x, p.y)
+          val apple = Apple(score, appleType)
+          feededApples ::= Ap(score, appleType, p.x, p.y)
           grid += (p -> apple)
           appleNeeded -= 1
         }
@@ -349,8 +349,8 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
               case x if x > 0.8 => 25
               case x => 5
             }
-            val apple = Apple(score, appleLife, FoodType.intermediate, Some(targetPoint, score))
-            deadBodies ::= Ap(score, appleLife, FoodType.intermediate, dead._1.x, dead._1.y, Some(targetPoint, score))
+            val apple = Apple(score, FoodType.intermediate, Some(targetPoint, score))
+            deadBodies ::= Ap(score, FoodType.intermediate, dead._1.x, dead._1.y, Some(targetPoint, score))
             grid += (dead._1 -> apple)
             appleNeeded -= 1
           }
@@ -373,12 +373,14 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
             totalScore += x.score
             newSpeed += 0.1
             speedOrNot = true
-            apples ::= Ap(x.score, x.life, x.appleType, e.x, e.y, x.targetAppleOpt)
+            apples ::= Ap(x.score, x.appleType, e.x, e.y, x.targetAppleOpt)
           }
         case _ => //do nothing
       }
     }
-    eatenApples += (snakeId -> apples.map(a => AppleWithFrame(frameCount, a)))
+    if(apples.nonEmpty) {
+      eatenApples += (snakeId -> apples.map(a => AppleWithFrame(frameCount, a)))
+    }
     Some((totalScore, newSpeed, speedOrNot))
   }
 
@@ -425,8 +427,9 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
     }else{
       fSpeed
     }
-
-    speedUpInfo ::= SpeedUpInfo(snake.id, speedOrNot, newSpeed)
+    if(speedOrNot) {
+      speedUpInfo ::= SpeedUpInfo(snake.id, speedOrNot, newSpeed)
+    }
     Some((speedOrNot, newSpeed))
   }
 
