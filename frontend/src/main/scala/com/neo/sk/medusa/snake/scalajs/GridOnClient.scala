@@ -20,7 +20,6 @@ class GridOnClient(override val boundary: Point) extends Grid {
   }
 
 
-//  def addSnake(id: String, name: String) = snakes += (id -> SnakeInfo())
   def updateSnakes() = {
     var updatedSnakes = List.empty[Snake4Client]
     val acts = actionMap.getOrElse(frameCount, Map.empty[String, Int])
