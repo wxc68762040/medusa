@@ -31,20 +31,19 @@ trait Grid {
   val speedUpRange = 50
 
   val freeFrameTime = 30
-
+  var snakes = Map.empty[String, SnakeInfo]
+  var snakes4client = Map.empty[String, Snake4Client]
   var frameCount = 0l
   var grid = Map[Point, Spot]()
-  var snakes = Map.empty[String, SnakeInfo]
   var actionMap = Map.empty[Long, Map[String, Int]]
   var deadSnakeList = List.empty[DeadSnakeInfo]
   var killMap = Map.empty[String, List[(String,String)]]
 
-  def removeSnake(id: String): Option[SnakeInfo] = {
+  def removeSnake(id: String) = {
     val r = snakes.get(id)
     if (r.isDefined) {
       snakes -= id
     }
-    r
   }
 
 
@@ -77,7 +76,7 @@ trait Grid {
 
   def eatFood(snakeId: String, newHead: Point, newSpeedInit: Double, speedOrNotInit: Boolean): Option[(Int, Double, Boolean)]
 
-  def speedUp(snake: SnakeInfo, newDirection: Point): Option[(Boolean, Double)]
+//  def speedUp(snake: SnakeInfo, newDirection: Point): Option[(Boolean, Double)]
 
   private[this] def updateSpots(front: Boolean) = {
     var appleCount = 0
@@ -159,24 +158,8 @@ trait Grid {
   }
   
   def updateSnakes():Unit
+//  def updateASnake(snake: SnakeInfo, actMap: Map[String, Int]): Either[String, SnakeInfo]
 
-  def updateASnake(snake: SnakeInfo, actMap: Map[String, Int]): Either[String, SnakeInfo]
-  
-//  def getGridData = {
-//    var bodyDetails: List[Bd] = Nil
-//    var appleDetails: List[Ap] = Nil
-//    grid.foreach {
-//      case (p, Body(id, color)) => bodyDetails ::= Bd(id, p.x, p.y, color)
-//      case (p, Apple(score, life, appleType, targetAppleOpt)) => appleDetails ::= Ap(score, life, appleType, p.x, p.y, targetAppleOpt)
-//      case _ =>
-//    }
-//    GridData(
-//      frameCount,
-//      snakes.values.toList,
-//      bodyDetails,
-//      appleDetails
-//    )
-//  }
   
   def getGridSyncData = {
     var appleDetails: List[Ap] = Nil
@@ -184,20 +167,35 @@ trait Grid {
       case (p, Apple(score, appleType, targetAppleOpt)) => appleDetails ::= Ap(score, appleType, p.x, p.y, targetAppleOpt)
       case _ =>
     }
+    val snake4client = snakes.values.map{
+      s => Snake4Client(s.id, s.name, s.head, s.tail, s.color, s.direction, s.joints, s.speed,s.length, s.extend)
+    }
     Protocol.GridDataSync(
       frameCount,
-      snakes.values.toList,
-      Some(appleDetails),
-      System.currentTimeMillis()
+      snake4client.toList,
+      appleDetails
+    )
+  }
+  def getGridSyncData4Client = {
+    var appleDetails: List[Ap] = Nil
+    grid.foreach {
+      case (p, Apple(score, appleType, targetAppleOpt)) => appleDetails ::= Ap(score, appleType, p.x, p.y, targetAppleOpt)
+      case _ =>
+    }
+    Protocol.GridDataSync(
+      frameCount,
+      snakes4client.values.toList,
+      appleDetails
     )
   }
 
   def getGridSyncDataNoApp = {
-    Protocol.GridDataSync(
+    val snake4client = snakes.values.map{
+      s => Snake4Client(s.id, s.name, s.head, s.tail, s.color, s.direction, s.joints, s.speed,s.length, s.extend)
+    }
+    Protocol.GridDataSyncNoApp(
       frameCount,
-      snakes.values.toList,
-      None,
-      System.currentTimeMillis()
+      snake4client.toList
     )
   }
 

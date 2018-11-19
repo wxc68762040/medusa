@@ -230,6 +230,19 @@ package object snake {
     }
   }
 
+  case class Snake4Client(
+    id: String,
+    name: String,
+    head: Point,
+    tail: Point,
+    color: String,
+    direction: Point = Point(1, 0),
+    joints: Queue[Point] = Queue(),
+    speed: Double = Protocol.fSpeed,
+    length: Int = 100,
+    extend: Int = 100, //需要伸长的量
+  )
+
   case class DeadSnakeInfo(
                             id: String,
                             name: String,
@@ -245,10 +258,8 @@ package object snake {
 
   case class SpeedUpInfo(
                           snakeId: String,
-                          speedUpOrNot: Boolean,
                           newSpeed: Double
                         )
-
   case class AppleWithFrame(
                              frameCount: Long,
                              apple: Ap

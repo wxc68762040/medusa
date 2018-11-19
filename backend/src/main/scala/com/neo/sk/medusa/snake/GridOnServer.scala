@@ -25,7 +25,6 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
 
   override def info(msg: String): Unit = log.info(msg)
 
-
   private[this] var waitingJoin = Map.empty[String, String]
   private[this] var feededApples: List[Ap] = Nil
   private[this] var deadBodies: List[Ap] = Nil
@@ -172,7 +171,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
     snakes = newSnakes.map(s => (s.id, s)).toMap
   }
   
-  override def updateASnake(snake: SnakeInfo, actMap: Map[String, Int]): Either[String, SnakeInfo] = {
+  def updateASnake(snake: SnakeInfo, actMap: Map[String, Int]): Either[String, SnakeInfo] = {
     val keyCode = actMap.get(snake.id)
     val newDirection = {
       val keyDirection = keyCode match {
@@ -384,7 +383,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
     Some((totalScore, newSpeed, speedOrNot))
   }
 
-  override def speedUp(snake: SnakeInfo, newDirection: Point): Option[(Boolean, Double)] = {
+  def speedUp(snake: SnakeInfo, newDirection: Point): Option[(Boolean, Double)] = {
     //检测加速
     var speedOrNot :Boolean = false
     val headerLeftRight=if(newDirection.y == 0){
@@ -428,7 +427,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
       fSpeed
     }
     if(speedOrNot) {
-      speedUpInfo ::= SpeedUpInfo(snake.id, speedOrNot, newSpeed)
+      speedUpInfo ::= SpeedUpInfo(snake.id, newSpeed)
     }
     Some((speedOrNot, newSpeed))
   }

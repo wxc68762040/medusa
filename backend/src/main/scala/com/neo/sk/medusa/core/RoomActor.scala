@@ -183,19 +183,23 @@ object RoomActor {
               dispatch(UserActor.DispatchMsg(Protocol.SpeedUp(speedUpInfo)), userMap)
             }
             if (tickCount % 20 == 5) {
-              val GridSyncData = if (tickCount > 300) {
-                grid.getGridSyncDataNoApp
+              if (tickCount > 300) {
+                val noAppData = grid.getGridSyncDataNoApp
+                if (!(snakeNumber > 0)) { //需要生成蛇的情况下，已经广播过一次全量数据，不再次广播
+                  dispatch(UserActor.DispatchMsg(noAppData), userMap)
+                }
               } else {
-                eventList.append(Protocol.SyncApples(grid.getGridSyncData.appleDetails.get))
-                grid.getGridSyncData
+                val syncData = grid.getGridSyncData
+                eventList.append(Protocol.SyncApples(syncData.appleDetails))
+                if (!(snakeNumber > 0)) { //需要生成蛇的情况下，已经广播过一次全量数据，不再次广播
+                  dispatch(UserActor.DispatchMsg(syncData), userMap)
+                }
               }
-              if (!(snakeNumber > 0)) { //需要生成蛇的情况下，已经广播过一次全量数据，不再次广播
-                dispatch(UserActor.DispatchMsg(GridSyncData), userMap)
-              }
+
             }
             if (tickCount % 300 == 1) {
 //              dispatch(UserActor.DispatchMsg(Protocol.SyncApples(grid.getGridSyncData.appleDetails.get)), userMap)
-              eventList.append(Protocol.SyncApples(grid.getGridSyncData.appleDetails.get))
+              eventList.append(Protocol.SyncApples(grid.getGridSyncData.appleDetails))
             }
 //            userMap.keys.foreach {
 //              user =>
