@@ -25,7 +25,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
   }
   
   override def updateSnakes() = {
-    var updatedSnakes = List.empty[SnakeInfo]
+    var updatedSnakes = List.empty[Snake4Client]
     val acts = actionMap.getOrElse(frameCount, Map.empty[String, Int])
     snakes.values.map(updateASnake(_, acts)).foreach {
       case Right(s) =>
@@ -35,7 +35,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
     snakes = updatedSnakes.map(s => (s.id, s)).toMap
   }
   
-  override def updateASnake(snake: SnakeInfo, actMap: Map[String, Int]): Either[String, SnakeInfo] = {
+  override def updateASnake(snake: Snake4Client, actMap: Map[String, Int]): Either[String, SnakeInfo] = {
     val keyCode = actMap.get(snake.id)
     val newDirection = {
       val keyDirection = keyCode match {
@@ -112,7 +112,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
 
   override def eatFood(snakeId: String, newHead: Point, newSpeedInit: Double, speedOrNotInit: Boolean): Option[(Int, Double, Boolean)] = None
 
-  override def speedUp(snake: SnakeInfo, newDirection: Point): Option[(Boolean, Double)] = None
+  override def speedUp(snake: Snake4Client, newDirection: Point): Option[(Boolean, Double)] = None
   
   override def countBody(): Unit = None
   
@@ -149,17 +149,25 @@ class GridOnClient(override val boundary: Point) extends Grid {
 			}
 		}
 	}
-	
+
 	def sync(dataOpt: scala.Option[Protocol.GridDataSync]) = {
 		if (dataOpt.nonEmpty) {
 			val data = dataOpt.get
 //      grid.actionMap = grid.actionMap.filterKeys(_ >= data.frameCount - 1 - advanceFrame)
 			frameCount = data.frameCount
 			snakes = data.snakes.map(s => s.id -> s).toMap
-			grid = grid.filter { case (_, spot) =>
-				spot match {
-					case Apple(_, life, _, _) if life >= 0 => true
-					case _ => false
+//			grid = grid.filter { case (_, spot) =>
+//				spot match {
+//					case Apple(_, life, _, _) if life >= 0 => true
+//					case _ => false
+//				}
+//			}
+			if(data.appleDetails.isDefined) {
+				grid = grid.filter{ case (_, spot) =>
+						spot match {
+							case Apple(_, life, _, _) if life >= 0 => true
+							case _ => false
+						}
 				}
 			}
 			val mySnakeOpt = snakes.find(_._1 == myId)

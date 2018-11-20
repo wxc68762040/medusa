@@ -114,7 +114,7 @@ object WatcherActor {
             Behaviors.same
 
           case PlayerWait =>
-            frontActor ! Protocol.PlayerWaitingJion
+            frontActor ! Protocol.PlayerWaitingJoin
             Behaviors.same
 
           case UserFrontActor(newFront) =>

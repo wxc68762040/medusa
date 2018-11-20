@@ -44,7 +44,7 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 	
 	def showScene() {
 		ClientBoot.addToPlatform {
-			stageCtx.switchScene(loginScene.scene, "Login")
+			stageCtx.switchScene(loginScene.scene, "Login", false)
 		}
 	}
 

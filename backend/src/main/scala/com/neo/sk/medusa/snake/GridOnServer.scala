@@ -25,7 +25,6 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
 
   override def info(msg: String): Unit = log.info(msg)
 
-
   private[this] var waitingJoin = Map.empty[String, String]
   private[this] var feededApples: List[Ap] = Nil
   private[this] var deadBodies: List[Ap] = Nil
@@ -172,7 +171,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
     snakes = newSnakes.map(s => (s.id, s)).toMap
   }
   
-  override def updateASnake(snake: SnakeInfo, actMap: Map[String, Int]): Either[String, SnakeInfo] = {
+  def updateASnake(snake: SnakeInfo, actMap: Map[String, Int]): Either[String, SnakeInfo] = {
     val keyCode = actMap.get(snake.id)
     val newDirection = {
       val keyDirection = keyCode match {
@@ -296,8 +295,8 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
             case x if x > 0.8 => 25
             case x => 5
           }
-          val apple = Apple(score, appleLife, appleType)
-          feededApples ::= Ap(score, appleLife, appleType, p.x, p.y)
+          val apple = Apple(score, appleType)
+          feededApples ::= Ap(score, appleType, p.x, p.y)
           grid += (p -> apple)
           appleNeeded -= 1
         }
@@ -349,8 +348,8 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
               case x if x > 0.8 => 25
               case x => 5
             }
-            val apple = Apple(score, appleLife, FoodType.intermediate, Some(targetPoint, score))
-            deadBodies ::= Ap(score, appleLife, FoodType.intermediate, dead._1.x, dead._1.y, Some(targetPoint, score))
+            val apple = Apple(score, FoodType.intermediate, Some(targetPoint, score))
+            deadBodies ::= Ap(score, FoodType.intermediate, dead._1.x, dead._1.y, Some(targetPoint, score))
             grid += (dead._1 -> apple)
             appleNeeded -= 1
           }
@@ -373,16 +372,18 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
             totalScore += x.score
             newSpeed += 0.1
             speedOrNot = true
-            apples ::= Ap(x.score, x.life, x.appleType, e.x, e.y, x.targetAppleOpt)
+            apples ::= Ap(x.score, x.appleType, e.x, e.y, x.targetAppleOpt)
           }
         case _ => //do nothing
       }
     }
-    eatenApples += (snakeId -> apples.map(a => AppleWithFrame(frameCount, a)))
+    if(apples.nonEmpty) {
+      eatenApples += (snakeId -> apples.map(a => AppleWithFrame(frameCount, a)))
+    }
     Some((totalScore, newSpeed, speedOrNot))
   }
 
-  override def speedUp(snake: SnakeInfo, newDirection: Point): Option[(Boolean, Double)] = {
+  def speedUp(snake: SnakeInfo, newDirection: Point): Option[(Boolean, Double)] = {
     //检测加速
     var speedOrNot :Boolean = false
     val headerLeftRight=if(newDirection.y == 0){
@@ -425,8 +426,9 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
     }else{
       fSpeed
     }
-
-    speedUpInfo ::= SpeedUpInfo(snake.id, speedOrNot, newSpeed)
+    if(speedOrNot) {
+      speedUpInfo ::= SpeedUpInfo(snake.id, newSpeed)
+    }
     Some((speedOrNot, newSpeed))
   }
 

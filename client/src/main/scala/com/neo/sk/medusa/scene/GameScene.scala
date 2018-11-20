@@ -1,5 +1,6 @@
 package com.neo.sk.medusa.scene
 
+import com.neo.sk.medusa.common.InfoHandler
 import javafx.animation.{Animation, KeyFrame, Timeline}
 import javafx.event.{ActionEvent, EventHandler}
 import javafx.scene.{Group, Scene}
@@ -27,13 +28,14 @@ class GameScene() {
 
 	import GameScene._
 	var gameSceneListener: GameSceneListener = _
-
-	val widthMap = 400
-	val heightMap = 816
-	val viewWidth = 1450
-	val viewHeight = 816
-	val infoWidth = 1450
-	val infoHeight = 816
+	var widthMap: Double= 400
+	var heightMap: Double = 816
+	var viewWidth: Double= 1450
+	var viewHeight: Double = 816
+	var infoWidth: Double = 1450
+	var infoHeight: Double = 816
+	val initWindowWidth = viewWidth
+	val initWindowHeight = viewHeight
 	val group = new Group
 	val mapCanvas = new Canvas(widthMap, heightMap)
 	val viewCanvas = new Canvas(viewWidth, viewHeight)
@@ -46,16 +48,25 @@ class GameScene() {
 	group.getChildren.add(viewCanvas)
   group.getChildren.add(infoCanvas)
   group.getChildren.add(mapCanvas)
-  val view = new GameViewCanvas(viewCanvas)
-	val map = new GameMapCanvas(mapCanvas)
-	val info = new GameInfoCanvas(infoCanvas)
+  val view = new GameViewCanvas(viewCanvas,GameScene.this)
+	val map = new GameMapCanvas(mapCanvas, GameScene.this)
+	val info = new GameInfoCanvas(infoCanvas, GameScene.this)
   viewCanvas.requestFocus()
 	viewCanvas.setOnKeyPressed(event => gameSceneListener.onKeyPressed(event.getCode))
 
-	def draw(myId:String, data: Protocol.GridDataSync,historyRank:List[Score], currentRank:List[Score], loginAgain:Boolean): Unit ={
-    view.drawSnake(myId, data)
-    map.drawMap(myId, data)
-		info.drawInfo(myId, data, historyRank, currentRank,loginAgain)
+	val infoHandler = new InfoHandler
+
+	def draw(myId:String, data: Protocol.GridDataSync,historyRank:List[Score], currentRank:List[Score], loginAgain:Boolean, scaleW:Double, scaleH:Double): Unit = {
+		infoHandler.refreshInfo()
+		infoHandler.fpsCounter += 1
+		infoHandler.dataCounter += 1
+		val timeNow = System.currentTimeMillis()
+		view.drawSnake(myId, data, scaleW, scaleH)
+    map.drawMap(myId, data, scaleW, scaleH)
+		info.drawInfo(myId, data, historyRank, currentRank,loginAgain, scaleW, scaleH)
+		val drawOnceTime = System.currentTimeMillis() - timeNow
+	  infoHandler.drawTimeAverage = drawOnceTime.toInt
+
   }
 	def setGameSceneListener(listener: GameSceneListener) {
 		gameSceneListener = listener

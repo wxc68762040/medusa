@@ -2,7 +2,7 @@ package com.neo.sk.medusa.snake.scalajs
 
 import java.awt.event.KeyEvent
 
-import com.neo.sk.medusa.snake.{Grid, Point, SnakeInfo}
+import com.neo.sk.medusa.snake.{Grid, Point, Snake4Client, SnakeInfo}
 
 /**
   * User: Taoz
@@ -20,19 +20,18 @@ class GridOnClient(override val boundary: Point) extends Grid {
   }
 
 
-//  def addSnake(id: String, name: String) = snakes += (id -> SnakeInfo())
-  override def updateSnakes() = {
-    var updatedSnakes = List.empty[SnakeInfo]
+  def updateSnakes() = {
+    var updatedSnakes = List.empty[Snake4Client]
     val acts = actionMap.getOrElse(frameCount, Map.empty[String, Int])
-    snakes.values.map(updateASnake(_, acts)).foreach {
+    snakes4client.values.map(updateASnake(_, acts)).foreach {
       case Right(s) =>
         updatedSnakes ::= s
       case Left(_) =>
     }
-    snakes = updatedSnakes.map(s => (s.id, s)).toMap
+    snakes4client = updatedSnakes.map(s => (s.id, s)).toMap
   }
   
-  override def updateASnake(snake: SnakeInfo, actMap: Map[String, Int]): Either[String, SnakeInfo] = {
+  def updateASnake(snake: Snake4Client, actMap: Map[String, Int]): Either[String, Snake4Client] = {
     val keyCode = actMap.get(snake.id)
     val newDirection = {
       val keyDirection = keyCode match {
@@ -52,32 +51,30 @@ class GridOnClient(override val boundary: Point) extends Grid {
         snake.direction
       }
     }
-    
-    val speedInfoOpt = speedUp(snake, newDirection)
-    var newSpeed = if (speedInfoOpt.nonEmpty) speedInfoOpt.get._2 else snake.speed
-    var speedOrNot = if (speedInfoOpt.nonEmpty) speedInfoOpt.get._1 else false
+
+    var newSpeed =  snake.speed
     
     val newHead = snake.head + snake.direction * newSpeed.toInt
     val oldHead = snake.head
+//
+//    val foodEaten = eatFood(snake.id, newHead, newSpeed, speedOrNot)
     
-    val foodEaten = eatFood(snake.id, newHead, newSpeed, speedOrNot)
+//    val foodSum = if (foodEaten.nonEmpty) {
+//      newSpeed = foodEaten.get._2
+//      speedOrNot = foodEaten.get._3
+//      foodEaten.get._1
+//    } else 0
     
-    val foodSum = if (foodEaten.nonEmpty) {
-      newSpeed = foodEaten.get._2
-      speedOrNot = foodEaten.get._3
-      foodEaten.get._1
-    } else 0
-    
-    val len = snake.length + foodSum
+    val len = snake.length
     
     //处理身体及尾巴的移动
     var newJoints = snake.joints
     var newTail = snake.tail
-    var step = snake.speed.toInt - (snake.extend + foodSum)
+    var step = snake.speed.toInt - (snake.extend)
     val newExtend = if(step >= 0) {
       0
     } else {
-      snake.extend + foodSum - snake.speed.toInt
+      snake.extend - snake.speed.toInt
     }
     if (newDirection != snake.direction) {
       newJoints = newJoints.enqueue(newHead)
@@ -96,20 +93,20 @@ class GridOnClient(override val boundary: Point) extends Grid {
       }
     }
     
-    val newFreeFrame = if (speedInfoOpt.nonEmpty) {
-      if(speedOrNot) 0 else snake.freeFrame + 1
-    } else snake.freeFrame
+//    val newFreeFrame = if (speedInfoOpt.nonEmpty) {
+//      if(speedOrNot) 0 else snake.freeFrame + 1
+//    } else snake.freeFrame
     
-    Right(snake.copy(head = newHead, tail = newTail, lastHead = oldHead, direction = newDirection,
-      joints = newJoints, speed = newSpeed, freeFrame = newFreeFrame, length = len, extend = newExtend))
+    Right(snake.copy(head = newHead, tail = newTail, direction = newDirection,
+      joints = newJoints, speed = newSpeed, length = len, extend = newExtend))
   }
-  
+
   override def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[String] = None): Unit = {} //do nothing.
-
+//
   override def eatFood(snakeId: String, newHead: Point, newSpeedInit: Double, speedOrNotInit: Boolean): Option[(Int, Double, Boolean)] = None
-
-  override def speedUp(snake: SnakeInfo, newDirection: Point): Option[(Boolean, Double)] = None
-  
+//
+//  override def speedUp(snake: SnakeInfo, newDirection: Point): Option[(Boolean, Double)] = None
+//
   override def countBody(): Unit = None
   
   var init: Boolean = false

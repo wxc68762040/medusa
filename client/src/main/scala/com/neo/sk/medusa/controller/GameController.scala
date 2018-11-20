@@ -12,6 +12,7 @@ import com.neo.sk.medusa.model.GridOnClient
 import com.neo.sk.medusa.scene.GameScene
 import com.neo.sk.medusa.snake.Protocol.{Key, NetTest}
 import com.neo.sk.medusa.snake.{Boundary, Point, Protocol}
+import com.neo.sk.medusa.common.StageContext._
 import com.neo.sk.medusa.ClientBoot.{executor, scheduler}
 import javafx.scene.input.KeyCode
 import scala.concurrent.duration._
@@ -65,7 +66,7 @@ class GameController(id: String,
 
 	def connectToGameServer(gameController: GameController) = {
 		ClientBoot.addToPlatform {
-			stageCtx.switchScene(gameScene.scene, "Gaming")
+			stageCtx.switchScene(gameScene.scene, "Gaming", true)
 			gameMessageReceiver ! ControllerInitial(gameController)
 		}
 	}
@@ -74,7 +75,11 @@ class GameController(id: String,
 		basicTime = System.currentTimeMillis()
 		val animationTimer = new AnimationTimer() {
 			override def handle(now: Long): Unit = {
-				gameScene.draw(grid.myId, grid.getGridSyncData, grid.historyRank, grid.currentRank, grid.loginAgain)
+				gameScene.viewWidth = stageCtx.getWindowSize.windowWidth
+				gameScene.viewHeight = stageCtx.getWindowSize.windowHeight
+				val scaleW = gameScene.viewWidth / gameScene.initWindowWidth
+				val scaleH = gameScene.viewHeight / gameScene.initWindowHeight
+				gameScene.draw(grid.myId, grid.getGridSyncData, grid.historyRank, grid.currentRank, grid.loginAgain, scaleW, scaleH)
 			}
 		}
 		scheduler.schedule(10.millis, 100.millis) {
