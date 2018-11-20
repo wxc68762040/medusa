@@ -272,6 +272,7 @@ object NetGameHolder extends js.JSApp {
                   myRoomId = roomId
                   playerState = (id, true)
                   println(s"user JoinRoomSuccess $id")
+
                 case Protocol.TextMsg(_) =>
 
                 case Protocol.NewSnakeJoined(id, _, _) =>

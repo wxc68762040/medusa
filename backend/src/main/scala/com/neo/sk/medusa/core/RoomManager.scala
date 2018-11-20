@@ -51,7 +51,7 @@ object RoomManager {
 
   case class GetRoomListRsp(roomList:List[Long])
 
-
+  case class ReStartGame(playerId:String,roomId:Long) extends Command
 
   /**
     *

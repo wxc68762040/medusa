@@ -62,6 +62,8 @@ object RoomActor {
 
   final case class ChildDead[U](name: String, childRef: ActorRef[U]) extends Command
 
+
+
   private var deadCommonInfo = Protocol.DeadInfo("","",0,0,"","")
 
   def create(roomId: Long): Behavior[Command] = {
@@ -280,6 +282,7 @@ object RoomActor {
           case t: YouAreUnwatched =>
             watcherMap.get(t.playerId).get.remove(t.watcherId)
             Behaviors.same
+
 
 
 

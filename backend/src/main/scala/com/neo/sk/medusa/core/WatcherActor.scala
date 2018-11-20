@@ -7,10 +7,13 @@ import akka.stream.scaladsl.{Flow, Sink, Source}
 import com.neo.sk.medusa.Boot.watchManager
 import akka.stream.typed.scaladsl.{ActorSink, ActorSource}
 import com.neo.sk.medusa.snake.Protocol
-import com.neo.sk.medusa.snake.Protocol.{WsMsgSource, YouHaveLogined}
+import com.neo.sk.medusa.snake.Protocol.{NewSnakeJoined, WsMsgSource, YouHaveLogined}
+import com.sun.media.jfxmedia.events.PlayerStateEvent.PlayerState
 import io.circe.Decoder
 import org.slf4j.LoggerFactory
 
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration._
 
 /**
@@ -56,33 +59,39 @@ object WatcherActor {
   case object WatcherReady extends Command
 
 
+
   def create(watcherId: String, roomId:Long): Behavior[Command] = {
     Behaviors.setup[Command] {
       ctx =>
         implicit val stashBuffer: StashBuffer[Command] = StashBuffer[Command](Int.MaxValue)
         Behaviors.withTimers[Command] {
           implicit timer =>
-            switchBehavior(ctx, "init", init(watcherId,"", roomId), InitTime, TimeOut("init"))
+            switchBehavior(ctx, "init", init(watcherId,"", roomId,true), InitTime, TimeOut("init"))
         }
     }
   }
 
-  private def init(watcherId: String, watchedId:String, roomId:Long)(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]):Behavior[Command] =
+  private def init(watcherId: String, watchedId:String, roomId:Long,waitTip:Boolean)(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]):Behavior[Command] =
     Behaviors.receive[Command] {
       (ctx, msg) =>
-        println("the state is init")
         msg match {
           case UserFrontActor(frontActor) =>
+            println(" 我就看看")
             ctx.watchWith(frontActor, FrontLeft(frontActor))
             ctx.self ! WatcherReady
-            switchBehavior(ctx, "idle", idle(watcherId, watchedId, roomId, frontActor))
+            switchBehavior(ctx, "idle", idle(watcherId, watchedId, roomId, frontActor,waitTip))
+
+
 
           case GetWatchedId(id) =>
-            init(watchedId, id, roomId)
+            init(watchedId, id, roomId,waitTip)
 
           case TimeOut(m) =>
+            println(s"${m}")
             log.debug(s"${ctx.self.path} is time out when busy,msg=$m")
             Behaviors.stopped
+
+
 
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when init:$x")
@@ -91,8 +100,8 @@ object WatcherActor {
         }
     }
 
-  private var s= false
-  private def idle(watcherId: String, watchedId:String, roomId:Long, frontActor: ActorRef[Protocol.WsMsgSource])(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
+
+  private def idle(watcherId: String, watchedId:String ,roomId:Long, frontActor: ActorRef[Protocol.WsMsgSource],waitTip:Boolean)(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
@@ -104,12 +113,8 @@ object WatcherActor {
             ctx.unwatch(front)
             println("action occur when you refresh page")
             watchManager ! WatcherManager.WatcherGone(watcherId,roomId)
-            Behaviors.same
+            switchBehavior(ctx,"init",init(watcherId,watchedId,roomId,waitTip),Some(10.seconds),TimeOut("lalalallalallalalalalalalalalala11111"))
 
-          case UserLeft =>
-            ctx.unwatch(frontActor)
-            watchManager ! WatcherManager.WatcherGone(watcherId,roomId)
-            Behaviors.same
 
           case NoRoom =>
             frontActor ! Protocol.NoRoom
@@ -117,9 +122,8 @@ object WatcherActor {
 
           case PlayerWait =>
             frontActor ! Protocol.PlayerWaitingJion
-            println("---- "+Protocol.PlayerWaitingJion)
-            s = true
-            Behaviors.same
+            println("---- "+Protocol.PlayerWaitingJion+"  ")
+            idle(watcherId,watchedId,roomId,frontActor,false)
 
           case UserFrontActor(newFront) =>
             println("just test !")
@@ -127,9 +131,10 @@ object WatcherActor {
             ctx.watchWith(newFront, FrontLeft(newFront))
             newFront ! Protocol.JoinRoomSuccess(watchedId, roomId)
             frontActor ! YouHaveLogined
+            println("this information will print: watcherId: "+watcherId+" watchedId: "+watchedId+" roomId: "+roomId+ "  "+newFront+"  ")
+            ctx.self ! UserFrontActor(newFront)
+            switchBehavior(ctx,"init",init(watcherId,watchedId,roomId,waitTip),Some(10.seconds),TimeOut("lalalallalallalalalalalalalalala"))
 
-            println("this information will print: watcherId: "+watcherId+" watchedId: "+watchedId+" roomId: "+roomId+ "  "+newFront)
-            idle(watcherId, watchedId, roomId, newFront)
 
 
           case GetWatchedId(id) =>
@@ -138,8 +143,12 @@ object WatcherActor {
 
           case TransInfo(x) =>
             frontActor ! x
-            Behaviors.same
-
+            if(!waitTip) frontActor ! Protocol.PlayerWaitingJion
+            if(x.isInstanceOf[NewSnakeJoined]){
+              idle(watcherId,watchedId,roomId,frontActor,true)
+            }else{
+              Behaviors.same
+            }
 
           case NetTest(b, a) =>
             Behaviors.same
@@ -161,7 +170,7 @@ object WatcherActor {
   ) (implicit timer: TimerScheduler[Command],
     stashBuffer: StashBuffer[Command]
   ) = {
-    log.debug(s"${ctx.self.path} becomes $behaviorName behavior.")
+    log.info(s"${ctx.self.path} becomes $behaviorName behavior.")
     timer.cancel(BehaviorChangeKey)
     durationOpt.foreach(duration => timer.startSingleTimer(BehaviorChangeKey, timeOut, duration))
     stashBuffer.unstashAll(ctx, behavior)

@@ -40,7 +40,6 @@ object WatcherManager {
   case class GetPlayerWatchedRsp(watcherId:String, playerId:String) extends Command
 
   case class WatcherGone(watcherId:String,roomId:Long) extends Command
-
   val behaviors: Behavior[Command] = {
     log.debug(s"WatchManager start...")
     Behaviors.setup[Command] {
@@ -63,6 +62,7 @@ object WatcherManager {
 //              getWatcherActor(ctx, t.watcherId) ! WatcherActor.KillSelf
 //            }
             val watcher = getWatcherActor(ctx, t.watcherId, t.roomId)
+            println("+++++++++++++------------------: "+watcher)
             t.replyTo ! getWebSocketFlow(watcher)
             watcherMap.put(t.watcherId,("", t.roomId))
             roomManager ! RoomManager.GetPlayerByRoomId(t.playerId, t.roomId, t.watcherId, watcher)
@@ -91,6 +91,8 @@ object WatcherManager {
             ctx.unwatch(childRef)
             Behaviors.same
 
+
+
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")
             Behaviors.unhandled
@@ -101,6 +103,7 @@ object WatcherManager {
   private def getWatcherActor(ctx: ActorContext[Command], watcherId: String, roomId:Long): ActorRef[WatcherActor.Command] = {
     val childName = s"WatcherActor-$watcherId"
     ctx.child(childName).getOrElse {
+      println("11111111111111111111111111111111111111111111")
       val actor = ctx.spawn(WatcherActor.create(watcherId, roomId), childName)
       ctx.watchWith(actor, ChildDead(childName, actor))
       actor
