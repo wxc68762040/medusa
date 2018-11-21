@@ -125,6 +125,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
 	var eatenApples  = Map[String, List[AppleWithFrame]]()
 	var savedGrid = Map[Long,Protocol.GridDataSync]()
 	var syncData: scala.Option[Protocol.GridDataSync] = None
+	var syncDataNoApp: scala.Option[Protocol.GridDataSyncNoApp] = None
 	var waitingShowKillList = List.empty[(String, String, Long)] //ID, Name, timestamp
 	
 	def loadData(dataOpt: scala.Option[Protocol.GridDataSync]) = {

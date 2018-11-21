@@ -75,7 +75,7 @@ object GameInfo {
             infoCacheCtx.font = s"${14 * scaleW}px Helvetica"
             infoCacheCtx.fillStyle = "rgb(250,250,250)"
             drawTextLine(infoCacheCtx, s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 1, baseLine, scaleW, scaleH)
-            drawTextLine(infoCacheCtx, s"your kill = ${kill}", leftBegin, 2, baseLine, scaleW, scaleH)
+            drawTextLine(infoCacheCtx, s"your kill = $kill", leftBegin, 2, baseLine, scaleW, scaleH)
             drawTextLine(infoCacheCtx, s"your length = ${mySnake.length} ", leftBegin, 3, baseLine, scaleW, scaleH)
             drawTextLine(infoCacheCtx, s"fps: ${netInfoHandler.fps.formatted("%.2f")} ping:${netInfoHandler.ping.formatted("%.2f")} dataps:${netInfoHandler.dataps.formatted("%.2f")}", leftBegin, 4, baseLine, scaleW, scaleH)
             drawTextLine(infoCacheCtx, s"drawTimeAverage: ${netInfoHandler.drawTimeAverage}", leftBegin, 5, baseLine, scaleW, scaleH)

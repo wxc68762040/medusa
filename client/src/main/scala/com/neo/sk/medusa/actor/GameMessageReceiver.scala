@@ -169,6 +169,12 @@ object GameMessageReceiver {
 					}
 					Behavior.same
 				
+				case data:Protocol.GridDataSyncNoApp =>
+					setLagTrigger
+					grid.syncDataNoApp = Some(data)
+					grid.justSynced = true
+					Behavior.same
+				
 				case Protocol.NetDelayTest(createTime) =>
 					ClientBoot.addToPlatform {
 						val receiveTime = System.currentTimeMillis()

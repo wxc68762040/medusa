@@ -32,10 +32,7 @@ object NetGameHolder extends js.JSApp {
   val initWindowHeight: Int = windowHeight
   var canvasBoundary = Point(dom.document.documentElement.clientWidth, dom.document.documentElement.clientHeight)
   var mapBoundary = Point(LittleMap.w, LittleMap.h)
-
-
-  //override val scaleW =
-
+  
   var syncData: scala.Option[Protocol.GridDataSync] = None
   var syncDataNoApp: scala.Option[Protocol.GridDataSyncNoApp] = None
   var infoState = "normal"
@@ -126,7 +123,7 @@ object NetGameHolder extends js.JSApp {
       if (!justSynced) {
         update(false)
       } else {
-        sync(syncData,syncDataNoApp)
+        sync(syncData, syncDataNoApp)
         syncData = None
         syncDataNoApp = None
         update(true)
@@ -413,14 +410,16 @@ object NetGameHolder extends js.JSApp {
 
                 case data: Protocol.GridDataSync =>
                   infoState = "normal"
+                  setLagTrigger()
                   if(!grid.init) {
                     grid.init = true
                     val timeout = 100 - 50 % 100
                     dom.window.setTimeout(() => startLoop(), timeout)
                   }
-                  setLagTrigger()
-                  syncData = Some(data)
-                  justSynced = true
+                  if(syncData.isEmpty || syncData.get.frameCount < data.frameCount) {
+                    syncData = Some(data)
+                    justSynced = true
+                  }
 
                 case data:Protocol.GridDataSyncNoApp =>
                   infoState = "normal"
@@ -438,7 +437,7 @@ object NetGameHolder extends js.JSApp {
                     grid.removeSnake(myId)
                     playerState = (myId, false)
                     if (state.contains("playGame")) {
-                      println("when play game user dead ")
+                      println("when play game user dead")
                       myId = killerId
                     }
                     deadName = myName
