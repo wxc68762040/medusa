@@ -50,13 +50,14 @@ class GameInfoCanvas(canvas: Canvas, gameScene: GameScene) {
     if(!loginAgain) {
       snakes.find(_.id == uid) match {
         case Some(mySnake) =>
+          val kill = currentRank.filter(_.id == uid).map(_.k)
           firstCome = false
           val baseLine = 1
           infoCtx.setFont(Font.font(" Helvetica", 12 * scale))
           infoCtx.setFill(Color.web("rgb(250,250,250)"))
           drawTextLine(infoCtx, s"YOU: id=[${mySnake.id}] ", leftBegin, 1, baseLine, scale)
           drawTextLine(infoCtx, s"name=[${mySnake.name.take(32)}]", leftBegin, 2, baseLine, scale)
-          drawTextLine(infoCtx, s"your kill = ${mySnake.kill}", leftBegin, 3, baseLine, scale)
+          drawTextLine(infoCtx, s"your kill = $kill", leftBegin, 3, baseLine, scale)
           drawTextLine(infoCtx, s"your length = ${mySnake.length} ", leftBegin, 4, baseLine, scale)
          // drawTextLine(infoCtx, s"fps: ${netInfoHandler.fps.formatted("%.2f")} ping:${netInfoHandler.ping.formatted("%.2f")} dataps:${netInfoHandler.dataps.formatted("%.2f")}", leftBegin, 4, baseLine)
           drawTextLine(infoCtx, s"fps: ${gameScene.infoHandler.fps.formatted("%.2f")}  dataps:${gameScene.infoHandler.dataps.formatted("%.2f")}", leftBegin, 5, baseLine, scale)
