@@ -60,7 +60,7 @@ object UserManager {
             val userRoomMap = mutable.HashMap.empty[String, (Long, String)]
             val userRecMap = mutable.HashMap.empty[String, UserActor.ReplayGame]
             val allUser = mutable.HashMap.empty[String, ActorRef[UserActor.Command]]
-            timer.startSingleTimer(Timer4MsgAdd, StartMsgAddLength, 3000.milli)
+            timer.startSingleTimer(Timer4MsgAdd, ClearMsgLength, 10000.milli)
             idle(userRoomMap,userRecMap, allUser)
         }
     }
@@ -116,17 +116,23 @@ object UserManager {
 
           case StartMsgAddLength =>
             msgLength = 0
+            RoomActor.keyLength = 0l
+            RoomActor.eatAppLength = 0l
+            RoomActor.feedAppLength = 0l
+            RoomActor.syncLength = 0l
+            RoomActor.speedLength = 0l
+            RoomActor.rankLength = 0l
             timer.startSingleTimer(TimerForMsgClear,ClearMsgLength,100.milli)
             Behaviors.same
 
           case ClearMsgLength =>
-            log.info(s"msg total length from ${System.currentTimeMillis() - 100} to ${System.currentTimeMillis()} is $msgLength ")
-            log.info(s"keyLength:${RoomActor.keyLength}")
-            log.info(s"eatFoodLength:${RoomActor.eatAppLength}")
-            log.info(s"feedAppLength:${RoomActor.feedAppLength}")
-            log.info(s"syncLength:${RoomActor.syncLength}")
-            log.info(s"speedLength:${RoomActor.speedLength}")
-            log.info(s"rankLength:${RoomActor.rankLength}")
+            log.info(s"msg total length  is ${msgLength/10}B/s ")
+            log.info(s"keyLength:${RoomActor.keyLength/10}B/s")
+            log.info(s"eatFoodLength:${RoomActor.eatAppLength/10}B/s")
+            log.info(s"feedAppLength:${RoomActor.feedAppLength/10}B/s")
+            log.info(s"syncLength:${RoomActor.syncLength/10}B/s")
+            log.info(s"speedLength:${RoomActor.speedLength/10}B/s")
+            log.info(s"rankLength:${RoomActor.rankLength/10}B/s")
             RoomActor.keyLength = 0l
             RoomActor.eatAppLength = 0l
             RoomActor.feedAppLength = 0l
@@ -134,7 +140,8 @@ object UserManager {
             RoomActor.speedLength = 0l
             RoomActor.rankLength = 0l
 
-            timer.startSingleTimer(Timer4MsgAdd, StartMsgAddLength,(scala.util.Random.nextInt(5000)+8000).milli)
+            timer.startSingleTimer(Timer4MsgAdd, ClearMsgLength
+              ,10000.milli)
             Behaviors.same
 
           case t: YourUserUnwatched =>
