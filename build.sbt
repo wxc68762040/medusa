@@ -11,6 +11,7 @@ val projectName = "medusa"
 val projectVersion = "1.2.1"
 
 val projectMainClass = "com.neo.sk.medusa.Boot"
+val clientMainClass = "com.neo.sk.medusa.ClientBoot"
 
 def commonSettings = Seq(
   version := projectVersion,
@@ -35,6 +36,15 @@ lazy val sharedJs = shared.js
 //client
 lazy val client = (project in file("client"))
   .settings(name := "client")
+  .settings(
+    //pack
+    // If you need to specify main classes manually, use packSettings and packMain
+    //packSettings,
+    // [Optional] Creating `hello` command that calls org.mydomain.Hello#main(Array[String])
+    packMain := Map("medusa" -> clientMainClass),
+    packJvmOpts := Map("medusa" -> Seq("-Xmx128m", "-Xms32m")),
+    packExtraClasspath := Map("medusa" -> Seq("."))
+  )
   .settings(commonSettings: _*)
   .settings(libraryDependencies ++= Dependencies.backendDependencies)
   .dependsOn(sharedJvm)
@@ -85,7 +95,7 @@ lazy val backend = (project in file("backend")).enablePlugins(PackPlugin)
     //packSettings,
     // [Optional] Creating `hello` command that calls org.mydomain.Hello#main(Array[String])
     packMain := Map("medusa" -> projectMainClass),
-    packJvmOpts := Map("medusa" -> Seq("-Xmx128m", "-Xms32m")),
+    packJvmOpts := Map("medusa" -> Seq("-Xmx1g", "-Xms64m")),
     packExtraClasspath := Map("medusa" -> Seq("."))
   )
   .settings(

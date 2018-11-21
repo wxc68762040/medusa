@@ -14,27 +14,34 @@ import javafx.scene.canvas.Canvas
   * Date: 2018/10/25
   * Time: 3:16 PM
   */
-class GameMapCanvas(canvas: Canvas) {
+class GameMapCanvas(canvas: Canvas, gameScene: GameScene) {
 
   val mapCtx = canvas.getGraphicsContext2D
   val maxImage = new Image("champion.png")
-  val mapWidth = canvas.getWidth
-  val mapHeight = canvas.getHeight
+//  val mapWidth = canvas.getWidth
+//  val mapHeight = canvas.getHeight
 
 
-  def drawMap(uid: String, data :GridDataSync): Unit = {
+  def drawMap(uid: String, data: GridDataSync, scaleW: Double, scaleH: Double): Unit = {
+
+    val mapWidth = gameScene.widthMap * scaleW
+    val mapHeight = gameScene.heightMap * scaleH
+    canvas.setWidth(mapWidth)
+    canvas.setHeight(mapHeight)
+
+    val scale = if(scaleW >= scaleH) scaleH  else scaleW // 长款变化比例不同时，取小比例
     val period = (System.currentTimeMillis() - basicTime).toInt
-    mapCtx.clearRect(0, 0, mapWidth, mapHeight)
+    mapCtx.clearRect(0, 0, mapWidth , mapHeight)
     mapCtx.setFill(Color.BLACK)
     mapCtx.setGlobalAlpha(0.5)
-    mapCtx.fillRect(0, 600, mapWidth, mapHeight - 600 )
+    mapCtx.fillRect(0, 600 * scaleH, mapWidth, mapHeight - 600 * scaleH )
 
 
     val allSnakes = data.snakes
     val maxLength = if (allSnakes.nonEmpty) allSnakes.sortBy(r =>(r.length,r.id)).reverse.head.head else Point(0,0)
     val maxId = if (allSnakes.nonEmpty) allSnakes.sortBy(r => (r.length,r.id)).reverse.head.id else 0L
     mapCtx.save()
-    mapCtx.drawImage(maxImage, (maxLength.x * LittleMap.w) / Boundary.w - 7, 600 + (maxLength.y * LittleMap.h) / Boundary.h - 7, 15, 15)
+    mapCtx.drawImage(maxImage, (maxLength.x * LittleMap.w) * scaleW / Boundary.w - 7, 600 * scaleH + maxLength.y * LittleMap.h * scaleH / Boundary.h - 7, 15 * scaleW, 15 * scaleH)
     mapCtx.restore()
 
     if(allSnakes.nonEmpty && allSnakes.exists(_.id == uid)) {
@@ -65,20 +72,20 @@ class GameMapCanvas(canvas: Canvas) {
           mapCtx.beginPath()
           mapCtx.setGlobalAlpha(0.5)
           mapCtx.setStroke(Color.WHITE)
-          mapCtx.setLineWidth(2.0)
-          mapCtx.moveTo((joints.head.x * LittleMap.w)/Boundary.w, 600 + (joints.head.y * LittleMap.h)/Boundary.h)
+          mapCtx.setLineWidth(2 * scale)
+          mapCtx.moveTo((joints.head.x * LittleMap.w) * scaleW /Boundary.w, 600 * scaleH + (joints.head.y * LittleMap.h) /Boundary.h)
           for(i<- 1 until joints.length) {
-            mapCtx.lineTo((joints(i).x * LittleMap.w) / Boundary.w, 600 + (joints(i).y * LittleMap.h)/Boundary.h)
+            mapCtx.lineTo((joints(i).x * LittleMap.w) * scaleW / Boundary.w, 600 * scaleH + (joints(i).y * LittleMap.h)  /Boundary.h)
           }
           mapCtx.stroke()
           mapCtx.closePath()
         }
       }
     } else {
-      mapCtx.clearRect(0,0,mapWidth,mapHeight)
+      mapCtx.clearRect(0,0,mapWidth, mapHeight)
       mapCtx.setGlobalAlpha(0.5)
       mapCtx.setFill(Color.BLACK)
-      mapCtx.fillRect(0,600 ,mapWidth,mapHeight - 600)
+      mapCtx.fillRect(0,600 * scaleH ,mapWidth,mapHeight - 600 * scaleH)
     }
 
 

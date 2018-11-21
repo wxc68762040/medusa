@@ -121,7 +121,7 @@ object WatcherActor {
             Behaviors.same
 
           case PlayerWait =>
-            frontActor ! Protocol.PlayerWaitingJion
+            frontActor ! Protocol.PlayerWaitingJoin
             println("---- "+Protocol.PlayerWaitingJion+"  ")
             idle(watcherId,watchedId,roomId,frontActor,false)
 

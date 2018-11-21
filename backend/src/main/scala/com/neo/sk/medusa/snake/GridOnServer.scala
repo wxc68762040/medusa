@@ -25,7 +25,6 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
 
   override def info(msg: String): Unit = log.info(msg)
 
-
   private[this] var waitingJoin = Map.empty[String, String]
   private[this] var feededApples: List[Ap] = Nil
   private[this] var deadBodies: List[Ap] = Nil
@@ -44,14 +43,14 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
   def randomColor() = {
     val a = random.nextInt(7)
     val color = a match {
-      case 0 => "rgba(255, 20, 63, 1)"
-      case 1 => "rgba(235, 181, 51,1)"
-      case 2 => "rgba(255, 51, 153, 1)"
-      case 3 => "rgba(255, 255, 51, 1)"
-      case 4 => "rgba(102, 204, 255, 1)"
-      case 5 => "rgba(51, 255, 204, 1)"
-      case 6 => "rgba(51, 82, 255, 1)"
-      case _ => "rgba(255, 255, 255, 1)"
+      case 0 => (255, 20, 63, 1)
+      case 1 => (235, 181, 51,1)
+      case 2 => (255, 51, 153, 1)
+      case 3 => (255, 255, 51, 1)
+      case 4 => (102, 204, 255, 1)
+      case 5 => (51, 255, 204, 1)
+      case 6 => (51, 82, 255, 1)
+      case _ => (255, 255, 255, 1)
     }
     color
   }
@@ -60,7 +59,9 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
   def genWaitingSnake() = {
     val snakeNumber = waitingJoin.size
     waitingJoin.filterNot(kv => snakes.contains(kv._1)).foreach { case (id, name) =>
-      val color = randomColor()
+      val tmp = randomColor()
+      val color = "rgba(" + Math.min(tmp._1 + random.nextInt(100) - 35,255 )+ "," + Math.min(tmp._2 + random.nextInt(30), 255 )+
+      ", "+ Math.min(tmp._3 + random.nextInt(60) - 45, 255) + ", 1)"
       val head = randomHeadEmptyPoint()
       val direction = getSafeDirection(head)
       grid += head -> Body(id, color)
@@ -147,11 +148,10 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
       val winner = sorted.head
       val deads = sorted.tail
       // fixme 死亡
-      deads.foreach{
-        snake=>
+      deads.foreach { snake=>
         roomActor ! RoomActor.UserDead(snake.id, DeadInfo(snake.name, snake.length, snake.kill, winner.id, winner.name))
       }
-      deadSnakeList :::= deads.map(i=>DeadSnakeInfo(i.id,i.name,i.length,i.kill, winner.name))
+      deadSnakeList :::= deads.map(i=>DeadSnakeInfo(i.id, i.name, i.length, i.kill, winner.name))
       killMap += winner.id->(killMap.getOrElse(winner.id,Nil):::deads.map(i=>(i.id,i.name)))
       mapKillCounter += winner.id -> (mapKillCounter.getOrElse(winner.id, 0) + deads.length)
       deads.foreach { snake =>
@@ -171,14 +171,18 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
     snakes = newSnakes.map(s => (s.id, s)).toMap
   }
   
-  override def updateASnake(snake: SnakeInfo, actMap: Map[String, Int]): Either[String, SnakeInfo] = {
+  def updateASnake(snake: SnakeInfo, actMap: Map[String, Int]): Either[String, SnakeInfo] = {
     val keyCode = actMap.get(snake.id)
     val newDirection = {
       val keyDirection = keyCode match {
         case Some(KeyEvent.VK_LEFT) => Point(-1, 0)
+        case Some(KeyEvent.VK_A) => Point(-1, 0)
         case Some(KeyEvent.VK_RIGHT) => Point(1, 0)
+        case Some(KeyEvent.VK_D) => Point(1, 0)
         case Some(KeyEvent.VK_UP) => Point(0, -1)
+        case Some(KeyEvent.VK_W) => Point(0, -1)
         case Some(KeyEvent.VK_DOWN) => Point(0, 1)
+        case Some(KeyEvent.VK_S) => Point(0, 1)
         case _ => snake.direction
       }
       if (keyDirection + snake.direction != Point(0, 0)) {
@@ -291,8 +295,8 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
             case x if x > 0.8 => 25
             case x => 5
           }
-          val apple = Apple(score, appleLife, appleType)
-          feededApples ::= Ap(score, appleLife, appleType, p.x, p.y)
+          val apple = Apple(score, appleType)
+          feededApples ::= Ap(score, appleType, p.x, p.y)
           grid += (p -> apple)
           appleNeeded -= 1
         }
@@ -344,8 +348,8 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
               case x if x > 0.8 => 25
               case x => 5
             }
-            val apple = Apple(score, appleLife, FoodType.intermediate, Some(targetPoint, score))
-            deadBodies ::= Ap(score, appleLife, FoodType.intermediate, dead._1.x, dead._1.y, Some(targetPoint, score))
+            val apple = Apple(score, FoodType.intermediate, Some(targetPoint, score))
+            deadBodies ::= Ap(score, FoodType.intermediate, dead._1.x, dead._1.y, Some(targetPoint, score))
             grid += (dead._1 -> apple)
             appleNeeded -= 1
           }
@@ -368,16 +372,18 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
             totalScore += x.score
             newSpeed += 0.1
             speedOrNot = true
-            apples ::= Ap(x.score, x.life, x.appleType, e.x, e.y, x.targetAppleOpt)
+            apples ::= Ap(x.score, x.appleType, e.x, e.y, x.targetAppleOpt)
           }
         case _ => //do nothing
       }
     }
-    eatenApples += (snakeId -> apples.map(a => AppleWithFrame(frameCount, a)))
+    if(apples.nonEmpty) {
+      eatenApples += (snakeId -> apples.map(a => AppleWithFrame(frameCount, a)))
+    }
     Some((totalScore, newSpeed, speedOrNot))
   }
 
-  override def speedUp(snake: SnakeInfo, newDirection: Point): Option[(Boolean, Double)] = {
+  def speedUp(snake: SnakeInfo, newDirection: Point): Option[(Boolean, Double)] = {
     //检测加速
     var speedOrNot :Boolean = false
     val headerLeftRight=if(newDirection.y == 0){
@@ -420,8 +426,9 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
     }else{
       fSpeed
     }
-
-    speedUpInfo ::= SpeedUpInfo(snake.id, speedOrNot, newSpeed)
+    if(speedOrNot) {
+      speedUpInfo ::= SpeedUpInfo(snake.id, newSpeed)
+    }
     Some((speedOrNot, newSpeed))
   }
 

@@ -23,6 +23,8 @@ object GameView  {
 
   val canvas: Canvas = dom.document.getElementById("GameView").asInstanceOf[Canvas]
   private[this] val canvasPic = dom.document.getElementById("canvasPic").asInstanceOf[HTMLElement]
+  private[this] val killerImg = dom.document.getElementById("killerImg").asInstanceOf[HTMLElement]
+  private[this] val championSnake = dom.document.getElementById("championSnake").asInstanceOf[HTMLElement]
   private[this] val ctx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
   def drawGameOn(): Unit = {
@@ -92,7 +94,7 @@ object GameView  {
     cacheCtx.drawImage(canvasPic, 0 + deviationX, 0 + deviationY, Boundary.w * scaleW, Boundary.h * scaleH)
     //cacheCtx.drawImage(canvasPic,0 + deviationX ,0 + deviationY , Boundary.w * scaleW, Boundary.h * scaleH)
 
-    apples.get.filterNot( a=> a.x * scaleW < myHead.x * scaleW - windowWidth/2 * myProportion || a.y * scaleH < myHead.y * scaleH - windowHeight/2 * myProportion || a.x * scaleW > myHead.x * scaleW + windowWidth/2 * myProportion|| a.y * scaleH > myHead.y * scaleH + windowHeight/2* myProportion).foreach{ case Ap (score,_,_,x,y,_)=>
+    apples.filterNot( a=> a.x * scaleW < myHead.x * scaleW - windowWidth/2 * myProportion || a.y * scaleH < myHead.y * scaleH - windowHeight/2 * myProportion || a.x * scaleW > myHead.x * scaleW + windowWidth/2 * myProportion|| a.y * scaleH > myHead.y * scaleH + windowHeight/2* myProportion).foreach{ case Ap (score,_,x,y,_)=>
        cacheCtx.fillStyle = score match{
          case 50 => "#ffeb3bd9"
          case 25 => "#1474c1"
@@ -130,15 +132,15 @@ object GameView  {
       joints = joints.reverse.enqueue(tail)
 
       cacheCtx.beginPath()
-      if(id != myId || !playerState._2){
+//      if(id != myId || !playerState._2){
         cacheCtx.strokeStyle = snake.color
         cacheCtx.shadowBlur = 20
         cacheCtx.shadowColor = snake.color
-      } else {
-        cacheCtx.strokeStyle = "rgba(0,0,0,1)"
-        cacheCtx.shadowBlur = 20
-        cacheCtx.shadowColor = "rgba(255,255,255,1)"
-      }
+//      } else {
+//        cacheCtx.strokeStyle = "rgba(0,0,0,1)"
+//        cacheCtx.shadowBlur = 20
+//        cacheCtx.shadowColor = "rgba(255,255,255,1)"
+//      }
       val snakeWidth = square * 2 * scaleW
       cacheCtx.lineWidth = snakeWidth
       cacheCtx.moveTo(joints.head.x * scaleW + deviationX, joints.head.y * scaleH + deviationY)
@@ -173,6 +175,12 @@ object GameView  {
       cacheCtx.fillStyle = Color.White.toString()
       val snakeName = if(snake.name.length > 15) snake.name.substring(0,14) else snake.name
       cacheCtx.fillText(snakeName, x * scaleW + deviationX - nameLength * 4, y * scaleH + deviationY - 15)
+      if (!playerState._2 && id == myId) {
+        cacheCtx.drawImage(killerImg, x * scaleW + deviationX - nameLength * 4, y * scaleH + deviationY - 15)
+      }
+      if (snake.length >= snakes.maxBy(_.length).length) {
+        cacheCtx.drawImage(championSnake, x * scaleW + deviationX - nameLength * 4 + cacheCtx.measureText(snake.name + " ").width, y * scaleH + deviationY - 15 - 13 * scaleW * myProportion)
+      }
       if (snakeSpeed > fSpeed + 1) {
         cacheCtx.fillText(snakeSpeed.toInt.toString, x * scaleW  + deviationX - nameLength * 4, y * scaleH + deviationY - 25)
       }

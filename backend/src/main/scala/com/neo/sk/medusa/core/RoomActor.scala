@@ -78,7 +78,7 @@ object RoomActor {
             if(isRecord){
               getGameRecorder(ctx, grid, roomId)
             }
-            idle(roomId, 0,ListBuffer[Protocol.GameMessage](), mutable.HashMap[String, (ActorRef[UserActor.Command], String)](),mutable.HashMap[String,mutable.HashMap[String, ActorRef[WatcherActor.Command]]](),mutable.ListBuffer[String]() ,grid,emptyKeepTime.toMillis/AppSettings.frameRate)
+            idle(roomId, 0,ListBuffer[Protocol.GameMessage](), mutable.HashMap[String, (ActorRef[UserActor.Command], String, Long)](),mutable.HashMap[String,mutable.HashMap[String, ActorRef[WatcherActor.Command]]](),mutable.ListBuffer[String]() ,grid,emptyKeepTime.toMillis/AppSettings.frameRate)
         }
     }
   }
@@ -94,8 +94,8 @@ object RoomActor {
           case t: UserJoinGame =>
             log.info(s"room $roomId got a new player: ${t.playerId}")
             timer.cancel(TimerKey4CloseRec)
-            userMap.put(t.playerId, (t.userActor, t.playerName))
-            deadUserList-=t.playerId
+            userMap.put(t.playerId, (t.userActor, t.playerName, tickCount))
+            deadUserList -= t.playerId
             grid.addSnake(t.playerId, t.playerName)
             //dispatchTo(t.playerId, UserActor.DispatchMsg(Protocol.Id(t.playerId)), userMap)
             eventList.append(Protocol.NewSnakeJoined(t.playerId, t.playerName, roomId))
@@ -151,19 +151,20 @@ object RoomActor {
 
           case t:UserLeft =>
             grid.removeSnake(t.playerId)
-            val userName=userMap(t.playerId)._2
-            dispatch(UserActor.DispatchMsg(Protocol.SnakeDead(t.playerId,userName)),userMap,watcherMap,Protocol.SnakeDead(t.playerId,userName))
+            val userName = userMap(t.playerId)._2
+            dispatch(UserActor.DispatchMsg(Protocol.SnakeDead(t.playerId, userName)), userMap,watcherMap,Protocol.SnakeDead(t.playerId,userName))
 
-            eventList.append(Protocol.SnakeDead(t.playerId,userName))
-            if(isRecord) {
+            eventList.append(Protocol.SnakeDead(t.playerId, userName))
+            if (isRecord) {
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserLeftRoom(t.playerId, userMap(t.playerId)._2, grid.frameCount)
             }
             userMap.remove(t.playerId)
-            if (userMap.isEmpty && ! deadUserList.contains(t.playerId)){
+            deadUserList -= t.playerId
+            if (userMap.isEmpty && !deadUserList.contains(t.playerId)) {
               //非正常死亡退出
-              timer.startSingleTimer(TimerKey4CloseRec,CloseRecorder,emptyKeepTime)
+              timer.startSingleTimer(TimerKey4CloseRec, CloseRecorder, emptyKeepTime)
             }
-            if(deadUserList.contains(t.playerId)) deadUserList-=t.playerId
+            if (deadUserList.contains(t.playerId)) deadUserList -= t.playerId
             Behaviors.same
 
           case Sync =>
@@ -174,13 +175,13 @@ object RoomActor {
             val speedUpInfo = grid.getSpeedUpInfo
             grid.resetFoodData()
             val snakeNumber = grid.genWaitingSnake()
-            if(snakeNumber > 0) {
+            if (snakeNumber > 0) {
               eventList.append(grid.getGridSyncData)
               dispatch(UserActor.DispatchMsg(grid.getGridSyncData), userMap,watcherMap,grid.getGridSyncData)
 
             }
             if (grid.deadSnakeList.nonEmpty) {
-              grid.deadSnakeList.foreach{s =>
+              grid.deadSnakeList.foreach { s =>
                 grid.removeSnake(s.id)
               }
               eventList.append(Protocol.DeadList(grid.deadSnakeList.map(_.id)))
@@ -189,9 +190,8 @@ object RoomActor {
             }
             grid.killMap.foreach {
               g =>
-                eventList.append(Protocol.KillList(g._2))
-                dispatchTo(g._1, UserActor.DispatchMsg(Protocol.KillList(g._2)), userMap,watcherMap,Protocol.KillList(g._2))
-
+                eventList.append(Protocol.KillList(g._1, g._2))
+                dispatchTo(g._1, UserActor.DispatchMsg(Protocol.KillList(g._1, g._2)), userMap,watcherMap,Protocol.KillList(g._2))
             }
 
             if (speedUpInfo.nonEmpty) {
@@ -200,22 +200,27 @@ object RoomActor {
 
             }
             if (tickCount % 20 == 5) {
-              val GridSyncData = if(tickCount > 100){
-                grid.getGridSyncDataNoApp
+              if(tickCount > 300){
+                val noAppData = grid.getGridSyncDataNoApp
+                if (!(snakeNumber > 0)) { //需要生成蛇的情况下，已经广播过一次全量数据，不再次广播
+                  dispatch(UserActor.DispatchMsg(noAppData), userMap，watcherMap,noAppData)
+                }
               }else {
-                eventList.append(Protocol.SyncApples(grid.getGridSyncData.appleDetails.get))
-                grid.getGridSyncData
-              }
-              if (!(snakeNumber > 0)) { //需要生成蛇的情况下，已经广播过一次全量数据，不再次广播
-                dispatch(UserActor.DispatchMsg(GridSyncData), userMap,watcherMap,GridSyncData)
+                val syncData = grid.getGridSyncData
+                eventList.append(Protocol.SyncApples(syncData.appleDetails))
+                if (!(snakeNumber > 0)) { //需要生成蛇的情况下，已经广播过一次全量数据，不再次广播
+                  dispatch(UserActor.DispatchMsg(syncData), userMap,watcherMap,syncData)
+                }
 
               }
+
+
             }
-            if(tickCount % 200 == 1){
-              dispatch(UserActor.DispatchMsg(Protocol.SyncApples(grid.getGridSyncData.appleDetails.get)),userMap,watcherMap,Protocol.SyncApples(grid.getGridSyncData.appleDetails.get))
+            if(tickCount % 300 == 1){
+//             dispatch(UserActor.DispatchMsg(Protocol.SyncApples(grid.getGridSyncData.appleDetails.get)),userMap,watcherMap,Protocol.SyncApples(grid.getGridSyncData.appleDetails.get))
 
-              eventList.append(Protocol.SyncApples(grid.getGridSyncData.appleDetails.get))
-            }else{
+              eventList.append(Protocol.SyncApples(grid.getGridSyncData.appleDetails))
+            }
               if (feedApples.nonEmpty) {
                 eventList.append(Protocol.FeedApples(feedApples))
                 dispatch(UserActor.DispatchMsg(Protocol.FeedApples(feedApples)), userMap,watcherMap,Protocol.FeedApples(feedApples))
@@ -227,21 +232,21 @@ object RoomActor {
 
                 eventList.append(tmp)
               }
-            }
+
             if (tickCount % 20 == 1) {
               eventList.append(Protocol.Ranks(grid.currentRank, grid.historyRankList))
               dispatch(UserActor.DispatchMsg(Protocol.Ranks(grid.currentRank, grid.historyRankList)), userMap,watcherMap,Protocol.Ranks(grid.currentRank, grid.historyRankList))
 
             }
-            var rEmptyCount=roomEmptyCount
-            if(isRecord && userMap.exists(u=> ! deadUserList.contains(u._1))) {
+            var rEmptyCount = roomEmptyCount
+            if (isRecord && userMap.exists(u => !deadUserList.contains(u._1))) {
               //房间不空
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.GameRecord(eventList.toList, Some(grid.getGridSyncData))
-            }else if(isRecord && rEmptyCount>0){
+            } else if (isRecord && rEmptyCount > 0) {
               //房间空了 先同步一分钟数据后不再同步
-              rEmptyCount-=1
+              rEmptyCount -= 1
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.GameRecord(eventList.toList, Some(grid.getGridSyncData))
-            }else if(isRecord && rEmptyCount<=0){
+            } else if (isRecord && rEmptyCount <= 0) {
               //房间空了 数据已经同步一分钟了
               //do nothing
             }
@@ -255,7 +260,7 @@ object RoomActor {
           case KillRoom =>
             Behaviors.stopped
 
-          case CloseRecorder=>
+          case CloseRecorder =>
             getGameRecorder(ctx, grid, roomId) ! GameRecorder.RoomEmpty
             Behaviors.same
 
@@ -326,6 +331,7 @@ object RoomActor {
     userMap.foreach {
       case (id, t) =>
         if (id != distinctId) {
+          t._1 ! gameOutPut
         } else {
           t._1 ! distinctGameOutPut
         }
@@ -335,12 +341,11 @@ object RoomActor {
   private def getGameRecorder(ctx: ActorContext[Command],grid:GridOnServer,roomId:Long):ActorRef[GameRecorder.Command] = {
     val childName = s"gameRecorder" + roomId
     ctx.child(childName).getOrElse{
-      val curTime = System.currentTimeMillis()
       val fileName = "medusa"
       val gameInformation = ""
       val initStateOpt = Some(grid.getGridSyncData)
       val actor = ctx.spawn(GameRecorder.create(fileName,gameInformation,initStateOpt,roomId),childName)
-      ctx.watchWith(actor,ChildDead(childName,actor))
+      ctx.watchWith(actor, ChildDead(childName, actor))
       actor
     }.upcast[GameRecorder.Command]
   }

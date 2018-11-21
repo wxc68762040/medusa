@@ -12,6 +12,7 @@ object Protocol {
   case object CompleteMsgServer extends WsMsgSource
   case class FailMsgServer(ex: Throwable) extends WsMsgSource
   case object HeartBeat extends WsMsgSource
+  case object LagSet extends WsMsgSource
 
 	trait GameMessageBeginning extends WsMsgSource
 	
@@ -19,15 +20,18 @@ object Protocol {
 
   case class GridDataSync(
     frameCount: Long,
-    snakes: List[SnakeInfo],
-    appleDetails: Option[List[Ap]],
-    timestamp: Long
+    snakes: List[Snake4Client],
+    appleDetails: List[Ap]
   ) extends GameMessage
 
+  case class GridDataSyncNoApp(
+    frameCount: Long,
+    snakes: List[Snake4Client]
+  ) extends GameMessage
 
   case object YouHaveLogined extends GameMessage
 
-  case object PlayerWaitingJion extends GameMessage
+  case object PlayerWaitingJoin extends GameMessage
 
   case object RecordNotExist extends GameMessage
 
@@ -61,6 +65,7 @@ object Protocol {
   ) extends GameMessage
 
   case class KillList(
+    playerID: String,
     killList: List[(String, String)]
   ) extends GameMessage
 
@@ -138,4 +143,6 @@ object Protocol {
   //val savingFrame = 5 //保存的帧数
 
   val netInfoRate = 1000
+  
+  val lagLimitTime = 6 * 1000 //距离上次接受同步帧超过6秒，停止绘制及前端更新
 }

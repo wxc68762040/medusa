@@ -202,6 +202,22 @@ object GameRecorder {
           }
           data.recorder.putMutableInfo(Constants.essfMapKeyName, ESSFSupport.userMapEncode(mapInfo))
 
+          if(data.gameRecordBuffer.nonEmpty){
+            val rs = data.gameRecordBuffer.reverse
+            rs.headOption.foreach { e =>
+              data.recorder.writeFrame(e.event._1.fillMiddleBuffer(middleBuffer).result(), e.event._2.map(_.fillMiddleBuffer(middleBuffer).result()))
+              rs.tail.foreach { e =>
+                if (e.event._1.nonEmpty) {
+                  data.recorder.writeFrame(e.event._1.fillMiddleBuffer(middleBuffer).result())
+                } else {
+                  data.recorder.writeEmptyFrame()
+                }
+              }
+            }
+            data.gameRecordBuffer = List[GameRecord]()
+          }
+
+
           data.recorder.finish()
           log.info(s"${ctx.self.path} has save game data to file=${data.fileName}_${data.fileIndex}")
           val recordInfo = rRecords(data.fileIndex, data.startTime, System.currentTimeMillis(), data.roomId, userAllMap.size, frameIndex)

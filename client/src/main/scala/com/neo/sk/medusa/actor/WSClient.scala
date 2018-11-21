@@ -117,7 +117,6 @@ object WSClient {
 			case TextMessage.Strict(msg) =>
 				import io.circe.generic.auto._
 				import scala.concurrent.ExecutionContext.Implicits.global
-
 				log.debug(s"msg from webSocket: $msg")
 				val gameId = AppSettings.gameId
         if(msg.length > 50) {
@@ -147,10 +146,9 @@ object WSClient {
 				//decode process.
 				val buffer = new MiddleBufferInJvm(bMsg.asByteBuffer)
 				bytesDecode[WsResponse](buffer) match {
-					case Right(v) => v
+					case Right(v) =>
 					case Left(e) =>
 						println(s"decode error: ${e.message}")
-						TextMsg("decode error")
 				}
 		}
 	}
@@ -195,7 +193,7 @@ object WSClient {
 	
 	def getWebSocketUri(playerId: String, playerName: String, accessCode: String): String = {
 		val wsProtocol = AppSettings.gameProtocol
-		//val host ="10.1.29.250:" + AppSettings.httpPort
+//		val host = AppSettings.gameHost
 		val domain = AppSettings.gameDomain
 		val playerIdEncoder = URLEncoder.encode(playerId, "UTF-8")
 		val playerNameEncoder = URLEncoder.encode(playerName, "UTF-8")
