@@ -1,10 +1,11 @@
 package com.neo.sk.medusa.core
-
+import org.seekloud.byteobject.ByteObject._
 import akka.actor.typed.scaladsl.{Behaviors, StashBuffer, TimerScheduler}
 import org.slf4j.LoggerFactory
 import com.neo.sk.medusa.snake.GridOnServer
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors, TimerScheduler}
+import akka.util.ByteString
 
 import concurrent.duration._
 import scala.collection.mutable.ListBuffer
@@ -16,6 +17,7 @@ import com.neo.sk.medusa.common.AppSettings
 import com.neo.sk.medusa.core.RoomManager.Command
 import com.neo.sk.medusa.snake.Protocol.WsMsgSource
 import net.sf.ehcache.transaction.xa.commands.Command
+import org.seekloud.byteobject.MiddleBufferInJvm
 
 import scala.collection.mutable
 
@@ -59,6 +61,14 @@ object RoomActor {
 
   final case class ChildDead[U](name: String, childRef: ActorRef[U]) extends Command
 
+  val sendBuffer = new MiddleBufferInJvm(40960)
+
+  var keyLength = 0l
+  var feedAppLength = 0l
+  var eatAppLength = 0l
+  var speedLength = 0l
+  var syncLength = 0l
+  var rankLength = 0l
 
   def create(roomId: Long): Behavior[Command] = {
     Behaviors.setup[Command] {
@@ -130,6 +140,8 @@ object RoomActor {
             } else {
               log.info(s"key loss: server: ${grid.frameCount} client: ${t.frame}")
             }
+            val msg = ByteString(Protocol.SnakeAction(t.id, t.keyCode, t.frame).fillMiddleBuffer(sendBuffer).result())
+            keyLength += msg.length*userMap.size
             Behaviors.same
 
           case BeginSync =>
@@ -164,6 +176,9 @@ object RoomActor {
             if (snakeNumber > 0) {
               eventList.append(grid.getGridSyncData)
               dispatch(UserActor.DispatchMsg(grid.getGridSyncData), userMap)
+
+              val msg = ByteString(grid.getGridSyncData.fillMiddleBuffer(sendBuffer).result())
+              syncLength += msg.length*userMap.size
             }
             if (grid.deadSnakeList.nonEmpty) {
               grid.deadSnakeList.foreach { s =>
@@ -181,18 +196,27 @@ object RoomActor {
             if (speedUpInfo.nonEmpty) {
               eventList.append(Protocol.SpeedUp(speedUpInfo))
               dispatch(UserActor.DispatchMsg(Protocol.SpeedUp(speedUpInfo)), userMap)
+              val msg = ByteString(Protocol.SpeedUp(speedUpInfo).fillMiddleBuffer(sendBuffer).result())
+              speedLength += msg.length * userMap.size
             }
             if (tickCount % 20 == 5) {
               if (tickCount > 300) {
                 val noAppData = grid.getGridSyncDataNoApp
                 if (!(snakeNumber > 0)) { //需要生成蛇的情况下，已经广播过一次全量数据，不再次广播
                   dispatch(UserActor.DispatchMsg(noAppData), userMap)
+
+                  val msg = ByteString(noAppData.fillMiddleBuffer(sendBuffer).result())
+                  syncLength += msg.length * userMap.size
+
                 }
               } else {
                 val syncData = grid.getGridSyncData
                 eventList.append(Protocol.SyncApples(syncData.appleDetails))
                 if (!(snakeNumber > 0)) { //需要生成蛇的情况下，已经广播过一次全量数据，不再次广播
                   dispatch(UserActor.DispatchMsg(syncData), userMap)
+
+                  val msg = ByteString(syncData.fillMiddleBuffer(sendBuffer).result())
+                  syncLength += msg.length*userMap.size
                 }
               }
 
@@ -201,24 +225,25 @@ object RoomActor {
 //              dispatch(UserActor.DispatchMsg(Protocol.SyncApples(grid.getGridSyncData.appleDetails.get)), userMap)
               eventList.append(Protocol.SyncApples(grid.getGridSyncData.appleDetails))
             }
-//            userMap.keys.foreach {
-//              user =>
-//                if((tickCount - userMap(user)._3) % 200 == 1){
-//                  dispatchTo(user, UserActor.DispatchMsg(Protocol.SyncApples(grid.getGridSyncData.appleDetails.get)), userMap)
-//                }
-//            }
 
             if (feedApples.nonEmpty) {
               eventList.append(Protocol.FeedApples(feedApples))
               dispatch(UserActor.DispatchMsg(Protocol.FeedApples(feedApples)), userMap)
+              val msg = ByteString(Protocol.FeedApples(feedApples).fillMiddleBuffer(sendBuffer).result())
+              feedAppLength += msg.length*userMap.size
             }
             if (eatenApples.nonEmpty) {
               val tmp = Protocol.EatApples(eatenApples.map(r => EatFoodInfo(r._1, r._2)).toList)
               dispatch(UserActor.DispatchMsg(tmp), userMap)
               eventList.append(tmp)
+
+              val msg = ByteString(tmp.fillMiddleBuffer(sendBuffer).result())
+              eatAppLength += msg.length*userMap.size
             }
             if (tickCount % 20 == 1) {
               eventList.append(Protocol.Ranks(grid.currentRank, grid.historyRankList))
+              val msg = ByteString(Protocol.Ranks(grid.currentRank, grid.historyRankList).fillMiddleBuffer(sendBuffer).result())
+              rankLength += msg.length*userMap.size
               dispatch(UserActor.DispatchMsg(Protocol.Ranks(grid.currentRank, grid.historyRankList)), userMap)
             }
             var rEmptyCount = roomEmptyCount

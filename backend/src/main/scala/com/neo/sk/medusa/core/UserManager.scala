@@ -121,6 +121,19 @@ object UserManager {
 
           case ClearMsgLength =>
             log.info(s"msg total length from ${System.currentTimeMillis() - 100} to ${System.currentTimeMillis()} is $msgLength ")
+            log.info(s"keyLength:${RoomActor.keyLength}")
+            log.info(s"eatFoodLength:${RoomActor.eatAppLength}")
+            log.info(s"feedAppLength:${RoomActor.feedAppLength}")
+            log.info(s"syncLength:${RoomActor.syncLength}")
+            log.info(s"speedLength:${RoomActor.speedLength}")
+            log.info(s"rankLength:${RoomActor.rankLength}")
+            RoomActor.keyLength = 0l
+            RoomActor.eatAppLength = 0l
+            RoomActor.feedAppLength = 0l
+            RoomActor.syncLength = 0l
+            RoomActor.speedLength = 0l
+            RoomActor.rankLength = 0l
+
             timer.startSingleTimer(Timer4MsgAdd, StartMsgAddLength,(scala.util.Random.nextInt(5000)+8000).milli)
             Behaviors.same
 
