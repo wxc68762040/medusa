@@ -127,7 +127,7 @@ object GameMessageReceiver {
 				
 				case Protocol.FeedApples(apples) =>
 					ClientBoot.addToPlatform {
-						grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt))
+						grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.appleType, a.targetAppleOpt))
 					}
 					Behavior.same
 				
@@ -144,11 +144,11 @@ object GameMessageReceiver {
 				case Protocol.SpeedUp(speedInfo) =>
 					ClientBoot.addToPlatform {
 						speedInfo.foreach { info =>
-							val oldSnake = grid.snakes.get(info.snakeId)
+							val oldSnake = grid.snakes4client.get(info.snakeId)
 							if (oldSnake.nonEmpty) {
-								val freeFrame = if (info.speedUpOrNot) 0 else oldSnake.get.freeFrame + 1
-								val newSnake = oldSnake.get.copy(speed = info.newSpeed, freeFrame = freeFrame)
-								grid.snakes += (info.snakeId -> newSnake)
+//								val freeFrame = if (info.speedUpOrNot) 0 else oldSnake.get.freeFrame + 1
+								val newSnake = oldSnake.get.copy(speed = info.newSpeed)
+								grid.snakes4client += (info.snakeId -> newSnake)
 							}
 						}
 					}

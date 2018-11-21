@@ -128,7 +128,7 @@ object UserActor {
             Behaviors.stopped
             
           case x =>
-            log.error(s"${ctx.self.path} receive an unknown msg when init:$x")
+//            log.error(s"${ctx.self.path} receive an unknown msg when init:$x")
             Behaviors.unhandled
 
         }

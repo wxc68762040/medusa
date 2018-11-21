@@ -508,17 +508,11 @@ object NetGameHolder extends js.JSApp {
     }
   }
 	
-  def sync(dataOpt: scala.Option[Protocol.GridDataSync],dataNoAppOpt:scala.Option[Protocol.GridDataSyncNoApp]) = {
+  def sync(dataOpt: scala.Option[Protocol.GridDataSync], dataNoAppOpt:scala.Option[Protocol.GridDataSyncNoApp]) = {
     if (dataOpt.nonEmpty) {
       val data = dataOpt.get
-      val presentFrame = grid.frameCount
       grid.frameCount = data.frameCount
       grid.snakes4client = data.snakes.map(s => s.id -> s).toMap
-      if (data.frameCount <= presentFrame) {
-        for (_ <- presentFrame until data.frameCount by -1) {
-          grid.update(false)
-        }
-      }
       val mySnakeOpt = grid.snakes4client.find(_._1 == myId)
       if (mySnakeOpt.nonEmpty && state.contains("playGame") && playerState._2) {
         var mySnake = mySnakeOpt.get._2
@@ -534,7 +528,7 @@ object NetGameHolder extends js.JSApp {
       val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.appleType, a.targetAppleOpt)).toMap
       val gridMap = appleMap
       grid.grid = gridMap
-    }else if(dataNoAppOpt.nonEmpty){
+    } else if(dataNoAppOpt.nonEmpty) {
       val data = dataNoAppOpt.get
       val presentFrame = grid.frameCount
       grid.frameCount = data.frameCount
