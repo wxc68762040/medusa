@@ -27,6 +27,7 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 				case Right(r) =>
 					wsUrl = r.data.wsUrl
 					scanUrl = r.data.scanUrl
+					println(s"!!${r.data.scanUrl}")
 					loginScene.drawScanUrl(imageFromBase64(scanUrl))
 					wsClient ! EstablishConnectionEs(wsUrl, scanUrl)
 				case Left(l) =>

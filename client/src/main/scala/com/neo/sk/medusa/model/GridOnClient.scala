@@ -27,15 +27,15 @@ class GridOnClient(override val boundary: Point) extends Grid {
   override def updateSnakes() = {
     var updatedSnakes = List.empty[Snake4Client]
     val acts = actionMap.getOrElse(frameCount, Map.empty[String, Int])
-    snakes.values.map(updateASnake(_, acts)).foreach {
+		snakes4client.values.map(updateASnake(_, acts)).foreach {
       case Right(s) =>
         updatedSnakes ::= s
       case Left(_) =>
     }
-    snakes = updatedSnakes.map(s => (s.id, s)).toMap
+		snakes4client = updatedSnakes.map(s => (s.id, s)).toMap
   }
   
-  override def updateASnake(snake: Snake4Client, actMap: Map[String, Int]): Either[String, SnakeInfo] = {
+  def updateASnake(snake: Snake4Client, actMap: Map[String, Int]): Either[String, Snake4Client] = {
     val keyCode = actMap.get(snake.id)
     val newDirection = {
       val keyDirection = keyCode match {
@@ -55,33 +55,29 @@ class GridOnClient(override val boundary: Point) extends Grid {
         snake.direction
       }
     }
-
-    
-    val speedInfoOpt = speedUp(snake, newDirection)
-    var newSpeed = if (speedInfoOpt.nonEmpty) speedInfoOpt.get._2 else snake.speed
-    var speedOrNot = if (speedInfoOpt.nonEmpty) speedInfoOpt.get._1 else false
+		
+    val newSpeed = snake.speed
     
     val newHead = snake.head + snake.direction * newSpeed.toInt
-    val oldHead = snake.head
+//    val oldHead = snake.head
+//
+//    val foodEaten = eatFood(snake.id, newHead, newSpeed, speedOrNot)
+//    val foodSum = if (foodEaten.nonEmpty) {
+//      newSpeed = foodEaten.get._2
+//      speedOrNot = foodEaten.get._3
+//      foodEaten.get._1
+//    } else 0
     
-    val foodEaten = eatFood(snake.id, newHead, newSpeed, speedOrNot)
-    var myId = ""
-    val foodSum = if (foodEaten.nonEmpty) {
-      newSpeed = foodEaten.get._2
-      speedOrNot = foodEaten.get._3
-      foodEaten.get._1
-    } else 0
-    
-    val len = snake.length + foodSum
+    val len = snake.length
     
     //处理身体及尾巴的移动
     var newJoints = snake.joints
     var newTail = snake.tail
-    var step = snake.speed.toInt - (snake.extend + foodSum)
+    var step = snake.speed.toInt - snake.extend
     val newExtend = if(step >= 0) {
       0
     } else {
-      snake.extend + foodSum - snake.speed.toInt
+      snake.extend - snake.speed.toInt
     }
     if (newDirection != snake.direction) {
       newJoints = newJoints.enqueue(newHead)
@@ -100,19 +96,19 @@ class GridOnClient(override val boundary: Point) extends Grid {
       }
     }
     
-    val newFreeFrame = if (speedInfoOpt.nonEmpty) {
-      if(speedOrNot) 0 else snake.freeFrame + 1
-    } else snake.freeFrame
+//    val newFreeFrame = if (speedInfoOpt.nonEmpty) {
+//      if(speedOrNot) 0 else snake.freeFrame + 1
+//    } else snake.freeFrame
     
-    Right(snake.copy(head = newHead, tail = newTail, lastHead = oldHead, direction = newDirection,
-      joints = newJoints, speed = newSpeed, freeFrame = newFreeFrame, length = len, extend = newExtend))
+    Right(snake.copy(head = newHead, tail = newTail, direction = newDirection,
+      joints = newJoints, speed = newSpeed, length = len, extend = newExtend))
   }
   
   override def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[String] = None): Unit = {} //do nothing.
 
   override def eatFood(snakeId: String, newHead: Point, newSpeedInit: Double, speedOrNotInit: Boolean): Option[(Int, Double, Boolean)] = None
 
-  override def speedUp(snake: Snake4Client, newDirection: Point): Option[(Boolean, Double)] = None
+//  override def speedUp(snake: Snake4Client, newDirection: Point): Option[(Boolean, Double)] = None
   
   override def countBody(): Unit = None
   
@@ -135,42 +131,25 @@ class GridOnClient(override val boundary: Point) extends Grid {
 		if (dataOpt.nonEmpty) {
 			val data = dataOpt.get
 			frameCount = data.frameCount
-			snakes = data.snakes.map(s => s.id -> s).toMap
+			snakes4client = data.snakes.map(s => s.id -> s).toMap
 			grid = grid.filter { case (_, spot) =>
 				spot match {
-					case Apple(_, life, _, _) if life >= 0 => true
+					case Apple(_, life, _) if life >= 0 => true
 					case _ => false
 				}
 			}
-			if(data.appleDetails.isDefined) {
-				val appleMap = data.appleDetails.get.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
-				val gridMap = appleMap
-				grid = gridMap
-			}
+			val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.appleType, a.targetAppleOpt)).toMap
+			val gridMap = appleMap
+			grid = gridMap
 		}
 	}
 
-	def sync(dataOpt: scala.Option[Protocol.GridDataSync]) = {
+	def sync(dataOpt: scala.Option[Protocol.GridDataSync], dataNoAppOpt:scala.Option[Protocol.GridDataSyncNoApp]) = {
 		if (dataOpt.nonEmpty) {
 			val data = dataOpt.get
-//      grid.actionMap = grid.actionMap.filterKeys(_ >= data.frameCount - 1 - advanceFrame)
 			frameCount = data.frameCount
-			snakes = data.snakes.map(s => s.id -> s).toMap
-//			grid = grid.filter { case (_, spot) =>
-//				spot match {
-//					case Apple(_, life, _, _) if life >= 0 => true
-//					case _ => false
-//				}
-//			}
-			if(data.appleDetails.isDefined) {
-				grid = grid.filter{ case (_, spot) =>
-						spot match {
-							case Apple(_, life, _, _) if life >= 0 => true
-							case _ => false
-						}
-				}
-			}
-			val mySnakeOpt = snakes.find(_._1 == myId)
+			snakes4client = data.snakes.map(s => s.id -> s).toMap
+			val mySnakeOpt = snakes4client.find(_._1 == myId)
 			if (mySnakeOpt.nonEmpty) {
 				var mySnake = mySnakeOpt.get._2
 				for (i <- Protocol.advanceFrame to 1 by -1) {
@@ -180,18 +159,32 @@ class GridOnClient(override val boundary: Point) extends Grid {
 						case Left(_) =>
 					}
 				}
-				snakes += ((mySnake.id, mySnake))
+				snakes4client += ((mySnake.id, mySnake))
 			}
-			if(data.appleDetails.isDefined) {
-				val appleMap = data.appleDetails.get.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
-				val gridMap = appleMap
-				grid = gridMap
+			val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.appleType, a.targetAppleOpt)).toMap
+			val gridMap = appleMap
+			grid = gridMap
+		} else if(dataNoAppOpt.nonEmpty) {
+			val data = dataNoAppOpt.get
+			frameCount = data.frameCount
+			snakes4client = data.snakes.map(s => s.id -> s).toMap
+			val mySnakeOpt = snakes4client.find(_._1 == myId)
+			if (mySnakeOpt.nonEmpty) {
+				var mySnake = mySnakeOpt.get._2
+				for (i <- Protocol.advanceFrame to 1 by -1) {
+					updateASnake(mySnake, actionMap.getOrElse(data.frameCount - i, Map.empty)) match {
+						case Right(snake) =>
+							mySnake = snake
+						case Left(_) =>
+					}
+				}
+				snakes4client += ((mySnake.id, mySnake))
 			}
 		}
 	}
 	
 	def moveEatenApple(): Unit = {
-		val invalidApple = Ap(0, 0, 0, 0, 0)
+		val invalidApple = Ap(0, 0, 0, 0)
 		eatenApples = eatenApples.filterNot { apple => !snakes.exists(_._2.id == apple._1) }
 		eatenApples.foreach { info =>
 			val snakeOpt = snakes.get(info._1)
@@ -216,9 +209,9 @@ class GridOnClient(override val boundary: Point) extends Grid {
 								grid.get(nextLoc) match {
 									case Some(Body(_, _)) => AppleWithFrame(apple.frameCount, invalidApple)
 									case _ =>
-										val nextApple = Apple(apple.apple.score, apple.apple.life, FoodType.intermediate)
+										val nextApple = Apple(apple.apple.score, FoodType.intermediate)
 										grid += (nextLoc -> nextApple)
-										AppleWithFrame(apple.frameCount, Ap(apple.apple.score, apple.apple.life, FoodType.intermediate, nextLoc.x, nextLoc.y))
+										AppleWithFrame(apple.frameCount, Ap(apple.apple.score, FoodType.intermediate, nextLoc.x, nextLoc.y))
 								}
 							} else AppleWithFrame(apple.frameCount, invalidApple)
 						}.filterNot(a => a.apple == invalidApple)

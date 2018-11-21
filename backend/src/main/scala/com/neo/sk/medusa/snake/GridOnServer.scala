@@ -385,10 +385,10 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
 
   def speedUp(snake: SnakeInfo, newDirection: Point): Option[(Boolean, Double)] = {
     //检测加速
-    var speedOrNot :Boolean = false
-    val headerLeftRight=if(newDirection.y == 0){
+    var speedOrNot: Boolean = false
+    val headerLeftRight = if(newDirection.y == 0){
       Point(snake.head.x - square, snake.head.y - square - speedUpRange).zone(square * 2, (speedUpRange+square) * 2)
-    }else{
+    } else {
       Point(snake.head.x - square- speedUpRange, snake.head.y - square).zone((speedUpRange+square) * 2, square*2)
     }
 

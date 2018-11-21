@@ -20,7 +20,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
   }
 
 
-  def updateSnakes() = {
+  override def updateSnakes() = {
     var updatedSnakes = List.empty[Snake4Client]
     val acts = actionMap.getOrElse(frameCount, Map.empty[String, Int])
     snakes4client.values.map(updateASnake(_, acts)).foreach {
@@ -36,7 +36,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
     val newDirection = {
       val keyDirection = keyCode match {
         case Some(KeyEvent.VK_LEFT) => Point(-1, 0)
-        case Some(KeyEvent.VK_A) =>Point(-1, 0)
+        case Some(KeyEvent.VK_A) => Point(-1, 0)
         case Some(KeyEvent.VK_RIGHT) => Point(1, 0)
         case Some(KeyEvent.VK_D) => Point(1, 0)
         case Some(KeyEvent.VK_UP) => Point(0, -1)
@@ -52,13 +52,12 @@ class GridOnClient(override val boundary: Point) extends Grid {
       }
     }
 
-    var newSpeed =  snake.speed
+    val newSpeed = snake.speed
     
     val newHead = snake.head + snake.direction * newSpeed.toInt
-    val oldHead = snake.head
+//    val oldHead = snake.head
 //
 //    val foodEaten = eatFood(snake.id, newHead, newSpeed, speedOrNot)
-    
 //    val foodSum = if (foodEaten.nonEmpty) {
 //      newSpeed = foodEaten.get._2
 //      speedOrNot = foodEaten.get._3
@@ -70,7 +69,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
     //处理身体及尾巴的移动
     var newJoints = snake.joints
     var newTail = snake.tail
-    var step = snake.speed.toInt - (snake.extend)
+    var step = snake.speed.toInt - snake.extend
     val newExtend = if(step >= 0) {
       0
     } else {
@@ -102,11 +101,11 @@ class GridOnClient(override val boundary: Point) extends Grid {
   }
 
   override def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[String] = None): Unit = {} //do nothing.
-//
+
   override def eatFood(snakeId: String, newHead: Point, newSpeedInit: Double, speedOrNotInit: Boolean): Option[(Int, Double, Boolean)] = None
-//
+
 //  override def speedUp(snake: SnakeInfo, newDirection: Point): Option[(Boolean, Double)] = None
-//
+
   override def countBody(): Unit = None
   
   var init: Boolean = false
