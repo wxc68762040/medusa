@@ -133,6 +133,7 @@ object UserManager {
             log.info(s"syncLength:${RoomActor.syncLength/10}B/s")
             log.info(s"speedLength:${RoomActor.speedLength/10}B/s")
             log.info(s"rankLength:${RoomActor.rankLength/10}B/s")
+            msgLength = 0
             RoomActor.keyLength = 0l
             RoomActor.eatAppLength = 0l
             RoomActor.feedAppLength = 0l
