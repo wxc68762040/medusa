@@ -21,7 +21,12 @@ object Protocol {
   case class GridDataSync(
     frameCount: Long,
     snakes: List[Snake4Client],
-    appleDetails: List[Ap]
+    appleDetails: List[Ap],
+    timeStamp:Long = 0l
+  ) extends GameMessage
+
+  case class AddSnakes(
+    snakes:List[Snake4Client]
   ) extends GameMessage
 
   case class GridDataSyncNoApp(
@@ -82,7 +87,7 @@ object Protocol {
 
   case object ReplayOver extends GameMessage
 
-  case class SnakeDead(id: String, name: String) extends GameMessage
+  case class SnakeDead(id: String) extends GameMessage
 
   case object NoRoom extends GameMessage
 

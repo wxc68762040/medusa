@@ -164,7 +164,7 @@ trait Grid {
   def getGridSyncData = {
     var appleDetails: List[Ap] = Nil
     grid.foreach {
-      case (p, Apple(score, appleType, targetAppleOpt)) => appleDetails ::= Ap(score, appleType, p.x, p.y, targetAppleOpt)
+      case (p, Apple(score, appleType, targetAppleOpt)) => appleDetails ::= Ap(score, appleType, p.x, p.y)
       case _ =>
     }
     val snake4client = snakes.values.map{
@@ -173,13 +173,14 @@ trait Grid {
     Protocol.GridDataSync(
       frameCount,
       snake4client.toList,
-      appleDetails
+      appleDetails,
+      System.currentTimeMillis()
     )
   }
   def getGridSyncData4Client = {
     var appleDetails: List[Ap] = Nil
     grid.foreach {
-      case (p, Apple(score, appleType, targetAppleOpt)) => appleDetails ::= Ap(score, appleType, p.x, p.y, targetAppleOpt)
+      case (p, Apple(score, appleType, targetAppleOpt)) => appleDetails ::= Ap(score, appleType, p.x, p.y)
       case _ =>
     }
     Protocol.GridDataSync(

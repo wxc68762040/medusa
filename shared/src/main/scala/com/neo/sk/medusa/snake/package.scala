@@ -18,11 +18,11 @@ package object snake {
   case class Apple(score: Int, appleType: Int, targetAppleOpt: Option[(Point, Int)] = None) extends Spot //食物类型，0：普通食物，1：死蛇身体，2：中间路径
   case class Bound() extends Spot
 
-  case class Score(id: String, n: String, k: Int, l: Int, t: Option[Long] = None)
+  case class Score(id: String, n: String, k: Int, l: Int)
 
   case class Bd(id: String, x: Int, y: Int, color: String)
 
-  case class Ap(score: Int, appleType: Int, x: Int, y: Int, targetAppleOpt: Option[(Point, Int)] = None)
+  case class Ap(score: Int, appleType: Int, x: Int, y: Int)
 
   case class GridData(
                        frameCount: Long,
