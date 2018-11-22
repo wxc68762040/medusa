@@ -67,7 +67,7 @@ object GameInfo {
     NetGameHolder.infoState match {
       case "normal" =>
         if(playerState._2) {
-          val kill = currentRank.filter(_.id == uid).map(_.k).head
+          val kill = currentRank.filter(_.id == uid).map(_.k).headOption.getOrElse(0)
           snakes.find(_.id == uid) match {
             case Some(mySnake) =>
               startBg.setAttribute("style", "display:none")

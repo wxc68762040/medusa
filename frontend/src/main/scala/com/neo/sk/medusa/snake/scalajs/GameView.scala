@@ -44,7 +44,7 @@ object GameView  {
     }
   }
 
-  def drawGrid(uid: String, data: GridDataSync, scaleW: Double, scaleH:Double): Unit = {
+  def drawGrid(uid: String, data: GridDataSync, scaleW: Double, scaleH: Double): Unit = {
     val cacheCanvas = dom.document.createElement("canvas").asInstanceOf[Canvas]
     val cacheCtx = cacheCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
@@ -173,7 +173,7 @@ object GameView  {
 
       cacheCtx.font = s"${12 * scaleW * myProportion}px Helvetica"
       cacheCtx.fillStyle = Color.White.toString()
-      val snakeName = if(snake.name.length > 15) snake.name.substring(0,14) else snake.name
+      val snakeName = if(snake.name.length > 15) snake.name.substring(0, 14) else snake.name
       cacheCtx.fillText(snakeName, x * scaleW + deviationX - nameLength * 4, y * scaleH + deviationY - 15)
       if (!playerState._2 && id == myId) {
         cacheCtx.drawImage(killerImg, x * scaleW + deviationX - nameLength * 4, y * scaleH + deviationY - 15)
@@ -192,16 +192,16 @@ object GameView  {
     cacheCtx.shadowBlur = 5
     cacheCtx.shadowColor= "#FFFFFF"
 
-    cacheCtx.fillRect(0 + deviationX, 0 + deviationY, Boundary.w * scaleW , boundaryWidth * scaleH )
-    cacheCtx.fillRect(0 + deviationX, 0 + deviationY, boundaryWidth * scaleW , Boundary.h * scaleH)
-    cacheCtx.fillRect(0 + deviationX, Boundary.h * scaleH + deviationY, Boundary.w * scaleW , boundaryWidth *scaleH)
-    cacheCtx.fillRect(Boundary.w * scaleW  + deviationX, 0 + deviationY  , boundaryWidth * scaleW, Boundary.h * scaleH )
+    cacheCtx.fillRect(0 + deviationX, 0 + deviationY, Boundary.w * scaleW, boundaryWidth * scaleH)
+    cacheCtx.fillRect(0 + deviationX, 0 + deviationY, boundaryWidth * scaleW, Boundary.h * scaleH)
+    cacheCtx.fillRect(0 + deviationX, Boundary.h * scaleH + deviationY, Boundary.w * scaleW, boundaryWidth * scaleH)
+    cacheCtx.fillRect(Boundary.w * scaleW  + deviationX, 0 + deviationY, boundaryWidth * scaleW, Boundary.h * scaleH)
     cacheCtx.restore()
     cacheCtx.fillStyle = "rgb(250, 250, 250)"
 
     ctx.fillStyle = "#012d2d"
     ctx.fillRect(0, 0, canvas.width, canvas.height)
-    ctx.drawImage(cacheCanvas,0,0)
+    ctx.drawImage(cacheCanvas, 0, 0)
 
   }
 }
