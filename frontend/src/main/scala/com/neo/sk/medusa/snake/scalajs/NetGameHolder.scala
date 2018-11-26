@@ -464,6 +464,9 @@ object NetGameHolder extends js.JSApp {
                   //死亡的蛇与击杀者
                   waitingShowKillList :::= killList
                   dom.window.setTimeout(() => waitingShowKillList = waitingShowKillList.drop(killList.length), 2000)
+									
+								case x =>
+									println(s"front received unknown message $x")
               }
 
               case Left(e) =>
