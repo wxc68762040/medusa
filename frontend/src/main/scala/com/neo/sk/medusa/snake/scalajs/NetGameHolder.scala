@@ -322,7 +322,7 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.NewSnakeJoined(id, _, _) =>
                   if(id == playerState._1){
                     myId = id
-                    playerState = (id,true)
+                    playerState = (id, true)
                   }
 
                 case Protocol.YouHaveLogined =>
