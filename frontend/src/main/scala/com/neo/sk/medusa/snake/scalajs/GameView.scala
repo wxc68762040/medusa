@@ -19,7 +19,6 @@ import org.scalajs.dom.raw._
 object GameView  {
 
   val canvasUnit = 7
-	var counter = 0
 
   val canvas: Canvas = dom.document.getElementById("GameView").asInstanceOf[Canvas]
   private[this] val canvasPic = dom.document.getElementById("canvasPic").asInstanceOf[HTMLElement]
@@ -45,10 +44,6 @@ object GameView  {
   }
 
   def drawGrid(uid: String, data: GridDataSync, scaleW: Double, scaleH: Double): Unit = {
-		counter += 1
-		if(counter % 30 == 0) {
-			println(data.snakes.size)
-		}
     val cacheCanvas = dom.document.createElement("canvas").asInstanceOf[Canvas]
     val cacheCtx = cacheCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 

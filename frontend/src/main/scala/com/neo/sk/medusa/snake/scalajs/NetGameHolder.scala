@@ -129,11 +129,8 @@ object NetGameHolder extends js.JSApp {
         update(true)
         justSynced = false
       }
-      savedGrid += (grid.frameCount -> grid.getGridSyncData)
+      savedGrid += (grid.frameCount -> grid.getGridSyncData4Client)
       savedGrid -= (grid.frameCount - Protocol.savingFrame - Protocol.advanceFrame)
-      savedGrid.foreach { e =>
-        println(s"${e._1} ${e._2.snakes.size}")
-      }
     }
   }
 
@@ -509,7 +506,6 @@ object NetGameHolder extends js.JSApp {
     if (dataOpt.nonEmpty) {
       val data = dataOpt.get
       grid.frameCount = data.frameCount
-      println(s"loading data:${data.snakes.size}")
       grid.snakes4client = data.snakes.map(s => s.id -> s).toMap
       grid.grid = grid.grid.filter { case (_, spot) =>
         spot match {
@@ -527,7 +523,6 @@ object NetGameHolder extends js.JSApp {
       val data = dataOpt.get
       grid.frameCount = data.frameCount
       grid.snakes4client = data.snakes.map(s => s.id -> s).toMap
-      println(s"syncing full, size: ${data.snakes.size}")
       val mySnakeOpt = grid.snakes4client.find(_._1 == myId)
       if (mySnakeOpt.nonEmpty && state.contains("playGame") && playerState._2) {
         var mySnake = mySnakeOpt.get._2
@@ -548,7 +543,6 @@ object NetGameHolder extends js.JSApp {
       val presentFrame = grid.frameCount
       grid.frameCount = data.frameCount
       grid.snakes4client = data.snakes.map(s => s.id -> s).toMap
-      println(s"syncing no app, size: ${data.snakes.size}")
       if (data.frameCount <= presentFrame) {
         for (_ <- presentFrame until data.frameCount by -1) {
           grid.update(false)
