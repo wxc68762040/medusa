@@ -40,10 +40,14 @@ trait Grid {
   var killMap = Map.empty[String, List[(String,String)]]
 
   def removeSnake(id: String) = {
-    val r = snakes.get(id)
-    if (r.isDefined) {
+    val r1 = snakes.get(id)
+		val r2 = snakes4client.get(id)
+    if (r1.isDefined) {
       snakes -= id
     }
+		if(r2.isDefined) {
+			snakes4client -= id
+		}
   }
 
 
@@ -180,7 +184,7 @@ trait Grid {
   def getGridSyncData4Client = {
     var appleDetails: List[Ap] = Nil
     grid.foreach {
-      case (p, Apple(score, appleType, targetAppleOpt)) => appleDetails ::= Ap(score, appleType, p.x, p.y)
+      case (p, Apple(score, appleType, _)) => appleDetails ::= Ap(score, appleType, p.x, p.y)
       case _ =>
     }
     Protocol.GridDataSync(
