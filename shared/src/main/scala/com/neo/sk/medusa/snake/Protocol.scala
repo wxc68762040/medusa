@@ -1,5 +1,9 @@
 package com.neo.sk.medusa.snake
 
+import scala.collection.mutable.ListBuffer
+
+import scala.collection.mutable.ListBuffer
+
 /**
   * User: Taoz
   * Date: 8/29/2016
@@ -25,9 +29,9 @@ object Protocol {
     timeStamp:Long = 0l
   ) extends GameMessage
 
-  case class AddSnakes(
-    snakes:List[Snake4Client]
-  ) extends GameMessage
+//  case class AddSnakes(
+//    snakes:List[Snake4Client]
+//  ) extends GameMessage
 
   case class GridDataSyncNoApp(
     frameCount: Long,
@@ -68,7 +72,9 @@ object Protocol {
   case class DeadList(
     deadList: List[String]
   ) extends GameMessage
-
+  case class DeadListBuff(
+                         deadList: ListBuffer[String]
+                         ) extends GameMessage
   case class KillList(
     playerID: String,
     killList: List[(String, String)]
@@ -86,18 +92,22 @@ object Protocol {
   case class SnakeAction(id: String, keyCode: Int, frame: Long) extends GameMessage
 
   case object ReplayOver extends GameMessage
-
+  case class AddSnakes(
+                        snakes:List[Snake4Client]
+                      ) extends GameMessage
   case class SnakeDead(id: String) extends GameMessage
 
   case object NoRoom extends GameMessage
-
+  case class IAmAliveAgain(id:String) extends GameMessage
   //case class DistinctSnakeAction(keyCode: Int, frame: Long, frontFrame: Long) extends GameMessage
 
-  case class Ranks(currentRank: List[Score], historyRank: List[Score]) extends GameMessage
-
+  case class Ranks(currentRank: List[Score],historyRank: List[Score]) extends GameMessage
+  case class myRank(id: String, ScoreMap: Map[Int,Score] ) extends GameMessage
+  //case class myRank(id: String, Score:Score ) extends GameMessage
   case class NetDelayTest(createTime: Long) extends GameMessage
 
   case class JoinRoomSuccess(playerId:String,roomId:Long)extends GameMessage
+
   case class JoinRoomFailure(playerId:String,roomId:Long,errorCode:Int,msg:String)extends GameMessage
 
 

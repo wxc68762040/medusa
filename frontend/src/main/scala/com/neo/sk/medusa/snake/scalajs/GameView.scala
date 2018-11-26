@@ -20,7 +20,6 @@ object GameView  {
 
   val canvasUnit = 7
 
-
   val canvas: Canvas = dom.document.getElementById("GameView").asInstanceOf[Canvas]
   private[this] val canvasPic = dom.document.getElementById("canvasPic").asInstanceOf[HTMLElement]
   private[this] val killerImg = dom.document.getElementById("killerImg").asInstanceOf[HTMLElement]

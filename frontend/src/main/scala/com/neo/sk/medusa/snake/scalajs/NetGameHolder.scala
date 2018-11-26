@@ -32,7 +32,7 @@ object NetGameHolder extends js.JSApp {
   val initWindowHeight: Int = windowHeight
   var canvasBoundary = Point(dom.document.documentElement.clientWidth, dom.document.documentElement.clientHeight)
   var mapBoundary = Point(LittleMap.w, LittleMap.h)
-  
+
   var syncData: scala.Option[Protocol.GridDataSync] = None
   var syncDataNoApp: scala.Option[Protocol.GridDataSyncNoApp] = None
   var infoState = "normal"
@@ -111,7 +111,7 @@ object NetGameHolder extends js.JSApp {
     lagging = false
     lagControl = dom.window.setTimeout(() => lagging = true, Protocol.lagLimitTime)
   }
-  
+
   def startLoop(): Unit = {
     gameLoop()
     dom.window.setInterval(() => gameLoop(), Protocol.frameRate)
@@ -129,7 +129,7 @@ object NetGameHolder extends js.JSApp {
         update(true)
         justSynced = false
       }
-      savedGrid += (grid.frameCount -> grid.getGridSyncData)
+      savedGrid += (grid.frameCount -> grid.getGridSyncData4Client)
       savedGrid -= (grid.frameCount - Protocol.savingFrame - Protocol.advanceFrame)
     }
   }
@@ -309,23 +309,21 @@ object NetGameHolder extends js.JSApp {
             //            GameView.canvas.focus()
             encodedData match {
               case Right(data) =>
-                println(data)
                 data match {
                 case Protocol.JoinRoomSuccess(id, roomId) =>
                   myId = id
                   myRoomId = roomId
                   playerState = (id, true)
                   println(s"$id JoinRoomSuccess ")
-									
+
 								case Protocol.JoinRoomFailure(id, _, errCode, msg) =>
 									println(s"$id JoinRoomFailure: $msg")
-									
                 case Protocol.TextMsg(_) =>
 
                 case Protocol.NewSnakeJoined(id, _, _) =>
                   if(id == playerState._1){
                     myId = id
-                    playerState = (id,true)
+                    playerState = (id, true)
                   }
 
                 case Protocol.YouHaveLogined =>
@@ -351,7 +349,7 @@ object NetGameHolder extends js.JSApp {
                   } else {
                     grid.addActionWithFrame(id, keyCode, frame)
                   }
-                
+
                 case Protocol.DistinctSnakeAction(keyCode, frame, frontFrame) =>
                   val savedAction = grid.actionMap.get(frontFrame - Protocol.advanceFrame)
                   if (savedAction.nonEmpty) {
@@ -371,7 +369,10 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.Ranks(current, history) =>
                   GameInfo.currentRank = current
                   GameInfo.historyRank = history
-                  
+                case Protocol.myRank(id,myRank) =>
+                  GameInfo.myRank = Map(id -> myRank)
+
+
                 case Protocol.FeedApples(apples) =>
 
                   grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.appleType))
@@ -429,10 +430,10 @@ object NetGameHolder extends js.JSApp {
                   infoState = "normal"
                   setLagTrigger()
                   if(syncData.isEmpty || syncData.get.frameCount < data.frameCount) {
-                    syncDataNoApp = Some(data)
-                    justSynced = true
+										syncDataNoApp = Some(data)
+                  	justSynced = true
                   }
-                  
+
                 case Protocol.NetDelayTest(createTime) =>
                   val receiveTime = System.currentTimeMillis()
                   netInfoHandler.ping = receiveTime - createTime
@@ -471,6 +472,9 @@ object NetGameHolder extends js.JSApp {
                   //死亡的蛇与击杀者
                   waitingShowKillList :::= killList
                   dom.window.setTimeout(() => waitingShowKillList = waitingShowKillList.drop(killList.length), 2000)
+
+								case x =>
+									println(s"front received unknown message $x")
               }
 
               case Left(e) =>
@@ -501,7 +505,7 @@ object NetGameHolder extends js.JSApp {
     paragraph.innerHTML = msg
     paragraph
   }
-	
+
 	def loadData(dataOpt: scala.Option[Protocol.GridDataSync]) = {
     if (dataOpt.nonEmpty) {
       val data = dataOpt.get
@@ -517,7 +521,7 @@ object NetGameHolder extends js.JSApp {
       grid.grid = gridMap
     }
   }
-	
+
   def sync(dataOpt: scala.Option[Protocol.GridDataSync], dataNoAppOpt:scala.Option[Protocol.GridDataSyncNoApp]) = {
     if (dataOpt.nonEmpty) {
       val data = dataOpt.get
