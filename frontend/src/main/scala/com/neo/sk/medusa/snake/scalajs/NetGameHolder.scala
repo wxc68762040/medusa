@@ -309,7 +309,6 @@ object NetGameHolder extends js.JSApp {
             //            GameView.canvas.focus()
             encodedData match {
               case Right(data) =>
-                println(data)
                 data match {
                 case Protocol.JoinRoomSuccess(id, roomId) =>
                   myId = id
@@ -503,6 +502,7 @@ object NetGameHolder extends js.JSApp {
     if (dataOpt.nonEmpty) {
       val data = dataOpt.get
       grid.frameCount = data.frameCount
+      println(s"loading data:${data.snakes.size}")
       grid.snakes4client = data.snakes.map(s => s.id -> s).toMap
       grid.grid = grid.grid.filter { case (_, spot) =>
         spot match {
