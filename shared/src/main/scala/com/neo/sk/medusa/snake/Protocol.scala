@@ -2,6 +2,8 @@ package com.neo.sk.medusa.snake
 
 import scala.collection.mutable.ListBuffer
 
+import scala.collection.mutable.ListBuffer
+
 /**
   * User: Taoz
   * Date: 8/29/2016
@@ -23,17 +25,18 @@ object Protocol {
   case class GridDataSync(
     frameCount: Long,
     snakes: List[Snake4Client],
-    appleDetails: List[Ap]
+    appleDetails: List[Ap],
+    timeStamp:Long = 0l
   ) extends GameMessage
+
+//  case class AddSnakes(
+//    snakes:List[Snake4Client]
+//  ) extends GameMessage
 
   case class GridDataSyncNoApp(
     frameCount: Long,
     snakes: List[Snake4Client]
   ) extends GameMessage
-
-//  case Dead
-
-
 
   case object YouHaveLogined extends GameMessage
 
@@ -92,7 +95,7 @@ object Protocol {
   case class AddSnakes(
                         snakes:List[Snake4Client]
                       ) extends GameMessage
-  case class SnakeDead(id: String, name: String) extends GameMessage
+  case class SnakeDead(id: String) extends GameMessage
 
   case object NoRoom extends GameMessage
   case class IAmAliveAgain(id:String) extends GameMessage
@@ -152,7 +155,7 @@ object Protocol {
 
   //val savingFrame = 5 //保存的帧数
 
-  val netInfoRate = 1000
+  val netInfoRate = 5000
   
   val lagLimitTime = 6 * 1000 //距离上次接受同步帧超过6秒，停止绘制及前端更新
 }
