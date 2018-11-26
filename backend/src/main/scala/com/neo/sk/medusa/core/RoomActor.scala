@@ -223,29 +223,33 @@ object RoomActor {
             }
 
             for((k, u)<- userMap) {
-                if ((tickCount - u._3) % 20 == 5) {
-                  val noAppData = grid.getGridSyncDataNoApp
-                  dispatchTo(noAppData, u._1,watcherMap,k)
+              if ((tickCount - u._3) % 20 == 5) {
+                val noAppData = grid.getGridSyncDataNoApp
+                dispatchTo(noAppData, u._1, watcherMap, k)
 
-                  val msg = ByteString(noAppData.fillMiddleBuffer(sendBuffer).result())
-                  syncLength += msg.length
-                  //                  } else {
-                  //                    val syncData = grid.getGridSyncData
-                  //                    //                    eventList.append(Protocol.SyncApples(syncData.appleDetails))
-                  //                    dispatchTo(UserActor.DispatchMsg(syncData), u._1)
-                  //                    val msg = ByteString(syncData.fillMiddleBuffer(sendBuffer).result())
-                  //                    syncLength += msg.length
-                  //                  }
-                }
+                val msg = ByteString(noAppData.fillMiddleBuffer(sendBuffer).result())
+                syncLength += msg.length
+                //                  } else {
+                //                    val syncData = grid.getGridSyncData
+                //                    //                    eventList.append(Protocol.SyncApples(syncData.appleDetails))
+                //                    dispatchTo(UserActor.DispatchMsg(syncData), u._1)
+                //                    val msg = ByteString(syncData.fillMiddleBuffer(sendBuffer).result())
+                //                    syncLength += msg.length
+                //                  }
+              }
 
-                if ((tickCount - u._3) % 30 == 1) {
-                  eventList.append(Protocol.Ranks(grid.currentRank, grid.historyRankList))
-                  val msg = ByteString(Protocol.Ranks(grid.currentRank, grid.historyRankList).fillMiddleBuffer(sendBuffer).result())
-                  rankLength += msg.length
+              if ((tickCount - u._3) % 30 == 1) {
+                eventList.append(Protocol.Ranks(grid.topCurrentRank, grid.historyRankList))
+                val msg = ByteString(Protocol.Ranks(grid.topCurrentRank, grid.historyRankList).fillMiddleBuffer(sendBuffer).result())
+                rankLength += msg.length * userMap.size
+                dispatch(userMap, watcherMap, Protocol.Ranks(grid.topCurrentRank, grid.historyRankList))
+                val myScore =
+                  grid.currentRank.filter(s => s.id == k).map(r => Score(r.id, r.n, r.k, r.l)).headOption.getOrElse(Score("","",0,0))
+                val myIndex = grid.currentRank.sortBy(s => s.l).reverse.indexOf(myScore) + 1
+                eventList.append(Protocol.myRank(k,Map(myIndex -> myScore)))
+                dispatchTo( Protocol.myRank(k,Map(myIndex -> myScore)),u._1, watcherMap,k)
 
-                  dispatchTo( Protocol.Ranks(grid.currentRank, grid.historyRankList),u._1,watcherMap,k)
-
-                }
+              }
             }
             if (tickCount % 300 == 1) {
               //              dispatch(UserActor.DispatchMsg(Protocol.SyncApples(grid.getGridSyncData.appleDetails.get)), userMap)
@@ -346,12 +350,12 @@ object RoomActor {
             }
 
             Behavior.same
-            
+
           case t: YouAreUnwatched =>
             println("123: "+t)
             if(!watcherMap.get(t.playerId).isEmpty) watcherMap.get(t.playerId).get.remove(t.watcherId)
             Behaviors.same
-            
+
           case ChildDead(name, childRef) =>
             log.info(s"Child${childRef.path}----$name is dead")
             ctx.unwatch(childRef)

@@ -372,6 +372,9 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.Ranks(current, history) =>
                   GameInfo.currentRank = current
                   GameInfo.historyRank = history
+                case Protocol.myRank(id,myRank) =>
+                  GameInfo.myRank = Map(id -> myRank)
+
 
                 case Protocol.FeedApples(apples) =>
 
@@ -429,7 +432,7 @@ object NetGameHolder extends js.JSApp {
 										syncDataNoApp = Some(data)
                   	justSynced = true
                   }
-									
+
                 case Protocol.NetDelayTest(createTime) =>
                   val receiveTime = System.currentTimeMillis()
                   netInfoHandler.ping = receiveTime - createTime
@@ -460,6 +463,7 @@ object NetGameHolder extends js.JSApp {
                     if (deadList.contains(myId)) {
                       //击杀者死亡　
                       myId = playerState._1
+
                     }
                   }
 
@@ -467,7 +471,7 @@ object NetGameHolder extends js.JSApp {
                   //死亡的蛇与击杀者
                   waitingShowKillList :::= killList
                   dom.window.setTimeout(() => waitingShowKillList = waitingShowKillList.drop(killList.length), 2000)
-									
+
 								case x =>
 									println(s"front received unknown message $x")
               }

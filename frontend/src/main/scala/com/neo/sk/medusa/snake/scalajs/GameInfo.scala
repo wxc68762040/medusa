@@ -15,8 +15,11 @@ import org.scalajs.dom.html.{Canvas, Document => _}
   */
 object GameInfo {
 
+//  var currentRank = List.empty[(List[Score],Score)]
   var currentRank = List.empty[Score]
   var historyRank = List.empty[Score]
+  var myRank = Map.empty[String,Map[Int, Score]]
+  //var myRank = Score("","",0,0)
 
   val textLineHeight = 14
   var basicTime = 0L
@@ -153,13 +156,37 @@ object GameInfo {
 
     val currentRankBaseLine = 10
     var index = 0
-    drawTextLine(infoCacheCtx,s" --- Current Rank --- ", leftBegin, index, currentRankBaseLine,scaleW, scaleH)
-    currentRank.foreach{ score =>
-      index += 1
-      drawTextLine(infoCacheCtx,s"[$index]: ${score.n.+("   ").take(8)} kill=${score.k} len=${score.l}",leftBegin,index,currentRankBaseLine, scaleW, scaleH)
-    }
+    drawTextLine(infoCacheCtx,s"---Current Rank ---",leftBegin,index,currentRankBaseLine, scaleW, scaleH)
+      if(currentRank.exists(s => s.id == myId)){
+        currentRank.foreach { score =>
+          index += 1
+          if (score.id == myRank.keys.head) {
+            infoCacheCtx.fillStyle = "#FFB90F"
+            infoCacheCtx.font = s" ${14 * scaleW}px Helvetica "
+            drawTextLine(infoCacheCtx, s"[$index]: ${score.n.+("   ").take(8)} kill=${score.k} len=${score.l}", leftBegin, index, currentRankBaseLine, scaleW, scaleH)
+          } else {
+            infoCacheCtx.fillStyle = "#FFFFFF"
+            infoCacheCtx.font = s"${14 * scaleW}px Helvetica"
+            drawTextLine(infoCacheCtx, s"[$index]: ${score.n.+("   ").take(8)} kill=${score.k} len=${score.l}", leftBegin, index, currentRankBaseLine, scaleW, scaleH)
+          }
+        }
+      } else {
+          currentRank.foreach{ score =>
+          index += 1
+          infoCacheCtx.fillStyle = "#FFFFFF"
+          infoCacheCtx.font = s"${14 * scaleW}px Helvetica"
+          drawTextLine(infoCacheCtx, s"[$index]: ${score.n.+("   ").take(8)} kill=${score.k} len=${score.l}", leftBegin, index, currentRankBaseLine, scaleW, scaleH)
+        }
+        val myScore = myRank.filter(s => s._1 == myId).values.head.values.head
+        val myIndex = myRank.filter(s => s._1 == myId).values.head.keys.head
+        infoCacheCtx.fillStyle = "#FFB90F"
+        infoCacheCtx.font = s"bolder ${14 * scaleW}px Helvetica "
+        drawTextLine(infoCacheCtx,s"[$myIndex]: ${myScore.n.+(" ").take(8)} kill=${myScore.k} len=${myScore.l}", leftBegin, 7,currentRankBaseLine, scaleW, scaleH)
 
+      }
 
+    infoCacheCtx.fillStyle = "#FFFFFF"
+    infoCacheCtx.font = s"${14 * scaleW}px Helvetica"
     val historyRankBaseLine = 2
     index = 0
     drawTextLine(infoCacheCtx,s"---History Rank ---",rightBegin,index,historyRankBaseLine, scaleW, scaleH)
