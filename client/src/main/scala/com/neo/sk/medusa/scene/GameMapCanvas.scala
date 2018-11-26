@@ -91,11 +91,6 @@ class GameMapCanvas(canvas: Canvas, gameScene: GameScene) {
       mapCtx.setFill(Color.BLACK)
       mapCtx.fillRect(0,600 * scaleH ,mapWidth,mapHeight - 600 * scaleH)
     }
-
-
-
-
-
   }
 
 
