@@ -241,10 +241,18 @@ object RoomActor {
               eatAppLength += msg.length*userMap.size
             }
             if (tickCount % 20 == 1) {
-              eventList.append(Protocol.Ranks(grid.currentRank, grid.historyRankList))
-              val msg = ByteString(Protocol.Ranks(grid.currentRank, grid.historyRankList).fillMiddleBuffer(sendBuffer).result())
+              eventList.append(Protocol.Ranks(grid.topCurrentRank, grid.historyRankList))
+              val msg = ByteString(Protocol.Ranks(grid.topCurrentRank, grid.historyRankList).fillMiddleBuffer(sendBuffer).result())
               rankLength += msg.length*userMap.size
-              dispatch(UserActor.DispatchMsg(Protocol.Ranks(grid.currentRank, grid.historyRankList)), userMap)
+              dispatch(UserActor.DispatchMsg(Protocol.Ranks(grid.topCurrentRank, grid.historyRankList)), userMap)
+              grid.currentRank.foreach{
+                s =>
+                  val myScore = userMap.filter(u => u._1 == s.id).map(r => Score(s.id, s.n, s.k, s.l)).head
+                  val myIndex = grid.currentRank.sortBy(s => s.l).reverse.indexOf(myScore) + 1
+                  eventList.append(Protocol.myRank(s.id,Map(myIndex -> myScore)))
+                  dispatchTo(s.id, UserActor.DispatchMsg(Protocol.myRank(s.id,Map(myIndex -> myScore))), userMap)
+              }
+
             }
             var rEmptyCount = roomEmptyCount
             if (isRecord && userMap.exists(u => !deadUserList.contains(u._1))) {

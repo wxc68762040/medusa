@@ -88,8 +88,9 @@ object Protocol {
 
   //case class DistinctSnakeAction(keyCode: Int, frame: Long, frontFrame: Long) extends GameMessage
 
-  case class Ranks(currentRank: List[Score], historyRank: List[Score]) extends GameMessage
-
+  case class Ranks(currentRank: List[Score],historyRank: List[Score]) extends GameMessage
+  case class myRank(id: String, ScoreMap: Map[Int,Score] ) extends GameMessage
+  //case class myRank(id: String, Score:Score ) extends GameMessage
   case class NetDelayTest(createTime: Long) extends GameMessage
 
   case class JoinRoomSuccess(playerId:String,roomId:Long)extends GameMessage

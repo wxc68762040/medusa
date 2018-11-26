@@ -33,6 +33,9 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
 
 
   var currentRank = List.empty[Score]
+  var topCurrentRank = List.empty[Score]
+ // var myRank =Map.empty[Int, Score]
+  //var myId = ""
   private[this] var historyRankMap = Map.empty[String, Score]
   var historyRankList = historyRankMap.values.toList.sortBy(_.l).reverse
 
@@ -83,6 +86,12 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
 
   private[this] def updateRanks() = {
     currentRank = snakes.values.map(s => Score(s.id, s.name, s.kill, s.length)).toList.sorted
+    topCurrentRank = snakes.values.map(s => Score(s.id, s.name, s.kill, s.length)).toList.sortBy(s => s.l).reverse.slice(0,5)
+    //myId = if(snakes.nonEmpty) snakes.values.map(s => s.id).head else ""
+    //val myScore = if(snakes.nonEmpty) currentRank.filter(s => s.id == myId).head else Score("", "", 0, 0)
+    //val myIndex = currentRank.sortBy(s => s.l).reverse.indexOf(myScore) + 1
+    //myRank = if(snakes.nonEmpty) Map(myIndex -> snakes.values.map(s => Score(s.id, s.name, s.kill, s.length)).head) else Map(0 -> Score("","",0,0))
+
     var historyChange = false
     currentRank.foreach { cScore =>
       historyRankMap.get(cScore.id) match {

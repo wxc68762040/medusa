@@ -370,7 +370,10 @@ object NetGameHolder extends js.JSApp {
                   }
                 case Protocol.Ranks(current, history) =>
                   GameInfo.currentRank = current
+                  //GameInfo.myRank = myRank
                   GameInfo.historyRank = history
+                case Protocol.myRank(id,myRank) =>
+                  GameInfo.myRank = Map(id -> myRank)
                   
                 case Protocol.FeedApples(apples) =>
 
