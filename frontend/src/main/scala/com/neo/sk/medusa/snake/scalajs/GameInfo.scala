@@ -85,7 +85,7 @@ object GameInfo {
             case None =>
           }
         }else{
-          if(state.contains("playGame")){
+          if(state.contains("playGame")||state.contains("watchGame")){
             //玩游戏过程中死亡显示
             if (NetGameHolder.firstCome) {
               infoCacheCtx.font = s"${38 * scaleW}px Helvetica"

@@ -119,7 +119,7 @@ object RoomActor {
             log.info(s"room $roomId lost a player ${t.userId}")
             //grid.removeSnake(t.userId)
             deadCommonInfo = Protocol.DeadInfo( t.userId,t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer)
-            dispatchTo(t.userId,userMap,watcherMap,Protocol.DeadInfo( t.userId,t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer))
+            dispatchTo(Protocol.DeadInfo(t.userId, t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer), userMap(t.userId)._1,watcherMap,t.userId)
 
             dispatch(userMap,watcherMap,Protocol.SnakeDead(t.userId))
 
@@ -194,13 +194,16 @@ object RoomActor {
               println("----")
               snakeState._1.foreach {
                 s =>
-                  dispatchTo(UserActor.DispatchMsg(grid.getGridSyncData), userMap(s.id)._1)
+                  dispatchTo(grid.getGridSyncData, userMap(s.id)._1,watcherMap,s.id)
+
                   val msg = ByteString(grid.getGridSyncData.fillMiddleBuffer(sendBuffer).result())
                   syncLength += msg.length
               }
               snakeState._2.foreach {
                 s =>
-                  dispatchTo(UserActor.DispatchMsg(Protocol.AddSnakes(snakeState._1)), userMap(s._1)._1)
+
+                  dispatchTo(Protocol.AddSnakes(snakeState._1), userMap(s._1)._1,watcherMap,s._1)
+
                   val msg = ByteString(grid.getGridSyncData.fillMiddleBuffer(sendBuffer).result())
                   syncLength += msg.length
               }
@@ -211,25 +214,30 @@ object RoomActor {
                 grid.removeSnake(s.id)
               }
               eventList.append(Protocol.DeadList(grid.deadSnakeList.map(_.id)))
-              dispatch(UserActor.DispatchMsg(Protocol.DeadList(grid.deadSnakeList.map(_.id))), userMap)
+
+              dispatch(userMap,watcherMap,Protocol.DeadList(grid.deadSnakeList.map(_.id)))
+
             }
             grid.killMap.foreach {
               g =>
                 eventList.append(Protocol.KillList(g._1, g._2))
-                dispatchTo(UserActor.DispatchMsg(Protocol.KillList(g._1, g._2)), userMap(g._1)._1)
+
+                dispatchTo(Protocol.KillList(g._1, g._2), userMap(g._1)._1,watcherMap,g._1)
+
             }
 
             if (speedUpInfo.nonEmpty) {
               eventList.append(Protocol.SpeedUp(speedUpInfo))
-              dispatch(UserActor.DispatchMsg(Protocol.SpeedUp(speedUpInfo)), userMap)
+              dispatch( userMap,watcherMap,Protocol.SpeedUp(speedUpInfo))
               val msg = ByteString(Protocol.SpeedUp(speedUpInfo).fillMiddleBuffer(sendBuffer).result())
               speedLength += msg.length * userMap.size
             }
-            userMap.values.foreach {
-              u =>
+
+            for((k, u)<- userMap) {
                 if ((tickCount - u._3) % 20 == 5) {
                   val noAppData = grid.getGridSyncDataNoApp
-                  dispatchTo(UserActor.DispatchMsg(noAppData), u._1)
+                  dispatchTo(noAppData, u._1,watcherMap,k)
+
                   val msg = ByteString(noAppData.fillMiddleBuffer(sendBuffer).result())
                   syncLength += msg.length
                   //                  } else {
@@ -245,7 +253,9 @@ object RoomActor {
                   eventList.append(Protocol.Ranks(grid.currentRank, grid.historyRankList))
                   val msg = ByteString(Protocol.Ranks(grid.currentRank, grid.historyRankList).fillMiddleBuffer(sendBuffer).result())
                   rankLength += msg.length
-                  dispatchTo(UserActor.DispatchMsg(Protocol.Ranks(grid.currentRank, grid.historyRankList)), u._1)
+
+                  dispatchTo( Protocol.Ranks(grid.currentRank, grid.historyRankList),u._1,watcherMap,k)
+
                 }
             }
             if (tickCount % 300 == 1) {
@@ -255,13 +265,17 @@ object RoomActor {
 
             if (feedApples.nonEmpty) {
               eventList.append(Protocol.FeedApples(feedApples))
-              dispatch(UserActor.DispatchMsg(Protocol.FeedApples(feedApples)), userMap)
+
+              dispatch(userMap,watcherMap,Protocol.FeedApples(feedApples))
+
               val msg = ByteString(Protocol.FeedApples(feedApples).fillMiddleBuffer(sendBuffer).result())
               feedAppLength += msg.length * userMap.size
             }
             if (eatenApples.nonEmpty) {
               val tmp = Protocol.EatApples(eatenApples.map(r => EatFoodInfo(r._1, r._2)).toList)
-              dispatch(UserActor.DispatchMsg(tmp), userMap)
+
+              dispatch( userMap,watcherMap,tmp)
+
               eventList.append(tmp)
 
               val msg = ByteString(tmp.fillMiddleBuffer(sendBuffer).result())
@@ -282,8 +296,8 @@ object RoomActor {
             }
             idle(roomId, newTick, ListBuffer[Protocol.GameMessage](), userMap,watcherMap, deadUserList,grid,rEmptyCount)  //---
 
-          case NetTest(id, createTime) =>
-            dispatchTo(id,userMap,watcherMap,Protocol.NetDelayTest(createTime))
+          case NetTest(id,createTime) =>
+            dispatchTo(Protocol.NetDelayTest(createTime),userMap(id)._1,watcherMap,id)
 
             Behaviors.same
 
@@ -325,11 +339,25 @@ object RoomActor {
 
           case t:GiveYouApple =>
             val syncData = grid.getGridSyncData
+            println("give0:   "+watcherMap+"   playerId: "+t.playerId)
             if(watcherMap.nonEmpty && (watcherMap.get(t.playerId).isDefined)){
+              println("give1: "+(watcherMap.get(t.playerId)))
               if(watcherMap.get(t.playerId).get!=None ){
+                println("give2: "+watcherMap.get(t.playerId).get)
                 if(watcherMap.get(t.playerId).get.get(t.waterId).isDefined){
                   val watcherRef = watcherMap.get(t.playerId).get.get(t.waterId).get
                   watcherRef ! WatcherActor.TransInfo(syncData)
+                  println("1-----------------------------------------------------------------------------------------------------"+watcherRef)
+                }else{
+                  var emptyFlag = 0
+                  watcherMap.foreach{ k=>
+                    if(k._2.nonEmpty && emptyFlag==0){
+                      val watcherRef = watcherMap.get(k._1).get.get(t.waterId).get
+                      watcherRef ! WatcherActor.TransInfo(syncData)
+                      println("2-----------------------------------------------------------------------------------------------------"+watcherRef)
+                      emptyFlag = 1
+                    }
+                  }
                 }
               }
             }
@@ -357,22 +385,20 @@ object RoomActor {
     }
   }
 
-  def dispatchTo(id: String,
-                 userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String,Long)],
-                 watcherMap:mutable.HashMap[String,mutable.HashMap[String, ActorRef[WatcherActor.Command]]],
-                 toWatcherMsg:Protocol.WsMsgSource): Unit = {
-    userMap.get(id).foreach { t => t._1 ! UserActor.DispatchMsg(toWatcherMsg) }
+
+  def dispatchTo(toMsg: Protocol.WsMsgSource, user: ActorRef[UserActor.Command],watcherMap:mutable.HashMap[String,mutable.HashMap[String, ActorRef[WatcherActor.Command]]],id:String): Unit = {
+    user ! UserActor.DispatchMsg(toMsg)
     if(watcherMap.contains(id)) {
-      watcherMap.get(id).get.values.foreach{t => t ! WatcherActor.TransInfo(toWatcherMsg)}
+      watcherMap.get(id).get.values.foreach{t => t ! WatcherActor.TransInfo(toMsg)}
     }
   }
 
   def dispatch(userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String,Long)],
                watcherMap:mutable.HashMap[String,mutable.HashMap[String, ActorRef[WatcherActor.Command]]],
-               toWatcherMsg:Protocol.WsMsgSource) = {
-    userMap.values.foreach { t => t._1 ! UserActor.DispatchMsg(toWatcherMsg) }
+               toMsg:Protocol.WsMsgSource) = {
+    userMap.values.foreach { t => t._1 ! UserActor.DispatchMsg(toMsg) }
     watcherMap.values.foreach{t =>t.values.foreach{ ti =>
-       ti ! WatcherActor.TransInfo(toWatcherMsg)
+       ti ! WatcherActor.TransInfo(toMsg)
     }}
   }
 
@@ -388,16 +414,16 @@ object RoomActor {
     }
   }
 
-  private def getGameRecorder(ctx: ActorContext[Command], grid: GridOnServer, roomId: Long): ActorRef[GameRecorder.Command] = {
-    val childName = s"gameRecorder" + roomId
-    ctx.child(childName).getOrElse {
-      val fileName = "medusa"
-      val gameInformation = ""
-      val initStateOpt = Some(grid.getGridSyncData)
-      val actor = ctx.spawn(GameRecorder.create(fileName, gameInformation, initStateOpt, roomId), childName)
-      ctx.watchWith(actor, ChildDead(childName, actor))
-      actor
-    }.upcast[GameRecorder.Command]
-  }
+    private def getGameRecorder(ctx: ActorContext[Command], grid: GridOnServer, roomId: Long): ActorRef[GameRecorder.Command] = {
+      val childName = s"gameRecorder" + roomId
+      ctx.child(childName).getOrElse {
+        val fileName = "medusa"
+        val gameInformation = ""
+        val initStateOpt = Some(grid.getGridSyncData)
+        val actor = ctx.spawn(GameRecorder.create(fileName, gameInformation, initStateOpt, roomId), childName)
+        ctx.watchWith(actor, ChildDead(childName, actor))
+        actor
+      }.upcast[GameRecorder.Command]
+    }
 
 }

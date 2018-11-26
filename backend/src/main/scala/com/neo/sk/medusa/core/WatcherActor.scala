@@ -168,6 +168,13 @@ object WatcherActor {
                 idle(watcherId,watchedId,roomId,frontActor,true)
               }
             }else{
+//              x match {
+//                case GridDataSync(_, _, _,_) =>
+//                  log.info(s"sync data full: $x")
+//                case GridDataSyncNoApp(_, _) =>
+//                  log.info(s"sync data no app: $x")
+//                case _ =>
+//              }
               Behavior.same
             }
 
