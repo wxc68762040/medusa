@@ -116,6 +116,7 @@ object NetGameHolder extends js.JSApp {
   }
 
   def startLoop(): Unit = {
+    println("----")
     gameLoop()
     dom.window.setInterval(() => gameLoop(), Protocol.frameRate)
   }
@@ -202,6 +203,7 @@ object NetGameHolder extends js.JSApp {
     netInfoHandler.fpsCounter += 1
     if (wsSetup) {
       val data = grid.getGridSyncData4Client
+//      println("x  :"+data)
       val timeNow = System.currentTimeMillis()
       GameView.drawGrid(myId, data, scaleW, scaleH)
       GameMap.drawLittleMap(myId, data, scaleW, scaleH)
@@ -309,7 +311,7 @@ object NetGameHolder extends js.JSApp {
             val middleDataInJs = new MiddleBufferInJs(buf) //put data into MiddleBuffer
           val encodedData: Either[decoder.DecoderFailure, Protocol.GameMessage] =
             bytesDecode[Protocol.GameMessage](middleDataInJs) // get encoded data.
-            //            GameView.canvas.focus()
+//            println(encodedData)
             encodedData match {
               case Right(data) => data match {
                 case Protocol.JoinRoomSuccess(id, roomId) =>
@@ -411,8 +413,10 @@ object NetGameHolder extends js.JSApp {
                   infoState = "noRoom"
 
                 case data: Protocol.GridDataSync =>
+                  println(s"get sync data full: $data")
                   infoState = "normal"
                   if(!grid.init) {
+                    println("full true")
                     grid.init = true
                     val timeout = 100 - 50 % 100
                     dom.window.setTimeout(() => startLoop(), timeout)
@@ -422,7 +426,14 @@ object NetGameHolder extends js.JSApp {
                   justSynced = true
 
                 case data:Protocol.GridDataSyncNoApp =>
+                  println(s"get sync data no app: $data")
                   infoState = "normal"
+                  if(!grid.init) {
+                    println("no true")
+                    grid.init = true
+                    val timeout = 100 - 50 % 100
+                    dom.window.setTimeout(() => startLoop(), timeout)
+                  }
                   setLagTrigger()
                   syncDataNoApp = Some(data)
                   justSynced = true

@@ -5,9 +5,10 @@ import akka.actor.typed.{ActorRef, Behavior}
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import com.neo.sk.medusa.Boot.watchManager
+import com.neo.sk.medusa.Boot.roomManager
 import akka.stream.typed.scaladsl.{ActorSink, ActorSource}
 import com.neo.sk.medusa.snake.Protocol
-import com.neo.sk.medusa.snake.Protocol.{NewSnakeJoined, WsMsgSource, YouHaveLogined}
+import com.neo.sk.medusa.snake.Protocol._
 import com.sun.media.jfxmedia.events.PlayerStateEvent.PlayerState
 import io.circe.Decoder
 import org.slf4j.LoggerFactory
@@ -66,6 +67,7 @@ object WatcherActor {
         implicit val stashBuffer: StashBuffer[Command] = StashBuffer[Command](Int.MaxValue)
         Behaviors.withTimers[Command] {
           implicit timer =>
+            log.info(s"id at create: $watcherId")
             switchBehavior(ctx, "init", init(watcherId,"", roomId,true), InitTime, TimeOut("init"))
         }
     }
@@ -79,15 +81,19 @@ object WatcherActor {
             println(" 我就看看")
             ctx.watchWith(frontActor, FrontLeft(frontActor))
             ctx.self ! WatcherReady
+            roomManager ! RoomManager.INeedApple(watchedId,watcherId,roomId)
+            println("watchedId in watcherActor init: "+watchedId)
             switchBehavior(ctx, "idle", idle(watcherId, watchedId, roomId, frontActor,waitTip))
 
 
 
           case GetWatchedId(id) =>
-            init(watchedId, id, roomId,waitTip)
+
+            switchBehavior(ctx, "init", init(watcherId, id, roomId,waitTip))
 
           case TimeOut(m) =>
             println(s"${m}")
+            watchManager ! WatcherManager.WatcherGone(watchedId,watcherId,roomId)
             log.debug(s"${ctx.self.path} is time out when busy,msg=$m")
             Behaviors.stopped
 
@@ -112,7 +118,9 @@ object WatcherActor {
           case FrontLeft(front) =>
             ctx.unwatch(front)
             println("action occur when you refresh page")
-            watchManager ! WatcherManager.WatcherGone(watcherId,roomId)
+            println("watchedId in watcherActor idle: "+watchedId)
+
+            //
             switchBehavior(ctx,"init",init(watcherId,watchedId,roomId,waitTip),Some(10.seconds),TimeOut("lalalallalallalalalalalalalalala11111"))
 
 
@@ -122,7 +130,7 @@ object WatcherActor {
 
           case PlayerWait =>
             frontActor ! Protocol.PlayerWaitingJoin
-            println("---- "+Protocol.PlayerWaitingJion+"  ")
+            println("---- "+Protocol.PlayerWaitingJoin+"  ")
             idle(watcherId,watchedId,roomId,frontActor,false)
 
           case UserFrontActor(newFront) =>
@@ -143,12 +151,27 @@ object WatcherActor {
 
           case TransInfo(x) =>
             frontActor ! x
-            if(!waitTip) frontActor ! Protocol.PlayerWaitingJion
-            if(x.isInstanceOf[NewSnakeJoined]){
-              idle(watcherId,watchedId,roomId,frontActor,true)
+//            println(x)
+//            x match {
+//              case GridDataSync(_, _, _) =>
+//                log.info(s"sync data full: $x")
+//              case GridDataSyncNoApp(_, _) =>
+//                log.info(s"sync data no app: $x")
+//              case _ =>
+//            }
+            if(!waitTip) frontActor ! Protocol.PlayerWaitingJoin
+            if(x.isInstanceOf[Protocol.DeadListBuff]){
+              println("Dead:   "+x+" "+watchedId)
+              if(x.asInstanceOf[Protocol.DeadListBuff].deadList.contains(watchedId)){
+                idle(watcherId,watchedId,roomId,frontActor,false)
+              }else{
+                idle(watcherId,watchedId,roomId,frontActor,true)
+              }
             }else{
-              Behaviors.same
+              Behavior.same
             }
+
+
 
           case NetTest(b, a) =>
             Behaviors.same

@@ -61,8 +61,7 @@ object RoomActor {
   private case object TimerKey4CloseRec
 
   final case class ChildDead[U](name: String, childRef: ActorRef[U]) extends Command
-
-
+  case class GiveYouApple(playerId:String,waterId:String) extends Command
 
   private var deadCommonInfo = Protocol.DeadInfo("","",0,0,"","")
 
@@ -78,13 +77,13 @@ object RoomActor {
             if(isRecord){
               getGameRecorder(ctx, grid, roomId)
             }
-            idle(roomId, 0,ListBuffer[Protocol.GameMessage](), mutable.HashMap[String, (ActorRef[UserActor.Command], String, Long)](),mutable.HashMap[String,mutable.HashMap[String, ActorRef[WatcherActor.Command]]](),mutable.ListBuffer[String]() ,grid,emptyKeepTime.toMillis/AppSettings.frameRate)
+            idle(roomId, 0,ListBuffer[Protocol.GameMessage](), mutable.HashMap[String, (ActorRef[UserActor.Command], String,Long)](),mutable.HashMap[String,mutable.HashMap[String, ActorRef[WatcherActor.Command]]](),mutable.ListBuffer[String]() ,grid,emptyKeepTime.toMillis/AppSettings.frameRate)
         }
     }
   }
 
   private def idle(roomId: Long, tickCount: Long, eventList:ListBuffer[Protocol.GameMessage],
-                   userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String)],
+                   userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String,Long)],
                    watcherMap: mutable.HashMap[String,mutable.HashMap[String, ActorRef[WatcherActor.Command]]],  //watcherMap:  playId  -> map
                    deadUserList:mutable.ListBuffer[String] ,grid: GridOnServer, roomEmptyCount:Long)
                   (implicit timer: TimerScheduler[RoomActor.Command]): Behavior[Command] = {
@@ -99,7 +98,8 @@ object RoomActor {
             grid.addSnake(t.playerId, t.playerName)
             //dispatchTo(t.playerId, UserActor.DispatchMsg(Protocol.Id(t.playerId)), userMap)
             eventList.append(Protocol.NewSnakeJoined(t.playerId, t.playerName, roomId))
-            dispatch(UserActor.DispatchMsg(Protocol.NewSnakeJoined(t.playerId, t.playerName, roomId)), userMap,watcherMap,Protocol.NewSnakeJoined(t.playerId, t.playerName, roomId))
+            dispatch( userMap,watcherMap,Protocol.NewSnakeJoined(t.playerId, t.playerName, roomId))
+            dispatch(userMap,watcherMap,Protocol.DeadListBuff(deadUserList))
             if(isRecord){
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserJoinRoom(t.playerId, t.playerName, grid.frameCount)
             }
@@ -109,9 +109,9 @@ object RoomActor {
             log.info(s"room $roomId lost a player ${t.userId}")
             //grid.removeSnake(t.userId)
             deadCommonInfo = Protocol.DeadInfo( t.userId,t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer)
-            dispatchTo(t.userId, UserActor.DispatchMsg(Protocol.DeadInfo( t.userId,t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer)), userMap,watcherMap,Protocol.DeadInfo( t.userId,t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer))
+            dispatchTo(t.userId,userMap,watcherMap,Protocol.DeadInfo( t.userId,t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer))
 
-            dispatch(UserActor.DispatchMsg(Protocol.SnakeDead(t.userId, t.deadInfo.name)), userMap,watcherMap,Protocol.SnakeDead(t.userId, t.deadInfo.name))
+            dispatch(userMap,watcherMap,Protocol.SnakeDead(t.userId, t.deadInfo.name))
 
             eventList.append(Protocol.DeadInfo(t.userId,t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer))
             eventList.append(Protocol.SnakeDead(t.userId, t.deadInfo.name))
@@ -130,7 +130,7 @@ object RoomActor {
             if (t.frame >= grid.frameCount) {
               grid.addActionWithFrame(t.id, t.keyCode, t.frame)
               eventList.append(Protocol.SnakeAction(t.id, t.keyCode, t.frame))
-              dispatch(UserActor.DispatchMsg(Protocol.SnakeAction(t.id, t.keyCode, t.frame)), userMap,watcherMap,Protocol.SnakeAction(t.id, t.keyCode, t.frame))
+              dispatch(userMap,watcherMap,Protocol.SnakeAction(t.id, t.keyCode, t.frame))
 
             } else if (t.frame >= grid.frameCount - Protocol.savingFrame + Protocol.advanceFrame) {
               grid.addActionWithFrame(t.id, t.keyCode, grid.frameCount)
@@ -152,7 +152,7 @@ object RoomActor {
           case t:UserLeft =>
             grid.removeSnake(t.playerId)
             val userName = userMap(t.playerId)._2
-            dispatch(UserActor.DispatchMsg(Protocol.SnakeDead(t.playerId, userName)), userMap,watcherMap,Protocol.SnakeDead(t.playerId,userName))
+            dispatch( userMap,watcherMap,Protocol.SnakeDead(t.playerId,userName))
 
             eventList.append(Protocol.SnakeDead(t.playerId, userName))
             if (isRecord) {
@@ -177,65 +177,66 @@ object RoomActor {
             val snakeNumber = grid.genWaitingSnake()
             if (snakeNumber > 0) {
               eventList.append(grid.getGridSyncData)
-              dispatch(UserActor.DispatchMsg(grid.getGridSyncData), userMap,watcherMap,grid.getGridSyncData)
-
+              dispatch( userMap,watcherMap,grid.getGridSyncData)
+              println("----")
             }
             if (grid.deadSnakeList.nonEmpty) {
               grid.deadSnakeList.foreach { s =>
                 grid.removeSnake(s.id)
               }
               eventList.append(Protocol.DeadList(grid.deadSnakeList.map(_.id)))
-              dispatch(UserActor.DispatchMsg(Protocol.DeadList(grid.deadSnakeList.map(_.id))), userMap,watcherMap,Protocol.DeadList(grid.deadSnakeList.map(_.id)))
+              dispatch( userMap,watcherMap,Protocol.DeadList(grid.deadSnakeList.map(_.id)))
 
             }
             grid.killMap.foreach {
               g =>
                 eventList.append(Protocol.KillList(g._1, g._2))
-                dispatchTo(g._1, UserActor.DispatchMsg(Protocol.KillList(g._1, g._2)), userMap,watcherMap,Protocol.KillList(g._2))
+                dispatchTo(g._1, userMap,watcherMap,Protocol.KillList(g._1,g._2))
             }
 
             if (speedUpInfo.nonEmpty) {
               eventList.append(Protocol.SpeedUp(speedUpInfo))
-              dispatch(UserActor.DispatchMsg(Protocol.SpeedUp(speedUpInfo)),userMap,watcherMap,Protocol.SpeedUp(speedUpInfo))
+              dispatch(userMap,watcherMap,Protocol.SpeedUp(speedUpInfo))
 
             }
             if (tickCount % 20 == 5) {
               if(tickCount > 300){
                 val noAppData = grid.getGridSyncDataNoApp
                 if (!(snakeNumber > 0)) { //需要生成蛇的情况下，已经广播过一次全量数据，不再次广播
-                  dispatch(UserActor.DispatchMsg(noAppData), userMap，watcherMap,noAppData)
+                  dispatch( userMap,watcherMap,noAppData)
                 }
+//                println("3---"+ noAppData)
               }else {
                 val syncData = grid.getGridSyncData
                 eventList.append(Protocol.SyncApples(syncData.appleDetails))
                 if (!(snakeNumber > 0)) { //需要生成蛇的情况下，已经广播过一次全量数据，不再次广播
-                  dispatch(UserActor.DispatchMsg(syncData), userMap,watcherMap,syncData)
+                  dispatch(userMap,watcherMap,syncData)
                 }
-
+//                println("---")
               }
 
 
             }
             if(tickCount % 300 == 1){
-//             dispatch(UserActor.DispatchMsg(Protocol.SyncApples(grid.getGridSyncData.appleDetails.get)),userMap,watcherMap,Protocol.SyncApples(grid.getGridSyncData.appleDetails.get))
+             dispatch(userMap,watcherMap,Protocol.SyncApples(grid.getGridSyncData.appleDetails))
 
               eventList.append(Protocol.SyncApples(grid.getGridSyncData.appleDetails))
             }
               if (feedApples.nonEmpty) {
                 eventList.append(Protocol.FeedApples(feedApples))
-                dispatch(UserActor.DispatchMsg(Protocol.FeedApples(feedApples)), userMap,watcherMap,Protocol.FeedApples(feedApples))
+                dispatch(userMap,watcherMap,Protocol.FeedApples(feedApples))
 
               }
               if (eatenApples.nonEmpty) {
                 val tmp = Protocol.EatApples(eatenApples.map(r => EatFoodInfo(r._1, r._2)).toList)
-                dispatch(UserActor.DispatchMsg(tmp), userMap,watcherMap,tmp)
+                dispatch(userMap,watcherMap,tmp)
 
                 eventList.append(tmp)
               }
 
             if (tickCount % 20 == 1) {
               eventList.append(Protocol.Ranks(grid.currentRank, grid.historyRankList))
-              dispatch(UserActor.DispatchMsg(Protocol.Ranks(grid.currentRank, grid.historyRankList)), userMap,watcherMap,Protocol.Ranks(grid.currentRank, grid.historyRankList))
+              dispatch( userMap,watcherMap,Protocol.Ranks(grid.currentRank, grid.historyRankList))
 
             }
             var rEmptyCount = roomEmptyCount
@@ -253,7 +254,7 @@ object RoomActor {
             idle(roomId, newTick, ListBuffer[Protocol.GameMessage](), userMap,watcherMap, deadUserList,grid,rEmptyCount)  //---
 
           case NetTest(id, createTime) =>
-            dispatchTo(id, UserActor.DispatchMsg(Protocol.NetDelayTest(createTime)), userMap,watcherMap,Protocol.NetDelayTest(createTime))
+            dispatchTo(id,userMap,watcherMap,Protocol.NetDelayTest(createTime))
 
             Behaviors.same
 
@@ -269,23 +270,47 @@ object RoomActor {
           case t: YourUserIsWatched =>
 //            userMap.get(t.playerId).foreach(a => a._1 ! UserActor.YouAreWatched(t.watcherId, t.watcherRef))
             println("i will print this word every refresh  :"+deadUserList)
+            if(watcherMap.contains(t.playerId)){ //如果player已经存在就不在创建对应的观看者map
+              //检查该watcher是否在其他的player的观看map中，如果存在，则删除
+              watcherMap.map{ k =>
+                if(k._1 != t.playerId){
+                  if(k._2.contains(t.watcherId))watcherMap.get(k._1).get.remove(t.watcherId)
+                }
+              }
+              watcherMap.get(t.playerId).get.put(t.watcherId, t.watcherRef)
+            }else{
+              val watcherMapIn = new mutable.HashMap[String,ActorRef[WatcherActor.Command]]()
+              watcherMapIn.put(t.watcherId, t.watcherRef)
+              watcherMap.put(t.playerId,watcherMapIn)
+            }
+            println("watcherMap:   "+watcherMap)
             if(deadUserList.contains(t.playerId)){
               println("deadInfo: "+deadCommonInfo)
               println("playerId: "+t.playerId)
               println("watcher: "+t.watcherRef)
               t.watcherRef ! WatcherActor.PlayerWait
-            }else{
-              val watcherMapIn = new mutable.HashMap[String,ActorRef[WatcherActor.Command]]()
-              watcherMapIn.put(t.watcherId, t.watcherRef)
-              watcherMap.put(t.playerId,watcherMapIn)
-              t.watcherRef ! WatcherActor.GetWatchedId(t.playerId)
             }
+            t.watcherRef ! WatcherActor.GetWatchedId(t.playerId)
+            t.watcherRef ! WatcherActor.TransInfo(Protocol.DeadListBuff(deadUserList))
             Behaviors.same
-          /**
-            * fix
-            */
+
+          case t:GiveYouApple =>
+            val syncData = grid.getGridSyncData
+            if(watcherMap.nonEmpty && (watcherMap.get(t.playerId).isDefined)){
+              if(watcherMap.get(t.playerId).get!=None ){
+                if(watcherMap.get(t.playerId).get.get(t.waterId).isDefined){
+                  val watcherRef = watcherMap.get(t.playerId).get.get(t.waterId).get
+                  watcherRef ! WatcherActor.TransInfo(syncData)
+                }
+              }
+            }
+
+            Behavior.same
+
+
           case t: YouAreUnwatched =>
-            watcherMap.get(t.playerId).get.remove(t.watcherId)
+            println("123: "+t)
+            if(!watcherMap.get(t.playerId).isEmpty) watcherMap.get(t.playerId).get.remove(t.watcherId)
             Behaviors.same
 
 
@@ -306,28 +331,27 @@ object RoomActor {
 
   }
 
-  def dispatchTo(id: String, gameOutPut: UserActor.DispatchMsg,
-                 userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String)],
+  def dispatchTo(id: String,
+                 userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String,Long)],
                  watcherMap:mutable.HashMap[String,mutable.HashMap[String, ActorRef[WatcherActor.Command]]],
                  toWatcherMsg:Protocol.WsMsgSource): Unit = {
-    userMap.get(id).foreach { t => t._1 ! gameOutPut }
+    userMap.get(id).foreach { t => t._1 ! UserActor.DispatchMsg(toWatcherMsg) }
     if(watcherMap.contains(id)) {
       watcherMap.get(id).get.values.foreach{t => t ! WatcherActor.TransInfo(toWatcherMsg)}
     }
   }
 
-  def dispatch(gameOutPut: UserActor.Command,
-               userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String)],
+  def dispatch(userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String,Long)],
                watcherMap:mutable.HashMap[String,mutable.HashMap[String, ActorRef[WatcherActor.Command]]],
                toWatcherMsg:Protocol.WsMsgSource) = {
-    userMap.values.foreach { t => t._1 ! gameOutPut }
+    userMap.values.foreach { t => t._1 ! UserActor.DispatchMsg(toWatcherMsg) }
     watcherMap.values.foreach{t =>t.values.foreach{ ti =>
        ti ! WatcherActor.TransInfo(toWatcherMsg)
     }}
   }
 
   def dispatchDistinct(distinctId: String, distinctGameOutPut: UserActor.DispatchMsg, gameOutPut: UserActor.DispatchMsg,
-                       userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String)]): Unit = {
+                       userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String,Long)]): Unit = {
     userMap.foreach {
       case (id, t) =>
         if (id != distinctId) {

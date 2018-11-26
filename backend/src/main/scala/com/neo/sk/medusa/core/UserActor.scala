@@ -378,9 +378,9 @@ object UserActor {
             roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
             Behaviors.stopped
 
-          case HeartBeat =>
-            frontActor ! Protocol.HeartBeat
-            Behaviors.same
+//          case HeartBeat =>
+//            frontActor ! Protocol.HeartBeat
+//            Behaviors.same
 
 
           case x =>

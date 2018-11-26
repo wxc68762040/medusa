@@ -53,14 +53,9 @@ object RoomManager {
 
   case class ReStartGame(playerId:String,roomId:Long) extends Command
 
-  /**
-    *
-    * @param playerId
-    * @param watcherId
-    * @param roomId
-    */
   case class YourUserUnwatched(playerId: String, watcherId: String,roomId:Long) extends Command
 
+  case class INeedApple(playerId: String, watcherId: String,roomId:Long) extends Command
 
   val behaviors: Behavior[Command] = {
     log.info(s"RoomManager start...")
@@ -190,19 +185,21 @@ object RoomManager {
                 t.playerId
               }
             }
+            println("RoomManager: "+ playerId)
             watchManager ! WatcherManager.GetPlayerWatchedRsp(t.watcherId, playerId)
-            if(playerId != "") {
+            if(playerId.trim != "") {
               getRoomActor(ctx, t.roomId) ! RoomActor.YourUserIsWatched(playerId, t.watcherRef, t.watcherId)
             }
             Behaviors.same
 
-          /**
-            * fix
-             */
           case t: YourUserUnwatched =>
             getRoomActor(ctx, t.roomId) ! RoomActor.YouAreUnwatched(t.playerId,t.watcherId)
             Behaviors.same
 
+          case t:INeedApple =>
+            println("--t-- :"+ t)
+            getRoomActor(ctx,t.roomId) ! RoomActor.GiveYouApple(t.playerId,t.watcherId)
+            Behavior.same
 
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")

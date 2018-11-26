@@ -45,6 +45,7 @@ object GameView  {
   }
 
   def drawGrid(uid: String, data: GridDataSync, scaleW: Double, scaleH:Double): Unit = {
+
     val cacheCanvas = dom.document.createElement("canvas").asInstanceOf[Canvas]
     val cacheCtx = cacheCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
@@ -112,7 +113,7 @@ object GameView  {
       val id = snake.id
       val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
       val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
-
+//      println("snake.foreach ----:  "+id)
       var step = (snake.speed * period / Protocol.frameRate - snake.extend).toInt
       var tail = snake.tail
       var joints = snake.joints.enqueue(Point(x.toInt, y.toInt))//通过在旧序列上添加元素创造一个新的队列

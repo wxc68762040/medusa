@@ -187,6 +187,7 @@ trait Grid {
       snakes4client.values.toList,
       appleDetails
     )
+
   }
 
   def getGridSyncDataNoApp = {
