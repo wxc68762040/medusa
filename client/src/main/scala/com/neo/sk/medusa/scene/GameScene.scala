@@ -22,6 +22,8 @@ object GameScene{
 	trait GameSceneListener {
 		def onKeyPressed(e: KeyCode): Unit
 	}
+	val initWindowWidth = 1450
+	val initWindowHeight = 816
 }
 
 class GameScene() {

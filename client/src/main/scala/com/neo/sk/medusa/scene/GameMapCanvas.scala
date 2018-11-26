@@ -23,7 +23,6 @@ class GameMapCanvas(canvas: Canvas, gameScene: GameScene) {
 
 
   def drawMap(uid: String, data: GridDataSync, scaleW: Double, scaleH: Double): Unit = {
-
     val mapWidth = gameScene.widthMap * scaleW
     val mapHeight = gameScene.heightMap * scaleH
     canvas.setWidth(mapWidth)
@@ -67,7 +66,12 @@ class GameMapCanvas(canvas: Canvas, gameScene: GameScene) {
         }
         mapCtx.setFill(Color.WHITE)
         joints = joints.reverse.enqueue(tail)
-
+        if(snake.id == grid.myId){
+          mapCtx.setStroke(Color.WHITE)
+          mapCtx.setGlobalAlpha(0.8)
+          mapCtx.rect((joints.head.x * LittleMap.w) * scaleW / Boundary.w - GameScene.initWindowWidth.toFloat / Boundary.w * LittleMap.w * scaleW / 2 , (joints.head.y * LittleMap.h) * scaleH / Boundary.h - GameScene.initWindowHeight.toFloat / Boundary.h * LittleMap.h * scaleW / 2, GameScene.initWindowWidth.toFloat / Boundary.w * LittleMap.w * scaleW, GameScene.initWindowHeight.toFloat / Boundary.h * LittleMap.h * scaleW)
+          mapCtx.stroke()
+        }
         if(snake.id != maxId && snake.id == grid.myId) {
           mapCtx.beginPath()
           mapCtx.setGlobalAlpha(0.5)
