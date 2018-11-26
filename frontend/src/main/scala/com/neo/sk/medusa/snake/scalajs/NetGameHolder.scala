@@ -308,7 +308,9 @@ object NetGameHolder extends js.JSApp {
             bytesDecode[Protocol.GameMessage](middleDataInJs) // get encoded data.
             //            GameView.canvas.focus()
             encodedData match {
-              case Right(data) => data match {
+              case Right(data) =>
+                println(data)
+                data match {
                 case Protocol.JoinRoomSuccess(id, roomId) =>
                   myId = id
                   myRoomId = roomId
