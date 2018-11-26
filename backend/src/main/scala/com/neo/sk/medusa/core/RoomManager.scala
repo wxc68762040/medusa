@@ -5,11 +5,13 @@ import java.util.concurrent.atomic.AtomicInteger
 import com.neo.sk.medusa.protocol.PlayInfoProtocol.PlayerInfo
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors, TimerScheduler}
-import com.neo.sk.medusa.core.UserManager.ChildDead
+import com.neo.sk.medusa.core.UserManager.{ChildDead, YourUserUnwatched, getUserActor}
 import net.sf.ehcache.transaction.xa.commands.Command
 import org.slf4j.LoggerFactory
+
 import scala.concurrent.duration._
 import com.neo.sk.medusa.Boot.watchManager
+
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -48,6 +50,12 @@ object RoomManager {
   case class GetRoomListReq(replyTo:ActorRef[GetRoomListRsp]) extends Command
 
   case class GetRoomListRsp(roomList:List[Long])
+
+  case class ReStartGame(playerId:String,roomId:Long) extends Command
+
+  case class YourUserUnwatched(playerId: String, watcherId: String,roomId:Long) extends Command
+
+  case class INeedApple(playerId: String, watcherId: String,roomId:Long) extends Command
 
   val behaviors: Behavior[Command] = {
     log.info(s"RoomManager start...")
@@ -177,12 +185,22 @@ object RoomManager {
                 t.playerId
               }
             }
+            println("RoomManager: "+ playerId)
             watchManager ! WatcherManager.GetPlayerWatchedRsp(t.watcherId, playerId)
-            if(playerId != "") {
+            if(playerId.trim != "") {
               getRoomActor(ctx, t.roomId) ! RoomActor.YourUserIsWatched(playerId, t.watcherRef, t.watcherId)
             }
             Behaviors.same
-            
+
+          case t: YourUserUnwatched =>
+            getRoomActor(ctx, t.roomId) ! RoomActor.YouAreUnwatched(t.playerId,t.watcherId)
+            Behaviors.same
+
+          case t:INeedApple =>
+            println("--t-- :"+ t)
+            getRoomActor(ctx,t.roomId) ! RoomActor.GiveYouApple(t.playerId,t.watcherId)
+            Behavior.same
+
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")
             Behaviors.unhandled

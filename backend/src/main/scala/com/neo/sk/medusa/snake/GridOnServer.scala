@@ -8,6 +8,7 @@ import com.neo.sk.medusa.core.RoomActor.DeadInfo
 import com.neo.sk.medusa.snake.Protocol.{fSpeed, square}
 import org.slf4j.LoggerFactory
 
+import scala.collection.mutable.ListBuffer
 import scala.util.Random
 import scala.util.matching.Regex
 
@@ -60,7 +61,8 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
 
 
   def genWaitingSnake() = {
-    val snakeNumber = waitingJoin.size
+    val oldSnakes = snakes
+    val newSnakes = ListBuffer[Snake4Client]()
     waitingJoin.filterNot(kv => snakes.contains(kv._1)).foreach { case (id, name) =>
       val tmp = randomColor()
       val color = "rgba(" + Math.min(tmp._1 + random.nextInt(100) - 35,255 )+ "," + Math.min(tmp._2 + random.nextInt(30), 255 )+
@@ -69,9 +71,10 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
       val direction = getSafeDirection(head)
       grid += head -> Body(id, color)
       snakes += id -> SnakeInfo(id, name, head, head, head, color, direction)
+      newSnakes.append(Snake4Client(id,name, head, head, color, direction))
     }
     waitingJoin = Map.empty[String, String]
-    snakeNumber
+    (newSnakes.toList, oldSnakes)
   }
 
   implicit val scoreOrdering = new Ordering[Score] {
@@ -358,7 +361,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
               case x => 5
             }
             val apple = Apple(score, FoodType.intermediate, Some(targetPoint, score))
-            deadBodies ::= Ap(score, FoodType.intermediate, dead._1.x, dead._1.y, Some(targetPoint, score))
+            deadBodies ::= Ap(score, FoodType.intermediate, dead._1.x, dead._1.y)
             grid += (dead._1 -> apple)
             appleNeeded -= 1
           }
@@ -381,7 +384,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
             totalScore += x.score
             newSpeed += 0.1
             speedOrNot = true
-            apples ::= Ap(x.score, x.appleType, e.x, e.y, x.targetAppleOpt)
+            apples ::= Ap(x.score, x.appleType, e.x, e.y)
           }
         case _ => //do nothing
       }

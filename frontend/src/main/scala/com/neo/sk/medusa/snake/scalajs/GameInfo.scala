@@ -69,22 +69,55 @@ object GameInfo {
     val centerY = windowHeight/2
     NetGameHolder.infoState match {
       case "normal" =>
-        val kill = currentRank.filter(_.id == uid).map(_.k)
-        snakes.find(_.id == uid) match {
-          case Some(mySnake) =>
-            startBg.setAttribute("style", "display:none")
-            NetGameHolder.firstCome = false
-            val baseLine = 1
-            infoCacheCtx.font = s"${14 * scaleW}px Helvetica"
-            infoCacheCtx.fillStyle = "rgb(250,250,250)"
-            drawTextLine(infoCacheCtx, s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 1, baseLine, scaleW, scaleH)
-            drawTextLine(infoCacheCtx, s"your kill = $kill", leftBegin, 2, baseLine, scaleW, scaleH)
-            drawTextLine(infoCacheCtx, s"your length = ${mySnake.length} ", leftBegin, 3, baseLine, scaleW, scaleH)
-            drawTextLine(infoCacheCtx, s"fps: ${netInfoHandler.fps.formatted("%.2f")} ping:${netInfoHandler.ping.formatted("%.2f")} dataps:${netInfoHandler.dataps.formatted("%.2f")}", leftBegin, 4, baseLine, scaleW, scaleH)
-            drawTextLine(infoCacheCtx, s"drawTimeAverage: ${netInfoHandler.drawTimeAverage}", leftBegin, 5, baseLine, scaleW, scaleH)
-            drawTextLine(infoCacheCtx, s"roomId: $myRoomId", leftBegin, 6, baseLine, scaleW, scaleH)
+        if(playerState._2) {
+          val kill = currentRank.filter(_.id == uid).map(_.k).headOption.getOrElse(0)
+          snakes.find(_.id == uid) match {
+            case Some(mySnake) =>
+              startBg.setAttribute("style", "display:none")
+              NetGameHolder.firstCome = false
+              val baseLine = 1
+              infoCacheCtx.font = s"${14 * scaleW}px Helvetica"
+              infoCacheCtx.fillStyle = "rgb(250,250,250)"
+              drawTextLine(infoCacheCtx, s"YOU: id=[${mySnake.id}]    name=[${mySnake.name.take(32)}]", leftBegin, 1, baseLine, scaleW, scaleH)
+              drawTextLine(infoCacheCtx, s"your kill = $kill", leftBegin, 2, baseLine, scaleW, scaleH)
+              drawTextLine(infoCacheCtx, s"your length = ${mySnake.length} ", leftBegin, 3, baseLine, scaleW, scaleH)
+              drawTextLine(infoCacheCtx, s"fps: ${netInfoHandler.fps.formatted("%.2f")} ping:${netInfoHandler.ping.formatted("%.2f")} dataps:${netInfoHandler.dataps.formatted("%.2f")}", leftBegin, 4, baseLine, scaleW, scaleH)
+              drawTextLine(infoCacheCtx, s"drawTimeAverage: ${netInfoHandler.drawTimeAverage}", leftBegin, 5, baseLine, scaleW, scaleH)
+              drawTextLine(infoCacheCtx, s"roomId: $myRoomId", leftBegin, 6, baseLine, scaleW, scaleH)
 
-          case None =>
+            case None =>
+          }
+        }else{
+          if(state.contains("playGame")||state.contains("watchGame")){
+            //玩游戏过程中死亡显示
+            if (NetGameHolder.firstCome) {
+              infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
+            } else {
+              /*infoCacheCtx.clearRect(centerX - 350 * scaleW,centerX - 150 * scaleW,400,200)
+              infoCacheCtx.globalAlpha=0.2
+              infoCacheCtx.fillStyle= Color.Black.toString()
+              infoCacheCtx.fillRect(centerX - 350 * scaleW,centerX - 150 * scaleW,400,200)*/
+
+              infoCacheCtx.font = s"${26 * scaleW}px Helvetica"
+              infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
+              infoCacheCtx.shadowBlur = 1
+              infoCacheCtx.fillText(s"Your name   : $deadName", centerX - 150 * scaleW, centerY - 30 * scaleH)
+              infoCacheCtx.fillText(s"Your length  : $deadLength", centerX - 150 * scaleW, centerY)
+              infoCacheCtx.fillText(s"Your kill        : $deadKill", centerX - 150 * scaleW, centerY + 30 * scaleH)
+              infoCacheCtx.fillText(s"Killer            : $yourKiller", centerX - 150 * scaleW, centerY + 60 * scaleH)
+              infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
+              infoCacheCtx.fillText("Ops, Press Space Key To Restart!", centerX - 350 * scaleW, centerY - 150 * scaleH)
+              myProportion = 1.0
+            }
+          }else if(state.contains("watchRecord")&& NetGameHolder.infoState == "normal"  ){
+            //观看记录时 观看玩家死亡
+            infoCacheCtx.font = "36px Helvetica"
+            infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
+            infoCacheCtx.shadowBlur = 0
+            infoCacheCtx.fillText("您观看的玩家已死亡",centerX - 150, centerY - 30)
+
+          }
+
         }
       case "recordNotExist" =>
         infoCacheCtx.font = s"${36 * scaleW}px Helvetica"
@@ -118,39 +151,6 @@ object GameInfo {
         infoCacheCtx.fillText("等待玩家重新开始……",centerX - 150 * scaleW, centerY - 30 * scaleH)
     }
 
-    //用户死亡
-    if(!playerState._2){
-      if(state.contains("playGame")){
-        //玩游戏过程中死亡显示
-        if (NetGameHolder.firstCome) {
-          infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
-        } else {
-          /*infoCacheCtx.clearRect(centerX - 350 * scaleW,centerX - 150 * scaleW,400,200)
-          infoCacheCtx.globalAlpha=0.2
-          infoCacheCtx.fillStyle= Color.Black.toString()
-          infoCacheCtx.fillRect(centerX - 350 * scaleW,centerX - 150 * scaleW,400,200)*/
-
-          infoCacheCtx.font = s"${26 * scaleW}px Helvetica"
-          infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
-          infoCacheCtx.shadowBlur = 1
-          infoCacheCtx.fillText(s"Your name   : $deadName", centerX - 150 * scaleW, centerY - 30 * scaleH)
-          infoCacheCtx.fillText(s"Your length  : $deadLength", centerX - 150 * scaleW, centerY)
-          infoCacheCtx.fillText(s"Your kill        : $deadKill", centerX - 150 * scaleW, centerY + 30 * scaleH)
-          infoCacheCtx.fillText(s"Killer            : $yourKiller", centerX - 150 * scaleW, centerY + 60 * scaleH)
-          infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
-          infoCacheCtx.fillText("Ops, Press Space Key To Restart!", centerX - 350 * scaleW, centerY - 150 * scaleH)
-          myProportion = 1.0
-        }
-      }else if(state.contains("watchRecord")&& NetGameHolder.infoState == "normal"  ){
-        //观看记录时 观看玩家死亡
-        infoCacheCtx.font = "36px Helvetica"
-        infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
-        infoCacheCtx.shadowBlur = 0
-        infoCacheCtx.fillText("您观看的玩家已死亡",centerX - 150, centerY - 30)
-
-      }
-
-    }
 
     infoCacheCtx.font = s"${14 * scaleW}px Helvetica"
 

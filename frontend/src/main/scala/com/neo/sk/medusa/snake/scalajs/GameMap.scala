@@ -68,7 +68,12 @@ object GameMap {
           }
           mapCtx.fillStyle = Color.White.toString()
           joints = joints.reverse.enqueue(tail)
-
+          if(snake.id == NetGameHolder.myId){
+            mapCtx.strokeStyle = Color.White.toString()
+            mapCtx.globalAlpha = 0.8
+            mapCtx.rect((joints.head.x * LittleMap.w) * scaleW / Boundary.w - NetGameHolder.initWindowWidth.toFloat/Boundary.w * LittleMap.w*scaleW/2 ,(joints.head.y * LittleMap.h) * scaleH / Boundary.h - NetGameHolder.initWindowHeight.toFloat/Boundary.h * LittleMap.h*scaleW/2, NetGameHolder.initWindowWidth.toFloat/Boundary.w * LittleMap.w*scaleW,NetGameHolder.initWindowHeight.toFloat/Boundary.h * LittleMap.h*scaleW)
+            mapCtx.stroke()
+          }
           if (snake.id != maxId && snake.id == NetGameHolder.myId) {
             mapCtx.beginPath()
             mapCtx.globalAlpha = 1

@@ -40,10 +40,14 @@ trait Grid {
   var killMap = Map.empty[String, List[(String,String)]]
 
   def removeSnake(id: String) = {
-    val r = snakes.get(id)
-    if (r.isDefined) {
+    val r1 = snakes.get(id)
+		val r2 = snakes4client.get(id)
+    if (r1.isDefined) {
       snakes -= id
     }
+		if(r2.isDefined) {
+			snakes4client -= id
+		}
   }
 
 
@@ -164,7 +168,7 @@ trait Grid {
   def getGridSyncData = {
     var appleDetails: List[Ap] = Nil
     grid.foreach {
-      case (p, Apple(score, appleType, targetAppleOpt)) => appleDetails ::= Ap(score, appleType, p.x, p.y, targetAppleOpt)
+      case (p, Apple(score, appleType, targetAppleOpt)) => appleDetails ::= Ap(score, appleType, p.x, p.y)
       case _ =>
     }
     val snake4client = snakes.values.map{
@@ -173,13 +177,14 @@ trait Grid {
     Protocol.GridDataSync(
       frameCount,
       snake4client.toList,
-      appleDetails
+      appleDetails,
+      System.currentTimeMillis()
     )
   }
   def getGridSyncData4Client = {
     var appleDetails: List[Ap] = Nil
     grid.foreach {
-      case (p, Apple(score, appleType, targetAppleOpt)) => appleDetails ::= Ap(score, appleType, p.x, p.y, targetAppleOpt)
+      case (p, Apple(score, appleType, _)) => appleDetails ::= Ap(score, appleType, p.x, p.y)
       case _ =>
     }
     Protocol.GridDataSync(
@@ -187,6 +192,7 @@ trait Grid {
       snakes4client.values.toList,
       appleDetails
     )
+
   }
 
   def getGridSyncDataNoApp = {
