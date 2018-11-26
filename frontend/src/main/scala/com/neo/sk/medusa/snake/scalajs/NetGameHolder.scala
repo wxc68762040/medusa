@@ -456,7 +456,6 @@ object NetGameHolder extends js.JSApp {
                     if (deadList.contains(myId)) {
                       //击杀者死亡　
                       myId = playerState._1
-
                     }
                   }
 

@@ -255,19 +255,14 @@ object RoomActor {
 
             if (feedApples.nonEmpty) {
               eventList.append(Protocol.FeedApples(feedApples))
-
               dispatch(userMap,watcherMap,Protocol.FeedApples(feedApples))
-
               val msg = ByteString(Protocol.FeedApples(feedApples).fillMiddleBuffer(sendBuffer).result())
               feedAppLength += msg.length * userMap.size
             }
             if (eatenApples.nonEmpty) {
               val tmp = Protocol.EatApples(eatenApples.map(r => EatFoodInfo(r._1, r._2)).toList)
-
               dispatch( userMap,watcherMap,tmp)
-
               eventList.append(tmp)
-
               val msg = ByteString(tmp.fillMiddleBuffer(sendBuffer).result())
               eatAppLength += msg.length * userMap.size
             }
@@ -288,7 +283,6 @@ object RoomActor {
 
           case NetTest(id,createTime) =>
             dispatchTo(Protocol.NetDelayTest(createTime),userMap(id)._1,watcherMap,id)
-
             Behaviors.same
 
           case KillRoom =>
@@ -353,16 +347,12 @@ object RoomActor {
             }
 
             Behavior.same
-
-
+            
           case t: YouAreUnwatched =>
             println("123: "+t)
             if(!watcherMap.get(t.playerId).isEmpty) watcherMap.get(t.playerId).get.remove(t.watcherId)
             Behaviors.same
-
-
-
-
+            
           case ChildDead(name, childRef) =>
             log.info(s"Child${childRef.path}----$name is dead")
             ctx.unwatch(childRef)
@@ -378,8 +368,10 @@ object RoomActor {
 
   def dispatchTo(toMsg: Protocol.WsMsgSource, user: ActorRef[UserActor.Command],watcherMap:mutable.HashMap[String,mutable.HashMap[String, ActorRef[WatcherActor.Command]]],id:String): Unit = {
     user ! UserActor.DispatchMsg(toMsg)
-    if(watcherMap.contains(id)) {
-      watcherMap.get(id).get.values.foreach{t => t ! WatcherActor.TransInfo(toMsg)}
+    if(watcherMap.get(id).nonEmpty) {
+      watcherMap(id).values.foreach { t =>
+        t ! WatcherActor.TransInfo(toMsg)
+      }
     }
   }
 
