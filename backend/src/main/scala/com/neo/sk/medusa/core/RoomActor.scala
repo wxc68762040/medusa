@@ -141,7 +141,6 @@ object RoomActor {
               grid.addActionWithFrame(t.id, t.keyCode, t.frame)
               eventList.append(Protocol.SnakeAction(t.id, t.keyCode, t.frame))
               dispatch(userMap,watcherMap,Protocol.SnakeAction(t.id, t.keyCode, t.frame))
-
             } else if (t.frame >= grid.frameCount - Protocol.savingFrame + Protocol.advanceFrame) {
               grid.addActionWithFrame(t.id, t.keyCode, grid.frameCount)
               eventList.append(Protocol.SnakeAction(t.id, t.keyCode, grid.frameCount))

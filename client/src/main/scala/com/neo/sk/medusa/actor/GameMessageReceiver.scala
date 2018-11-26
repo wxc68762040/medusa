@@ -196,7 +196,7 @@ object GameMessageReceiver {
 				
 				case Protocol.DeadList(deadList) =>
 					ClientBoot.addToPlatform {
-						deadList.foreach(grid.snakes -= _)
+						deadList.foreach(grid.snakes4client -= _)
 					}
 					Behavior.same
 				
