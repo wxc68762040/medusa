@@ -84,11 +84,8 @@ object WatcherActor {
             roomManager ! RoomManager.INeedApple(watchedId,watcherId,roomId)
             println("watchedId in watcherActor init: "+watchedId)
             switchBehavior(ctx, "idle", idle(watcherId, watchedId, roomId, frontActor,waitTip))
-
-
-
+						
           case GetWatchedId(id) =>
-
             switchBehavior(ctx, "init", init(watcherId, id, roomId,waitTip))
 
           case TimeOut(m) =>
@@ -96,9 +93,7 @@ object WatcherActor {
             watchManager ! WatcherManager.WatcherGone(watchedId,watcherId,roomId)
             log.debug(s"${ctx.self.path} is time out when busy,msg=$m")
             Behaviors.stopped
-
-
-
+						
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when init:$x")
             stashBuffer.stash(x)
@@ -119,11 +114,8 @@ object WatcherActor {
             ctx.unwatch(front)
             println("action occur when you refresh page")
             println("watchedId in watcherActor idle: "+watchedId)
-
-            //
             switchBehavior(ctx,"init",init(watcherId,watchedId,roomId,waitTip),Some(10.seconds),TimeOut("lalalallalallalalalalalalalalala11111"))
-
-
+						
           case NoRoom =>
             frontActor ! Protocol.NoRoom
             Behaviors.same
@@ -142,8 +134,6 @@ object WatcherActor {
             println("this information will print: watcherId: "+watcherId+" watchedId: "+watchedId+" roomId: "+roomId+ "  "+newFront+"  ")
             ctx.self ! UserFrontActor(newFront)
             switchBehavior(ctx,"init",init(watcherId,watchedId,roomId,waitTip),Some(10.seconds),TimeOut("lalalallalallalalalalalalalalala"))
-
-
 
           case GetWatchedId(id) =>
             frontActor ! Protocol.JoinRoomSuccess(id,roomId)

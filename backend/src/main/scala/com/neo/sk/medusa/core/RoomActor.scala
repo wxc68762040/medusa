@@ -94,7 +94,7 @@ object RoomActor {
 
   private def idle(roomId: Long, tickCount: Long, eventList:ListBuffer[Protocol.GameMessage],
                    userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String, Long)],
-                   watcherMap: mutable.HashMap[String,mutable.HashMap[String, ActorRef[WatcherActor.Command]]],  //watcherMap:  playId  -> map
+                   watcherMap: mutable.HashMap[String,mutable.HashMap[String, ActorRef[WatcherActor.Command]]],  //watcherMap:  playerId -> Map[watcherId -> watchActor]
                   deadUserList:mutable.ListBuffer[String], grid: GridOnServer, roomEmptyCount: Long)
                   (implicit timer: TimerScheduler[RoomActor.Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
@@ -189,42 +189,32 @@ object RoomActor {
 
             val snakeState = grid.genWaitingSnake()
             if (snakeState._1.nonEmpty) {
-              eventList.append(grid.getGridSyncData)
-              dispatch( userMap,watcherMap,grid.getGridSyncData)
-              println("----")
-              snakeState._1.foreach {
-                s =>
-                  dispatchTo(grid.getGridSyncData, userMap(s.id)._1,watcherMap,s.id)
-
-                  val msg = ByteString(grid.getGridSyncData.fillMiddleBuffer(sendBuffer).result())
-                  syncLength += msg.length
-              }
-              snakeState._2.foreach {
-                s =>
-
-                  dispatchTo(Protocol.AddSnakes(snakeState._1), userMap(s._1)._1,watcherMap,s._1)
-
-                  val msg = ByteString(grid.getGridSyncData.fillMiddleBuffer(sendBuffer).result())
-                  syncLength += msg.length
-              }
-            }
+							eventList.append(grid.getGridSyncData)
+							dispatch(userMap, watcherMap, grid.getGridSyncData)
+							println("----")
+							snakeState._1.foreach { s =>
+								dispatchTo(grid.getGridSyncData, userMap(s.id)._1, watcherMap, s.id)
+								val msg = ByteString(grid.getGridSyncData.fillMiddleBuffer(sendBuffer).result())
+								syncLength += msg.length
+							}
+							snakeState._2.foreach { s =>
+								dispatchTo(Protocol.AddSnakes(snakeState._1), userMap(s._1)._1, watcherMap, s._1)
+								val msg = ByteString(grid.getGridSyncData.fillMiddleBuffer(sendBuffer).result())
+								syncLength += msg.length
+							}
+						}
 
             if (grid.deadSnakeList.nonEmpty) {
-              grid.deadSnakeList.foreach { s =>
-                grid.removeSnake(s.id)
-              }
-              eventList.append(Protocol.DeadList(grid.deadSnakeList.map(_.id)))
-
-              dispatch(userMap,watcherMap,Protocol.DeadList(grid.deadSnakeList.map(_.id)))
-
-            }
-            grid.killMap.foreach {
-              g =>
-                eventList.append(Protocol.KillList(g._1, g._2))
-
-                dispatchTo(Protocol.KillList(g._1, g._2), userMap(g._1)._1,watcherMap,g._1)
-
-            }
+							grid.deadSnakeList.foreach { s =>
+								grid.removeSnake(s.id)
+							}
+							eventList.append(Protocol.DeadList(grid.deadSnakeList.map(_.id)))
+							dispatch(userMap, watcherMap, Protocol.DeadList(grid.deadSnakeList.map(_.id)))
+						}
+            grid.killMap.foreach { g =>
+							eventList.append(Protocol.KillList(g._1, g._2))
+							dispatchTo(Protocol.KillList(g._1, g._2), userMap(g._1)._1, watcherMap, g._1)
+						}
 
             if (speedUpInfo.nonEmpty) {
               eventList.append(Protocol.SpeedUp(speedUpInfo))
@@ -340,12 +330,12 @@ object RoomActor {
           case t:GiveYouApple =>
             val syncData = grid.getGridSyncData
             println("give0:   "+watcherMap+"   playerId: "+t.playerId)
-            if(watcherMap.nonEmpty && (watcherMap.get(t.playerId).isDefined)){
-              println("give1: "+(watcherMap.get(t.playerId)))
-              if(watcherMap.get(t.playerId).get!=None ){
-                println("give2: "+watcherMap.get(t.playerId).get)
-                if(watcherMap.get(t.playerId).get.get(t.waterId).isDefined){
-                  val watcherRef = watcherMap.get(t.playerId).get.get(t.waterId).get
+            if(watcherMap.nonEmpty && watcherMap.get(t.playerId).isDefined){
+              println("give1: "+watcherMap.get(t.playerId))
+              if(watcherMap(t.playerId).nonEmpty){
+                println("give2: "+watcherMap(t.playerId))
+                if(watcherMap(t.playerId).get(t.waterId).isDefined){
+                  val watcherRef = watcherMap(t.playerId)(t.waterId)
                   watcherRef ! WatcherActor.TransInfo(syncData)
                   println("1-----------------------------------------------------------------------------------------------------"+watcherRef)
                 }else{

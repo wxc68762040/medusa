@@ -421,9 +421,11 @@ object NetGameHolder extends js.JSApp {
                 case data:Protocol.GridDataSyncNoApp =>
                   infoState = "normal"
                   setLagTrigger()
-                  if(syncData.isEmpty || syncData.get.frameCount < data.frameCount) {syncDataNoApp = Some(data)
-                  justSynced = true
+                  if(syncData.isEmpty || syncData.get.frameCount < data.frameCount) {
+										syncDataNoApp = Some(data)
+                  	justSynced = true
                   }
+									
                 case Protocol.NetDelayTest(createTime) =>
                   val receiveTime = System.currentTimeMillis()
                   netInfoHandler.ping = receiveTime - createTime
