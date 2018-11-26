@@ -131,6 +131,9 @@ object NetGameHolder extends js.JSApp {
       }
       savedGrid += (grid.frameCount -> grid.getGridSyncData)
       savedGrid -= (grid.frameCount - Protocol.savingFrame - Protocol.advanceFrame)
+      savedGrid.foreach { e =>
+        println(s"${e._1} ${e._2.snakes.size}")
+      }
     }
   }
 
