@@ -420,10 +420,11 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.DeadInfo(id,myName, myLength, myKill, killerId, killer) =>if(playerState._2 && id==playerState._1){
                   grid.removeSnake(myId)
                   playerState = (myId, false)
-                    if (state.contains("playGame")) {
-                      println("when  play game  user dead ")
-                      myId = killerId
-                    }deadName = myName
+                  if (state.contains("playGame")) {
+                    println("when play game user dead ")
+                    myId = killerId
+                  }
+                  deadName = myName
                   deadLength = myLength
                   deadKill = myKill
                   yourKiller = killer}
@@ -484,9 +485,11 @@ object NetGameHolder extends js.JSApp {
 					case _ => false
 				}
 			}
-			val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
-			val gridMap = appleMap
-			grid.grid = gridMap
+      if(data.appleDetails.isDefined) {
+        val appleMap = data.appleDetails.get.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt)).toMap
+        val gridMap = appleMap
+        grid.grid = gridMap
+      }
 		}
 	}
 	

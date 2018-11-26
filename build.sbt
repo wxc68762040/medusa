@@ -1,5 +1,5 @@
 import sbt.Keys._
-import sbtcrossproject.{crossProject, CrossType}
+import sbtcrossproject.{CrossType, crossProject}
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 
 name := "medusa"
@@ -101,6 +101,10 @@ lazy val backend = (project in file("backend")).enablePlugins(PackPlugin)
   .settings(
     libraryDependencies ++= Dependencies.backendDependencies
   )
+  .settings(
+    PB.targets in Compile := Seq(
+      scalapb.gen() -> (sourceManaged in Compile).value
+  ))
   .settings {
     (resourceGenerators in Compile) += Def.task {
       val fastJsOut = (fastOptJS in Compile in frontend).value.data
@@ -121,11 +125,11 @@ lazy val backend = (project in file("backend")).enablePlugins(PackPlugin)
   //      )
   //    }.taskValue)
   .settings((resourceGenerators in Compile) += Def.task {
-  Seq(
-    (packageJSDependencies in Compile in frontend).value
-    //(packageMinifiedJSDependencies in Compile in frontend).value
-  )
-}.taskValue)
+    Seq(
+      (packageJSDependencies in Compile in frontend).value
+      //(packageMinifiedJSDependencies in Compile in frontend).value
+    )
+  }.taskValue)
   .settings(
     (resourceDirectories in Compile) += (crossTarget in frontend).value,
     watchSources ++= (watchSources in frontend).value
