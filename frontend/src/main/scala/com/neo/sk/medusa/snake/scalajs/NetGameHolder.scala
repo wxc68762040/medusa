@@ -374,8 +374,7 @@ object NetGameHolder extends js.JSApp {
 
 
                 case Protocol.FeedApples(apples) =>
-
-                  grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.appleType))
+                  grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.appleType, a.targetAppleOpt))
 
                 case Protocol.EatApples(apples) =>
                   apples.foreach { apple =>
