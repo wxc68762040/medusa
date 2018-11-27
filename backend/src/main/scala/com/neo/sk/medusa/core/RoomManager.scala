@@ -1,6 +1,6 @@
 package com.neo.sk.medusa.core
 
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
 import com.neo.sk.medusa.protocol.PlayInfoProtocol.PlayerInfo
 import akka.actor.typed.{ActorRef, Behavior}
@@ -23,7 +23,7 @@ object RoomManager {
 
   private final val maxUserNum = 30
 
-  private val idGenerator = new AtomicInteger(1000001)
+  private val idGenerator = new AtomicLong(1000001l)
 
   sealed trait Command
 
@@ -94,7 +94,7 @@ object RoomManager {
                 userRoomMap.put(playerId, (randomRoomId, playerName))
                 userActor ! UserActor.JoinRoomSuccess(randomRoomId, getRoomActor(ctx, randomRoomId))
               } else {
-                val newRoomId = idGenerator.getAndIncrement().toLong
+                val newRoomId = idGenerator.getAndIncrement()
                 log.info(s"room full ,start a new room.. ")
                 roomNumMap.put(newRoomId, 1)
                 userRoomMap.put(playerId, (newRoomId, playerName))
@@ -126,11 +126,13 @@ object RoomManager {
 
           case UserLeftRoom(playerId, roomId) =>
             if(userRoomMap.get(playerId).nonEmpty){
-              if(roomNumMap(roomId)-1<=0){
-                roomNumMap.update(roomId,0)
-                timer.startSingleTimer(RoomEmptyTimerKey(roomId),RoomEmptyKill(roomId),UserLeftRoomTime)
-              }else{
-                roomNumMap.update(roomId,roomNumMap(roomId)-1)
+              if(roomNumMap.get(roomId).nonEmpty) {
+                if (roomNumMap(roomId) - 1 <= 0) {
+                  roomNumMap.update(roomId, 0)
+                  timer.startSingleTimer(RoomEmptyTimerKey(roomId), RoomEmptyKill(roomId), UserLeftRoomTime)
+                } else {
+                  roomNumMap.update(roomId, roomNumMap(roomId) - 1)
+                }
               }
               userRoomMap.remove(playerId)
             }
@@ -197,7 +199,6 @@ object RoomManager {
             Behaviors.same
 
           case t:INeedApple =>
-            println("--t-- :"+ t)
             getRoomActor(ctx,t.roomId) ! RoomActor.GiveYouApple(t.playerId,t.watcherId)
             Behavior.same
 
