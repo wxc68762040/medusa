@@ -95,25 +95,25 @@ class GameInfoCanvas(canvas: Canvas, gameScene: GameScene) {
    // val myId = myRank.keys.headOption.getOrElse("")
     drawTextLine(infoCtx,s" --- Current Rank --- ", leftBegin, index, currentRankBaseLine, scale)
     if(currentRank.exists(s => s.id == uid)){
-      currentRank.foreach{ score =>
-        index += 1
-        if( score.id == uid) {
-          infoCtx.setFont(Font.font("px Helvetica", 12 * scale))
-          infoCtx.setFill(Color.web("rgb(255, 185, 15)"))
-          drawTextLine(infoCtx, s"[$index]: ${score.n.+ ("").take(8)} kill=${score.k} len=${score.l}", leftBegin,index,currentRankBaseLine,scale)
-        } else {
-          infoCtx.setFont(Font.font("px Helvetica", 12 * scale))
-          infoCtx.setFill(Color.web( "rgb(250, 250, 250)"))
-          drawTextLine(infoCtx, s"[$index]: ${score.n.+ ("").take(8)} kill=${score.k} len=${score.l}", leftBegin,index,currentRankBaseLine,scale)
-        }
-      }
+      currentRank.foreach { score =>
+				index += 1
+				if (score.id == uid) {
+					infoCtx.setFont(Font.font("px Helvetica", 12 * scale))
+					infoCtx.setFill(Color.web("rgb(255, 185, 15)"))
+					drawTextLine(infoCtx, s"[$index]: ${score.n.+("").take(8)} kill=${score.k} len=${score.l}", leftBegin, index, currentRankBaseLine, scale)
+				} else {
+					infoCtx.setFont(Font.font("px Helvetica", 12 * scale))
+					infoCtx.setFill(Color.web("rgb(250, 250, 250)"))
+					drawTextLine(infoCtx, s"[$index]: ${score.n.+("").take(8)} kill=${score.k} len=${score.l}", leftBegin, index, currentRankBaseLine, scale)
+				}
+			}
     } else {
-      currentRank.foreach{ score =>
-        index += 1
-        infoCtx.setFont(Font.font("px Helvetica", 12 * scale))
-        infoCtx.setFill(Color.web( "rgb(250, 250, 250)"))
-        drawTextLine(infoCtx, s"[$index]: ${score.n.+ ("").take(8)} kill=${score.k} len=${score.l}", leftBegin,index,currentRankBaseLine,scale)
-      }
+      currentRank.foreach { score =>
+				index += 1
+				infoCtx.setFont(Font.font("px Helvetica", 12 * scale))
+				infoCtx.setFill(Color.web("rgb(250, 250, 250)"))
+				drawTextLine(infoCtx, s"[$index]: ${score.n.+("").take(8)} kill=${score.k} len=${score.l}", leftBegin, index, currentRankBaseLine, scale)
+			}
 //      val myRanks = myRank.filter(s => s._1 == uid).values.headOption.getOrElse(Map(0 -> Score("","",0,0)))
       ////      val myScore = myRanks.values.headOption.getOrElse(Score("","",0,0))
       ////      val myIndex = myRanks.keys.headOption.getOrElse(0)
@@ -122,32 +122,31 @@ class GameInfoCanvas(canvas: Canvas, gameScene: GameScene) {
       infoCtx.setFont(Font.font("px Helvetica", 12 * scale))
       infoCtx.setFill(Color.web("rgb(255, 185, 15)"))
       drawTextLine(infoCtx,s"[$myIndex]: ${myScore.n.+(" ").take(8)} kill=${myScore.k} len=${myScore.l}", leftBegin, 7,currentRankBaseLine, scale)
-
     }
 
     val historyRankBaseLine = 2
     index = 0
     infoCtx.setFont(Font.font("px Helvetica", 12 * scale))
     infoCtx.setFill(Color.web( "rgb(250, 250, 250)"))
-    drawTextLine(infoCtx,s"---History Rank ---",rightBegin ,index,historyRankBaseLine, scale)
+    drawTextLine(infoCtx, s"---History Rank ---", rightBegin, index, historyRankBaseLine, scale)
     historyRank.foreach{ score  =>
       index += 1
-      drawTextLine(infoCtx,s"[$index]: ${score.n.+("   ").take(8)} kill=${score.k} len= ${score.l}",rightBegin,index,historyRankBaseLine,scale)
+      drawTextLine(infoCtx, s"[$index]: ${score.n.+("   ").take(8)} kill=${score.k} len= ${score.l}", rightBegin, index, historyRankBaseLine, scale)
     }
 
     infoCtx.setFont(Font.font("Helvetica", 18 * scale))
     var i = 1
 
     grid.waitingShowKillList = grid.waitingShowKillList.filter(_._3 >= System.currentTimeMillis() - 5 * 1000)
-    grid.waitingShowKillList.foreach{
-      j =>
-        if(j._1 != grid.myId){
-          infoCtx.fillText(s"你击杀了 ${j._2}",centerX - 120 * scaleW,i * 20 * scaleH)
-        }else {
-          infoCtx.fillText(s"你自杀了", centerX - 100 * scaleW,i * 20 * scaleH)
-        }
-        i += 1
-    }
+    grid.waitingShowKillList.foreach {
+			j =>
+				if (j._1 != grid.myId) {
+					infoCtx.fillText(s"你击杀了 ${j._2}", centerX - 120 * scaleW, i * 20 * scaleH)
+				} else {
+					infoCtx.fillText(s"你自杀了", centerX - 100 * scaleW, i * 20 * scaleH)
+				}
+				i += 1
+		}
   }
 
 

@@ -118,7 +118,7 @@ object WatcherActor {
 
           case PlayerWait =>
             frontActor ! Protocol.PlayerWaitingJoin
-            idle(watcherId,watchedId,roomId,frontActor,false)
+            idle(watcherId, watchedId, roomId, frontActor,false)
 
           case UserFrontActor(newFront) =>
             ctx.unwatch(frontActor)
