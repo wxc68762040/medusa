@@ -199,7 +199,6 @@ object RoomManager {
             Behaviors.same
 
           case t:INeedApple =>
-            println("--t-- :"+ t)
             getRoomActor(ctx,t.roomId) ! RoomActor.GiveYouApple(t.playerId,t.watcherId)
             Behavior.same
 
