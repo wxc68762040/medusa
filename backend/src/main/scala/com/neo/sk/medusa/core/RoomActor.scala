@@ -125,7 +125,7 @@ object RoomActor {
 
             eventList.append(Protocol.DeadInfo(t.userId,t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer))
             eventList.append(Protocol.SnakeDead(t.userId))
-            //userMap.remove(t.userId)
+//            userMap.remove(t.userId)
             deadUserList += t.userId
             if(isRecord){
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserLeftRoom(t.userId, t.deadInfo.name, grid.frameCount)
@@ -162,7 +162,6 @@ object RoomActor {
 
           case t:UserLeft =>
             grid.removeSnake(t.playerId)
-            val userName = userMap(t.playerId)._2
             dispatch( userMap,watcherMap,Protocol.SnakeDead(t.playerId))
 
             eventList.append(Protocol.SnakeDead(t.playerId))
@@ -191,14 +190,18 @@ object RoomActor {
 							eventList.append(grid.getGridSyncData)
 							dispatch(userMap, watcherMap, grid.getGridSyncData)
 							snakeState._1.foreach { s =>
-								dispatchTo(grid.getGridSyncData, userMap(s.id)._1, watcherMap, s.id)
-								val msg = ByteString(grid.getGridSyncData.fillMiddleBuffer(sendBuffer).result())
-								syncLength += msg.length
+                if(userMap.get(s.id).nonEmpty) {
+                  dispatchTo(grid.getGridSyncData, userMap(s.id)._1, watcherMap, s.id)
+                  val msg = ByteString(grid.getGridSyncData.fillMiddleBuffer(sendBuffer).result())
+                  syncLength += msg.length
+                }
 							}
 							snakeState._2.foreach { s =>
-								dispatchTo(Protocol.AddSnakes(snakeState._1), userMap(s._1)._1, watcherMap, s._1)
-								val msg = ByteString(grid.getGridSyncData.fillMiddleBuffer(sendBuffer).result())
-								syncLength += msg.length
+                if(userMap.get(s._1).nonEmpty) {
+                  dispatchTo(Protocol.AddSnakes(snakeState._1), userMap(s._1)._1, watcherMap, s._1)
+                  val msg = ByteString(grid.getGridSyncData.fillMiddleBuffer(sendBuffer).result())
+                  syncLength += msg.length
+                }
 							}
 						}
 
@@ -228,24 +231,17 @@ object RoomActor {
 
                 val msg = ByteString(noAppData.fillMiddleBuffer(sendBuffer).result())
                 syncLength += msg.length
-                //                  } else {
-                //                    val syncData = grid.getGridSyncData
-                //                    //                    eventList.append(Protocol.SyncApples(syncData.appleDetails))
-                //                    dispatchTo(UserActor.DispatchMsg(syncData), u._1)
-                //                    val msg = ByteString(syncData.fillMiddleBuffer(sendBuffer).result())
-                //                    syncLength += msg.length
-                //                  }
               }
 
               if ((tickCount - u._3) % 30 == 1) {
                 eventList.append(Protocol.Ranks(grid.topCurrentRank, grid.historyRankList))
                 val msg = ByteString(Protocol.Ranks(grid.topCurrentRank, grid.historyRankList).fillMiddleBuffer(sendBuffer).result())
-                rankLength += msg.length * userMap.size
-                dispatch(userMap, watcherMap, Protocol.Ranks(grid.topCurrentRank, grid.historyRankList))
+                rankLength += msg.length
+                dispatchTo(Protocol.Ranks(grid.topCurrentRank, grid.historyRankList), u._1, watcherMap, k)
                 val myScore =
                   grid.currentRank.filter(s => s.id == k).map(r => Score(r.id, r.n, r.k, r.l)).headOption.getOrElse(Score("", "", 0, 0))
                 val myIndex = grid.currentRank.sortBy(s => s.l).reverse.indexOf(myScore) + 1
-                eventList.append(Protocol.MyRank( myIndex,myScore))
+                eventList.append(Protocol.MyRank(myIndex, myScore))
                 dispatchTo(Protocol.MyRank(myIndex, myScore), u._1, watcherMap, k)
               }
             }

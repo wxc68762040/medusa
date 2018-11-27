@@ -118,7 +118,7 @@ object WatcherActor {
 
           case PlayerWait =>
             frontActor ! Protocol.PlayerWaitingJoin
-            idle(watcherId,watchedId,roomId,frontActor,false)
+            idle(watcherId, watchedId, roomId, frontActor,false)
 
           case UserFrontActor(newFront) =>
             ctx.unwatch(frontActor)
@@ -133,8 +133,6 @@ object WatcherActor {
             idle(watcherId,id,roomId,frontActor,waitTip)
 
           case TransInfo(x) =>
-            frontActor ! x
-            if(!waitTip) frontActor ! Protocol.PlayerWaitingJoin
             x match {
               case info: Protocol.DeadListBuff =>
                 if(info.deadList.contains(watchedId)) {
@@ -143,6 +141,8 @@ object WatcherActor {
                   idle(watcherId, watchedId, roomId, frontActor, true)
                 }
               case _ =>
+                frontActor ! x
+                if(!waitTip) frontActor ! Protocol.PlayerWaitingJoin
                 Behavior.same
             }
 

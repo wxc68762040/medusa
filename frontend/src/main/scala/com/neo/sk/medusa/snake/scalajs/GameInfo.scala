@@ -186,7 +186,7 @@ object GameInfo {
         val myIndex = myRank._1
         infoCacheCtx.fillStyle = "#FFB90F"
         infoCacheCtx.font = s"bolder ${14 * scaleW}px Helvetica "
-        drawTextLine(infoCacheCtx, s"[${myIndex}]: ${myScore.n.+(" ").take(8)} kill=${myScore.k} len=${myScore.l}", leftBegin, 7, currentRankBaseLine, scaleW, scaleH)
+        drawTextLine(infoCacheCtx, s"[$myIndex]: ${myScore.n.+(" ").take(8)} kill=${myScore.k} len=${myScore.l}", leftBegin, 7, currentRankBaseLine, scaleW, scaleH)
       }
 
     infoCacheCtx.fillStyle = "#FFFFFF"
