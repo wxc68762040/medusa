@@ -411,7 +411,11 @@ object NetGameHolder extends js.JSApp {
 
                 case data: Protocol.GridDataSync =>
                   infoState = "normal"
-                  setLagTrigger()
+                  if(state.contains("watchRecord")){
+                    lagging = false
+                  }else {
+                    setLagTrigger()
+                  }
                   if(!grid.init) {
                     grid.init = true
                     val timeout = 100 - (System.currentTimeMillis() - data.timeStamp) % 100

@@ -1,9 +1,9 @@
 package com.neo.sk.medusa.core
 
-
+import com.neo.sk.medusa.Boot.executor
 import java.awt.event.KeyEvent
 import java.io.File
-
+import com.neo.sk.medusa.models.Dao.GameRecordDao
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors, StashBuffer, TimerScheduler}
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.http.scaladsl.model.ws.Message
@@ -26,7 +26,7 @@ import org.seekloud.byteobject.MiddleBufferInJvm
 import org.seekloud.byteobject.ByteObject._
 import org.seekloud.essf.io.FrameData
 import org.slf4j.LoggerFactory
-
+import scala.util.{Failure, Success}
 import scala.collection.mutable
 import scala.concurrent.duration._
 
@@ -146,10 +146,17 @@ object UserActor {
 
           case ReplayGame(recordId, watchPlayerId, frame)=>
             log.info(s"start replay")
-            frontActor ! Protocol.JoinRoomSuccess(watchPlayerId,-1)
+
             val fileName = recordPath + "medusa" + recordId
             val tmpFile = new File(fileName)
             if(tmpFile.exists()) {
+              GameRecordDao.getRoomId(recordId).onComplete{
+                case Success(roomIdOpt) =>
+                  frontActor ! Protocol.JoinRoomSuccess(watchPlayerId,roomIdOpt.getOrElse(-1))
+                case Failure(exception) =>
+                  frontActor ! Protocol.JoinRoomSuccess(watchPlayerId,-1)
+                  log.error(s"dataBase get roomId when replay record $recordId, error:$exception")
+              }
               getGameReplay(ctx, recordId) ! GameReader.InitPlay(watchPlayerId, frame)
               Behaviors.same
             }else{

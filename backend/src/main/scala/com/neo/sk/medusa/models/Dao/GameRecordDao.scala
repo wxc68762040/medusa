@@ -82,6 +82,10 @@ object GameRecordDao {
   def getFrameCount(recordId: Long) = {
     db.run(tRecords.filter(_.recordsId === recordId).map(_.frameCount).result.headOption)
   }
+
+  def getRoomId(recordId: Long) = {
+    db.run(tRecords.filter(_.recordsId === recordId).map(_.roomId).result.headOption)
+  }
   
   """
     |根据recordId获取Record
