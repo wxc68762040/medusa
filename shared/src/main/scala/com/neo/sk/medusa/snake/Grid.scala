@@ -90,7 +90,6 @@ trait Grid {
         case _ => false
       }
     }.map {
-
       case (p, a@Apple(_,  appleType, targetAppleOpt)) =>
         if (appleType == FoodType.normal) {
           appleCount += 1
@@ -98,7 +97,7 @@ trait Grid {
         } else if (appleType == FoodType.intermediate && targetAppleOpt.nonEmpty) {
           val targetApple = targetAppleOpt.get
           if (p == targetApple._1) {
-            val apple = Apple(targetApple._2,  FoodType.deadBody)
+            val apple = Apple(targetApple._2, FoodType.deadBody)
             (p, apple)
           } else {
             val nextLoc = p pathTo targetApple._1
