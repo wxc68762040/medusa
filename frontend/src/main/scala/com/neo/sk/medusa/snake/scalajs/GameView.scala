@@ -180,7 +180,7 @@ object GameView  {
       }
 //      if (snake.length >= snakes.maxBy(_.length).length) {
       if (snakes.nonEmpty && snake.id == snakes.sortBy(e => (e.length, e.id)).map(_.id).head) {
-        cacheCtx.drawImage(championSnake, x * scaleW + deviationX - nameLength * 4 + cacheCtx.measureText(snake.name + " ").width, y * scaleH + deviationY - 15)
+        cacheCtx.drawImage(championSnake, x * scaleW + deviationX, y * scaleH + deviationY - 20)
       }
       if (snakeSpeed > fSpeed + 1) {
         cacheCtx.fillText(snakeSpeed.toInt.toString, x * scaleW  + deviationX - nameLength * 4, y * scaleH + deviationY - 25)
