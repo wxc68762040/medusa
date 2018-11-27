@@ -191,14 +191,18 @@ object RoomActor {
 							eventList.append(grid.getGridSyncData)
 							dispatch(userMap, watcherMap, grid.getGridSyncData)
 							snakeState._1.foreach { s =>
-								dispatchTo(grid.getGridSyncData, userMap(s.id)._1, watcherMap, s.id)
-								val msg = ByteString(grid.getGridSyncData.fillMiddleBuffer(sendBuffer).result())
-								syncLength += msg.length
+                if(userMap.get(s.id).nonEmpty) {
+                  dispatchTo(grid.getGridSyncData, userMap(s.id)._1, watcherMap, s.id)
+                  val msg = ByteString(grid.getGridSyncData.fillMiddleBuffer(sendBuffer).result())
+                  syncLength += msg.length
+                }
 							}
 							snakeState._2.foreach { s =>
-								dispatchTo(Protocol.AddSnakes(snakeState._1), userMap(s._1)._1, watcherMap, s._1)
-								val msg = ByteString(grid.getGridSyncData.fillMiddleBuffer(sendBuffer).result())
-								syncLength += msg.length
+                if(userMap.get(s._1).nonEmpty) {
+                  dispatchTo(Protocol.AddSnakes(snakeState._1), userMap(s._1)._1, watcherMap, s._1)
+                  val msg = ByteString(grid.getGridSyncData.fillMiddleBuffer(sendBuffer).result())
+                  syncLength += msg.length
+                }
 							}
 						}
 
