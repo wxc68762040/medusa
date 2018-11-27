@@ -86,6 +86,7 @@ object WatcherActor {
             switchBehavior(ctx, "idle", idle(watcherId, watchedId, roomId, frontActor,waitTip))
 						
           case GetWatchedId(id) =>
+//            println("init : "+id)
             switchBehavior(ctx, "init", init(watcherId, id, roomId,waitTip))
 
           case TimeOut(m) =>
@@ -137,7 +138,7 @@ object WatcherActor {
 
           case GetWatchedId(id) =>
             frontActor ! Protocol.JoinRoomSuccess(id,roomId)
-            Behaviors.same
+            idle(watcherId,id,roomId,frontActor,waitTip)
 
           case TransInfo(x) =>
             frontActor ! x
