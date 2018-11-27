@@ -126,11 +126,13 @@ object RoomManager {
 
           case UserLeftRoom(playerId, roomId) =>
             if(userRoomMap.get(playerId).nonEmpty){
-              if(roomNumMap(roomId)-1<=0){
-                roomNumMap.update(roomId,0)
-                timer.startSingleTimer(RoomEmptyTimerKey(roomId),RoomEmptyKill(roomId),UserLeftRoomTime)
-              }else{
-                roomNumMap.update(roomId,roomNumMap(roomId)-1)
+              if(roomNumMap.get(roomId).nonEmpty) {
+                if (roomNumMap(roomId) - 1 <= 0) {
+                  roomNumMap.update(roomId, 0)
+                  timer.startSingleTimer(RoomEmptyTimerKey(roomId), RoomEmptyKill(roomId), UserLeftRoomTime)
+                } else {
+                  roomNumMap.update(roomId, roomNumMap(roomId) - 1)
+                }
               }
               userRoomMap.remove(playerId)
             }
