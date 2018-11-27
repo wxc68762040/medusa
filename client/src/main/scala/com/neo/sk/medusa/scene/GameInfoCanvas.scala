@@ -29,7 +29,7 @@ class GameInfoCanvas(canvas: Canvas, gameScene: GameScene) {
 //    ctx.clearRect(0,0,infoWidth,infoHeight)
 //  }
 
-  def drawInfo(uid: String, data: GridDataSync,historyRank: List[Score], currentRank: List[Score], loginAgain: Boolean, scaleW: Double, scaleH: Double): Unit = {
+  def drawInfo(uid: String, data: GridDataSync,historyRank: List[Score], currentRank: List[Score], loginAgain: Boolean, myRank: Map[String,Map[Int, Score]], scaleW: Double, scaleH: Double): Unit = {
     val infoWidth = gameScene.infoWidth * scaleW
     val infoHeight = gameScene.infoHeight * scaleH
 
@@ -92,15 +92,46 @@ class GameInfoCanvas(canvas: Canvas, gameScene: GameScene) {
 
     val currentRankBaseLine = 10
     var index = 0
+    val myId = myRank.keys.headOption.getOrElse("")
     drawTextLine(infoCtx,s" --- Current Rank --- ", leftBegin, index, currentRankBaseLine, scale)
-    currentRank.foreach{ score =>
-      index += 1
-      drawTextLine(infoCtx,s"[$index]: ${score.n.+("   ").take(8)} kill=${score.k} len=${score.l}",leftBegin,index,currentRankBaseLine, scale)
+    if(currentRank.exists(s => s.id == uid)){
+      currentRank.foreach{ score =>
+        index += 1
+        if( score.id == myId) {
+          infoCtx.setFont(Font.font("px Helvetica", 12 * scale))
+          infoCtx.setFill(Color.web("rgb(255, 185, 15)"))
+          drawTextLine(infoCtx, s"[$index]: ${score.n.+ ("").take(8)} kill=${score.k} len=${score.l}", leftBegin,index,currentRankBaseLine,scale)
+        } else {
+          infoCtx.setFont(Font.font("px Helvetica", 12 * scale))
+          infoCtx.setFill(Color.web( "rgb(250, 250, 250)"))
+          drawTextLine(infoCtx, s"[$index]: ${score.n.+ ("").take(8)} kill=${score.k} len=${score.l}", leftBegin,index,currentRankBaseLine,scale)
+        }
+      }
+    } else {
+      currentRank.foreach{ score =>
+        index += 1
+        infoCtx.setFont(Font.font("px Helvetica", 12 * scale))
+        infoCtx.setFill(Color.web( "rgb(250, 250, 250)"))
+        drawTextLine(infoCtx, s"[$index]: ${score.n.+ ("").take(8)} kill=${score.k} len=${score.l}", leftBegin,index,currentRankBaseLine,scale)
+      }
+      val myRanks = myRank.filter(s => s._1 == uid).values.headOption.getOrElse(Map(0 -> Score("","",0,0)))
+      val myScore = myRanks.values.headOption.getOrElse(Score("","",0,0))
+      val myIndex = myRanks.keys.headOption.getOrElse(0)
+      infoCtx.setFont(Font.font("px Helvetica", 12 * scale))
+      infoCtx.setFill(Color.web("rgb(255, 185, 15)"))
+      drawTextLine(infoCtx,s"[$myIndex]: ${myScore.n.+(" ").take(8)} kill=${myScore.k} len=${myScore.l}", leftBegin, 7,currentRankBaseLine, scale)
+
     }
+//    currentRank.foreach{ score =>
+//      index += 1
+//      drawTextLine(infoCtx,s"[$index]: ${score.n.+("   ").take(8)} kill=${score.k} len=${score.l}",leftBegin,index,currentRankBaseLine, scale)
+//    }
 
 
     val historyRankBaseLine = 2
     index = 0
+    infoCtx.setFont(Font.font("px Helvetica", 12 * scale))
+    infoCtx.setFill(Color.web( "rgb(250, 250, 250)"))
     drawTextLine(infoCtx,s"---History Rank ---",rightBegin ,index,historyRankBaseLine, scale)
     historyRank.foreach{ score  =>
       index += 1

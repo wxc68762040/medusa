@@ -124,7 +124,12 @@ object GameMessageReceiver {
             grid.historyRank = history
           }
 					Behavior.same
-				
+				case Protocol.myRank(id,myRank) =>
+					ClientBoot.addToPlatform {
+						grid.myRank = Map(id -> myRank)
+					}
+					Behaviors.same
+
 				case Protocol.FeedApples(apples) =>
 					ClientBoot.addToPlatform {
 						grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.appleType))

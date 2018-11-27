@@ -58,14 +58,14 @@ class GameScene() {
 
 	val infoHandler = new InfoHandler
 
-	def draw(myId:String, data: Protocol.GridDataSync,historyRank:List[Score], currentRank:List[Score], loginAgain:Boolean, scaleW:Double, scaleH:Double): Unit = {
+	def draw(myId:String, data: Protocol.GridDataSync,historyRank:List[Score], currentRank:List[Score], loginAgain:Boolean, myRank:Map[String,Map[Int, Score]], scaleW:Double, scaleH:Double): Unit = {
 		infoHandler.refreshInfo()
 		infoHandler.fpsCounter += 1
 		infoHandler.dataCounter += 1
 		val timeNow = System.currentTimeMillis()
 		view.drawSnake(myId, data, scaleW, scaleH)
     map.drawMap(myId, data, scaleW, scaleH)
-		info.drawInfo(myId, data, historyRank, currentRank,loginAgain, scaleW, scaleH)
+		info.drawInfo(myId, data, historyRank, currentRank, loginAgain, myRank, scaleW, scaleH)
 		val drawOnceTime = System.currentTimeMillis() - timeNow
 	  infoHandler.drawTimeAverage = drawOnceTime.toInt
 
