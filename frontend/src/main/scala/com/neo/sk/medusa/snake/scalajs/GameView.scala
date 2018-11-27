@@ -178,8 +178,9 @@ object GameView  {
       if (!playerState._2 && id == myId) {
         cacheCtx.drawImage(killerImg, x * scaleW + deviationX - nameLength * 4, y * scaleH + deviationY - 15)
       }
-      if (snake.length >= snakes.maxBy(_.length).length) {
-        cacheCtx.drawImage(championSnake, x * scaleW + deviationX - nameLength * 4 + cacheCtx.measureText(snake.name + " ").width, y * scaleH + deviationY - 15 - 13 * scaleW * myProportion)
+//      if (snake.length >= snakes.maxBy(_.length).length) {
+      if (snakes.nonEmpty && snake.id == snakes.sortBy(e => (e.length, e.id)).map(_.id).head) {
+        cacheCtx.drawImage(championSnake, x * scaleW + deviationX - nameLength * 4 + cacheCtx.measureText(snake.name + " ").width, y * scaleH + deviationY - 15)
       }
       if (snakeSpeed > fSpeed + 1) {
         cacheCtx.fillText(snakeSpeed.toInt.toString, x * scaleW  + deviationX - nameLength * 4, y * scaleH + deviationY - 25)
