@@ -13,7 +13,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
 
 	var currentRank = List.empty[Score]
 	var historyRank = List.empty[Score]
-	var myRank = Map.empty[String,Map[Int, Score]]
+	var myRank = (0,Score("","",0,0))
   var loginAgain = false
 
   override def debug(msg: String): Unit = println(msg)

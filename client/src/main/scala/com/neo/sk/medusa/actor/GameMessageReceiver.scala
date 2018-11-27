@@ -124,9 +124,10 @@ object GameMessageReceiver {
             grid.historyRank = history
           }
 					Behavior.same
-				case Protocol.myRank(id,myRank) =>
+
+				case Protocol.MyRank(index,myRank) =>
 					ClientBoot.addToPlatform {
-						grid.myRank = Map(id -> myRank)
+						grid.myRank = (index, myRank)
 					}
 					Behaviors.same
 

@@ -7,6 +7,8 @@ import org.scalajs.dom
 import org.scalajs.dom.ext.Color
 import org.scalajs.dom.html.{Canvas, Document => _}
 
+import scala.collection.immutable.Range
+
 /**
   * User: gaohan
   * Date: 2018/10/12
@@ -18,7 +20,8 @@ object GameInfo {
 //  var currentRank = List.empty[(List[Score],Score)]
   var currentRank = List.empty[Score]
   var historyRank = List.empty[Score]
-  var myRank = Map.empty[String,Map[Int, Score]]
+  var myRank = (0, Score("","",0,0))
+
   //var myRank = Score("","",0,0)
 
   val textLineHeight = 14
@@ -160,7 +163,7 @@ object GameInfo {
       if(currentRank.exists(s => s.id == myId)){
         currentRank.foreach { score =>
           index += 1
-          if (score.id == myRank.keys.head) {
+          if (score.id == myId) {
             infoCacheCtx.fillStyle = "#FFB90F"
             infoCacheCtx.font = s" ${14 * scaleW}px Helvetica "
             drawTextLine(infoCacheCtx, s"[$index]: ${score.n.+("   ").take(8)} kill=${score.k} len=${score.l}", leftBegin, index, currentRankBaseLine, scaleW, scaleH)
@@ -177,14 +180,11 @@ object GameInfo {
           infoCacheCtx.font = s"${14 * scaleW}px Helvetica"
           drawTextLine(infoCacheCtx, s"[$index]: ${score.n.+("   ").take(8)} kill=${score.k} len=${score.l}", leftBegin, index, currentRankBaseLine, scaleW, scaleH)
         }
-        val myScore = myRank.filter(s => s._1 == myId).values.head.values.headOption
-        val myIndex = myRank.filter(s => s._1 == myId).values.head.keys.headOption
+        val myScore = myRank._2
+        val myIndex = myRank._1
         infoCacheCtx.fillStyle = "#FFB90F"
         infoCacheCtx.font = s"bolder ${14 * scaleW}px Helvetica "
-        if(myScore.nonEmpty && myIndex.nonEmpty) {
-          drawTextLine(infoCacheCtx, s"[${myIndex.get}]: ${myScore.get.n.+(" ").take(8)} kill=${myScore.get.k} len=${myScore.get.l}", leftBegin, 7, currentRankBaseLine, scaleW, scaleH)
-        }
-
+        drawTextLine(infoCacheCtx, s"[${myIndex}]: ${myScore.n.+(" ").take(8)} kill=${myScore.k} len=${myScore.l}", leftBegin, 7, currentRankBaseLine, scaleW, scaleH)
       }
 
     infoCacheCtx.fillStyle = "#FFFFFF"

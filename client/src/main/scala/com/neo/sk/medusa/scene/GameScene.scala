@@ -58,7 +58,7 @@ class GameScene() {
 
 	val infoHandler = new InfoHandler
 
-	def draw(myId:String, data: Protocol.GridDataSync,historyRank:List[Score], currentRank:List[Score], loginAgain:Boolean, myRank:Map[String,Map[Int, Score]], scaleW:Double, scaleH:Double): Unit = {
+	def draw(myId:String, data: Protocol.GridDataSync,historyRank:List[Score], currentRank:List[Score], loginAgain:Boolean, myRank:(Int,Score), scaleW:Double, scaleH:Double): Unit = {
 		infoHandler.refreshInfo()
 		infoHandler.fpsCounter += 1
 		infoHandler.dataCounter += 1
