@@ -187,9 +187,9 @@ class GridOnClient(override val boundary: Point) extends Grid {
 	
 	def moveEatenApple(): Unit = {
 		val invalidApple = Ap(0, 0, 0, 0)
-		eatenApples = eatenApples.filterNot { apple => !snakes.exists(_._2.id == apple._1) }
+		eatenApples = eatenApples.filterNot { apple => !snakes4client.exists(_._2.id == apple._1) }
 		eatenApples.foreach { info =>
-			val snakeOpt = snakes.get(info._1)
+			val snakeOpt = snakes4client.get(info._1)
 			if (snakeOpt.isDefined) {
 				val snake = snakeOpt.get
 				val applesOpt = eatenApples.get(info._1)
@@ -203,7 +203,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
 								val newLength = snake.length + apple.apple.score
 								val newExtend = snake.extend + apple.apple.score
 								val newSnakeInfo = snake.copy(length = newLength, extend = newExtend)
-								snakes += (snake.id -> newSnakeInfo)
+								snakes4client += (snake.id -> newSnakeInfo)
 							}
 							val nextLocOpt = Point(apple.apple.x, apple.apple.y).pathTo(snake.head, Some(apple.frameCount, frameCount))
 							if (nextLocOpt.nonEmpty) {

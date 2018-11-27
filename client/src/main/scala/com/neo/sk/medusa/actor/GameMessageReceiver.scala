@@ -85,7 +85,6 @@ object GameMessageReceiver {
 				case Protocol.NewSnakeJoined(id, user, roomId) =>
 					log.info(s"new user $user joined")
 					Behavior.same
-
 				
 				case Protocol.SnakeDead(id) =>
 					ClientBoot.addToPlatform {
@@ -181,11 +180,7 @@ object GameMessageReceiver {
 					grid.justSynced = true
 					Behavior.same
 				
-				case Protocol.NetDelayTest(createTime) =>
-					ClientBoot.addToPlatform {
-						val receiveTime = System.currentTimeMillis()
-					}
-					//					netInfoHandler.ping = receiveTime - createTime
+				case Protocol.NetDelayTest(_) =>
 					Behavior.same
 				
 				case Protocol.DeadInfo(id,myName, myLength, myKill, killerId, killer) =>

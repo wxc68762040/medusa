@@ -169,8 +169,7 @@ object GameView  {
       }
 
       val nameLength = if(snake.name.length > 15) 15 else snake.name.length
-      val snakeSpeed = snake.speed
-
+//      val snakeSpeed = snake.speed
       cacheCtx.font = s"${12 * scaleW * myProportion}px Helvetica"
       cacheCtx.fillStyle = Color.White.toString()
       val snakeName = if(snake.name.length > 15) snake.name.substring(0, 14) else snake.name

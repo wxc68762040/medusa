@@ -27,6 +27,7 @@ class GameViewCanvas(canvas: Canvas, gameScene: GameScene) {
   val ctx = canvas.getGraphicsContext2D
   val bgColor = new Color(0.003, 0.176, 0.176, 1.0)
   val bgImage = new Image("file:client/src/main/resources/bg.png")
+  val championImage = new Image("file:client/src/main/resources/champion.png")
 
 
 
@@ -163,13 +164,16 @@ class GameViewCanvas(canvas: Canvas, gameScene: GameScene) {
       }
 
       val nameLength = if (snake.name.length > 15) 15 else snake.name.length
-      val snakeSpeed = snake.speed
+//      val snakeSpeed = snake.speed
       ctx.setFill(Color.WHITE)
 			ctx.setFont(new Font("Helvetica", 12 * myProportion * scale))
       val snakeName = if(snake.name.length > 15) snake.name.substring(0, 14) else snake.name
 			ctx.fillText(snakeName, x * scaleW + deviationX - nameLength * 4, y * scaleH + deviationY - 15)
-      if (snakeSpeed > fSpeed + 1) {
-        ctx.fillText(snakeSpeed.toInt.toString, x * scaleW + deviationX - nameLength * 4, y * scaleH + deviationY - 25)
+//      if (snakeSpeed > fSpeed + 1) {
+//        ctx.fillText(snakeSpeed.toInt.toString, x * scaleW + deviationX - nameLength * 4, y * scaleH + deviationY - 25)
+//      }
+      if (snakes.nonEmpty && snake.id == snakes.sortBy(e => (e.length, e.id)).reverse.map(_.id).head) {
+        ctx.drawImage(championImage, x * scaleW + deviationX - 8, y * scaleH + deviationY - 45)
       }
     }
 
