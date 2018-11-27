@@ -93,7 +93,8 @@ object GameView  {
     cacheCtx.drawImage(canvasPic, 0 + deviationX, 0 + deviationY, Boundary.w * scaleW, Boundary.h * scaleH)
     //cacheCtx.drawImage(canvasPic,0 + deviationX ,0 + deviationY , Boundary.w * scaleW, Boundary.h * scaleH)
 
-    apples.filterNot( a=> a.x * scaleW < myHead.x * scaleW - windowWidth/2 * myProportion || a.y * scaleH < myHead.y * scaleH - windowHeight/2 * myProportion || a.x * scaleW > myHead.x * scaleW + windowWidth/2 * myProportion|| a.y * scaleH > myHead.y * scaleH + windowHeight/2* myProportion).foreach{ case Ap (score,_,x,y)=>
+    apples.filterNot( a=> a.x * scaleW < myHead.x * scaleW - windowWidth/2 * myProportion || a.y * scaleH < myHead.y * scaleH - windowHeight/2 * myProportion || a.x * scaleW > myHead.x * scaleW + windowWidth/2 * myProportion|| a.y * scaleH > myHead.y * scaleH + windowHeight/2* myProportion).foreach {
+      case Ap (score, _, x, y, _)=>
        cacheCtx.fillStyle = score match{
          case 50 => "#ffeb3bd9"
          case 25 => "#1474c1"

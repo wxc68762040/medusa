@@ -361,7 +361,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
               case x => 5
             }
             val apple = Apple(score, FoodType.intermediate, Some(targetPoint, score))
-            deadBodies ::= Ap(score, FoodType.intermediate, dead._1.x, dead._1.y)
+            deadBodies ::= Ap(score, FoodType.intermediate, dead._1.x, dead._1.y, Some(targetPoint, score))
             grid += (dead._1 -> apple)
             appleNeeded -= 1
           }
