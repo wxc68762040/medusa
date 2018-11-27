@@ -79,7 +79,7 @@ class GameController(id: String,
 				gameScene.viewHeight = stageCtx.getWindowSize.windowHeight
 				val scaleW = gameScene.viewWidth / gameScene.initWindowWidth
 				val scaleH = gameScene.viewHeight / gameScene.initWindowHeight
-				gameScene.draw(grid.myId, grid.getGridSyncData4Client, grid.historyRank, grid.currentRank, grid.loginAgain, scaleW, scaleH)
+				gameScene.draw(grid.myId, grid.getGridSyncData4Client, grid.historyRank, grid.currentRank, grid.loginAgain, grid.myRank, scaleW, scaleH)
 			}
 		}
 		scheduler.schedule(10.millis, 100.millis) {
