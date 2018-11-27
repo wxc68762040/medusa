@@ -174,17 +174,17 @@ object GameView  {
       cacheCtx.font = s"${12 * scaleW * myProportion}px Helvetica"
       cacheCtx.fillStyle = Color.White.toString()
       val snakeName = if(snake.name.length > 15) snake.name.substring(0, 14) else snake.name
-      cacheCtx.fillText(snakeName, x * scaleW + deviationX - nameLength * 4, y * scaleH + deviationY - 15)
+      cacheCtx.fillText(snakeName, x * scaleW + deviationX - nameLength * 4, y * scaleH + deviationY - 12)
       if (!playerState._2 && id == myId) {
         cacheCtx.drawImage(killerImg, x * scaleW + deviationX - nameLength * 4, y * scaleH + deviationY - 15)
       }
 //      if (snake.length >= snakes.maxBy(_.length).length) {
-      if (snakes.nonEmpty && snake.id == snakes.sortBy(e => (e.length, e.id)).map(_.id).head) {
-        cacheCtx.drawImage(championSnake, x * scaleW + deviationX - 8, y * scaleH + deviationY - 35)
+      if (snakes.nonEmpty && snake.id == snakes.sortBy(e => (e.length, e.id)).reverse.map(_.id).head) {
+        cacheCtx.drawImage(championSnake, x * scaleW + deviationX - 8, y * scaleH + deviationY - 40)
       }
-      if (snakeSpeed > fSpeed + 1) {
-        cacheCtx.fillText(snakeSpeed.toInt.toString, x * scaleW  + deviationX - nameLength * 4, y * scaleH + deviationY - 25)
-      }
+//      if (snakeSpeed > fSpeed + 1) {
+//        cacheCtx.fillText(snakeSpeed.toInt.toString, x * scaleW  + deviationX - nameLength * 4, y * scaleH + deviationY - 25)
+//      }
     }
 
 
