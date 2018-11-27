@@ -62,25 +62,21 @@ object WatcherManager {
 //              getWatcherActor(ctx, t.watcherId) ! WatcherActor.KillSelf
 //            }
             val watcher = getWatcherActor(ctx, t.watcherId, t.roomId)
-            println("+++++++++++++------------------: "+t.playerId)
             watcherMap.put(t.watcherId,("", t.roomId))
             roomManager ! RoomManager.GetPlayerByRoomId(t.playerId, t.roomId, t.watcherId, watcher)
             t.replyTo ! getWebSocketFlow(watcher)
             Behaviors.same
 
           case t: GetPlayerWatchedRsp =>
-            println("WatcherManager playerId: "+t.playerId)
             if(t.playerId == ""){
               getWatcherActor(ctx, t.watcherId, 1 ) ! WatcherActor.NoRoom
             }else {
               watcherMap.update(t.watcherId, (t.playerId, watcherMap(t.watcherId)._2))
             }
-            println("WatcherManager watcherMap: "+watcherMap)
             Behaviors.same
 
           case t: WatcherGone =>
             val playerWatched = watcherMap.get(t.watcherId).map(_._1)
-            println("watcherGone: "+playerWatched)
             if(playerWatched.nonEmpty) {
 
               roomManager ! YourUserUnwatched(playerWatched.get, t.watcherId,t.roomId)
@@ -105,7 +101,6 @@ object WatcherManager {
   private def getWatcherActor(ctx: ActorContext[Command], watcherId: String, roomId:Long): ActorRef[WatcherActor.Command] = {
     val childName = s"WatcherActor-$watcherId"
     ctx.child(childName).getOrElse {
-      println("11111111111111111111111111111111111111111111")
       val actor = ctx.spawn(WatcherActor.create(watcherId, roomId), childName)
       ctx.watchWith(actor, ChildDead(childName, actor))
       actor

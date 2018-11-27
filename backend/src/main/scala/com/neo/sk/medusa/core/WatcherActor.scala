@@ -78,18 +78,18 @@ object WatcherActor {
       (ctx, msg) =>
         msg match {
           case UserFrontActor(frontActor) =>
-            println(" 我就看看")
+//            println(" 我就看看")
             ctx.watchWith(frontActor, FrontLeft(frontActor))
             ctx.self ! WatcherReady
             roomManager ! RoomManager.INeedApple(watchedId,watcherId,roomId)
-            println("watchedId in watcherActor init: "+watchedId)
+//            println("watchedId in watcherActor init: "+watchedId)
             switchBehavior(ctx, "idle", idle(watcherId, watchedId, roomId, frontActor,waitTip))
 						
           case GetWatchedId(id) =>
             switchBehavior(ctx, "init", init(watcherId, id, roomId,waitTip))
 
           case TimeOut(m) =>
-            println(s"${m}")
+//            println(s"${m}")
             watchManager ! WatcherManager.WatcherGone(watchedId,watcherId,roomId)
             log.debug(s"${ctx.self.path} is time out when busy,msg=$m")
             Behaviors.stopped
@@ -112,8 +112,8 @@ object WatcherActor {
             
           case FrontLeft(front) =>
             ctx.unwatch(front)
-            println("action occur when you refresh page")
-            println("watchedId in watcherActor idle: "+watchedId)
+//            println("action occur when you refresh page")
+//            println("watchedId in watcherActor idle: "+watchedId)
             switchBehavior(ctx,"init",init(watcherId,watchedId,roomId,waitTip),Some(10.seconds),TimeOut("lalalallalallalalalalalalalalala11111"))
 						
           case NoRoom =>
@@ -126,12 +126,12 @@ object WatcherActor {
             idle(watcherId,watchedId,roomId,frontActor,false)
 
           case UserFrontActor(newFront) =>
-            println("just test !")
+//            println("just test !")
             ctx.unwatch(frontActor)
             ctx.watchWith(newFront, FrontLeft(newFront))
             newFront ! Protocol.JoinRoomSuccess(watchedId, roomId)
             frontActor ! YouHaveLogined
-            println("this information will print: watcherId: "+watcherId+" watchedId: "+watchedId+" roomId: "+roomId+ "  "+newFront+"  ")
+//            println("this information will print: watcherId: "+watcherId+" watchedId: "+watchedId+" roomId: "+roomId+ "  "+newFront+"  ")
             ctx.self ! UserFrontActor(newFront)
             switchBehavior(ctx,"init",init(watcherId,watchedId,roomId,waitTip),Some(10.seconds),TimeOut("lalalallalallalalalalalalalalala"))
 
@@ -151,20 +151,12 @@ object WatcherActor {
 //            }
             if(!waitTip) frontActor ! Protocol.PlayerWaitingJoin
             if(x.isInstanceOf[Protocol.DeadListBuff]){
-              println("Dead:   "+x+" "+watchedId)
               if(x.asInstanceOf[Protocol.DeadListBuff].deadList.contains(watchedId)){
                 idle(watcherId,watchedId,roomId,frontActor,false)
               }else{
                 idle(watcherId,watchedId,roomId,frontActor,true)
               }
             }else{
-//              x match {
-//                case GridDataSync(_, _, _,_) =>
-//                  log.info(s"sync data full: $x")
-//                case GridDataSyncNoApp(_, _) =>
-//                  log.info(s"sync data no app: $x")
-//                case _ =>
-//              }
               Behavior.same
             }
 
