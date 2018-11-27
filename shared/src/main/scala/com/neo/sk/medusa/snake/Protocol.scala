@@ -29,10 +29,6 @@ object Protocol {
     timeStamp:Long = 0l
   ) extends GameMessage
 
-//  case class AddSnakes(
-//    snakes:List[Snake4Client]
-//  ) extends GameMessage
-
   case class GridDataSyncNoApp(
     frameCount: Long,
     snakes: List[Snake4Client]

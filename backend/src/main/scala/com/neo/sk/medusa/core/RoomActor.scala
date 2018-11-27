@@ -279,7 +279,9 @@ object RoomActor {
             idle(roomId, newTick, ListBuffer[Protocol.GameMessage](), userMap,watcherMap, deadUserList,grid,rEmptyCount)  //---
 
           case NetTest(id,createTime) =>
-            dispatchTo(Protocol.NetDelayTest(createTime),userMap(id)._1,watcherMap,id)
+            if(userMap.get(id).nonEmpty) {
+              dispatchTo(Protocol.NetDelayTest(createTime), userMap(id)._1, watcherMap, id)
+            }
             Behaviors.same
 
           case KillRoom =>
