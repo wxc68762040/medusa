@@ -22,7 +22,7 @@ package object snake {
 
   case class Bd(id: String, x: Int, y: Int, color: String)
 
-  case class Ap(score: Int, appleType: Int, x: Int, y: Int)
+  case class Ap(score: Int, appleType: Int, x: Int, y: Int, targetAppleOpt: Option[(Point, Int)] = None)
 
   case class GridData(
                        frameCount: Long,

@@ -369,13 +369,13 @@ object NetGameHolder extends js.JSApp {
                 case Protocol.Ranks(current, history) =>
                   GameInfo.currentRank = current
                   GameInfo.historyRank = history
-                case Protocol.myRank(id,myRank) =>
+                  
+                case Protocol.MyRank(id,myRank) =>
                   GameInfo.myRank = Map(id -> myRank)
 
 
                 case Protocol.FeedApples(apples) =>
-
-                  grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.appleType))
+                  grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.appleType, a.targetAppleOpt))
 
                 case Protocol.EatApples(apples) =>
                   apples.foreach { apple =>
@@ -403,7 +403,7 @@ object NetGameHolder extends js.JSApp {
                       case Apple(_, _, _) => true
                     }
                   }
-                  val appleMap = ap.map(a => Point(a.x, a.y) -> Apple(a.score, a.appleType)).toMap
+                  val appleMap = ap.map(a => Point(a.x, a.y) -> Apple(a.score, a.appleType, a.targetAppleOpt)).toMap
                   grid.grid = appleMap
 
                 case Protocol.NoRoom =>

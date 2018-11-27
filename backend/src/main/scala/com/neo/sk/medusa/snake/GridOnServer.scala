@@ -284,7 +284,6 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
   
   override def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[String] = None) = {
     if (appleType == FoodType.normal) {
-
       def appleDecrease = {
         val step = 5
         snakes.size match {
@@ -361,7 +360,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
               case x => 5
             }
             val apple = Apple(score, FoodType.intermediate, Some(targetPoint, score))
-            deadBodies ::= Ap(score, FoodType.intermediate, dead._1.x, dead._1.y)
+            deadBodies ::= Ap(score, FoodType.intermediate, dead._1.x, dead._1.y, Some(targetPoint, score))
             grid += (dead._1 -> apple)
             appleNeeded -= 1
           }

@@ -177,11 +177,13 @@ object GameInfo {
           infoCacheCtx.font = s"${14 * scaleW}px Helvetica"
           drawTextLine(infoCacheCtx, s"[$index]: ${score.n.+("   ").take(8)} kill=${score.k} len=${score.l}", leftBegin, index, currentRankBaseLine, scaleW, scaleH)
         }
-        val myScore = myRank.filter(s => s._1 == myId).values.head.values.head
-        val myIndex = myRank.filter(s => s._1 == myId).values.head.keys.head
+        val myScore = myRank.filter(s => s._1 == myId).values.head.values.headOption
+        val myIndex = myRank.filter(s => s._1 == myId).values.head.keys.headOption
         infoCacheCtx.fillStyle = "#FFB90F"
         infoCacheCtx.font = s"bolder ${14 * scaleW}px Helvetica "
-        drawTextLine(infoCacheCtx,s"[$myIndex]: ${myScore.n.+(" ").take(8)} kill=${myScore.k} len=${myScore.l}", leftBegin, 7,currentRankBaseLine, scaleW, scaleH)
+        if(myScore.nonEmpty && myIndex.nonEmpty) {
+          drawTextLine(infoCacheCtx, s"[${myIndex.get}]: ${myScore.get.n.+(" ").take(8)} kill=${myScore.get.k} len=${myScore.get.l}", leftBegin, 7, currentRankBaseLine, scaleW, scaleH)
+        }
 
       }
 

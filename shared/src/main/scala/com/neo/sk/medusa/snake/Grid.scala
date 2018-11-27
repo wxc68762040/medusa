@@ -90,7 +90,6 @@ trait Grid {
         case _ => false
       }
     }.map {
-
       case (p, a@Apple(_,  appleType, targetAppleOpt)) =>
         if (appleType == FoodType.normal) {
           appleCount += 1
@@ -98,7 +97,7 @@ trait Grid {
         } else if (appleType == FoodType.intermediate && targetAppleOpt.nonEmpty) {
           val targetApple = targetAppleOpt.get
           if (p == targetApple._1) {
-            val apple = Apple(targetApple._2,  FoodType.deadBody)
+            val apple = Apple(targetApple._2, FoodType.deadBody)
             (p, apple)
           } else {
             val nextLoc = p pathTo targetApple._1
@@ -168,7 +167,7 @@ trait Grid {
   def getGridSyncData = {
     var appleDetails: List[Ap] = Nil
     grid.foreach {
-      case (p, Apple(score, appleType, targetAppleOpt)) => appleDetails ::= Ap(score, appleType, p.x, p.y)
+      case (p, Apple(score, appleType, targetAppleOpt)) => appleDetails ::= Ap(score, appleType, p.x, p.y, targetAppleOpt)
       case _ =>
     }
     val snake4client = snakes.values.map{
@@ -184,7 +183,7 @@ trait Grid {
   def getGridSyncData4Client = {
     var appleDetails: List[Ap] = Nil
     grid.foreach {
-      case (p, Apple(score, appleType, _)) => appleDetails ::= Ap(score, appleType, p.x, p.y)
+      case (p, Apple(score, appleType, targetAppleOpt)) => appleDetails ::= Ap(score, appleType, p.x, p.y, targetAppleOpt)
       case _ =>
     }
     Protocol.GridDataSync(

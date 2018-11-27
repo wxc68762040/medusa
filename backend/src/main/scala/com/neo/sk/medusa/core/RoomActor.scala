@@ -190,7 +190,6 @@ object RoomActor {
             if (snakeState._1.nonEmpty) {
 							eventList.append(grid.getGridSyncData)
 							dispatch(userMap, watcherMap, grid.getGridSyncData)
-							println("----")
 							snakeState._1.foreach { s =>
 								dispatchTo(grid.getGridSyncData, userMap(s.id)._1, watcherMap, s.id)
 								val msg = ByteString(grid.getGridSyncData.fillMiddleBuffer(sendBuffer).result())
@@ -244,11 +243,10 @@ object RoomActor {
                 rankLength += msg.length * userMap.size
                 dispatch(userMap, watcherMap, Protocol.Ranks(grid.topCurrentRank, grid.historyRankList))
                 val myScore =
-                  grid.currentRank.filter(s => s.id == k).map(r => Score(r.id, r.n, r.k, r.l)).headOption.getOrElse(Score("","",0,0))
+                  grid.currentRank.filter(s => s.id == k).map(r => Score(r.id, r.n, r.k, r.l)).headOption.getOrElse(Score("", "", 0, 0))
                 val myIndex = grid.currentRank.sortBy(s => s.l).reverse.indexOf(myScore) + 1
-                eventList.append(Protocol.myRank(k,Map(myIndex -> myScore)))
-                dispatchTo( Protocol.myRank(k,Map(myIndex -> myScore)),u._1, watcherMap,k)
-
+                eventList.append(Protocol.MyRank(k, Map(myIndex -> myScore)))
+                dispatchTo(Protocol.MyRank(k, Map(myIndex -> myScore)), u._1, watcherMap, k)
               }
             }
             if (tickCount % 300 == 1) {
@@ -299,7 +297,7 @@ object RoomActor {
 
           case t: YourUserIsWatched =>
 //            userMap.get(t.playerId).foreach(a => a._1 ! UserActor.YouAreWatched(t.watcherId, t.watcherRef))
-            println("i will print this word every refresh  :"+deadUserList)
+//            println("i will print this word every refresh  :"+deadUserList)
             if(watcherMap.contains(t.playerId)){ //如果player已经存在就不在创建对应的观看者map
               //检查该watcher是否在其他的player的观看map中，如果存在，则删除
               watcherMap.map{ k =>
@@ -313,11 +311,7 @@ object RoomActor {
               watcherMapIn.put(t.watcherId, t.watcherRef)
               watcherMap.put(t.playerId,watcherMapIn)
             }
-            println("watcherMap:   "+watcherMap)
             if(deadUserList.contains(t.playerId)){
-              println("deadInfo: "+deadCommonInfo)
-              println("playerId: "+t.playerId)
-              println("watcher: "+t.watcherRef)
               t.watcherRef ! WatcherActor.PlayerWait
             }
             t.watcherRef ! WatcherActor.GetWatchedId(t.playerId)
@@ -326,22 +320,17 @@ object RoomActor {
 
           case t:GiveYouApple =>
             val syncData = grid.getGridSyncData
-            println("give0:   "+watcherMap+"   playerId: "+t.playerId)
             if(watcherMap.nonEmpty && watcherMap.get(t.playerId).isDefined){
-              println("give1: "+watcherMap.get(t.playerId))
               if(watcherMap(t.playerId).nonEmpty){
-                println("give2: "+watcherMap(t.playerId))
                 if(watcherMap(t.playerId).get(t.waterId).isDefined){
                   val watcherRef = watcherMap(t.playerId)(t.waterId)
                   watcherRef ! WatcherActor.TransInfo(syncData)
-                  println("1-----------------------------------------------------------------------------------------------------"+watcherRef)
                 }else{
                   var emptyFlag = 0
                   watcherMap.foreach{ k=>
                     if(k._2.nonEmpty && emptyFlag==0){
-                      val watcherRef = watcherMap.get(k._1).get.get(t.waterId).get
+                      val watcherRef = watcherMap(k._1)(t.waterId)
                       watcherRef ! WatcherActor.TransInfo(syncData)
-                      println("2-----------------------------------------------------------------------------------------------------"+watcherRef)
                       emptyFlag = 1
                     }
                   }
@@ -352,7 +341,6 @@ object RoomActor {
             Behavior.same
 
           case t: YouAreUnwatched =>
-            println("123: "+t)
             if(!watcherMap.get(t.playerId).isEmpty) watcherMap.get(t.playerId).get.remove(t.watcherId)
             Behaviors.same
 
