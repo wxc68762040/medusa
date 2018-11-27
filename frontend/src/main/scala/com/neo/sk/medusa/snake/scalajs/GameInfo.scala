@@ -70,6 +70,7 @@ object GameInfo {
 
     val centerX = windowWidth/2
     val centerY = windowHeight/2
+    val snakeNum = snakes.length
     NetGameHolder.infoState match {
       case "normal" =>
         if(playerState._2) {
@@ -87,6 +88,7 @@ object GameInfo {
               drawTextLine(infoCacheCtx, s"fps: ${netInfoHandler.fps.formatted("%.2f")} ping:${netInfoHandler.ping.formatted("%.2f")} dataps:${netInfoHandler.dataps.formatted("%.2f")}", leftBegin, 4, baseLine, scaleW, scaleH)
               drawTextLine(infoCacheCtx, s"drawTimeAverage: ${netInfoHandler.drawTimeAverage}", leftBegin, 5, baseLine, scaleW, scaleH)
               drawTextLine(infoCacheCtx, s"roomId: $myRoomId", leftBegin, 6, baseLine, scaleW, scaleH)
+              drawTextLine(infoCacheCtx, s"snakeNumber: $snakeNum", leftBegin, 7, baseLine, scaleW, scaleH)
 
             case None =>
           }
