@@ -42,6 +42,7 @@ class GameScene() {
 	val mapCanvas = new Canvas(widthMap, heightMap)
 	val viewCanvas = new Canvas(viewWidth, viewHeight)
   val infoCanvas = new Canvas(infoWidth, infoHeight)
+	val timeLine = new Timeline
 	infoCanvas.setStyle("z-index: 100")
   mapCanvas.setStyle("z-index: 120")
 
@@ -59,17 +60,24 @@ class GameScene() {
 	val infoHandler = new InfoHandler
 
 	def draw(myId:String, data: Protocol.GridDataSync,historyRank:List[Score], currentRank:List[Score], loginAgain:Boolean, myRank:(Int,Score), scaleW:Double, scaleH:Double): Unit = {
-		infoHandler.refreshInfo()
 		infoHandler.fpsCounter += 1
-		infoHandler.dataCounter += 1
 		val timeNow = System.currentTimeMillis()
 		view.drawSnake(myId, data, scaleW, scaleH)
     map.drawMap(myId, data, scaleW, scaleH)
 		info.drawInfo(myId, data, historyRank, currentRank, loginAgain, myRank, scaleW, scaleH)
 		val drawOnceTime = System.currentTimeMillis() - timeNow
 	  infoHandler.drawTimeAverage = drawOnceTime.toInt
-
   }
+	
+	def startRefreshInfo = {
+		timeLine.setCycleCount(Animation.INDEFINITE)
+		val keyFrame = new KeyFrame(Duration.millis(5000), { _ =>
+			infoHandler.refreshInfo()
+		})
+		timeLine.getKeyFrames.add(keyFrame)
+		timeLine.play()
+	}
+	
 	def setGameSceneListener(listener: GameSceneListener) {
 		gameSceneListener = listener
 	}

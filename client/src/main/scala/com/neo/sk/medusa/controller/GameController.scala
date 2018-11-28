@@ -73,6 +73,7 @@ class GameController(id: String,
 
 	def startGameLoop() = {
 		basicTime = System.currentTimeMillis()
+		gameScene.startRefreshInfo
 		val animationTimer = new AnimationTimer() {
 			override def handle(now: Long): Unit = {
 				gameScene.viewWidth = stageCtx.getWindowSize.windowWidth

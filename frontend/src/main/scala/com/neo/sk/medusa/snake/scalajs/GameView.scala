@@ -55,6 +55,7 @@ object GameView  {
     val period = (System.currentTimeMillis() - basicTime).toInt
     val snakes = data.snakes
     val apples = data.appleDetails
+    //val framcount = apples.head.frame
 
     //下个帧的修改
     val mySubFrameRevise =
@@ -94,7 +95,13 @@ object GameView  {
     //cacheCtx.drawImage(canvasPic,0 + deviationX ,0 + deviationY , Boundary.w * scaleW, Boundary.h * scaleH)
 
     apples.filterNot( a=> a.x * scaleW < myHead.x * scaleW - windowWidth/2 * myProportion || a.y * scaleH < myHead.y * scaleH - windowHeight/2 * myProportion || a.x * scaleW > myHead.x * scaleW + windowWidth/2 * myProportion|| a.y * scaleH > myHead.y * scaleH + windowHeight/2* myProportion).foreach {
-      case Ap (score, _, x, y, _)=>
+      case a@Ap (score, _, x, y, frameCount, _)=>
+        if( grid.frameCount >  frameCount) {
+          val i = apples.indexOf(a)
+          apples.drop(i)
+
+        }
+
        cacheCtx.fillStyle = score match{
          case 50 => "#ffeb3bd9"
          case 25 => "#1474c1"
