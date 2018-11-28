@@ -3,6 +3,7 @@ package com.neo.sk.medusa.core
 import com.neo.sk.medusa.Boot.executor
 import java.awt.event.KeyEvent
 import java.io.File
+
 import com.neo.sk.medusa.models.Dao.GameRecordDao
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors, StashBuffer, TimerScheduler}
 import akka.actor.typed.{ActorRef, Behavior}
@@ -11,7 +12,7 @@ import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import com.neo.sk.medusa.snake.Protocol._
-import com.neo.sk.medusa.Boot.{roomManager, userManager, authActor}
+import com.neo.sk.medusa.Boot.{authActor, roomManager, userManager}
 import akka.stream.typed.scaladsl.{ActorSink, ActorSource}
 import com.neo.sk.medusa.common.AppSettings
 import com.neo.sk.medusa.common.AppSettings.recordPath
@@ -20,12 +21,14 @@ import com.neo.sk.medusa.core.UserManager.UserGone
 import com.neo.sk.medusa.snake.Protocol
 import io.circe.Decoder
 import com.neo.sk.medusa.protocol.RecordApiProtocol
+import com.neo.sk.medusa.protocol.RecordApiProtocol.FrameInfo
 import com.neo.sk.utils.BatRecordUtils
 import net.sf.ehcache.transaction.xa.commands.Command
 import org.seekloud.byteobject.MiddleBufferInJvm
 import org.seekloud.byteobject.ByteObject._
 import org.seekloud.essf.io.FrameData
 import org.slf4j.LoggerFactory
+
 import scala.util.{Failure, Success}
 import scala.collection.mutable
 import scala.concurrent.duration._
@@ -251,6 +254,10 @@ object UserActor {
 
           case NetTest(id, createTime) =>
             roomActor ! RoomActor.NetTest(id, createTime)
+            Behaviors.same
+
+          case GetRecordFrame(recordId, sender) =>
+            sender ! FrameInfo(-1,-1l)
             Behaviors.same
 
           case DispatchMsg(m) =>
