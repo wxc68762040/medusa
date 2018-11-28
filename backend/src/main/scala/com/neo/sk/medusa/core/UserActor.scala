@@ -142,7 +142,11 @@ object UserActor {
                   )(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
-        log.info(msg+"")
+        msg match {
+          case ReplayData(_) =>
+          case ReplayShot(_) =>
+          case _ => log.info(s"$msg")
+        }
         msg match {
           case StartGame(_, _, roomId,isNewUser) =>
             roomManager ! RoomManager.JoinGame(playerId, playerName, roomId, isNewUser, ctx.self)
