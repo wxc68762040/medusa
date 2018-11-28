@@ -143,11 +143,6 @@ object UserActor {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
-          case ReplayData(_) =>
-          case ReplayShot(_) =>
-          case _ => log.info(s"$msg")
-        }
-        msg match {
           case StartGame(_, _, roomId,isNewUser) =>
             roomManager ! RoomManager.JoinGame(playerId, playerName, roomId, isNewUser, ctx.self)
             Behaviors.same
