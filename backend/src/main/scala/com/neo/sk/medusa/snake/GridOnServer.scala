@@ -90,10 +90,6 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
   private[this] def updateRanks() = {
     currentRank = snakes.values.map(s => Score(s.id, s.name, s.kill, s.length)).toList.sorted
     topCurrentRank = snakes.values.map(s => Score(s.id, s.name, s.kill, s.length)).toList.sortBy(s => s.l).reverse.slice(0,5)
-    //myId = if(snakes.nonEmpty) snakes.values.map(s => s.id).head else ""
-    //val myScore = if(snakes.nonEmpty) currentRank.filter(s => s.id == myId).head else Score("", "", 0, 0)
-    //val myIndex = currentRank.sortBy(s => s.l).reverse.indexOf(myScore) + 1
-    //myRank = if(snakes.nonEmpty) Map(myIndex -> snakes.values.map(s => Score(s.id, s.name, s.kill, s.length)).head) else Map(0 -> Score("","",0,0))
 
     var historyChange = false
     currentRank.foreach { cScore =>
@@ -306,8 +302,8 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
             case x if x > 0.8 => 25
             case x => 5
           }
-          val apple = Apple(score, appleType)
-          feededApples ::= Ap(score, appleType, p.x, p.y)
+          val apple = Apple(score, appleType, frameCount + randomFram)
+          feededApples ::= Ap(score, appleType, p.x, p.y, frameCount + randomFram )
           grid += (p -> apple)
           appleNeeded -= 1
         }
@@ -359,8 +355,8 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
               case x if x > 0.8 => 25
               case x => 5
             }
-            val apple = Apple(score, FoodType.intermediate, Some(targetPoint, score))
-            deadBodies ::= Ap(score, FoodType.intermediate, dead._1.x, dead._1.y, Some(targetPoint, score))
+            val apple = Apple(score, FoodType.intermediate, frameCount + randomFram,Some(targetPoint, score))
+            deadBodies ::= Ap(score, FoodType.intermediate, dead._1.x, dead._1.y, frameCount + randomFram, Some(targetPoint, score))
             grid += (dead._1 -> apple)
             appleNeeded -= 1
           }
@@ -383,7 +379,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
             totalScore += x.score
             newSpeed += 0.1
             speedOrNot = true
-            apples ::= Ap(x.score, x.appleType, e.x, e.y)
+            apples ::= Ap(x.score, x.appleType, e.x, e.y, frameCount + randomFram)
           }
         case _ => //do nothing
       }
