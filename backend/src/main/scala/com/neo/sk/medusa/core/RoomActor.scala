@@ -241,8 +241,8 @@ object RoomActor {
                 val myScore =
                   grid.currentRank.filter(s => s.id == k).map(r => Score(r.id, r.n, r.k, r.l)).headOption.getOrElse(Score("", "", 0, 0))
                 val myIndex = grid.currentRank.sortBy(s => s.l).reverse.indexOf(myScore) + 1
-                eventList.append(Protocol.MyRank(k, myIndex, myScore))
-                dispatchTo(Protocol.MyRank(k, myIndex, myScore), u._1, watcherMap, k)
+                eventList.append(Protocol.MyRank(myIndex, myScore))
+                dispatchTo(Protocol.MyRank(myIndex, myScore), u._1, watcherMap, k)
               }
             }
             if (tickCount % 300 == 1) {
