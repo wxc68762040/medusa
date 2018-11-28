@@ -134,7 +134,6 @@ trait Api4Record extends ServiceUtils{
   private val getRecordFrame = (path("getRecordFrame") & post){
     dealPostReq[GetRecordFrameReq]{ req =>
       val reqFuture:Future[FrameInfo] = userManager ? (UserManager.GetRecordFrame(req.recordId, req.playerId, _))
-
         reqFuture.map { rsp =>
           if(rsp.frame == -1) {
             complete(GetRecordFrameRsp(FrameInfo(0,0), 100098, "the user does not exist or has finished the record"))
