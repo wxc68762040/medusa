@@ -101,7 +101,6 @@ object GameView  {
           apples.drop(i)
 
         }
-
        cacheCtx.fillStyle = score match{
          case 50 => "#ffeb3bd9"
          case 25 => "#1474c1"
