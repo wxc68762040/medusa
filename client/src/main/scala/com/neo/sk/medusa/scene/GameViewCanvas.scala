@@ -26,8 +26,8 @@ class GameViewCanvas(canvas: Canvas, gameScene: GameScene) {
 
   val ctx = canvas.getGraphicsContext2D
   val bgColor = new Color(0.003, 0.176, 0.176, 1.0)
-  val bgImage = new Image("file:client/src/main/resources/bg.png")
-  val championImage = new Image("file:client/src/main/resources/champion.png")
+  val bgImage = new Image("bg.png")
+  val championImage = new Image("champion.png")
 
 
 
@@ -114,7 +114,6 @@ class GameViewCanvas(canvas: Canvas, gameScene: GameScene) {
     ctx.setFill(Color.web(MyColors.otherHeader))
 
     snakes.foreach { snake =>
-      println(snake.head)
       val id = snake.id
       val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
       val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate

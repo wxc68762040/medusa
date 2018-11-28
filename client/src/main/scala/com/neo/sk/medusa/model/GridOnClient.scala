@@ -148,7 +148,6 @@ class GridOnClient(override val boundary: Point) extends Grid {
 			val mySnakeOpt = snakes4client.find(_._1 == myId)
 			if (mySnakeOpt.nonEmpty) {
 				var mySnake = mySnakeOpt.get._2
-				println(mySnake.head)
 				for (i <- Protocol.advanceFrame to 1 by -1) {
 					updateASnake(mySnake, actionMap.getOrElse(data.frameCount - i, Map.empty)) match {
 						case Right(snake) =>
@@ -168,7 +167,6 @@ class GridOnClient(override val boundary: Point) extends Grid {
 			val mySnakeOpt = snakes4client.find(_._1 == myId)
 			if (mySnakeOpt.nonEmpty) {
 				var mySnake = mySnakeOpt.get._2
-				println(mySnake.head)
 				for (i <- Protocol.advanceFrame to 1 by -1) {
 					updateASnake(mySnake, actionMap.getOrElse(data.frameCount - i, Map.empty)) match {
 						case Right(snake) =>
