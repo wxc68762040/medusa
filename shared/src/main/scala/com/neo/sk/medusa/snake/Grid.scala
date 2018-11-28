@@ -39,9 +39,6 @@ trait Grid {
   var deadSnakeList = List.empty[DeadSnakeInfo]
   var killMap = Map.empty[String, List[(String,String)]]
 
-  val randomFram = 150 + random.nextInt(100)
-
-
   def removeSnake(id: String) = {
     val r1 = snakes.get(id)
 		val r2 = snakes4client.get(id)
@@ -89,17 +86,11 @@ trait Grid {
     var appleCount = 0
     grid = grid.filter { case (_, spot) =>
       spot match {
-       case x@Apple(_, _, _, _) =>
-         if( x.frame + randomFram  < frameCount) {
-           false
-         }else{
-           true
-         }
-
+        case x@Apple(_, _, _, _) if x.frame >= frameCount => true
         case _ => false
       }
     }.map {
-      case (p, a@Apple(_,  appleType, frame ,targetAppleOpt)) =>
+      case (p, a@Apple(_,  appleType, frame, targetAppleOpt)) =>
         if (appleType == FoodType.normal) {
           appleCount += 1
           (p, a)
@@ -114,7 +105,7 @@ trait Grid {
               val apple = Apple(targetApple._2, FoodType.intermediate, frame, targetAppleOpt)
               (nextLoc.get, apple)
             } else {
-              val apple = Apple(targetApple._2, FoodType.deadBody,frame)
+              val apple = Apple(targetApple._2, FoodType.deadBody, frame)
               (p, apple)
             }
           }
@@ -176,7 +167,7 @@ trait Grid {
   def getGridSyncData = {
     var appleDetails: List[Ap] = Nil
     grid.foreach {
-      case (p, Apple(score, appleType, _, targetAppleOpt)) => appleDetails ::= Ap(score, appleType, p.x, p.y, frameCount + randomFram, targetAppleOpt)
+      case (p, Apple(score, appleType, frame, targetAppleOpt)) => appleDetails ::= Ap(score, appleType, p.x, p.y, frame, targetAppleOpt)
       case _ =>
     }
     val snake4client = snakes.values.map{
@@ -192,7 +183,7 @@ trait Grid {
   def getGridSyncData4Client = {
     var appleDetails: List[Ap] = Nil
     grid.foreach {
-      case (p, Apple(score, appleType, _, targetAppleOpt)) => appleDetails ::= Ap(score, appleType, p.x, p.y, frameCount + randomFram, targetAppleOpt)
+      case (p, Apple(score, appleType, frame, targetAppleOpt)) => appleDetails ::= Ap(score, appleType, p.x, p.y, frame, targetAppleOpt)
       case _ =>
     }
     Protocol.GridDataSync(
