@@ -134,13 +134,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
 			val data = dataOpt.get
 			frameCount = data.frameCount
 			snakes4client = data.snakes.map(s => s.id -> s).toMap
-			grid = grid.filter { case (_, spot) =>
-				spot match {
-					case Apple(_, life, _) if life >= 0 => true
-					case _ => false
-				}
-			}
-			val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.appleType)).toMap
+			val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.appleType, a.frame)).toMap
 			val gridMap = appleMap
 			grid = gridMap
 		}
@@ -154,6 +148,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
 			val mySnakeOpt = snakes4client.find(_._1 == myId)
 			if (mySnakeOpt.nonEmpty) {
 				var mySnake = mySnakeOpt.get._2
+				println(mySnake.head)
 				for (i <- Protocol.advanceFrame to 1 by -1) {
 					updateASnake(mySnake, actionMap.getOrElse(data.frameCount - i, Map.empty)) match {
 						case Right(snake) =>
@@ -163,7 +158,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
 				}
 				snakes4client += ((mySnake.id, mySnake))
 			}
-			val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.appleType)).toMap
+			val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.appleType, a.frame)).toMap
 			val gridMap = appleMap
 			grid = gridMap
 		} else if(dataNoAppOpt.nonEmpty) {
@@ -173,6 +168,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
 			val mySnakeOpt = snakes4client.find(_._1 == myId)
 			if (mySnakeOpt.nonEmpty) {
 				var mySnake = mySnakeOpt.get._2
+				println(mySnake.head)
 				for (i <- Protocol.advanceFrame to 1 by -1) {
 					updateASnake(mySnake, actionMap.getOrElse(data.frameCount - i, Map.empty)) match {
 						case Right(snake) =>
@@ -186,7 +182,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
 	}
 	
 	def moveEatenApple(): Unit = {
-		val invalidApple = Ap(0, 0, 0, 0)
+		val invalidApple = Ap(0, 0, 0, 0, 0)
 		eatenApples = eatenApples.filterNot { apple => !snakes4client.exists(_._2.id == apple._1) }
 		eatenApples.foreach { info =>
 			val snakeOpt = snakes4client.get(info._1)
@@ -211,9 +207,9 @@ class GridOnClient(override val boundary: Point) extends Grid {
 								grid.get(nextLoc) match {
 									case Some(Body(_, _)) => AppleWithFrame(apple.frameCount, invalidApple)
 									case _ =>
-										val nextApple = Apple(apple.apple.score, FoodType.intermediate)
+										val nextApple = Apple(apple.apple.score, FoodType.intermediate, apple.apple.frame)
 										grid += (nextLoc -> nextApple)
-										AppleWithFrame(apple.frameCount, Ap(apple.apple.score, FoodType.intermediate, nextLoc.x, nextLoc.y))
+										AppleWithFrame(apple.frameCount, Ap(apple.apple.score, FoodType.intermediate, nextLoc.x, nextLoc.y, apple.apple.frame))
 								}
 							} else AppleWithFrame(apple.frameCount, invalidApple)
 						}.filterNot(a => a.apple == invalidApple)

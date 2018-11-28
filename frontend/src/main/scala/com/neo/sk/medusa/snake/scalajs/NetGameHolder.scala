@@ -176,9 +176,9 @@ object NetGameHolder extends js.JSApp {
                 grid.grid.get(nextLoc) match {
                   case Some(Body(_, _)) => AppleWithFrame(apple.frameCount, invalidApple)
                   case _ =>
-                    val nextApple = Apple(apple.apple.score, FoodType.intermediate, apple.frameCount + grid.randomFram)
+                    val nextApple = Apple(apple.apple.score, FoodType.intermediate, apple.apple.frame)
                     grid.grid += (nextLoc -> nextApple)
-                    AppleWithFrame(apple.frameCount, Ap(apple.apple.score, FoodType.intermediate, nextLoc.x, nextLoc.y, apple.frameCount + grid.randomFram))
+                    AppleWithFrame(apple.frameCount, Ap(apple.apple.score, FoodType.intermediate, nextLoc.x, nextLoc.y, apple.apple.frame))
                 }
               } else AppleWithFrame(apple.frameCount, invalidApple)
             }.filterNot(a => a.apple == invalidApple)
@@ -404,7 +404,7 @@ object NetGameHolder extends js.JSApp {
                       case Apple(_, _, _, _) => true
                     }
                   }
-                  val appleMap = ap.map(a => Point(a.x, a.y) -> Apple(a.score, a.appleType, a.frame ,a.targetAppleOpt)).toMap
+                  val appleMap = ap.map(a => Point(a.x, a.y) -> Apple(a.score, a.appleType, a.frame, a.targetAppleOpt)).toMap
                   grid.grid = appleMap
 
                 case Protocol.NoRoom =>
@@ -517,7 +517,7 @@ object NetGameHolder extends js.JSApp {
           case Apple(_, _, _, _) => true
         }
       }
-      val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.appleType,a.frame)).toMap
+      val appleMap = data.appleDetails.map(a => Point(a.x, a.y) -> Apple(a.score, a.appleType, a.frame)).toMap
       val gridMap = appleMap
       grid.grid = gridMap
     }

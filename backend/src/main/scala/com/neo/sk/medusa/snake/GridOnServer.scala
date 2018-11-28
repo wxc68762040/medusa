@@ -302,8 +302,9 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
             case x if x > 0.8 => 25
             case x => 5
           }
-          val apple = Apple(score, appleType, frameCount + randomFram)
-          feededApples ::= Ap(score, appleType, p.x, p.y, frameCount + randomFram )
+          val randomFrame = 150 + random.nextInt(100)
+          val apple = Apple(score, appleType, frameCount + randomFrame)
+          feededApples ::= Ap(score, appleType, p.x, p.y, frameCount + randomFrame)
           grid += (p -> apple)
           appleNeeded -= 1
         }
@@ -355,8 +356,9 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
               case x if x > 0.8 => 25
               case x => 5
             }
-            val apple = Apple(score, FoodType.intermediate, frameCount + randomFram,Some(targetPoint, score))
-            deadBodies ::= Ap(score, FoodType.intermediate, dead._1.x, dead._1.y, frameCount + randomFram, Some(targetPoint, score))
+            val randomFrame = 150 + random.nextInt(100)
+            val apple = Apple(score, FoodType.intermediate, frameCount + randomFrame, Some(targetPoint, score))
+            deadBodies ::= Ap(score, FoodType.intermediate, dead._1.x, dead._1.y, frameCount + randomFrame, Some(targetPoint, score))
             grid += (dead._1 -> apple)
             appleNeeded -= 1
           }
@@ -379,7 +381,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
             totalScore += x.score
             newSpeed += 0.1
             speedOrNot = true
-            apples ::= Ap(x.score, x.appleType, e.x, e.y, frameCount + randomFram)
+            apples ::= Ap(x.score, x.appleType, e.x, e.y, x.frame)
           }
         case _ => //do nothing
       }

@@ -99,7 +99,7 @@ class GameController(id: String,
 			if (!grid.justSynced) {
 				grid.update(false)
 			} else {
-				log.info(s"now sync: ${System.currentTimeMillis()}")
+				log.info(s"now sync: ${grid.frameCount}")
 				grid.sync(grid.syncData, grid.syncDataNoApp)
 				grid.syncData = None
 				grid.update(true)

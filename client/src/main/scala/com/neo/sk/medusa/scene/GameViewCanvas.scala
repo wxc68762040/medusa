@@ -101,19 +101,20 @@ class GameViewCanvas(canvas: Canvas, gameScene: GameScene) {
     ctx.drawImage(bgImage, 0 + deviationX, 0 + deviationY, Boundary.w * scaleW, Boundary.h * scaleH)
 
     apples.filterNot(a => a.x * scaleW < myHead.x * scaleW - windowWidth / 2 * myProportion || a.y * scaleH < myHead.y * scaleH - windowHeight / 2 * myProportion || a.x * scaleW > myHead.x * scaleW + windowWidth / 2 * myProportion || a.y * scaleH > myHead.y * scaleH + windowHeight / 2 * myProportion).foreach {
-      case Ap(score, _, x, y, _) =>
-      val ApColor = score match {
-        case 50 => "#ffeb3bd9"
-        case 25 => "#1474c1"
-        case _ => "#e91e63ed"
-      }
-      ctx.setFill(Color.web(ApColor))
-      ctx.setEffect(new DropShadow(5 * scale, Color.web("#FFFFFF")))
-      ctx.fillRect(x * scaleW - square * scaleW + deviationX, y * scaleH - square * scaleH + deviationY, square * 2 * scaleW, square * 2 * scaleH)
-    }
+			case Ap(score, _, x, y, _, _) =>
+				val ApColor = score match {
+					case 50 => "#ffeb3bd9"
+					case 25 => "#1474c1"
+					case _ => "#e91e63ed"
+				}
+				ctx.setFill(Color.web(ApColor))
+				ctx.setEffect(new DropShadow(5 * scale, Color.web("#FFFFFF")))
+				ctx.fillRect(x * scaleW - square * scaleW + deviationX, y * scaleH - square * scaleH + deviationY, square * 2 * scaleW, square * 2 * scaleH)
+		}
     ctx.setFill(Color.web(MyColors.otherHeader))
 
     snakes.foreach { snake =>
+      println(snake.head)
       val id = snake.id
       val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
       val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
