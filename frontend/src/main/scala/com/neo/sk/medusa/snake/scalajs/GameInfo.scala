@@ -71,6 +71,13 @@ object GameInfo {
     val centerX = windowWidth/2
     val centerY = windowHeight/2
     val snakeNum = snakes.length
+    if(state.contains("watchRecord") && snakes.filter(_.id == uid).isEmpty){
+      infoCacheCtx.font = "36px Helvetica"
+      infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
+      infoCacheCtx.shadowBlur = 0
+      infoCacheCtx.fillText("玩家未加入游戏",centerX - 150, centerY - 30)
+
+    }
     NetGameHolder.infoState match {
       case "normal" =>
         if(playerState._2) {
@@ -114,7 +121,7 @@ object GameInfo {
               infoCacheCtx.fillText("Ops, Press Space Key To Restart!", centerX - 350 * scaleW, centerY - 150 * scaleH)
               myProportion = 1.0
             }
-          }else if(state.contains("watchRecord")&& NetGameHolder.infoState == "normal"  ){
+          }else if(state.contains("watchRecord")){
             //观看记录时 观看玩家死亡
             infoCacheCtx.font = "36px Helvetica"
             infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
