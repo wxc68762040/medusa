@@ -135,7 +135,7 @@ object GameMessageReceiver {
 
 				case Protocol.FeedApples(apples) =>
 					ClientBoot.addToPlatform {
-						grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.appleType, a.targetAppleOpt))
+						grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.appleType, a.frame,a.targetAppleOpt))
 					}
 					Behavior.same
 				
