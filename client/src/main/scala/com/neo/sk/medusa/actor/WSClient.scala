@@ -20,7 +20,6 @@ import org.seekloud.byteobject.ByteObject._
 import org.seekloud.byteobject.MiddleBufferInJvm
 import org.slf4j.LoggerFactory
 import io.circe.parser.decode
-
 import java.net.URLEncoder
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
@@ -161,6 +160,7 @@ object WSClient {
 				
 			case BinaryMessage.Strict(bMsg) =>
 				//decode process.
+				GameMessageReceiver.dataCounter += bMsg.size
 				val buffer = new MiddleBufferInJvm(bMsg.asByteBuffer)
 				val msg =
 					bytesDecode[GameMessage](buffer) match {

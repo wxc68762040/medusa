@@ -20,6 +20,7 @@ object GameMessageReceiver {
 	
 	private[this] val log = LoggerFactory.getLogger(this.getClass)
 	private[this] var grid: GridOnClient = _
+	var dataCounter = 0L
 	
 	def create(): Behavior[WsMsgSource] = {
 		Behaviors.setup[WsMsgSource] { ctx =>
@@ -124,9 +125,11 @@ object GameMessageReceiver {
           }
 					Behavior.same
 
-				case Protocol.MyRank(index, myRank) =>
+				case Protocol.MyRank(id, index, myRank) =>
 					ClientBoot.addToPlatform {
-						grid.myRank = (index, myRank)
+						if(id == myId) {
+							grid.myRank = (index, myRank)
+						}
 					}
 					Behaviors.same
 

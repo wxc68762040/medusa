@@ -114,7 +114,7 @@ object GameInfo {
               infoCacheCtx.fillText("Ops, Press Space Key To Restart!", centerX - 350 * scaleW, centerY - 150 * scaleH)
               myProportion = 1.0
             }
-          }else if(state.contains("watchRecord")&& NetGameHolder.infoState == "normal"  ){
+          }else if(state.contains("watchRecord")){
             //观看记录时 观看玩家死亡
             infoCacheCtx.font = "36px Helvetica"
             infoCacheCtx.fillStyle = "rgb(250, 250, 250)"

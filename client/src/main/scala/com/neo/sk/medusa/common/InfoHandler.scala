@@ -20,7 +20,6 @@ class InfoHandler {
 
   var fpsCounter = 0
   var fps = 0.0
-  var dataCounter = 0.0
   var dataps = 0.0
   var ping = 0.0
   var infoBasicTime = 0L
@@ -29,8 +28,8 @@ class InfoHandler {
   def refreshInfo() = {
     fps = fpsCounter / ((System.currentTimeMillis() - infoBasicTime) / 1000.0)
     fpsCounter = 0
-    dataps = dataCounter/ ((System.currentTimeMillis() - infoBasicTime) / 1000.0)
-    dataCounter = 0.0
+    dataps = GameMessageReceiver.dataCounter / ((System.currentTimeMillis() - infoBasicTime) / 1000.0)
+    GameMessageReceiver.dataCounter = 0
     infoBasicTime = System.currentTimeMillis()
 
 //    val pingMsg: Protocol.UserAction = NetTest(GameController.grid.myId, infoBasicTime)
