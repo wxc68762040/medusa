@@ -71,13 +71,7 @@ object GameInfo {
     val centerX = windowWidth/2
     val centerY = windowHeight/2
     val snakeNum = snakes.length
-    if(state.contains("watchRecord") && snakes.filter(_.id == uid).isEmpty){
-      infoCacheCtx.font = "36px Helvetica"
-      infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
-      infoCacheCtx.shadowBlur = 0
-      infoCacheCtx.fillText("玩家未加入游戏",centerX - 150, centerY - 30)
 
-    }
     NetGameHolder.infoState match {
       case "normal" =>
         if(playerState._2) {
@@ -98,6 +92,12 @@ object GameInfo {
               drawTextLine(infoCacheCtx, s"snakesNumber: $snakeNum", leftBegin, 7, baseLine, scaleW, scaleH)
 
             case None =>
+              if(state.contains("watchRecord")) {
+                infoCacheCtx.font = "36px Helvetica"
+                infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
+                infoCacheCtx.shadowBlur = 0
+                infoCacheCtx.fillText("玩家未加入游戏", centerX - 150, centerY - 30)
+              }
           }
         }else{
           if(state.contains("playGame")||state.contains("watchGame")){
@@ -131,6 +131,7 @@ object GameInfo {
           }
 
         }
+
       case "recordNotExist" =>
         infoCacheCtx.font = s"${36 * scaleW}px Helvetica"
         infoCacheCtx.fillStyle = "rgb(250, 250, 250)"

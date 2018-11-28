@@ -306,7 +306,7 @@ object UserActor {
 
           case UserFrontActor(_) => //已经在游戏中的玩家又再次加入
             ctx.unwatch(frontActor)
-						frontActor ! YouHaveLogined
+						 frontActor ! YouHaveLogined
             roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
             roomActor ! RoomActor.UserLeft(playerId)
             userManager ! UserManager.UserGone(playerId)
