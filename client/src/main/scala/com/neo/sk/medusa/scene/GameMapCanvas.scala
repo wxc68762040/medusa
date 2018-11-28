@@ -70,9 +70,9 @@ class GameMapCanvas(canvas: Canvas, gameScene: GameScene) {
           mapCtx.setStroke(Color.WHITE)
           mapCtx.setGlobalAlpha(0.8)
           val recX = (joints.head.x * LittleMap.w) * scaleW / Boundary.w - GameScene.initWindowWidth.toFloat / Boundary.w * LittleMap.w * scaleW / 2
-          val recY = (joints.head.y * LittleMap.h) * scaleH / Boundary.h - GameScene.initWindowHeight.toFloat / Boundary.h * LittleMap.h * scaleW / 2 + 600 * scaleH
+          val recY = (joints.head.y * LittleMap.h) * scaleH / Boundary.h - GameScene.initWindowHeight.toFloat / Boundary.h * LittleMap.h * scaleH / 2 + 600 * scaleH
           val recW = GameScene.initWindowWidth.toFloat / Boundary.w * LittleMap.w * scaleW
-          val recH = GameScene.initWindowHeight.toFloat / Boundary.h * LittleMap.h * scaleW
+          val recH = GameScene.initWindowHeight.toFloat / Boundary.h * LittleMap.h * scaleH
           mapCtx.moveTo(recX, recY)
           mapCtx.lineTo(recX, recY + recH)
           mapCtx.lineTo(recX + recW, recY + recH)
