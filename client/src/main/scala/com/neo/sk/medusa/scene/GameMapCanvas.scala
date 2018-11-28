@@ -39,9 +39,9 @@ class GameMapCanvas(canvas: Canvas, gameScene: GameScene) {
     val allSnakes = data.snakes
     val maxLength = if (allSnakes.nonEmpty) allSnakes.sortBy(r =>(r.length,r.id)).reverse.head.head else Point(0,0)
     val maxId = if (allSnakes.nonEmpty) allSnakes.sortBy(r => (r.length,r.id)).reverse.head.id else 0L
-    mapCtx.save()
+//    mapCtx.save()
     mapCtx.drawImage(maxImage, (maxLength.x * LittleMap.w) * scaleW / Boundary.w - 7, 600 * scaleH + maxLength.y * LittleMap.h * scaleH / Boundary.h - 7, 15 * scaleW, 15 * scaleH)
-    mapCtx.restore()
+//    mapCtx.restore()
 
     if(allSnakes.nonEmpty && allSnakes.exists(_.id == uid)) {
 
@@ -64,14 +64,24 @@ class GameMapCanvas(canvas: Canvas, gameScene: GameScene) {
             joints = joints.dequeue._2
           }
         }
-        mapCtx.setFill(Color.WHITE)
         joints = joints.reverse.enqueue(tail)
-        if(snake.id == grid.myId){
+        if(snake.id == grid.myId) {
+          mapCtx.beginPath()
           mapCtx.setStroke(Color.WHITE)
           mapCtx.setGlobalAlpha(0.8)
-          mapCtx.rect((joints.head.x * LittleMap.w) * scaleW / Boundary.w - GameScene.initWindowWidth.toFloat / Boundary.w * LittleMap.w * scaleW / 2 , ((joints.head.y * LittleMap.h) * scaleH / Boundary.h - GameScene.initWindowHeight.toFloat / Boundary.h * LittleMap.h * scaleW / 2) + 600 * scaleH, GameScene.initWindowWidth.toFloat / Boundary.w * LittleMap.w * scaleW, GameScene.initWindowHeight.toFloat / Boundary.h * LittleMap.h * scaleW)
+          val recX = (joints.head.x * LittleMap.w) * scaleW / Boundary.w - GameScene.initWindowWidth.toFloat / Boundary.w * LittleMap.w * scaleW / 2
+          val recY = (joints.head.y * LittleMap.h) * scaleH / Boundary.h - GameScene.initWindowHeight.toFloat / Boundary.h * LittleMap.h * scaleW / 2 + 600 * scaleH
+          val recW = GameScene.initWindowWidth.toFloat / Boundary.w * LittleMap.w * scaleW
+          val recH = GameScene.initWindowHeight.toFloat / Boundary.h * LittleMap.h * scaleW
+          mapCtx.moveTo(recX, recY)
+          mapCtx.lineTo(recX, recY + recH)
+          mapCtx.lineTo(recX + recW, recY + recH)
+          mapCtx.lineTo(recX + recW, recY)
+          mapCtx.lineTo(recX, recY)
           mapCtx.stroke()
+          mapCtx.closePath()
         }
+        mapCtx.clearRect(0, 0, mapWidth, 600 * scaleH)
         if(snake.id != maxId && snake.id == grid.myId) {
           mapCtx.beginPath()
           mapCtx.setGlobalAlpha(0.5)
@@ -85,11 +95,6 @@ class GameMapCanvas(canvas: Canvas, gameScene: GameScene) {
           mapCtx.closePath()
         }
       }
-    } else {
-      mapCtx.clearRect(0,0,mapWidth, mapHeight)
-      mapCtx.setGlobalAlpha(0.5)
-      mapCtx.setFill(Color.BLACK)
-      mapCtx.fillRect(0,600 * scaleH ,mapWidth,mapHeight - 600 * scaleH)
     }
   }
 
