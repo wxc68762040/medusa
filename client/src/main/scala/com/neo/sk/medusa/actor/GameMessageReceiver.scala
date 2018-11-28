@@ -125,9 +125,11 @@ object GameMessageReceiver {
           }
 					Behavior.same
 
-				case Protocol.MyRank(index, myRank) =>
+				case Protocol.MyRank(id, index, myRank) =>
 					ClientBoot.addToPlatform {
-						grid.myRank = (index, myRank)
+						if(id == myId) {
+							grid.myRank = (index, myRank)
+						}
 					}
 					Behaviors.same
 

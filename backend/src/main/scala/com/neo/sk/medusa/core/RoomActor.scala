@@ -118,12 +118,10 @@ object RoomActor {
           case t: UserDead =>
             log.info(s"room $roomId lost a player ${t.userId}")
             //grid.removeSnake(t.userId)
-            deadCommonInfo = Protocol.DeadInfo( t.userId,t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer)
-            dispatchTo(Protocol.DeadInfo(t.userId, t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer), userMap(t.userId)._1,watcherMap,t.userId)
-
-            dispatch(userMap,watcherMap,Protocol.SnakeDead(t.userId))
-
-            eventList.append(Protocol.DeadInfo(t.userId,t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer))
+            deadCommonInfo = Protocol.DeadInfo(t.userId, t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer)
+            dispatchTo(Protocol.DeadInfo(t.userId, t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer), userMap(t.userId)._1, watcherMap, t.userId)
+            dispatch(userMap, watcherMap, Protocol.SnakeDead(t.userId))
+            eventList.append(Protocol.DeadInfo(t.userId, t.deadInfo.name, t.deadInfo.length, t.deadInfo.kill, t.deadInfo.killerId, t.deadInfo.killer))
             eventList.append(Protocol.SnakeDead(t.userId))
 //            userMap.remove(t.userId)
             deadUserList += t.userId
@@ -140,7 +138,7 @@ object RoomActor {
             if (t.frame >= grid.frameCount) {
               grid.addActionWithFrame(t.id, t.keyCode, t.frame)
               eventList.append(Protocol.SnakeAction(t.id, t.keyCode, t.frame))
-              dispatch(userMap,watcherMap,Protocol.SnakeAction(t.id, t.keyCode, t.frame))
+              dispatch(userMap, watcherMap, Protocol.SnakeAction(t.id, t.keyCode, t.frame))
             } else if (t.frame >= grid.frameCount - Protocol.savingFrame + Protocol.advanceFrame) {
               grid.addActionWithFrame(t.id, t.keyCode, grid.frameCount)
               eventList.append(Protocol.SnakeAction(t.id, t.keyCode, grid.frameCount))
@@ -162,8 +160,7 @@ object RoomActor {
 
           case t:UserLeft =>
             grid.removeSnake(t.playerId)
-            dispatch( userMap,watcherMap,Protocol.SnakeDead(t.playerId))
-
+            dispatch(userMap, watcherMap, Protocol.SnakeDead(t.playerId))
             eventList.append(Protocol.SnakeDead(t.playerId))
             if (isRecord) {
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserLeftRoom(t.playerId, userMap(t.playerId)._2, grid.frameCount)
@@ -199,7 +196,7 @@ object RoomActor {
 							snakeState._2.foreach { s =>
                 if(userMap.get(s._1).nonEmpty) {
                   dispatchTo(Protocol.AddSnakes(snakeState._1), userMap(s._1)._1, watcherMap, s._1)
-                  val msg = ByteString(grid.getGridSyncData.fillMiddleBuffer(sendBuffer).result())
+                  val msg = ByteString(Protocol.AddSnakes(snakeState._1).fillMiddleBuffer(sendBuffer).result())
                   syncLength += msg.length
                 }
 							}
@@ -219,7 +216,7 @@ object RoomActor {
 
             if (speedUpInfo.nonEmpty) {
               eventList.append(Protocol.SpeedUp(speedUpInfo))
-              dispatch( userMap,watcherMap,Protocol.SpeedUp(speedUpInfo))
+              dispatch(userMap,watcherMap,Protocol.SpeedUp(speedUpInfo))
               val msg = ByteString(Protocol.SpeedUp(speedUpInfo).fillMiddleBuffer(sendBuffer).result())
               speedLength += msg.length * userMap.size
             }
@@ -241,8 +238,8 @@ object RoomActor {
                 val myScore =
                   grid.currentRank.filter(s => s.id == k).map(r => Score(r.id, r.n, r.k, r.l)).headOption.getOrElse(Score("", "", 0, 0))
                 val myIndex = grid.currentRank.sortBy(s => s.l).reverse.indexOf(myScore) + 1
-                eventList.append(Protocol.MyRank(myIndex, myScore))
-                dispatchTo(Protocol.MyRank(myIndex, myScore), u._1, watcherMap, k)
+                eventList.append(Protocol.MyRank(k, myIndex, myScore))
+                dispatchTo(Protocol.MyRank(k, myIndex, myScore), u._1, watcherMap, k)
               }
             }
             if (tickCount % 300 == 1) {
