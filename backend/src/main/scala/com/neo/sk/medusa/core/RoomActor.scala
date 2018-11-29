@@ -63,10 +63,10 @@ object RoomActor {
   private case object TimerKey4CloseRec
 
   final case class ChildDead[U](name: String, childRef: ActorRef[U]) extends Command
-  case class GiveYouApple(playerId:String,waterId:String) extends Command
+  case class GiveYouApple(playerId:String, watcherId:String) extends Command
 
   private var deadCommonInfo = Protocol.DeadInfo("","",0,0,"","")
-  val sendBuffer = new MiddleBufferInJvm(40960)
+  val sendBuffer = new MiddleBufferInJvm(163840)
 
   var keyLength = 0l
   var feedAppLength = 0l
@@ -287,24 +287,23 @@ object RoomActor {
           case CloseRecorder =>
             getGameRecorder(ctx, grid, roomId) ! GameRecorder.RoomEmpty
             Behaviors.same
-
-
-
+            
           case t: YourUserIsWatched =>
-//            userMap.get(t.playerId).foreach(a => a._1 ! UserActor.YouAreWatched(t.watcherId, t.watcherRef))
-//            println("i will print this word every refresh  :"+deadUserList)
-            if(watcherMap.contains(t.playerId)){ //如果player已经存在就不在创建对应的观看者map
+            if(watcherMap.contains(t.playerId)) { //如果player已经存在就不在创建对应的观看者map
               //检查该watcher是否在其他的player的观看map中，如果存在，则删除
-              watcherMap.map{ k =>
-                if(k._1 != t.playerId){
-                  if(k._2.contains(t.watcherId))watcherMap.get(k._1).get.remove(t.watcherId)
+              watcherMap.filter(_._1 != t.playerId).values.foreach { e =>
+                if (e.contains(t.watcherId)) {
+                  e.remove(t.watcherId)
                 }
               }
-              watcherMap.get(t.playerId).get.put(t.watcherId, t.watcherRef)
-            }else{
-              val watcherMapIn = new mutable.HashMap[String,ActorRef[WatcherActor.Command]]()
+              watcherMap(t.playerId).put(t.watcherId, t.watcherRef)
+              watcherMap.filter(_._2.isEmpty).keys.foreach { key =>
+                watcherMap.remove(key)
+              }
+            } else {
+              val watcherMapIn = new mutable.HashMap[String, ActorRef[WatcherActor.Command]]()
               watcherMapIn.put(t.watcherId, t.watcherRef)
-              watcherMap.put(t.playerId,watcherMapIn)
+              watcherMap.put(t.playerId, watcherMapIn)
             }
             if(deadUserList.contains(t.playerId)){
               t.watcherRef ! WatcherActor.PlayerWait
@@ -315,28 +314,31 @@ object RoomActor {
 
           case t:GiveYouApple =>
             val syncData = grid.getGridSyncData
-            if(watcherMap.nonEmpty && watcherMap.get(t.playerId).isDefined){
-              if(watcherMap(t.playerId).nonEmpty){
-                if(watcherMap(t.playerId).get(t.waterId).isDefined){
-                  val watcherRef = watcherMap(t.playerId)(t.waterId)
-                  watcherRef ! WatcherActor.TransInfo(syncData)
-                }else{
-                  var emptyFlag = 0
-                  watcherMap.foreach{ k=>
-                    if(k._2.nonEmpty && emptyFlag==0){
-                      val watcherRef = watcherMap(k._1)(t.waterId)
-                      watcherRef ! WatcherActor.TransInfo(syncData)
-                      emptyFlag = 1
-                    }
-                  }
-                }
+            if(watcherMap.nonEmpty && watcherMap.get(t.playerId).isDefined) {
+              if (watcherMap(t.playerId).get(t.watcherId).isDefined) {
+                val watcherRef = watcherMap(t.playerId)(t.watcherId)
+                watcherRef ! WatcherActor.TransInfo(syncData)
               }
+//              else {
+//                var emptyFlag = 0
+//                watcherMap.foreach { k =>
+//                  if (k._2.nonEmpty && emptyFlag == 0) {
+//                    val watcherRef = watcherMap(k._1)(t.watcherId)
+//                    watcherRef ! WatcherActor.TransInfo(syncData)
+//                    emptyFlag = 1
+//                  }
+//                }
+//              }
             }
-
             Behavior.same
 
           case t: YouAreUnwatched =>
-            if(!watcherMap.get(t.playerId).isEmpty) watcherMap.get(t.playerId).get.remove(t.watcherId)
+            if(watcherMap.get(t.playerId).nonEmpty) {
+              watcherMap(t.playerId).remove(t.watcherId)
+            }
+            watcherMap.filter(_._2.isEmpty).keys.foreach { key =>
+              watcherMap.remove(key)
+            }
             Behaviors.same
 
           case ChildDead(name, childRef) =>
