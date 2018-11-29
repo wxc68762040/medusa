@@ -309,7 +309,6 @@ object NetGameHolder extends js.JSApp {
             //            GameView.canvas.focus()
             encodedData match {
               case Right(data) =>
-                println(data)
                 data match {
                 case Protocol.JoinRoomSuccess(id, roomId) =>
                   myId = id
