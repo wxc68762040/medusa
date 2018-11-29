@@ -109,7 +109,7 @@ object RoomActor {
             //dispatchTo(t.playerId, UserActor.DispatchMsg(Protocol.Id(t.playerId)), userMap)
             eventList.append(Protocol.NewSnakeJoined(t.playerId, t.playerName, roomId))
             dispatch( userMap,watcherMap,Protocol.NewSnakeJoined(t.playerId, t.playerName, roomId))
-            dispatch(userMap,watcherMap,Protocol.DeadListBuff(deadUserList))
+            dispatch(mutable.HashMap.empty[String, (ActorRef[UserActor.Command], String, Long)],watcherMap,Protocol.DeadListBuff(deadUserList))
             if(isRecord){
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserJoinRoom(t.playerId, t.playerName, grid.frameCount)
             }
@@ -185,7 +185,7 @@ object RoomActor {
             val snakeState = grid.genWaitingSnake()
             if (snakeState._1.nonEmpty) {
 							eventList.append(grid.getGridSyncData)
-							dispatch(userMap, watcherMap, grid.getGridSyncData)
+//							dispatch(userMap, watcherMap, grid.getGridSyncData)
 							snakeState._1.foreach { s =>
                 if(userMap.get(s.id).nonEmpty) {
                   dispatchTo(grid.getGridSyncData, userMap(s.id)._1, watcherMap, s.id)
@@ -225,7 +225,7 @@ object RoomActor {
               if ((tickCount - u._3) % 20 == 5) {
                 val noAppData = grid.getGridSyncDataNoApp
                 dispatchTo(noAppData, u._1, watcherMap, k)
-
+                eventList.append(noAppData)
                 val msg = ByteString(noAppData.fillMiddleBuffer(sendBuffer).result())
                 syncLength += msg.length
               }
