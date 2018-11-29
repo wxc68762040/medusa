@@ -20,7 +20,6 @@ import org.seekloud.byteobject.ByteObject._
 import org.seekloud.byteobject.MiddleBufferInJvm
 import org.slf4j.LoggerFactory
 import io.circe.parser.decode
-
 import java.net.URLEncoder
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
@@ -117,7 +116,6 @@ object WSClient {
 			case TextMessage.Strict(msg) =>
 				import io.circe.generic.auto._
 				import scala.concurrent.ExecutionContext.Implicits.global
-
 				log.debug(s"msg from webSocket: $msg")
 				val gameId = AppSettings.gameId
         if(msg.length > 50) {
@@ -147,10 +145,9 @@ object WSClient {
 				//decode process.
 				val buffer = new MiddleBufferInJvm(bMsg.asByteBuffer)
 				bytesDecode[WsResponse](buffer) match {
-					case Right(v) => v
+					case Right(v) =>
 					case Left(e) =>
 						println(s"decode error: ${e.message}")
-						TextMsg("decode error")
 				}
 		}
 	}
@@ -163,6 +160,7 @@ object WSClient {
 				
 			case BinaryMessage.Strict(bMsg) =>
 				//decode process.
+				GameMessageReceiver.dataCounter += bMsg.size
 				val buffer = new MiddleBufferInJvm(bMsg.asByteBuffer)
 				val msg =
 					bytesDecode[GameMessage](buffer) match {

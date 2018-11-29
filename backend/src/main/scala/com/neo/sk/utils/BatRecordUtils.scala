@@ -32,7 +32,7 @@ object BatRecordUtils extends HttpUtil {
 
   def outputBatRecord(playerRecordWrap: PlayerRecordWrap, token:String) = {
     val data = playerRecordWrap.asJson.noSpaces
-    val url = esheepProtocol + "://" + esheepHost + "/esheep/api/gameServer/addPlayerRecord?" + token
+    val url = esheepProtocol + "://" + esheepHost + "/esheep/api/gameServer/addPlayerRecord?token=" + token
     postJsonRequestSend("post",url,Nil,data).map{
       case Right(jsonStr) =>
         decode[PutRecordRsp](jsonStr) match {

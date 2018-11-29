@@ -9,7 +9,7 @@ import akka.util.ByteString
 import org.seekloud.byteobject.ByteObject
 import org.slf4j.LoggerFactory
 import com.neo.sk.medusa.Boot.{roomManager, userManager}
-import com.neo.sk.medusa.core.UserManager.YourUserUnwatched
+import com.neo.sk.medusa.core.RoomManager.YourUserUnwatched
 
 import scala.collection._
 import scala.language.implicitConversions
@@ -39,8 +39,7 @@ object WatcherManager {
 
   case class GetPlayerWatchedRsp(watcherId:String, playerId:String) extends Command
 
-  case class WatcherGone(watcherId:String) extends Command
-
+  case class WatcherGone(watchedId:String,watcherId:String,roomId:Long) extends Command
   val behaviors: Behavior[Command] = {
     log.debug(s"WatchManager start...")
     Behaviors.setup[Command] {
@@ -63,9 +62,9 @@ object WatcherManager {
 //              getWatcherActor(ctx, t.watcherId) ! WatcherActor.KillSelf
 //            }
             val watcher = getWatcherActor(ctx, t.watcherId, t.roomId)
-            t.replyTo ! getWebSocketFlow(watcher)
-            watcherMap.put(t.watcherId,("", t.roomId))
+            watcherMap.put(t.watcherId, (t.playerId, t.roomId))
             roomManager ! RoomManager.GetPlayerByRoomId(t.playerId, t.roomId, t.watcherId, watcher)
+            t.replyTo ! getWebSocketFlow(watcher)
             Behaviors.same
 
           case t: GetPlayerWatchedRsp =>
@@ -79,7 +78,8 @@ object WatcherManager {
           case t: WatcherGone =>
             val playerWatched = watcherMap.get(t.watcherId).map(_._1)
             if(playerWatched.nonEmpty) {
-              userManager ! YourUserUnwatched(playerWatched.get, t.watcherId)
+
+              roomManager ! YourUserUnwatched(playerWatched.get, t.watcherId,t.roomId)
               watcherMap.remove(t.watcherId)
             }
             Behaviors.same
@@ -88,6 +88,8 @@ object WatcherManager {
             log.info(s"WatcherActor $name is dead ")
             ctx.unwatch(childRef)
             Behaviors.same
+
+
 
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")
@@ -130,7 +132,7 @@ object WatcherManager {
       //.map { msg => TextMessage.Strict(write(msg)) // ... pack outgoing messages into WS JSON messages ...
       .map {
       case message: GameMessage =>
-        val sendBuffer = new MiddleBufferInJvm(409600)
+        val sendBuffer = new MiddleBufferInJvm(163840)
         BinaryMessage.Strict(ByteString(
           //encoded process
           message.fillMiddleBuffer(sendBuffer).result()

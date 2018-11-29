@@ -1,5 +1,9 @@
 package com.neo.sk.medusa.snake
 
+import scala.collection.mutable.ListBuffer
+
+import scala.collection.mutable.ListBuffer
+
 /**
   * User: Taoz
   * Date: 8/29/2016
@@ -20,15 +24,19 @@ object Protocol {
 
   case class GridDataSync(
     frameCount: Long,
-    snakes: List[SnakeInfo],
-    appleDetails: Option[List[Ap]],
-    timestamp: Long
+    snakes: List[Snake4Client],
+    appleDetails: List[Ap],
+    timeStamp:Long = 0l
   ) extends GameMessage
 
+  case class GridDataSyncNoApp(
+    frameCount: Long,
+    snakes: List[Snake4Client]
+  ) extends GameMessage
 
   case object YouHaveLogined extends GameMessage
 
-  case object PlayerWaitingJion extends GameMessage
+  case object PlayerWaitingJoin extends GameMessage
 
   case object RecordNotExist extends GameMessage
 
@@ -60,7 +68,9 @@ object Protocol {
   case class DeadList(
     deadList: List[String]
   ) extends GameMessage
-
+  case class DeadListBuff(
+                         deadList: ListBuffer[String]
+                         ) extends GameMessage
   case class KillList(
     playerID: String,
     killList: List[(String, String)]
@@ -78,19 +88,22 @@ object Protocol {
   case class SnakeAction(id: String, keyCode: Int, frame: Long) extends GameMessage
 
   case object ReplayOver extends GameMessage
-
-  case class SnakeDead(id: String, name: String) extends GameMessage
+  case class AddSnakes(
+                        snakes:List[Snake4Client]
+                      ) extends GameMessage
+  case class SnakeDead(id: String) extends GameMessage
 
   case object NoRoom extends GameMessage
-
+  case class IAmAliveAgain(id:String) extends GameMessage
   //case class DistinctSnakeAction(keyCode: Int, frame: Long, frontFrame: Long) extends GameMessage
 
-  case class Ranks(currentRank: List[Score], historyRank: List[Score]) extends GameMessage
-
+  case class Ranks(currentRank: List[Score],historyRank: List[Score]) extends GameMessage
+  case class MyRank(id: String, index: Int, myRank: Score) extends GameMessage
   case class NetDelayTest(createTime: Long) extends GameMessage
 
   case class JoinRoomSuccess(playerId:String,roomId:Long)extends GameMessage
-  case class JoinRoomFailure(playerId:String,roomId:Long,errorCode:Int,msg:String)extends GameMessage
+
+  case class JoinRoomFailure(playerId:String,roomId:Long,errorCode:Int,msg:String) extends GameMessage
 
 
   sealed trait WsSendMsg
@@ -126,7 +139,7 @@ object Protocol {
 
   val square = 4
 
-  val fSpeed = 30
+  val fSpeed = 10
 
   val foodRate = 0.067 //尸体生成食物的倍率
 
@@ -138,7 +151,7 @@ object Protocol {
 
   //val savingFrame = 5 //保存的帧数
 
-  val netInfoRate = 1000
+  val netInfoRate = 5000
   
   val lagLimitTime = 6 * 1000 //距离上次接受同步帧超过6秒，停止绘制及前端更新
 }

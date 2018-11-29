@@ -20,6 +20,7 @@ object GameMessageReceiver {
 	
 	private[this] val log = LoggerFactory.getLogger(this.getClass)
 	private[this] var grid: GridOnClient = _
+	var dataCounter = 0L
 	
 	def create(): Behavior[WsMsgSource] = {
 		Behaviors.setup[WsMsgSource] { ctx =>
@@ -64,8 +65,8 @@ object GameMessageReceiver {
 					}
 					running(id, roomId, gameController)
 					
-				case Protocol.JoinRoomFailure(_, _, errCode, msg) =>
-					log.error(s"join room failed $errCode: $msg")
+				case Protocol.JoinRoomFailure(_, _, errCode, errMsg) =>
+					log.error(s"join room failed $errCode: $errMsg")
 					ClientBoot.addToPlatform {
 						gameController.gameStop()
 					}
@@ -85,9 +86,8 @@ object GameMessageReceiver {
 				case Protocol.NewSnakeJoined(id, user, roomId) =>
 					log.info(s"new user $user joined")
 					Behavior.same
-
 				
-				case Protocol.SnakeDead(id, user) =>
+				case Protocol.SnakeDead(id) =>
 					ClientBoot.addToPlatform {
 						grid.removeSnake(id)
 					}
@@ -124,10 +124,18 @@ object GameMessageReceiver {
             grid.historyRank = history
           }
 					Behavior.same
-				
+
+				case Protocol.MyRank(id, index, myRank) =>
+					ClientBoot.addToPlatform {
+						if(id == myId) {
+							grid.myRank = (index, myRank)
+						}
+					}
+					Behaviors.same
+
 				case Protocol.FeedApples(apples) =>
 					ClientBoot.addToPlatform {
-						grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.life, a.appleType, a.targetAppleOpt))
+						grid.grid ++= apples.map(a => Point(a.x, a.y) -> Apple(a.score, a.appleType, a.frame,a.targetAppleOpt))
 					}
 					Behavior.same
 				
@@ -144,11 +152,11 @@ object GameMessageReceiver {
 				case Protocol.SpeedUp(speedInfo) =>
 					ClientBoot.addToPlatform {
 						speedInfo.foreach { info =>
-							val oldSnake = grid.snakes.get(info.snakeId)
+							val oldSnake = grid.snakes4client.get(info.snakeId)
 							if (oldSnake.nonEmpty) {
-								val freeFrame = if (info.speedUpOrNot) 0 else oldSnake.get.freeFrame + 1
-								val newSnake = oldSnake.get.copy(speed = info.newSpeed, freeFrame = freeFrame)
-								grid.snakes += (info.snakeId -> newSnake)
+//								val freeFrame = if (info.speedUpOrNot) 0 else oldSnake.get.freeFrame + 1
+								val newSnake = oldSnake.get.copy(speed = info.newSpeed)
+								grid.snakes4client += (info.snakeId -> newSnake)
 							}
 						}
 					}
@@ -169,31 +177,34 @@ object GameMessageReceiver {
 					}
 					Behavior.same
 				
-				case Protocol.NetDelayTest(createTime) =>
-					ClientBoot.addToPlatform {
-						val receiveTime = System.currentTimeMillis()
-					}
-					//					netInfoHandler.ping = receiveTime - createTime
+				case data:Protocol.GridDataSyncNoApp =>
+					setLagTrigger
+					grid.syncDataNoApp = Some(data)
+					grid.justSynced = true
+					Behavior.same
+				
+				case Protocol.NetDelayTest(_) =>
 					Behavior.same
 				
 				case Protocol.DeadInfo(id,myName, myLength, myKill, killerId, killer) =>
-					if(id==myId){
-            ClientBoot.addToPlatform {
-            grid.deadName = myName
-            grid.deadLength = myLength
-            grid.deadKill = myKill
-            grid.yourKiller = killer
-          }
-          }
+					ClientBoot.addToPlatform {
+						log.info(s"receive DeadInfo")
+						if (id == myId) {
+							grid.deadName = myName
+							grid.deadLength = myLength
+							grid.deadKill = myKill
+							grid.yourKiller = killer
+						}
+					}
 					Behavior.same
 				
 				case Protocol.DeadList(deadList) =>
 					ClientBoot.addToPlatform {
-						deadList.foreach(grid.snakes -= _)
+						deadList.foreach(grid.snakes4client -= _)
 					}
 					Behavior.same
 				
-				case Protocol.KillList(playerID, killList) =>
+				case Protocol.KillList(_, killList) =>
 					ClientBoot.addToPlatform {
 						grid.waitingShowKillList :::= killList.map(e => (e._1, e._2, System.currentTimeMillis()))
 					}
@@ -201,10 +212,6 @@ object GameMessageReceiver {
 				
 				case FailMsgServer(_) =>
 					log.info("fail msg server")
-					Behavior.same
-					
-				case HeartBeat =>
-					log.info(s"get HeartBeat")
 					Behavior.same
 					
 				case LagSet =>

@@ -19,12 +19,23 @@ import com.neo.sk.medusa.snake.Protocol._
 import net.sf.ehcache.transaction.xa.commands.Command
 import com.neo.sk.medusa.protocol.RecordApiProtocol
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.duration._
 
 object UserManager {
 
   private val log = LoggerFactory.getLogger(this.getClass)
 
+  private var msgLength = 0l
+
   sealed trait Command
+
+  final private case object TimerForMsgClear extends Command
+
+  final private case object Timer4MsgAdd extends Command
+
+  final private case object ClearMsgLength extends Command
+
+  final private case object StartMsgAddLength extends Command
 
   final case class ChildDead[U](name: String, childRef: ActorRef[U]) extends Command
 
@@ -32,7 +43,13 @@ object UserManager {
 
   final case class GetReplayWebSocketFlow(recordId: Long, playerId: String, watchPlayerId: String, frame: Long, replyTo: ActorRef[Flow[Message, Message, Any]]) extends Command
 
-  case class YourUserUnwatched(playerId: String, watcherId: String) extends Command
+  /**
+    *
+    * @param playerId
+    * @param watcherId
+    * @param roomId
+    */
+  case class YourUserUnwatched(playerId: String, watcherId: String,roomId:Long) extends Command
 
   case class GetRecordFrame(recordId:Long, playerId:String, sender:ActorRef[RecordApiProtocol.FrameInfo]) extends Command
 
@@ -49,6 +66,7 @@ object UserManager {
             val userRoomMap = mutable.HashMap.empty[String, (Long, String)]
             val userRecMap = mutable.HashMap.empty[String, UserActor.ReplayGame]
             val allUser = mutable.HashMap.empty[String, ActorRef[UserActor.Command]]
+            timer.startSingleTimer(Timer4MsgAdd, ClearMsgLength, 10000.milli)
             idle(userRoomMap,userRecMap, allUser)
         }
     }
@@ -102,6 +120,40 @@ object UserManager {
             }
             Behaviors.same
 
+//          case t: YourUserUnwatched =>
+//            getUserActor(ctx, t.playerId, "") ! UserActor.YouAreUnwatched(t.watcherId)
+//            Behaviors.same
+          case StartMsgAddLength =>
+            msgLength = 0
+            RoomActor.keyLength = 0l
+            RoomActor.eatAppLength = 0l
+            RoomActor.feedAppLength = 0l
+            RoomActor.syncLength = 0l
+            RoomActor.speedLength = 0l
+            RoomActor.rankLength = 0l
+            timer.startSingleTimer(TimerForMsgClear,ClearMsgLength,100.milli)
+            Behaviors.same
+
+          case ClearMsgLength =>
+            log.info(s"msg total length  is ${msgLength/10}B/s ")
+            log.info(s"keyLength:${RoomActor.keyLength/10}B/s")
+            log.info(s"eatFoodLength:${RoomActor.eatAppLength/10}B/s")
+            log.info(s"feedAppLength:${RoomActor.feedAppLength/10}B/s")
+            log.info(s"syncLength:${RoomActor.syncLength/10}B/s")
+            log.info(s"speedLength:${RoomActor.speedLength/10}B/s")
+            log.info(s"rankLength:${RoomActor.rankLength/10}B/s")
+            msgLength = 0
+            RoomActor.keyLength = 0l
+            RoomActor.eatAppLength = 0l
+            RoomActor.feedAppLength = 0l
+            RoomActor.syncLength = 0l
+            RoomActor.speedLength = 0l
+            RoomActor.rankLength = 0l
+
+            timer.startSingleTimer(Timer4MsgAdd, ClearMsgLength
+              ,10000.milli)
+            Behaviors.same
+
           case t: YourUserUnwatched =>
             getUserActor(ctx, t.playerId, "") ! UserActor.YouAreUnwatched(t.watcherId)
             Behaviors.same
@@ -142,6 +194,7 @@ object UserManager {
 
         case BinaryMessage.Strict(bMsg) =>
           //decode process.
+
           val buffer = new MiddleBufferInJvm(bMsg.asByteBuffer)
           val msg =
             bytesDecode[UserAction](buffer) match {
@@ -159,11 +212,14 @@ object UserManager {
       .via(UserActor.flow(userActor)) // ... and route them through the chatFlow ...
       .map { //... pack outgoing messages into WS JSON messages ...
       case message: GameMessage =>
-        val sendBuffer = new MiddleBufferInJvm(40960)
-        BinaryMessage.Strict(ByteString(
+        val sendBuffer = new MiddleBufferInJvm(163840)
+        val msg = ByteString(
           //encoded process
           message.fillMiddleBuffer(sendBuffer).result()
-        ))
+        )
+        msgLength += msg.length
+        val a = BinaryMessage.Strict(msg)
+        a
 
       case _ =>
         TextMessage.apply("")
@@ -196,11 +252,12 @@ object UserManager {
       .via(UserActor.watchFlow(userActor)) // ... and route them through the chatFlow ...
       .map { //... pack outgoing messages into WS JSON messages ...
       case message: GameMessage =>
-        val sendBuffer = new MiddleBufferInJvm(40960)
-        BinaryMessage.Strict(ByteString(
+        val sendBuffer = new MiddleBufferInJvm(163840)
+        val msg = ByteString(
           //encoded process
-          message.fillMiddleBuffer(sendBuffer).result()
-        ))
+          message.fillMiddleBuffer(sendBuffer).result())
+        msgLength += msg.length
+        BinaryMessage.Strict(msg)
 
       case _ =>
         TextMessage.apply("")

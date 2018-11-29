@@ -8,6 +8,7 @@ import com.neo.sk.medusa.core.RoomActor.DeadInfo
 import com.neo.sk.medusa.snake.Protocol.{fSpeed, square}
 import org.slf4j.LoggerFactory
 
+import scala.collection.mutable.ListBuffer
 import scala.util.Random
 import scala.util.matching.Regex
 
@@ -25,7 +26,6 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
 
   override def info(msg: String): Unit = log.info(msg)
 
-
   private[this] var waitingJoin = Map.empty[String, String]
   private[this] var feededApples: List[Ap] = Nil
   private[this] var deadBodies: List[Ap] = Nil
@@ -34,6 +34,9 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
 
 
   var currentRank = List.empty[Score]
+  var topCurrentRank = List.empty[Score]
+ // var myRank =Map.empty[Int, Score]
+  //var myId = ""
   private[this] var historyRankMap = Map.empty[String, Score]
   var historyRankList = historyRankMap.values.toList.sortBy(_.l).reverse
 
@@ -58,7 +61,8 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
 
 
   def genWaitingSnake() = {
-    val snakeNumber = waitingJoin.size
+    val oldSnakes = snakes
+    val newSnakes = ListBuffer[Snake4Client]()
     waitingJoin.filterNot(kv => snakes.contains(kv._1)).foreach { case (id, name) =>
       val tmp = randomColor()
       val color = "rgba(" + Math.min(tmp._1 + random.nextInt(100) - 35,255 )+ "," + Math.min(tmp._2 + random.nextInt(30), 255 )+
@@ -67,9 +71,10 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
       val direction = getSafeDirection(head)
       grid += head -> Body(id, color)
       snakes += id -> SnakeInfo(id, name, head, head, head, color, direction)
+      newSnakes.append(Snake4Client(id,name, head, head, color, direction))
     }
     waitingJoin = Map.empty[String, String]
-    snakeNumber
+    (newSnakes.toList, oldSnakes)
   }
 
   implicit val scoreOrdering = new Ordering[Score] {
@@ -84,6 +89,8 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
 
   private[this] def updateRanks() = {
     currentRank = snakes.values.map(s => Score(s.id, s.name, s.kill, s.length)).toList.sorted
+    topCurrentRank = snakes.values.map(s => Score(s.id, s.name, s.kill, s.length)).toList.sortBy(s => s.l).reverse.slice(0,5)
+
     var historyChange = false
     currentRank.foreach { cScore =>
       historyRankMap.get(cScore.id) match {
@@ -172,7 +179,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
     snakes = newSnakes.map(s => (s.id, s)).toMap
   }
   
-  override def updateASnake(snake: SnakeInfo, actMap: Map[String, Int]): Either[String, SnakeInfo] = {
+  def updateASnake(snake: SnakeInfo, actMap: Map[String, Int]): Either[String, SnakeInfo] = {
     val keyCode = actMap.get(snake.id)
     val newDirection = {
       val keyDirection = keyCode match {
@@ -273,7 +280,6 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
   
   override def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[String] = None) = {
     if (appleType == FoodType.normal) {
-
       def appleDecrease = {
         val step = 5
         snakes.size match {
@@ -296,8 +302,9 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
             case x if x > 0.8 => 25
             case x => 5
           }
-          val apple = Apple(score, appleLife, appleType)
-          feededApples ::= Ap(score, appleLife, appleType, p.x, p.y)
+          val randomFrame = 400 + random.nextInt(200)
+          val apple = Apple(score, appleType, frameCount + randomFrame)
+          feededApples ::= Ap(score, appleType, p.x, p.y, frameCount + randomFrame)
           grid += (p -> apple)
           appleNeeded -= 1
         }
@@ -349,8 +356,9 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
               case x if x > 0.8 => 25
               case x => 5
             }
-            val apple = Apple(score, appleLife, FoodType.intermediate, Some(targetPoint, score))
-            deadBodies ::= Ap(score, appleLife, FoodType.intermediate, dead._1.x, dead._1.y, Some(targetPoint, score))
+            val randomFrame = 400 + random.nextInt(200)
+            val apple = Apple(score, FoodType.intermediate, frameCount + randomFrame, Some(targetPoint, score))
+            deadBodies ::= Ap(score, FoodType.intermediate, dead._1.x, dead._1.y, frameCount + randomFrame, Some(targetPoint, score))
             grid += (dead._1 -> apple)
             appleNeeded -= 1
           }
@@ -373,21 +381,23 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
             totalScore += x.score
             newSpeed += 0.1
             speedOrNot = true
-            apples ::= Ap(x.score, x.life, x.appleType, e.x, e.y, x.targetAppleOpt)
+            apples ::= Ap(x.score, x.appleType, e.x, e.y, x.frame)
           }
         case _ => //do nothing
       }
     }
-    eatenApples += (snakeId -> apples.map(a => AppleWithFrame(frameCount, a)))
+    if(apples.nonEmpty) {
+      eatenApples += (snakeId -> apples.map(a => AppleWithFrame(frameCount, a)))
+    }
     Some((totalScore, newSpeed, speedOrNot))
   }
 
-  override def speedUp(snake: SnakeInfo, newDirection: Point): Option[(Boolean, Double)] = {
+  def speedUp(snake: SnakeInfo, newDirection: Point): Option[(Boolean, Double)] = {
     //检测加速
-    var speedOrNot :Boolean = false
-    val headerLeftRight=if(newDirection.y == 0){
+    var speedOrNot: Boolean = false
+    val headerLeftRight = if(newDirection.y == 0){
       Point(snake.head.x - square, snake.head.y - square - speedUpRange).zone(square * 2, (speedUpRange+square) * 2)
-    }else{
+    } else {
       Point(snake.head.x - square- speedUpRange, snake.head.y - square).zone((speedUpRange+square) * 2, square*2)
     }
 
@@ -425,8 +435,9 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
     }else{
       fSpeed
     }
-
-    speedUpInfo ::= SpeedUpInfo(snake.id, speedOrNot, newSpeed)
+    if(speedOrNot) {
+      speedUpInfo ::= SpeedUpInfo(snake.id, newSpeed)
+    }
     Some((speedOrNot, newSpeed))
   }
 

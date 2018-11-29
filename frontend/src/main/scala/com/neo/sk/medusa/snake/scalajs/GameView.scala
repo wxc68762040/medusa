@@ -20,9 +20,10 @@ object GameView  {
 
   val canvasUnit = 7
 
-
   val canvas: Canvas = dom.document.getElementById("GameView").asInstanceOf[Canvas]
   private[this] val canvasPic = dom.document.getElementById("canvasPic").asInstanceOf[HTMLElement]
+  private[this] val killerImg = dom.document.getElementById("killerImg").asInstanceOf[HTMLElement]
+  private[this] val championSnake = dom.document.getElementById("championSnake").asInstanceOf[HTMLElement]
   private[this] val ctx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
   def drawGameOn(): Unit = {
@@ -42,7 +43,7 @@ object GameView  {
     }
   }
 
-  def drawGrid(uid: String, data: GridDataSync, scaleW: Double, scaleH:Double): Unit = {
+  def drawGrid(uid: String, data: GridDataSync, scaleW: Double, scaleH: Double): Unit = {
     val cacheCanvas = dom.document.createElement("canvas").asInstanceOf[Canvas]
     val cacheCtx = cacheCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
@@ -54,6 +55,7 @@ object GameView  {
     val period = (System.currentTimeMillis() - basicTime).toInt
     val snakes = data.snakes
     val apples = data.appleDetails
+    //val framcount = apples.head.frame
 
     //下个帧的修改
     val mySubFrameRevise =
@@ -92,7 +94,13 @@ object GameView  {
     cacheCtx.drawImage(canvasPic, 0 + deviationX, 0 + deviationY, Boundary.w * scaleW, Boundary.h * scaleH)
     //cacheCtx.drawImage(canvasPic,0 + deviationX ,0 + deviationY , Boundary.w * scaleW, Boundary.h * scaleH)
 
-    apples.get.filterNot( a=> a.x * scaleW < myHead.x * scaleW - windowWidth/2 * myProportion || a.y * scaleH < myHead.y * scaleH - windowHeight/2 * myProportion || a.x * scaleW > myHead.x * scaleW + windowWidth/2 * myProportion|| a.y * scaleH > myHead.y * scaleH + windowHeight/2* myProportion).foreach{ case Ap (score,_,_,x,y,_)=>
+    apples.filterNot( a=> a.x * scaleW < myHead.x * scaleW - windowWidth/2 * myProportion || a.y * scaleH < myHead.y * scaleH - windowHeight/2 * myProportion || a.x * scaleW > myHead.x * scaleW + windowWidth/2 * myProportion|| a.y * scaleH > myHead.y * scaleH + windowHeight/2* myProportion).foreach {
+      case a@Ap (score, _, x, y, frameCount, _)=>
+        if( grid.frameCount >  frameCount) {
+          val i = apples.indexOf(a)
+          apples.drop(i)
+
+        }
        cacheCtx.fillStyle = score match{
          case 50 => "#ffeb3bd9"
          case 25 => "#1474c1"
@@ -167,15 +175,21 @@ object GameView  {
       }
 
       val nameLength = if(snake.name.length > 15) 15 else snake.name.length
-      val snakeSpeed = snake.speed
-
+//      val snakeSpeed = snake.speed
       cacheCtx.font = s"${12 * scaleW * myProportion}px Helvetica"
       cacheCtx.fillStyle = Color.White.toString()
-      val snakeName = if(snake.name.length > 15) snake.name.substring(0,14) else snake.name
-      cacheCtx.fillText(snakeName, x * scaleW + deviationX - nameLength * 4, y * scaleH + deviationY - 15)
-      if (snakeSpeed > fSpeed + 1) {
-        cacheCtx.fillText(snakeSpeed.toInt.toString, x * scaleW  + deviationX - nameLength * 4, y * scaleH + deviationY - 25)
+      val snakeName = if(snake.name.length > 15) snake.name.substring(0, 14) else snake.name
+      cacheCtx.fillText(snakeName, x * scaleW + deviationX - nameLength * 4, y * scaleH + deviationY - 12)
+      if (!playerState._2 && id == myId) {
+        cacheCtx.drawImage(killerImg, x * scaleW + deviationX - nameLength * 4, y * scaleH + deviationY - 15)
       }
+//      if (snake.length >= snakes.maxBy(_.length).length) {
+      if (snakes.nonEmpty && snake.id == snakes.sortBy(e => (e.length, e.id)).reverse.map(_.id).head) {
+        cacheCtx.drawImage(championSnake, x * scaleW + deviationX - 8, y * scaleH + deviationY - 40)
+      }
+//      if (snakeSpeed > fSpeed + 1) {
+//        cacheCtx.fillText(snakeSpeed.toInt.toString, x * scaleW  + deviationX - nameLength * 4, y * scaleH + deviationY - 25)
+//      }
     }
 
 
@@ -184,16 +198,16 @@ object GameView  {
     cacheCtx.shadowBlur = 5
     cacheCtx.shadowColor= "#FFFFFF"
 
-    cacheCtx.fillRect(0 + deviationX, 0 + deviationY, Boundary.w * scaleW , boundaryWidth * scaleH )
-    cacheCtx.fillRect(0 + deviationX, 0 + deviationY, boundaryWidth * scaleW , Boundary.h * scaleH)
-    cacheCtx.fillRect(0 + deviationX, Boundary.h * scaleH + deviationY, Boundary.w * scaleW , boundaryWidth *scaleH)
-    cacheCtx.fillRect(Boundary.w * scaleW  + deviationX, 0 + deviationY  , boundaryWidth * scaleW, Boundary.h * scaleH )
+    cacheCtx.fillRect(0 + deviationX, 0 + deviationY, Boundary.w * scaleW, boundaryWidth * scaleH)
+    cacheCtx.fillRect(0 + deviationX, 0 + deviationY, boundaryWidth * scaleW, Boundary.h * scaleH)
+    cacheCtx.fillRect(0 + deviationX, Boundary.h * scaleH + deviationY, Boundary.w * scaleW, boundaryWidth * scaleH)
+    cacheCtx.fillRect(Boundary.w * scaleW  + deviationX, 0 + deviationY, boundaryWidth * scaleW, Boundary.h * scaleH)
     cacheCtx.restore()
     cacheCtx.fillStyle = "rgb(250, 250, 250)"
 
     ctx.fillStyle = "#012d2d"
     ctx.fillRect(0, 0, canvas.width, canvas.height)
-    ctx.drawImage(cacheCanvas,0,0)
+    ctx.drawImage(cacheCanvas, 0, 0)
 
   }
 }

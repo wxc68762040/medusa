@@ -1,15 +1,17 @@
 package com.neo.sk.medusa.core
 
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
 import com.neo.sk.medusa.protocol.PlayInfoProtocol.PlayerInfo
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors, TimerScheduler}
-import com.neo.sk.medusa.core.UserManager.ChildDead
+import com.neo.sk.medusa.core.UserManager.{ChildDead, YourUserUnwatched, getUserActor}
 import net.sf.ehcache.transaction.xa.commands.Command
 import org.slf4j.LoggerFactory
+
 import scala.concurrent.duration._
 import com.neo.sk.medusa.Boot.watchManager
+
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -21,7 +23,7 @@ object RoomManager {
 
   private final val maxUserNum = 30
 
-  private val idGenerator = new AtomicInteger(1000001)
+  private val idGenerator = new AtomicLong(1000001l)
 
   sealed trait Command
 
@@ -48,6 +50,12 @@ object RoomManager {
   case class GetRoomListReq(replyTo:ActorRef[GetRoomListRsp]) extends Command
 
   case class GetRoomListRsp(roomList:List[Long])
+
+  case class ReStartGame(playerId:String,roomId:Long) extends Command
+
+  case class YourUserUnwatched(playerId: String, watcherId: String,roomId:Long) extends Command
+
+  case class INeedApple(playerId: String, watcherId: String,roomId:Long) extends Command
 
   val behaviors: Behavior[Command] = {
     log.info(s"RoomManager start...")
@@ -86,7 +94,7 @@ object RoomManager {
                 userRoomMap.put(playerId, (randomRoomId, playerName))
                 userActor ! UserActor.JoinRoomSuccess(randomRoomId, getRoomActor(ctx, randomRoomId))
               } else {
-                val newRoomId = idGenerator.getAndIncrement().toLong
+                val newRoomId = idGenerator.getAndIncrement()
                 log.info(s"room full ,start a new room.. ")
                 roomNumMap.put(newRoomId, 1)
                 userRoomMap.put(playerId, (newRoomId, playerName))
@@ -118,11 +126,13 @@ object RoomManager {
 
           case UserLeftRoom(playerId, roomId) =>
             if(userRoomMap.get(playerId).nonEmpty){
-              if(roomNumMap(roomId)-1<=0){
-                roomNumMap.update(roomId,0)
-                timer.startSingleTimer(RoomEmptyTimerKey(roomId),RoomEmptyKill(roomId),UserLeftRoomTime)
-              }else{
-                roomNumMap.update(roomId,roomNumMap(roomId)-1)
+              if(roomNumMap.get(roomId).nonEmpty) {
+                if (roomNumMap(roomId) - 1 <= 0) {
+                  roomNumMap.update(roomId, 0)
+                  timer.startSingleTimer(RoomEmptyTimerKey(roomId), RoomEmptyKill(roomId), UserLeftRoomTime)
+                } else {
+                  roomNumMap.update(roomId, roomNumMap(roomId) - 1)
+                }
               }
               userRoomMap.remove(playerId)
             }
@@ -160,29 +170,37 @@ object RoomManager {
             
           case t:GetPlayerByRoomId =>
             val playerId = {
-              if(t.playerId == ""){
+              if (t.playerId == "") {
                 val tmpPlayerList = ListBuffer[String]()
-                userRoomMap.keys.foreach{
+                userRoomMap.keys.foreach {
                   key =>
-                    if(userRoomMap(key)._1 == t.roomId)
+                    if (userRoomMap(key)._1 == t.roomId)
                       tmpPlayerList.append(key)
                 }
-                if(tmpPlayerList.length <= 0){
+                if (tmpPlayerList.length <= 0) {
                   ""
-                }else {
+                } else {
                   val a = tmpPlayerList(scala.util.Random.nextInt(tmpPlayerList.length))
                   a
                 }
-              }else{
+              } else {
                 t.playerId
               }
             }
             watchManager ! WatcherManager.GetPlayerWatchedRsp(t.watcherId, playerId)
-            if(playerId != "") {
+            if(playerId.trim != "") {
               getRoomActor(ctx, t.roomId) ! RoomActor.YourUserIsWatched(playerId, t.watcherRef, t.watcherId)
             }
             Behaviors.same
-            
+
+          case t: YourUserUnwatched =>
+            getRoomActor(ctx, t.roomId) ! RoomActor.YouAreUnwatched(t.playerId,t.watcherId)
+            Behaviors.same
+
+          case t:INeedApple =>
+            getRoomActor(ctx,t.roomId) ! RoomActor.GiveYouApple(t.playerId,t.watcherId)
+            Behavior.same
+
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")
             Behaviors.unhandled

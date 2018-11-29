@@ -5,12 +5,16 @@ import akka.actor.typed.{ActorRef, Behavior}
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import com.neo.sk.medusa.Boot.watchManager
+import com.neo.sk.medusa.Boot.roomManager
 import akka.stream.typed.scaladsl.{ActorSink, ActorSource}
 import com.neo.sk.medusa.snake.Protocol
-import com.neo.sk.medusa.snake.Protocol.{WsMsgSource, YouHaveLogined}
+import com.neo.sk.medusa.snake.Protocol._
+import com.sun.media.jfxmedia.events.PlayerStateEvent.PlayerState
 import io.circe.Decoder
 import org.slf4j.LoggerFactory
 
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration._
 
 /**
@@ -56,33 +60,38 @@ object WatcherActor {
   case object WatcherReady extends Command
 
 
+
   def create(watcherId: String, roomId:Long): Behavior[Command] = {
     Behaviors.setup[Command] {
       ctx =>
         implicit val stashBuffer: StashBuffer[Command] = StashBuffer[Command](Int.MaxValue)
         Behaviors.withTimers[Command] {
           implicit timer =>
-            switchBehavior(ctx, "init", init(watcherId,"", roomId), InitTime, TimeOut("init"))
+            log.info(s"id at create: $watcherId")
+            switchBehavior(ctx, "init", init(watcherId,"", roomId,true), InitTime, TimeOut("init"))
         }
     }
   }
 
-  private def init(watcherId: String, watchedId:String, roomId:Long)(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]):Behavior[Command] =
+  private def init(watcherId: String, watchedId:String, roomId:Long,waitTip:Boolean)(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]):Behavior[Command] =
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
           case UserFrontActor(frontActor) =>
             ctx.watchWith(frontActor, FrontLeft(frontActor))
             ctx.self ! WatcherReady
-            switchBehavior(ctx, "idle", idle(watcherId, watchedId, roomId, frontActor))
-
+            roomManager ! RoomManager.INeedApple(watchedId,watcherId,roomId)
+            switchBehavior(ctx, "idle", idle(watcherId, watchedId, roomId, frontActor,waitTip))
+						
           case GetWatchedId(id) =>
-            init(watchedId, id, roomId)
+//            println("init : "+id)
+            switchBehavior(ctx, "init", init(watcherId, id, roomId,waitTip))
 
           case TimeOut(m) =>
-            log.debug(s"${ctx.self.path} is time out when busy,msg=$m")
+            watchManager ! WatcherManager.WatcherGone(watchedId,watcherId,roomId)
+            log.info(s"${ctx.self.path} is time out when init,msg=$m")
             Behaviors.stopped
-
+						
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when init:$x")
             stashBuffer.stash(x)
@@ -91,7 +100,7 @@ object WatcherActor {
     }
 
 
-  private def idle(watcherId: String, watchedId:String, roomId:Long, frontActor: ActorRef[Protocol.WsMsgSource])(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
+  private def idle(watcherId: String, watchedId:String ,roomId:Long, frontActor: ActorRef[Protocol.WsMsgSource],waitTip:Boolean)(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
@@ -101,39 +110,43 @@ object WatcherActor {
             
           case FrontLeft(front) =>
             ctx.unwatch(front)
-            watchManager ! WatcherManager.WatcherGone(watcherId)
-            Behaviors.stopped
-
-//          case UserLeft =>
-//            ctx.unwatch(frontActor)
-//            watchManager ! WatcherManager.WatcherGone(watcherId)
-//            Behaviors.same
-
+            switchBehavior(ctx,"init",init(watcherId,watchedId,roomId,waitTip),Some(10.seconds),TimeOut("FrontLeft"))
+						
           case NoRoom =>
             frontActor ! Protocol.NoRoom
             Behaviors.same
 
           case PlayerWait =>
-            frontActor ! Protocol.PlayerWaitingJion
-            Behaviors.same
+            frontActor ! Protocol.PlayerWaitingJoin
+            idle(watcherId, watchedId, roomId, frontActor,false)
 
           case UserFrontActor(newFront) =>
             ctx.unwatch(frontActor)
             ctx.watchWith(newFront, FrontLeft(newFront))
             newFront ! Protocol.JoinRoomSuccess(watchedId, roomId)
             frontActor ! YouHaveLogined
-            idle(watcherId, watchedId, roomId, newFront)
+            ctx.self ! UserFrontActor(newFront)
+            switchBehavior(ctx,"init",init(watcherId,watchedId,roomId,waitTip),Some(10.seconds),TimeOut("UserFrontActor"))
 
           case GetWatchedId(id) =>
             frontActor ! Protocol.JoinRoomSuccess(id,roomId)
-            Behaviors.same
+            idle(watcherId,id,roomId,frontActor,waitTip)
 
           case TransInfo(x) =>
-            frontActor ! x
-            Behaviors.same
+            x match {
+              case info: Protocol.DeadListBuff =>
+                if(info.deadList.contains(watchedId)) {
+                  idle(watcherId, watchedId, roomId, frontActor, false)
+                } else {
+                  idle(watcherId, watchedId, roomId, frontActor, true)
+                }
+              case _ =>
+                frontActor ! x
+                if(!waitTip) frontActor ! Protocol.PlayerWaitingJoin
+                Behavior.same
+            }
 
-
-          case NetTest(b, a) =>
+          case NetTest(_, _) =>
             Behaviors.same
 
           case x =>
@@ -153,7 +166,7 @@ object WatcherActor {
   ) (implicit timer: TimerScheduler[Command],
     stashBuffer: StashBuffer[Command]
   ) = {
-    log.debug(s"${ctx.self.path} becomes $behaviorName behavior.")
+    log.info(s"${ctx.self.path} becomes $behaviorName behavior.")
     timer.cancel(BehaviorChangeKey)
     durationOpt.foreach(duration => timer.startSingleTimer(BehaviorChangeKey, timeOut, duration))
     stashBuffer.unstashAll(ctx, behavior)
@@ -169,6 +182,7 @@ object WatcherActor {
 
           case Protocol.NetTest(id, createTime) =>
             NetTest(id, createTime)
+            
           case x =>
             UnKnowAction(x)
         }

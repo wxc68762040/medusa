@@ -31,20 +31,23 @@ trait Grid {
   val speedUpRange = 50
 
   val freeFrameTime = 30
-
+  var snakes = Map.empty[String, SnakeInfo]
+  var snakes4client = Map.empty[String, Snake4Client]
   var frameCount = 0l
   var grid = Map[Point, Spot]()
-  var snakes = Map.empty[String, SnakeInfo]
   var actionMap = Map.empty[Long, Map[String, Int]]
   var deadSnakeList = List.empty[DeadSnakeInfo]
   var killMap = Map.empty[String, List[(String,String)]]
 
-  def removeSnake(id: String): Option[SnakeInfo] = {
-    val r = snakes.get(id)
-    if (r.isDefined) {
+  def removeSnake(id: String) = {
+    val r1 = snakes.get(id)
+		val r2 = snakes4client.get(id)
+    if (r1.isDefined) {
       snakes -= id
     }
-    r
+		if(r2.isDefined) {
+			snakes4client -= id
+		}
   }
 
 
@@ -77,33 +80,32 @@ trait Grid {
 
   def eatFood(snakeId: String, newHead: Point, newSpeedInit: Double, speedOrNotInit: Boolean): Option[(Int, Double, Boolean)]
 
-  def speedUp(snake: SnakeInfo, newDirection: Point): Option[(Boolean, Double)]
+//  def speedUp(snake: SnakeInfo, newDirection: Point): Option[(Boolean, Double)]
 
   private[this] def updateSpots(front: Boolean) = {
     var appleCount = 0
     grid = grid.filter { case (_, spot) =>
       spot match {
-        case Apple(_, life, _, _) if life >= 0 => true
+        case Apple(_, _, frame, _) if frame >= frameCount => true
         case _ => false
       }
     }.map {
-
-      case (p, a@Apple(_, _, appleType, targetAppleOpt)) =>
+      case (p, a@Apple(_,  appleType, frame, targetAppleOpt)) =>
         if (appleType == FoodType.normal) {
           appleCount += 1
           (p, a)
         } else if (appleType == FoodType.intermediate && targetAppleOpt.nonEmpty) {
           val targetApple = targetAppleOpt.get
           if (p == targetApple._1) {
-            val apple = Apple(targetApple._2, appleLife, FoodType.deadBody)
+            val apple = Apple(targetApple._2, FoodType.deadBody, frame)
             (p, apple)
           } else {
             val nextLoc = p pathTo targetApple._1
             if (nextLoc.nonEmpty) {
-              val apple = Apple(targetApple._2, appleLife, FoodType.intermediate, targetAppleOpt)
+              val apple = Apple(targetApple._2, FoodType.intermediate, frame, targetAppleOpt)
               (nextLoc.get, apple)
             } else {
-              val apple = Apple(targetApple._2, appleLife, FoodType.deadBody)
+              val apple = Apple(targetApple._2, FoodType.deadBody, frame)
               (p, apple)
             }
           }
@@ -159,45 +161,46 @@ trait Grid {
   }
   
   def updateSnakes():Unit
+//  def updateASnake(snake: SnakeInfo, actMap: Map[String, Int]): Either[String, SnakeInfo]
 
-  def updateASnake(snake: SnakeInfo, actMap: Map[String, Int]): Either[String, SnakeInfo]
-  
-//  def getGridData = {
-//    var bodyDetails: List[Bd] = Nil
-//    var appleDetails: List[Ap] = Nil
-//    grid.foreach {
-//      case (p, Body(id, color)) => bodyDetails ::= Bd(id, p.x, p.y, color)
-//      case (p, Apple(score, life, appleType, targetAppleOpt)) => appleDetails ::= Ap(score, life, appleType, p.x, p.y, targetAppleOpt)
-//      case _ =>
-//    }
-//    GridData(
-//      frameCount,
-//      snakes.values.toList,
-//      bodyDetails,
-//      appleDetails
-//    )
-//  }
   
   def getGridSyncData = {
     var appleDetails: List[Ap] = Nil
     grid.foreach {
-      case (p, Apple(score, life, appleType, targetAppleOpt)) => appleDetails ::= Ap(score, life, appleType, p.x, p.y, targetAppleOpt)
+      case (p, Apple(score, appleType, frame, targetAppleOpt)) => appleDetails ::= Ap(score, appleType, p.x, p.y, frame, targetAppleOpt)
+      case _ =>
+    }
+    val snake4client = snakes.values.map{
+      s => Snake4Client(s.id, s.name, s.head, s.tail, s.color, s.direction, s.joints, s.speed,s.length, s.extend)
+    }
+    Protocol.GridDataSync(
+      frameCount,
+      snake4client.toList,
+      appleDetails,
+      System.currentTimeMillis()
+    )
+  }
+  def getGridSyncData4Client = {
+    var appleDetails: List[Ap] = Nil
+    grid.foreach {
+      case (p, Apple(score, appleType, frame, targetAppleOpt)) => appleDetails ::= Ap(score, appleType, p.x, p.y, frame, targetAppleOpt)
       case _ =>
     }
     Protocol.GridDataSync(
       frameCount,
-      snakes.values.toList,
-      Some(appleDetails),
-      System.currentTimeMillis()
+      snakes4client.values.toList,
+      appleDetails
     )
+
   }
 
   def getGridSyncDataNoApp = {
-    Protocol.GridDataSync(
+    val snake4client = snakes.values.map{
+      s => Snake4Client(s.id, s.name, s.head, s.tail, s.color, s.direction, s.joints, s.speed,s.length, s.extend)
+    }
+    Protocol.GridDataSyncNoApp(
       frameCount,
-      snakes.values.toList,
-      None,
-      System.currentTimeMillis()
+      snake4client.toList
     )
   }
 

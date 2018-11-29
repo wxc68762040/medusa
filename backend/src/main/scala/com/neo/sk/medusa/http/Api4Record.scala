@@ -47,7 +47,7 @@ trait Api4Record extends ServiceUtils{
         var gameList = List.empty[Record]
         for ((k, v) <- searchRes) {
           if (v.head._2.isDefined) {
-            gameList = gameList :+ Record(k.recordsId, k.roomId, k.startTime, k.endTime, k.userCount, v.map(t => t._2.get.playerId))
+            gameList = gameList :+ Record(k.recordsId, k.roomId, k.startTime, k.endTime, k.userCount, v.map(t => (t._2.get.playerId, t._2.get.nickname)))
           } else {
             gameList = gameList :+ Record(k.recordsId, k.roomId, k.startTime, k.endTime, k.userCount, List())
           }
@@ -55,7 +55,7 @@ trait Api4Record extends ServiceUtils{
         complete(RecordResponse(Some(gameList.sortBy(_.recordId))))
       }.recover {
         case e: Exception =>
-          log.error(s"Get error,please check your code! The exception you meet is: ${e}")
+          log.error(s"Get error,please check your code! The exception you meet is: $e")
           complete(CommonRsp(1000090, e.toString))
       }
     }
@@ -68,7 +68,7 @@ trait Api4Record extends ServiceUtils{
         var gameList = List.empty[Record]
         for ((k, v) <- searchRes) {
           if (v.head._2.isDefined) {
-            gameList = gameList :+ Record(k.recordsId, k.roomId, k.startTime, k.endTime, k.userCount, v.map(t =>  t._2.get.playerId ))
+            gameList = gameList :+ Record(k.recordsId, k.roomId, k.startTime, k.endTime, k.userCount, v.map(t => (t._2.get.playerId, t._2.get.nickname)))
           }else{
             gameList = gameList :+ Record(k.recordsId, k.roomId, k.startTime, k.endTime, k.userCount, List())
           }
@@ -76,7 +76,7 @@ trait Api4Record extends ServiceUtils{
         complete(RecordResponse(Some(gameList.sortBy(_.recordId))))
       }.recover {
         case e: Exception =>
-          log.error(s"Get error,please check your code! The exception you meet is: ${e}")
+          log.error(s"Get error,please check your code! The exception you meet is: $e")
           complete(CommonRsp(100091, e.toString))
       }
     }
@@ -88,7 +88,7 @@ trait Api4Record extends ServiceUtils{
         var gameList  = List.empty[Record]
         for((k,v) <- searchRes){
           if (v.head._2.isDefined) {
-            gameList = gameList :+ Record(k.recordsId, k.roomId, k.startTime, k.endTime, k.userCount, v.map(t =>  t._2.get.playerId ))
+            gameList = gameList :+ Record(k.recordsId, k.roomId, k.startTime, k.endTime, k.userCount, v.map(t => (t._2.get.playerId, t._2.get.nickname)))
           }else{
             gameList = gameList :+ Record(k.recordsId, k.roomId, k.startTime, k.endTime, k.userCount, List())
           }
@@ -96,7 +96,7 @@ trait Api4Record extends ServiceUtils{
         complete(RecordResponse(Some(gameList.sortBy(_.recordId))))
       }.recover{
         case e:Exception =>
-          log.error(s"Get error,please check your code! The exception you meet is: ${e}")
+          log.error(s"Get error,please check your code! The exception you meet is: $e")
           complete(CommonRsp(100093,e + ""))
       }
     }
@@ -134,7 +134,6 @@ trait Api4Record extends ServiceUtils{
   private val getRecordFrame = (path("getRecordFrame") & post){
     dealPostReq[GetRecordFrameReq]{ req =>
       val reqFuture:Future[FrameInfo] = userManager ? (UserManager.GetRecordFrame(req.recordId, req.playerId, _))
-
         reqFuture.map { rsp =>
           if(rsp.frame == -1) {
             complete(GetRecordFrameRsp(FrameInfo(0,0), 100098, "the user does not exist or has finished the record"))

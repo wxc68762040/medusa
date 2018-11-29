@@ -15,14 +15,14 @@ package object snake {
 
   case class Header(id: String, life: Int) extends Spot
 
-  case class Apple(score: Int, life: Int, appleType: Int, targetAppleOpt: Option[(Point, Int)] = None) extends Spot //食物类型，0：普通食物，1：死蛇身体，2：中间路径
+  case class Apple(score: Int, appleType: Int, frame: Long, targetAppleOpt: Option[(Point, Int)] = None) extends Spot //食物类型，0：普通食物，1：死蛇身体，2：中间路径
   case class Bound() extends Spot
 
-  case class Score(id: String, n: String, k: Int, l: Int, t: Option[Long] = None)
+  case class Score(id: String, n: String, k: Int, l: Int)
 
   case class Bd(id: String, x: Int, y: Int, color: String)
 
-  case class Ap(score: Int, life: Int, appleType: Int, x: Int, y: Int, targetAppleOpt: Option[(Point, Int)] = None)
+  case class Ap(score: Int, appleType: Int, x: Int, y: Int, frame: Long, targetAppleOpt: Option[(Point, Int)] = None)
 
   case class GridData(
                        frameCount: Long,
@@ -211,7 +211,7 @@ package object snake {
                         color: String,
                         direction: Point = Point(1, 0),
                         joints: Queue[Point] = Queue(),
-                        speed: Double = 25.0,
+                        speed: Double = Protocol.fSpeed,
                         freeFrame: Int = 0,
                         length: Int = 100,
                         extend: Int = 100, //需要伸长的量
@@ -230,6 +230,19 @@ package object snake {
     }
   }
 
+  case class Snake4Client(
+    id: String,
+    name: String,
+    head: Point,
+    tail: Point,
+    color: String,
+    direction: Point = Point(1, 0),
+    joints: Queue[Point] = Queue(),
+    speed: Double = Protocol.fSpeed,
+    length: Int = 100,
+    extend: Int = 100, //需要伸长的量
+  )
+
   case class DeadSnakeInfo(
                             id: String,
                             name: String,
@@ -245,10 +258,8 @@ package object snake {
 
   case class SpeedUpInfo(
                           snakeId: String,
-                          speedUpOrNot: Boolean,
                           newSpeed: Double
                         )
-
   case class AppleWithFrame(
                              frameCount: Long,
                              apple: Ap

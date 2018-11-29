@@ -39,9 +39,11 @@ object ESSFSupport {
     val name = "medusa"
     val version = "0.1"
     val gameInformationBytes = gameInformation.fillMiddleBuffer(middleBuffer).result()
-    val initStateBytes = initStateOpt.map{
-      case t:Protocol.GridDataSync =>
+    val initStateBytes = initStateOpt.map {
+      case t: Protocol.GridDataSync =>
         t.fillMiddleBuffer(middleBuffer).result()
+      case _ =>
+        Array[Byte]()
     }.getOrElse(Array[Byte]())
     val recorder = new FrameOutputStream(file)
     recorder.init(name,version,gameInformationBytes,initStateBytes)
