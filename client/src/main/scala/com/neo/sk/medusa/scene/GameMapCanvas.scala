@@ -33,7 +33,7 @@ class GameMapCanvas(canvas: Canvas, gameScene: GameScene) {
     mapCtx.clearRect(0, 0, mapWidth , mapHeight)
     mapCtx.setFill(Color.BLACK)
     mapCtx.setGlobalAlpha(0.5)
-    mapCtx.fillRect(0, 600 * scaleH, mapWidth, mapHeight - 600 * scaleH )
+    mapCtx.fillRect(0, 600 * scaleH, mapWidth, mapHeight - 600 * scaleH)
 
 
     val allSnakes = data.snakes
@@ -46,7 +46,7 @@ class GameMapCanvas(canvas: Canvas, gameScene: GameScene) {
     if(allSnakes.nonEmpty && allSnakes.exists(_.id == uid)) {
 
       allSnakes.foreach{ snake =>
-        val x = snake.head.x + snake.direction.x * snake.speed * period /Protocol.frameRate
+        val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
         val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
 
         var joints = snake.joints.enqueue(Point(x.toInt,y.toInt))
@@ -89,7 +89,7 @@ class GameMapCanvas(canvas: Canvas, gameScene: GameScene) {
           mapCtx.setLineWidth(2 * scale)
           mapCtx.moveTo((joints.head.x * LittleMap.w) * scaleW / Boundary.w, 600 * scaleH + (joints.head.y * LittleMap.h) / Boundary.h)
           for(i<- 1 until joints.length) {
-            mapCtx.lineTo((joints(i).x * LittleMap.w) * scaleW / Boundary.w, 600 * scaleH + (joints(i).y * LittleMap.h)  / Boundary.h)
+            mapCtx.lineTo((joints(i).x * LittleMap.w) * scaleW / Boundary.w, 600 * scaleH + (joints(i).y * LittleMap.h) / Boundary.h)
           }
           mapCtx.stroke()
           mapCtx.closePath()
