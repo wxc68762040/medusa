@@ -45,6 +45,10 @@ lazy val client = (project in file("client"))
     packJvmOpts := Map("medusa" -> Seq("-Xmx128m", "-Xms32m")),
     packExtraClasspath := Map("medusa" -> Seq("."))
   )
+	.settings(
+		PB.targets in Compile := Seq(
+			scalapb.gen() -> (sourceManaged in Compile).value
+		))
   .settings(commonSettings: _*)
   .settings(libraryDependencies ++= Dependencies.backendDependencies)
   .dependsOn(sharedJvm)
@@ -101,10 +105,6 @@ lazy val backend = (project in file("backend")).enablePlugins(PackPlugin)
   .settings(
     libraryDependencies ++= Dependencies.backendDependencies
   )
-  .settings(
-    PB.targets in Compile := Seq(
-      scalapb.gen() -> (sourceManaged in Compile).value
-  ))
   .settings {
     (resourceGenerators in Compile) += Def.task {
       val fastJsOut = (fastOptJS in Compile in frontend).value.data

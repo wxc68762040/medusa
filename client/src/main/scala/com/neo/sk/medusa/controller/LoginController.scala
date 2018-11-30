@@ -5,10 +5,11 @@ import java.io.ByteArrayInputStream
 import akka.actor.typed.ActorRef
 import com.neo.sk.medusa.ClientBoot
 import com.neo.sk.medusa.actor.WSClient
-import com.neo.sk.medusa.actor.WSClient.{ConnectGame, EstablishConnectionEs}
-import com.neo.sk.medusa.common.StageContext
+import com.neo.sk.medusa.actor.WSClient.{BotStart, ConnectGame, EstablishConnectionEs}
+import com.neo.sk.medusa.common.{AppSettings, StageContext}
 import com.neo.sk.medusa.scene.LoginScene
 import com.neo.sk.medusa.controller.Api4GameAgent._
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -18,22 +19,40 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 											loginScene: LoginScene,
 											stageCtx: StageContext) {
-	var wsUrl = ""
-	var scanUrl = ""
+	
+	private[this] val log = LoggerFactory.getLogger(this.getClass)
+	private	val gameId = AppSettings.gameId
+	private var playerId = ""
+	private var nickname = ""
+	private var userToken = ""
+	
 	loginScene.setLoginSceneListener(new LoginScene.LoginSceneListener {
 		override def onButtonConnect(): Unit = {
-
 			getLoginResponseFromEs().map {
 				case Right(r) =>
-					wsUrl = r.data.wsUrl
-					scanUrl = r.data.scanUrl
-					loginScene.drawScanUrl(imageFromBase64(scanUrl))
-					wsClient ! EstablishConnectionEs(wsUrl, scanUrl)
-				case Left(l) =>
+					loginScene.drawScanUrl(imageFromBase64(r.data.scanUrl))
+					wsClient ! EstablishConnectionEs(r.data.wsUrl, r.data.scanUrl)
+				case Left(e) =>
+					log.error(s"$e")
 			}
-
 		}
-
+		
+		override def onButtonJoin(): Unit = {
+			linkGameAgent(gameId, playerId, userToken).map {
+				case Right(resl) =>
+					log.debug("accessCode: " + resl.accessCode)
+					wsClient ! ConnectGame(playerId, nickname, resl.accessCode)
+				
+				case Left(l) =>
+					log.error("link error!")
+			}
+			
+		}
+		
+		override def onButtonBotJoin(): Unit = {
+			wsClient ! BotStart
+		}
+		
 	})
 	
 	stageCtx.setStageListener(new StageContext.StageListener {
@@ -54,11 +73,18 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 		import sun.misc.BASE64Decoder
 		val decoder = new BASE64Decoder
 		val bytes:Array[Byte]= decoder.decodeBuffer(base64Str)
-		for(i <- 0 until bytes.length){
-			if(bytes(i) < 0) bytes(i)=(bytes(i).+(256)).toByte
+		for(i <- bytes.indices) {
+			if (bytes(i) < 0) bytes(i) = (bytes(i) + 256).toByte
 		}
 		val  b = new ByteArrayInputStream(bytes)
 		b
+	}
+	
+	def setUserInfo(pId: String, name: String, token: String): Unit = {
+		playerId = pId
+		nickname = name
+		userToken = token
+		loginScene.readyToJoin
 	}
 
 }
