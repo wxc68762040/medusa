@@ -92,7 +92,7 @@ object RoomActor {
     }
   }
 
-  private def idle(roomId: Long, tickCount: Long, eventList:ListBuffer[Protocol.GameMessage],
+  private def idle( roomId: Long, tickCount: Long, eventList:ListBuffer[Protocol.GameMessage],
                    userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String, Long)],
                    watcherMap: mutable.HashMap[String,mutable.HashMap[String, ActorRef[WatcherActor.Command]]],  //watcherMap:  playerId -> Map[watcherId -> watchActor]
                   deadUserList:mutable.ListBuffer[String], grid: GridOnServer, roomEmptyCount: Long)
@@ -106,7 +106,6 @@ object RoomActor {
             userMap.put(t.playerId, (t.userActor, t.playerName, tickCount))
             deadUserList -= t.playerId
             grid.addSnake(t.playerId, t.playerName)
-            //dispatchTo(t.playerId, UserActor.DispatchMsg(Protocol.Id(t.playerId)), userMap)
             eventList.append(Protocol.NewSnakeJoined(t.playerId, t.playerName, roomId))
             dispatch( userMap,watcherMap,Protocol.NewSnakeJoined(t.playerId, t.playerName, roomId))
             dispatch(userMap,watcherMap,Protocol.DeadListBuff(deadUserList))
@@ -297,10 +296,10 @@ object RoomActor {
               //检查该watcher是否在其他的player的观看map中，如果存在，则删除
               watcherMap.map{ k =>
                 if(k._1 != t.playerId){
-                  if(k._2.contains(t.watcherId))watcherMap.get(k._1).get.remove(t.watcherId)
+                  if(k._2.contains(t.watcherId))watcherMap(k._1).remove(t.watcherId)
                 }
               }
-              watcherMap.get(t.playerId).get.put(t.watcherId, t.watcherRef)
+              watcherMap(t.playerId).put(t.watcherId, t.watcherRef)
             }else{
               val watcherMapIn = new mutable.HashMap[String,ActorRef[WatcherActor.Command]]()
               watcherMapIn.put(t.watcherId, t.watcherRef)
@@ -336,7 +335,7 @@ object RoomActor {
             Behavior.same
 
           case t: YouAreUnwatched =>
-            if(!watcherMap.get(t.playerId).isEmpty) watcherMap.get(t.playerId).get.remove(t.watcherId)
+            if(watcherMap.get(t.playerId).isDefined) watcherMap(t.playerId).remove(t.watcherId)
             Behaviors.same
 
           case ChildDead(name, childRef) =>
