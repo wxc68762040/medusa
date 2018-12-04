@@ -62,7 +62,7 @@ object WatcherManager {
 //              getWatcherActor(ctx, t.watcherId) ! WatcherActor.KillSelf
 //            }
             val watcher = getWatcherActor(ctx, t.watcherId, t.roomId)
-            watcherMap.put(t.watcherId,("", t.roomId))
+            watcherMap.put(t.watcherId, (t.playerId, t.roomId))
             roomManager ! RoomManager.GetPlayerByRoomId(t.playerId, t.roomId, t.watcherId, watcher)
             t.replyTo ! getWebSocketFlow(watcher)
             Behaviors.same
@@ -132,7 +132,7 @@ object WatcherManager {
       //.map { msg => TextMessage.Strict(write(msg)) // ... pack outgoing messages into WS JSON messages ...
       .map {
       case message: GameMessage =>
-        val sendBuffer = new MiddleBufferInJvm(409600)
+        val sendBuffer = new MiddleBufferInJvm(163840)
         BinaryMessage.Strict(ByteString(
           //encoded process
           message.fillMiddleBuffer(sendBuffer).result()

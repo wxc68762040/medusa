@@ -212,7 +212,7 @@ object UserManager {
       .via(UserActor.flow(userActor)) // ... and route them through the chatFlow ...
       .map { //... pack outgoing messages into WS JSON messages ...
       case message: GameMessage =>
-        val sendBuffer = new MiddleBufferInJvm(40960)
+        val sendBuffer = new MiddleBufferInJvm(163840)
         val msg = ByteString(
           //encoded process
           message.fillMiddleBuffer(sendBuffer).result()
@@ -252,7 +252,7 @@ object UserManager {
       .via(UserActor.watchFlow(userActor)) // ... and route them through the chatFlow ...
       .map { //... pack outgoing messages into WS JSON messages ...
       case message: GameMessage =>
-        val sendBuffer = new MiddleBufferInJvm(40960)
+        val sendBuffer = new MiddleBufferInJvm(163840)
         val msg = ByteString(
           //encoded process
           message.fillMiddleBuffer(sendBuffer).result())

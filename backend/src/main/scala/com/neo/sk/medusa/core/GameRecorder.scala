@@ -29,7 +29,7 @@ object GameRecorder {
 
   private final val log = LoggerFactory.getLogger(this.getClass)
   private final val InitTime = Some(5.minutes)
-  private final val saveTime = 10.minutes
+  private final val saveTime = 1.minutes
   private final val maxRecordNum = 10
 
   sealed trait Command
