@@ -27,11 +27,10 @@ object Api4GameAgent extends  HttpUtil{
           case Right(rin) =>
             Right(LoginResponse(UrlData(rin.data.wsUrl,rin.data.scanUrl.replaceFirst("data:image/png;base64,",""))))
           case Left(lout) =>
-            Left(s"error:${lout}")
+            Left(s"decode loginRsp error: $lout")
         }
       case Left(e) =>
-        log.info(s"${e}")
-        Left("error")
+        Left(s"getLoginResponse error: $e")
     }
   }
 //没有处理机器人bot的情况
@@ -53,12 +52,6 @@ object Api4GameAgent extends  HttpUtil{
         Left("get return error:"+erStr)
     }
 
-  }
-
-
-  def main(args: Array[String]): Unit = {
-    getLoginResponseFromEs()
-    Thread.sleep(1500)
   }
 
 }

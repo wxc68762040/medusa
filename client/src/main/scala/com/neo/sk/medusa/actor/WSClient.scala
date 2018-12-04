@@ -12,8 +12,8 @@ import akka.stream.typed.scaladsl.{ActorSink, _}
 import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.ByteString
 import com.neo.sk.medusa.common.{AppSettings, StageContext}
-import com.neo.sk.medusa.controller.GameController
-import com.neo.sk.medusa.scene.GameScene
+import com.neo.sk.medusa.controller.{GameController, LoginController}
+import com.neo.sk.medusa.scene.{GameScene, LoginScene}
 import com.neo.sk.medusa.snake.Protocol._
 import com.neo.sk.medusa.snake.Protocol4Agent.{Ws4AgentResponse, WsResponse}
 import org.seekloud.byteobject.ByteObject._
@@ -21,9 +21,11 @@ import org.seekloud.byteobject.MiddleBufferInJvm
 import org.slf4j.LoggerFactory
 import io.circe.parser.decode
 import java.net.URLEncoder
+
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import com.neo.sk.medusa.controller.Api4GameAgent._
+import com.neo.sk.medusa.gRPCService.{MedusaServer, MedusaTestClient}
 /**
 	* Created by wangxicheng on 2018/10/19.
 	*/
@@ -31,23 +33,30 @@ import com.neo.sk.medusa.controller.Api4GameAgent._
 object WSClient {
 	
 	sealed trait WsCommand
+	case object BotStart extends WsCommand
 	case class ConnectGame(id: String, name: String, accessCode: String) extends WsCommand
+	case class GetLoginInfo(id: String, name: String, access: String) extends WsCommand
 	case class EstablishConnectionEs(ws:String,scanUrl:String) extends WsCommand
-
-
 	case object Stop extends WsCommand
+	case object ClientTest extends WsCommand
+	
+	case object TimerKeyForTest
 
 	private val log = LoggerFactory.getLogger("WSClient")
 	private val logPrefix = "WSClient"
 	def create(gameMessageReceiver: ActorRef[WsMsgSource],stageCtx: StageContext, _system: ActorSystem, _materializer: Materializer, _executor: ExecutionContextExecutor): Behavior[WsCommand] = {
 		Behaviors.setup[WsCommand] { ctx =>
 			Behaviors.withTimers { timer =>
-				working(gameMessageReceiver, stageCtx)(timer, _system, _materializer, _executor)
+				val loginScene = new LoginScene()
+				val loginController = new LoginController(ctx.self, loginScene, stageCtx)
+				loginController.showScene()
+				working(gameMessageReceiver, loginController, stageCtx)(timer, _system, _materializer, _executor)
 			}
 		}
 	}
 	
 	private def working(gameMessageReceiver: ActorRef[WsMsgSource],
+											loginController: LoginController,
 											stageCtx: StageContext)
 										 (implicit timer: TimerScheduler[WsCommand],
 											system: ActorSystem,
@@ -82,6 +91,19 @@ object WSClient {
 //					} //链接断开时
 					Behaviors.same
 
+				case BotStart	=>
+					val port = 5321
+					val server = MedusaServer.build(port, executor, ctx.self, gameMessageReceiver, stageCtx)
+					server.start()
+					log.info(s"Server started at $port")
+					
+					sys.addShutdownHook {
+						log.info("JVM SHUT DOWN.")
+						server.shutdown()
+						log.info("SHUT DOWN.")
+					}
+					timer.startSingleTimer(TimerKeyForTest, ClientTest, 20.seconds)
+					Behavior.same
 
 				case EstablishConnectionEs(wsUrl, scanUrl) =>
 					val webSocketFlow = Http().webSocketClientFlow(WebSocketRequest(wsUrl))
@@ -102,7 +124,21 @@ object WSClient {
 					connected.onComplete(i => log.info(i.toString))
 					Behavior.same
 
-
+				case GetLoginInfo(id, name, token) =>
+					loginController.setUserInfo(id, name, token)
+					Behavior.same
+				
+				case ClientTest =>
+					log.info("get clientTest")
+					val host = "127.0.0.1"
+					val port = 5321
+					val playerId = "rua~"
+					val apiToken = "lala"
+					val client = new MedusaTestClient(host, port, playerId, apiToken)
+					val rsp1 = client.createRoom()
+					rsp1.onComplete(println(_))
+					Behavior.same
+					
 				case Stop =>
 					log.info("WSClient now stop.")
 					Behaviors.stopped
@@ -122,16 +158,10 @@ object WSClient {
           decode[Ws4AgentResponse](msg) match {
             case Right(res) =>
               if (res.Ws4AgentRsp.errCode == 0) {
-                println("res:   " + res)
                 val playerId = "user" + res.Ws4AgentRsp.data.userId.toString
                 val nickname = res.Ws4AgentRsp.data.nickname
-                linkGameAgent(gameId, playerId, res.Ws4AgentRsp.data.token).map {
-                  case Right(resl) =>
-                    log.debug("accessCode: " + resl.accessCode)
-                    self ! ConnectGame(playerId, nickname, resl.accessCode)
-                  case Left(l) =>
-                    log.error("link error!")
-                }
+								val token = res.Ws4AgentRsp.data.token
+              	self ! GetLoginInfo(playerId, nickname, token)
               } else {
                 log.error("link error!")
               }
