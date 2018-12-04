@@ -149,8 +149,8 @@ class GameInfoCanvas(canvas: Canvas, gameScene: GameScene) {
 				}
 				i += 1
 		}
+
+    //val infoByte = GameController.canvas2byteArray(canvas)
+    //println(infoByte)
   }
-
-
-
 }
