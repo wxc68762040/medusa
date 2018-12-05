@@ -57,10 +57,12 @@ object Dependencies {
   val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
   val codec = "commons-codec" % "commons-codec" % "1.10"
   val postgresql = "org.postgresql" % "postgresql" % "9.4.1208"
-  val asynchttpclient = "org.asynchttpclient" % "async-http-client" % "2.0.32"
+  val asynchttpclient = "org.asynchttpclient" % "async-http-client" % "2.5.2"
   val ehcache = "net.sf.ehcache" % "ehcache" % "2.10.4"
   val essf = "org.seekloud" %% "essf" % "0.0.1-beta3"
   val byteobject = "org.seekloud" %% "byteobject" % "0.1.2"
+  val grpc = "io.grpc" % "grpc-netty" % scalapb.compiler.Version.grpcJavaVersion
+  val scalapbDependency = "com.thesamet.scalapb" %% "scalapb-runtime-grpc" % scalapb.compiler.Version.scalapbVersion
 
 
   val backendDependencies =
@@ -83,7 +85,9 @@ object Dependencies {
       Dependencies.asynchttpclient,
       Dependencies.ehcache,
       Dependencies.essf,
-      Dependencies.byteobject
+      Dependencies.byteobject,
+      Dependencies.grpc,
+      Dependencies.scalapbDependency
     )
 
 
