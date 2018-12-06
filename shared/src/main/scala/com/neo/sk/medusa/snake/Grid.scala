@@ -59,6 +59,7 @@ trait Grid {
     val map = actionMap.getOrElse(frame, Map.empty)
     val tmp = map + (id -> keyCode)
     actionMap += (frame -> tmp)
+    actionMap = actionMap.filter(_._1 > frame - 15)
   }
 
 

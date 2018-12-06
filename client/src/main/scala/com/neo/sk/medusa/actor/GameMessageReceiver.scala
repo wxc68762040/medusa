@@ -96,7 +96,7 @@ object GameMessageReceiver {
 				case Protocol.SnakeAction(id, keyCode, frame) =>
 					if(id != myId) {
 						ClientBoot.addToPlatform {
-							grid.addActionWithFrame(id, keyCode, frame)
+							grid.addActionWithFrame(id, keyCode, math.max(frame,grid.frameCount))
 						}
 					}
 					Behavior.same
