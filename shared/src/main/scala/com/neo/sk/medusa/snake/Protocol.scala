@@ -103,6 +103,7 @@ object Protocol {
 
   case class JoinRoomSuccess(playerId:String,roomId:Long)extends GameMessage
 
+
   case class JoinRoomFailure(playerId:String,roomId:Long,errorCode:Int,msg:String) extends GameMessage
 
 
