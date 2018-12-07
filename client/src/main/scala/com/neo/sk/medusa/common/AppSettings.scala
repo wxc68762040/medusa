@@ -37,4 +37,6 @@ object AppSettings {
   val gameHost = appConfig.getString("gameServer.host")
   val gameDomain = appConfig.getString("gameServer.domain")
 
+  val isLayer = appConfig.getBoolean("isLayer")
+
 }

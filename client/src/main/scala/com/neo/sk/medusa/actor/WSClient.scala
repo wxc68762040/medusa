@@ -13,7 +13,7 @@ import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.ByteString
 import com.neo.sk.medusa.common.{AppSettings, StageContext}
 import com.neo.sk.medusa.controller.{GameController, LoginController}
-import com.neo.sk.medusa.scene.{GameScene, LoginScene}
+import com.neo.sk.medusa.scene.{GameScene, LayerScene, LoginScene}
 import com.neo.sk.medusa.snake.Protocol._
 import com.neo.sk.medusa.snake.Protocol4Agent.{Ws4AgentResponse, WsResponse}
 import org.seekloud.byteobject.ByteObject._
@@ -78,7 +78,8 @@ object WSClient {
 					val connected = response.flatMap { upgrade =>
 						if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
 							val gameScene = new GameScene()
-							val gameController = new GameController(id, name, accessCode, stageCtx, gameScene, stream)
+							val layerScene = new LayerScene
+							val gameController = new GameController(id, name, accessCode, stageCtx, gameScene, layerScene, stream)
 							gameController.connectToGameServer(gameController)
 							Future.successful(s"$logPrefix connect success.")
 						} else {
