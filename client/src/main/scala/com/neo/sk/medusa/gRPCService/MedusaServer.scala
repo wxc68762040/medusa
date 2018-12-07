@@ -8,10 +8,10 @@ import akka.stream.scaladsl.Keep
 import com.neo.sk.medusa.actor.WSClient
 import com.neo.sk.medusa.common.StageContext
 import com.neo.sk.medusa.controller.GameController
-import com.neo.sk.medusa.scene.GameScene
+import com.neo.sk.medusa.scene.{GameScene, LayerScene}
 import com.neo.sk.medusa.snake.Protocol
 import com.neo.sk.medusa.snake.Protocol.WsMsgSource
-import com.neo.sk.medusa.ClientBoot.{system, materializer, executor}
+import com.neo.sk.medusa.ClientBoot.{executor, materializer, system}
 import io.grpc.{Server, ServerBuilder}
 import org.seekloud.esheepapi.pb.api._
 import org.seekloud.esheepapi.pb.actions._
@@ -67,7 +67,8 @@ class MedusaServer(
 		val connected = response.flatMap { upgrade =>
 			if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
 				val gameScene = new GameScene()
-				val gameController = new GameController(request.playerId, request.playerId, request.apiToken, stageCtx, gameScene, stream)
+				val layerScene = new LayerScene
+				val gameController = new GameController(request.playerId, request.playerId, request.apiToken, stageCtx, gameScene, layerScene, stream)
 				gameController.connectToGameServer(gameController)
 				Future.successful(s"bot connect success.")
 			} else {
