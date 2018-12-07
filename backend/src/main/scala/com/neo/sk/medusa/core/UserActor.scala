@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory
 
 import scala.util.{Failure, Success}
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration._
 
 
@@ -52,12 +53,9 @@ object UserActor {
   final case class FailureMessage(ex: Throwable) extends Command
 
   case class UserFrontActor(actor: ActorRef[WsMsgSource]) extends Command
-  case class UserFrontCreateActor(actor: ActorRef[WsMsgSource]) extends Command
-
   case class UserWatchFrontActor(actor: ActorRef[WsMsgSource]) extends Command
 
   case class StartGame(playerId: String, playerName: String, roomId: Long,isNewUser:Boolean=true) extends Command
-  case class CreateRoom(playerId: String, playerName: String,pwd:Option[String]) extends Command
   case class JoinRoomSuccess(roomId: Long, roomActor: ActorRef[RoomActor.Command]) extends Command
 
   case class JoinRoomFailure(roomId: Long, errorCode: Int, msg: String) extends Command
@@ -98,6 +96,11 @@ object UserActor {
 
   case object KillSelf extends Command
 
+
+  case class JoinRoom(roomId:Long,password:String,isNewUser:Boolean) extends Command
+  case class CreateRoom(roomId:Long,password:String) extends  Command
+
+
   def create(playerId: String, playerName: String,password:String): Behavior[Command] = {
     Behaviors.setup[Command] {
       ctx =>
@@ -109,25 +112,18 @@ object UserActor {
         }
     }
   }
-
-  private def init(playerId: String, playerName: String,password:String)(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]) =
+//var frontActor1:ListBuffer[ActorRef[Protocol.WsMsgSource]] = ListBuffer.empty[ActorRef[Protocol.WsMsgSource]]
+  private def init(playerId: String, playerName: String,password:String)(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]):Behavior[Command] =
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
           case UserFrontActor(frontActor) =>
             ctx.watchWith(frontActor, FrontLeft(frontActor))
-            userManager ! UserManager.UserReady(playerId, ctx.self, 0,password)
             switchBehavior(ctx, "idle", idle(playerId, playerName,password, frontActor))
 
           case UserWatchFrontActor(frontActor) =>
             userManager ! UserManager.UserReady(playerId, ctx.self, 1,password)
             switchBehavior(ctx, "idle", idle(playerId, playerName,password, frontActor))
-
-          case UserFrontCreateActor(frontActor)=>
-            userManager ! UserManager.UserReady(playerId, ctx.self, 2,password)
-            switchBehavior(ctx, "idle", idle(playerId, playerName,password, frontActor))
-
-
 
           case TimeOut(m) =>
             log.debug(s"${ctx.self.path} is time out when busy,msg=$m")
@@ -149,12 +145,16 @@ object UserActor {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
-          case StartGame(_, _, roomId,isNewUser) =>
+
+          case JoinRoom(roomId,password,isNewUser) =>
             roomManager ! RoomManager.JoinGame(playerId, playerName, roomId, isNewUser, ctx.self,Some(password))
-            Behaviors.same
-          case CreateRoom(playerId,playerName,password) =>
-            roomManager ! RoomManager.CreateRoom(playerId,playerName,ctx.self,password)
-            Behavior.same
+            switchBehavior(ctx, "idle", idle(playerId, playerName,password, frontActor))
+
+          case CreateRoom(roomId,password) =>
+            roomManager ! RoomManager.CreateRoom(playerId,playerName,ctx.self,Some(password))
+            switchBehavior(ctx, "idle", idle(playerId, playerName,password, frontActor))
+
+
           case ReplayGame(recordId, watchPlayerId, frame)=>
             log.info(s"start replay")
 
@@ -359,7 +359,9 @@ object UserActor {
           case RestartGame =>
             //重新开始游戏
             timer.cancel(UserDeadTimerKey)
-            ctx.self ! StartGame(playerId, playerName, roomId, isNewUser = false)
+            println("RestartGame roomId: "+roomId+"  password: "+password)
+            ctx.self ! JoinRoom(roomId, password, false)
+//            ctx.self ! StartGame(playerId, playerName, roomId, isNewUser = false)
             switchBehavior(ctx, "idle", idle(playerId, playerName,password, frontActor))   //--------------
 
           case FrontLeft(front) =>
@@ -391,6 +393,7 @@ object UserActor {
 
 
   def flow(userActor: ActorRef[Command],isCreating:Int)(implicit decoder: Decoder[UserAction]): Flow[UserAction, WsMsgSource, Any] = {
+    println("--------------------flow")
     val in =
       Flow[UserAction]
         .map {
@@ -402,6 +405,10 @@ object UserActor {
             }
           case Protocol.NetTest(id, createTime) =>
             NetTest(id, createTime)
+          case Protocol.JoinRoom(roomId,password,isNewUser) =>
+            JoinRoom(roomId,password,isNewUser)
+          case Protocol.CreateRoom(roomId,password) =>
+            CreateRoom(roomId,password)
           case x =>
             UnKnowAction(x)
         }
@@ -420,8 +427,6 @@ object UserActor {
       ).mapMaterializedValue { frontActor =>
         if(isCreating==0){
           userActor ! UserFrontActor(frontActor)
-        }else{
-          userActor ! UserFrontCreateActor(frontActor)
         }
       }
 

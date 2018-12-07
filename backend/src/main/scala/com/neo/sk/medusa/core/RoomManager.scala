@@ -115,7 +115,7 @@ object RoomManager {
                 userRoomMap.put(playerId, (randomRoomId, playerName))
                 userActor ! UserActor.JoinRoomSuccess(randomRoomId, getRoomActor(ctx, randomRoomId))
               }else {         //如果房间人数全满  或者 存在人数未满但有密码的房间,那么就新建一个房间
-                log.info(s"all room is full or you have not permissions to enter any room ,start a new room.. ")
+                log.info(s"all room is full or you have not permissions to enter any room,or you are the first ,start a new room.. ")
                 ctx.self ! CreateRoom(playerId,playerName,userActor,password)
               }
             } else {
@@ -136,26 +136,29 @@ object RoomManager {
                 }
               } else {
                 //房间不存在
-                userActor ! UserActor.JoinRoomFailure(roomId, 100002, s"room$roomId  doesn't exist!")
+                userActor ! UserActor.JoinRoomFailure(roomId, 100002, s"room   $roomId  doesn't exist!")
               }
             }
             Behaviors.same
 
           case CreateRoom(playerId, playerName, userActor,password) =>
             val newRoomId = idGenerator.getAndIncrement()
-            log.info(s"room full ,start a new room.. ")
+            log.info(s"create a new room.. ")
             roomNumMap.put(newRoomId, 1)
             userRoomMap.put(playerId, (newRoomId, playerName))
             userRoomPwdMap.put(newRoomId,(playerId,password.getOrElse("")))
             userActor ! UserActor.JoinRoomSuccess(newRoomId, getRoomActor(ctx, newRoomId))
+            println("userRoomPwdMap:   "+userRoomPwdMap)
             Behavior.same
 
 
           case UserLeftRoom(playerId, roomId) =>
+
             if(userRoomMap.get(playerId).nonEmpty){
               if(roomNumMap.get(roomId).nonEmpty) {
-                if (roomNumMap(roomId) - 1 <= 0) {
+                if (roomNumMap(roomId) - 1 <= 0) {   //如果房间人数为0
                   roomNumMap.update(roomId, 0)
+                  userRoomPwdMap.remove(roomId)      //删除
                   timer.startSingleTimer(RoomEmptyTimerKey(roomId), RoomEmptyKill(roomId), UserLeftRoomTime)
                 } else {
                   roomNumMap.update(roomId, roomNumMap(roomId) - 1)

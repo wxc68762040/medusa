@@ -25,6 +25,7 @@ import io.circe.parser.decode
   * Date: 5/12/2018
   * Time: 13:00 PM
   */
+/***废弃***/
 trait RoomService4Bot extends  ServiceUtils{
 
   implicit val system: ActorSystem

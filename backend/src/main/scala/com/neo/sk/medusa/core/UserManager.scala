@@ -47,7 +47,7 @@ object UserManager {
 
   case class GetRecordFrame(recordId:Long, playerId:String, sender:ActorRef[RecordApiProtocol.FrameInfo]) extends Command
 
-  case class UserReady(playerId: String, userActor: ActorRef[UserActor.Command], state: Int,password:String) extends Command
+  case class UserReady(playerId: String, userActor: ActorRef[UserActor.Command], state: Long,password:String) extends Command
 
   case class UserGone(playerId:String) extends Command
 
@@ -75,6 +75,7 @@ object UserManager {
       (ctx, msg) =>
         msg match {
           case GetWebSocketFlow(playerId, playerName, roomId, replyTo,password,isCreating) =>
+            //此处的roomId是没有任何作用的
             val user = getUserActor(ctx, playerId, playerName,password.getOrElse(""))
             allUser.put(playerId, user)
             if (userRoomMap.get(playerId).nonEmpty) {
@@ -100,17 +101,8 @@ object UserManager {
             Behaviors.same
 
           case UserReady(playerId, userActor, state,password) =>
-            if (state == 0) {
-              userActor ! UserActor.StartGame(playerId, userRoomMap(playerId)._2, userRoomMap(playerId)._1)
-              userRoomMap.remove(playerId)
-            }else if(state==2){
-              userActor ! UserActor.CreateRoom(playerId, userRoomMap(playerId)._2, Some(password))
-              userRoomMap.remove(playerId)
-            }
-            else {
-              userActor ! UserActor.ReplayGame(userRecMap(playerId).recordId, userRecMap(playerId).watchPlayerId, userRecMap(playerId).frame)
-              userRecMap.remove(playerId)
-            }
+            userActor ! UserActor.ReplayGame(userRecMap(playerId).recordId, userRecMap(playerId).watchPlayerId, userRecMap(playerId).frame)
+            userRecMap.remove(playerId)
             Behaviors.same
 
           case GetRecordFrame(recordId, playerId, sender) =>
