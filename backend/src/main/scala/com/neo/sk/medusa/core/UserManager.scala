@@ -135,13 +135,13 @@ object UserManager {
             Behaviors.same
 
           case ClearMsgLength =>
-            log.info(s"msg total length  is ${msgLength/10}B/s ")
+          /*  log.info(s"msg total length  is ${msgLength/10}B/s ")
             log.info(s"keyLength:${RoomActor.keyLength/10}B/s")
             log.info(s"eatFoodLength:${RoomActor.eatAppLength/10}B/s")
             log.info(s"feedAppLength:${RoomActor.feedAppLength/10}B/s")
             log.info(s"syncLength:${RoomActor.syncLength/10}B/s")
             log.info(s"speedLength:${RoomActor.speedLength/10}B/s")
-            log.info(s"rankLength:${RoomActor.rankLength/10}B/s")
+            log.info(s"rankLength:${RoomActor.rankLength/10}B/s")*/
             msgLength = 0
             RoomActor.keyLength = 0l
             RoomActor.eatAppLength = 0l
