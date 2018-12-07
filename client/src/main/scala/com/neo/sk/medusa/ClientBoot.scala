@@ -31,7 +31,12 @@ object ClientBoot {
 class ClientBoot extends javafx.application.Application {
 	
 	import ClientBoot._
+	import scala.collection.JavaConverters._
 	override def start(mainStage: Stage): Unit = {
+		val a = getParameters.getRaw.asScala.toList
+		for(a11 <- a) {
+			println(a11)
+		}
 		val context = new StageContext(mainStage)
 		system.spawn(WSClient.create(gameMessageReceiver, context, system, materializer, executor), "WSClient")
 	}
