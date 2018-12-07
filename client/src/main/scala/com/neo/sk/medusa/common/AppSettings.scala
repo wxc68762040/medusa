@@ -36,5 +36,6 @@ object AppSettings {
   val gameProtocol = appConfig.getString("gameServer.protocol")
   val gameHost = appConfig.getString("gameServer.host")
   val gameDomain = appConfig.getString("gameServer.domain")
+  val botSecure = (appConfig.getString("botSecure.playerId"), appConfig.getString("botSecure.apiToken"))
 
 }

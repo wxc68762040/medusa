@@ -15,6 +15,7 @@ import com.neo.sk.medusa.snake.{Boundary, Point, Protocol}
 import com.neo.sk.medusa.common.StageContext._
 import com.neo.sk.medusa.ClientBoot.{executor, scheduler}
 import javafx.scene.input.KeyCode
+import org.seekloud.esheepapi.pb.actions._
 import scala.concurrent.duration._
 import com.neo.sk.medusa.snake.Protocol._
 import java.awt.event.KeyEvent
@@ -41,6 +42,19 @@ object GameController {
 		KeyCode.DOWN,
 		KeyCode.F2
 	)
+
+	val watchKeys4Bot = Set(Move.up, Move.down, Move.left, Move.right)
+
+	def key4Bot2Int(k: Move) = {
+		k match {
+			case Move.up => KeyEvent.VK_UP
+			case Move.down => KeyEvent.VK_DOWN
+			case Move.left => KeyEvent.VK_LEFT
+			case Move.right => KeyEvent.VK_RIGHT
+		}
+	}
+
+
 
 	def keyCode2Int(c: KeyCode) = {
 		c match {
@@ -71,6 +85,10 @@ class GameController(id: String,
 		}
 	}
 
+	def getFrameCount = grid.frameCount
+
+	def getScore = grid.myRank
+
 	def startGameLoop() = {
 		basicTime = System.currentTimeMillis()
 		gameScene.startRefreshInfo
@@ -88,7 +106,7 @@ class GameController(id: String,
 		}
 		animationTimer.start()
 	}
-	
+
 	def gameStop() = {
 		stageCtx.closeStage()
 	}
@@ -123,6 +141,15 @@ class GameController(id: String,
 			}
 		}
 	})
+
+	def gameActionReceiver(key: Move) = {
+		if(watchKeys4Bot.contains(key)) {
+			grid.addActionWithFrame(grid.myId, key4Bot2Int(key), grid.frameCount + operateDelay)
+			val msg: Protocol.UserAction = Key(grid.myId, key4Bot2Int(key), grid.frameCount + operateDelay + advanceFrame)
+			serverActor ! msg
+		}
+	}
+
 	
 	stageCtx.setStageListener(new StageContext.StageListener {
 		override def onCloseRequest(): Unit = {
