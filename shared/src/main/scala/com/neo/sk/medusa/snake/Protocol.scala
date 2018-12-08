@@ -103,6 +103,7 @@ object Protocol {
 
   case class JoinRoomSuccess(playerId:String,roomId:Long)extends GameMessage
 
+
   case class JoinRoomFailure(playerId:String,roomId:Long,errorCode:Int,msg:String) extends GameMessage
 
 
@@ -117,8 +118,8 @@ object Protocol {
   case class NetTest(id: String, createTime: Long) extends UserAction
 
   case class TextInfo(id: String, info: String) extends UserAction
-
-
+  case class JoinRoom(roomId:Long,password:String,isNewUser:Boolean=true) extends UserAction
+  case class CreateRoom(roomId:Long,password:String) extends UserAction
  sealed trait CommonRsp {
     val errCode: Int
     val msg: String

@@ -10,6 +10,7 @@ import io.circe.generic.auto._
 import io.circe.parser._
 
 import scala.scalajs.js
+import scala.scalajs.js.annotation._
 import scala.scalajs.js.typedarray.ArrayBuffer
 import org.seekloud.byteobject.ByteObject._
 import org.seekloud.byteobject.{MiddleBufferInJs, decoder}
@@ -74,6 +75,9 @@ object NetGameHolder extends js.JSApp {
   var waitingShowKillList = List.empty[(String, String)]
   var savedGrid: Predef.Map[Long, GridDataSync] = Map[Long, Protocol.GridDataSync]()
   var updateCounter = 0L
+  val mask = dom.document.getElementById("mask").asInstanceOf[Div]
+  val login = dom.document.getElementById("login").asInstanceOf[Div]
+
 
   object MyColors {
     val myHeader = "#FFFFFF"
@@ -100,7 +104,84 @@ object NetGameHolder extends js.JSApp {
     }
 
     state = dom.window.location.pathname.replace("medusa", "").drop(1)
-    joinGame(state, dom.window.location.search)
+    val roomId = dom.document.getElementById("room").asInstanceOf[Input]
+    val password = dom.document.getElementById("password").asInstanceOf[Input]
+    val joinRoomBtn = dom.document.getElementById("joinRoom").asInstanceOf[Button]
+    val createRoomBtn = dom.document.getElementById("createRoom").asInstanceOf[Button]
+
+
+    val gameStream = createConnection(state, dom.window.location.search)
+    gameStream.onopen = { (event0: Event) =>
+      println(123)
+      dom.window.setInterval(() => {
+        val pingMsg = netInfoHandler.refreshNetInfo()
+        gameStream.send(pingMsg)
+      }, Protocol.netInfoRate)
+
+      GameView.drawGameOn()
+
+      wsSetup = true
+      if (state.contains("playGame") && !isTest) {
+        //GameView.canvas.focus()
+        GameView.canvas.onkeydown = {
+          (e: dom.KeyboardEvent) =>
+            if (playerState._2) {
+              if (watchKeys.contains(e.keyCode)) {
+                e.preventDefault()
+                val msg: Protocol.UserAction = if (e.keyCode == KeyCode.F2) {
+                  NetTest(myId, System.currentTimeMillis())
+                } else {
+                  grid.addActionWithFrame(myId, e.keyCode, grid.frameCount + operateDelay)
+                  Key(myId, e.keyCode, grid.frameCount + advanceFrame + operateDelay) //客户端自己的行为提前帧
+                }
+                msg.fillMiddleBuffer(sendBuffer) //encode msg
+                val ab: ArrayBuffer = sendBuffer.result() //get encoded data.
+                gameStream.send(ab) // send data.
+              }
+            } else {
+              if (e.keyCode == KeyCode.Space) {
+                val msg: Protocol.UserAction = Key(myId, e.keyCode, grid.frameCount)
+                msg.fillMiddleBuffer(sendBuffer) //encode msg
+                val ab: ArrayBuffer = sendBuffer.result() //get encoded data.
+                gameStream.send(ab) // send data.
+              }
+
+            }
+        }
+        GameInfo.canvas.onclick = {
+          _ => GameView.canvas.focus()
+        }
+      } else if(isTest) {
+        dom.window.setTimeout(() =>
+          dom.window.setInterval(() => {
+            val msg = if(playerState._2){testSend(false)}else{testSend(true)}
+            gameStream.send(msg)
+          }, 2000), 3000)
+      }
+      event0
+    }
+
+    joinRoomBtn.onclick ={ _ =>
+      mask.setAttribute("style","display:none")
+      login.setAttribute("style","display:none")
+      var roomTrueId:Long = -1L
+      var passTrueWd:String = ""
+      if(!roomId.value.isEmpty) roomTrueId = roomId.value.toLong
+      if(!password.value.isEmpty) passTrueWd = password.value
+      joinGame(gameStream,roomTrueId,passTrueWd,0)
+
+    }
+
+    createRoomBtn.onclick ={ _ =>
+      mask.setAttribute("style","display:none")
+      login.setAttribute("style","display:none")
+      var roomTrueId:Long = -1L
+      var passTrueWd:String = ""
+      if(!roomId.value.isEmpty) roomTrueId = roomId.value.toLong
+      if(!password.value.isEmpty) passTrueWd = password.value
+      joinGame(gameStream,roomTrueId,passTrueWd,1)
+    }
+
     dom.window.requestAnimationFrame(drawLoop())
   }
 
@@ -197,9 +278,11 @@ object NetGameHolder extends js.JSApp {
 
   def draw(scaleW: Double, scaleH: Double): Unit = {
     netInfoHandler.fpsCounter += 1
+
     if (wsSetup) {
       val data = grid.getGridSyncData4Client
       val timeNow = System.currentTimeMillis()
+
       GameView.drawGrid(myId, data, scaleW, scaleH)
       GameMap.drawLittleMap(myId, data, scaleW, scaleH)
       GameInfo.drawInfo(myId, data, scaleW, scaleH)
@@ -235,57 +318,15 @@ object NetGameHolder extends js.JSApp {
     ab
   }
 
-  def joinGame(path: String, parameters: String): Unit = {
-    val gameStream = new WebSocket(getWebSocketUri(dom.document, path, parameters))
+  def createConnection(path: String, parameters: String): WebSocket ={
+    new WebSocket(getWebSocketUri(dom.document, path, parameters))
+  }
 
-    gameStream.onopen = { (event0: Event) =>
-      dom.window.setInterval(() => {
-        val pingMsg = netInfoHandler.refreshNetInfo()
-        gameStream.send(pingMsg)
-      }, Protocol.netInfoRate)
 
-      GameView.drawGameOn()
+  def joinGame(gameStream:WebSocket,roomId:Long,password:String,JorC:Int): Unit = {
+//    val gameStream = createConnection(path: String, parameters: String)
+    println(gameStream.url)
 
-      wsSetup = true
-      if (state.contains("playGame") && !isTest) {
-        //GameView.canvas.focus()
-        GameView.canvas.onkeydown = {
-          (e: dom.KeyboardEvent) =>
-            if (playerState._2) {
-              if (watchKeys.contains(e.keyCode)) {
-                e.preventDefault()
-                val msg: Protocol.UserAction = if (e.keyCode == KeyCode.F2) {
-                  NetTest(myId, System.currentTimeMillis())
-                } else {
-                  grid.addActionWithFrame(myId, e.keyCode, grid.frameCount + operateDelay)
-                  Key(myId, e.keyCode, grid.frameCount + advanceFrame + operateDelay) //客户端自己的行为提前帧
-                }
-                msg.fillMiddleBuffer(sendBuffer) //encode msg
-                val ab: ArrayBuffer = sendBuffer.result() //get encoded data.
-                gameStream.send(ab) // send data.
-              }
-            } else {
-              if (e.keyCode == KeyCode.Space) {
-                val msg: Protocol.UserAction = Key(myId, e.keyCode, grid.frameCount)
-                msg.fillMiddleBuffer(sendBuffer) //encode msg
-                val ab: ArrayBuffer = sendBuffer.result() //get encoded data.
-                gameStream.send(ab) // send data.
-              }
-
-            }
-        }
-        GameInfo.canvas.onclick = {
-          _ => GameView.canvas.focus()
-        }
-      } else if(isTest) {
-        dom.window.setTimeout(() =>
-          dom.window.setInterval(() => {
-            val msg = if(playerState._2){testSend(false)}else{testSend(true)}
-            gameStream.send(msg)
-          }, 2000), 3000)
-      }
-      event0
-    }
 
     gameStream.onerror = { (event: ErrorEvent) =>
       GameView.drawGameOff()
@@ -293,6 +334,21 @@ object NetGameHolder extends js.JSApp {
       wsSetup = false
 
     }
+
+    if(JorC==0){
+      val msg1:Protocol.UserAction = JoinRoom(roomId,password)
+      msg1.fillMiddleBuffer(sendBuffer) //encode msg
+      val ab1: ArrayBuffer = sendBuffer.result() //get encoded data.
+      gameStream.send(ab1) // send data.
+    }else{
+      val msg1:Protocol.UserAction = CreateRoom(roomId,password)
+      msg1.fillMiddleBuffer(sendBuffer) //encode msg
+      val ab1: ArrayBuffer = sendBuffer.result() //get encoded data.
+      gameStream.send(ab1) // send data.
+    }
+
+
+
 
     gameStream.onmessage = { (event: MessageEvent) =>
       event.data match {
@@ -316,8 +372,12 @@ object NetGameHolder extends js.JSApp {
                   playerState = (id, true)
                   println(s"$id JoinRoomSuccess ")
 
-								case Protocol.JoinRoomFailure(id, _, errCode, msg) =>
-									println(s"$id JoinRoomFailure: $msg")
+								 case Protocol.JoinRoomFailure(id, _, errCode, msg) =>
+
+                 JsFunc.alert("加入房间失败")
+
+                 println(s"$id JoinRoomFailure: $msg")
+
                 case Protocol.TextMsg(_) =>
 
                 case Protocol.NewSnakeJoined(id, _, _) =>

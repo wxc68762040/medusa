@@ -33,7 +33,7 @@ trait LinkService extends ServiceUtils {
     parameter('playerId.as[String], 'playerName.as[String], 'roomId.as[Long].?, 'accessCode.as[String]) {
       (playerId, playerName, roomId, accessCode) =>
         accessAuth(accessCode) { info =>
-          val flowFuture: Future[Flow[Message, Message, Any]] = userManager ? (UserManager.GetWebSocketFlow(playerId, playerName, roomId.getOrElse(-1), _))
+          val flowFuture: Future[Flow[Message, Message, Any]] = userManager ? (UserManager.GetWebSocketFlow(playerId, playerName, roomId.getOrElse(-1), _,Some(""),0))
           dealFutureResult(
             flowFuture.map(r => handleWebSocketMessages(r))
           )
@@ -47,7 +47,7 @@ trait LinkService extends ServiceUtils {
 				val playerId = URLDecoder.decode(playerIdEncoded, "UTF-8")
 				val playerName = URLDecoder.decode(playerNameEncoded, "UTF-8")
 				accessAuth(accessCode) { info =>
-					val flowFuture: Future[Flow[Message, Message, Any]] = userManager ? (UserManager.GetWebSocketFlow(playerId, playerName, roomId.getOrElse(-1), _))
+					val flowFuture: Future[Flow[Message, Message, Any]] = userManager ? (UserManager.GetWebSocketFlow(playerId, playerName, roomId.getOrElse(-1), _,Some(""),0))
 					dealFutureResult(
 						flowFuture.map(r => handleWebSocketMessages(r))
 					)

@@ -4,6 +4,41 @@
   <meta charset="UTF-8">
   <title>medusa</title>
 </head>
+<style>
+  *{margin:0;padding:0;}
+  body{
+    width:100%;
+    /*height:10000000px;*/
+  }
+  #mask{
+    display:block;
+    background:rgba(0,0,0,0.02);
+    width:100%;
+    height:100%;
+    position:fixed;//利用固定定位的好处：页面还可以上下翻动，但是始终处于灰色背景下
+  }
+  #login{
+    display:block;
+    background:white;
+    width:400px;
+    height:250px;
+    position:absolute;
+    left:50%;
+    top:50%;
+    margin-left:-200px;
+    margin-top:-125px;
+  }
+  #login #close_login{
+    position:absolute;
+    left:350px;
+    top:10px;
+    font-size:20px;
+    width:20px;
+    height:20px;
+    background:skyblue;
+    cursor:pointer;
+  }
+</style>
 <body>
 
   <br>
@@ -13,10 +48,17 @@
   <canvas id="GameMap" tabindex="3" style="position:absolute;z-index:3;left: 0px; bottom: 0px;"></canvas>
   <canvas id="GameInfo" tabindex="2" style="position:absolute;z-index:4;left: 0px; top:0px;"></canvas>
   <canvas id="GameView" tabindex="1"  style="position:absolute;z-index:1;left: 0px; top: 0px;"></canvas>
-  <div id="startBg"  tabindex="4" style="position:absolute;z-index: 5;left: 0px; top: 0px;background: rgba(0, 0, 0, 0.9)">
 
+  <div id="startBg"  tabindex="4" style="position:absolute;z-index: 5;left: 0px; top: 0px;background: rgba(0, 0, 0, 0.9)">
+    <div id="mask" style=""></div>
+    <div id="login" style="">
+      <input id="room" name="room" placeholder="RoomId">
+      <input id="password" name="password" placeholder="Password"><br>
+      <button id="joinRoom">Join Room</button>
+      <button id="createRoom">Create Room</button>
+    </div>
     <form action="#" style=" width: 300px;margin: 200px auto;">
-      <div id="nameExist" style="font-size: larger;height: 50px;width: 300px;color: red;text-align: center"> </div>
+      <!--<div id="nameExist" style="font-size: larger;height: 50px;width: 300px;color: red;text-align: center"> </div>-->
       <!--<label for="name" style="color: white">Name: </label><input id="name" type="text" />-->
       <!--<input id="join" type="button" value="Join!"/>-->
     </form>

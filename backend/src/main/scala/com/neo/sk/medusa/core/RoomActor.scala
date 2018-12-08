@@ -92,7 +92,7 @@ object RoomActor {
     }
   }
 
-  private def idle(roomId: Long, tickCount: Long, eventList:ListBuffer[Protocol.GameMessage],
+  private def idle( roomId: Long, tickCount: Long, eventList:ListBuffer[Protocol.GameMessage],
                    userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String, Long)],
                    watcherMap: mutable.HashMap[String,mutable.HashMap[String, ActorRef[WatcherActor.Command]]],  //watcherMap:  playerId -> Map[watcherId -> watchActor]
                   deadUserList:mutable.ListBuffer[String], grid: GridOnServer, roomEmptyCount: Long)
@@ -287,7 +287,7 @@ object RoomActor {
           case CloseRecorder =>
             getGameRecorder(ctx, grid, roomId) ! GameRecorder.RoomEmpty
             Behaviors.same
-            
+
           case t: YourUserIsWatched =>
             if(watcherMap.contains(t.playerId)) { //如果player已经存在就不在创建对应的观看者map
               //检查该watcher是否在其他的player的观看map中，如果存在，则删除
