@@ -38,11 +38,15 @@ message Credit{
   string api_token = 2;
 }
 
+message CreateRoomReq{
+     Credit credit = 1;
+     string password = 2;
+}
+
 
 
 message CreateRoomRsp {
   string room_id = 1;
-
   int32 err_code = 13;
   State state = 14;
   string msg = 15;
@@ -51,7 +55,7 @@ message CreateRoomRsp {
 
 message JoinRoomReq {
   string room_id = 1;
-  Credit credit = 15;
+  CreateRoomReq creatRoomReq = 15;
 }
 
 
