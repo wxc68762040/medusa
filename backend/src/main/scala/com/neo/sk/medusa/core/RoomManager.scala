@@ -14,6 +14,7 @@ import com.neo.sk.medusa.Boot.watchManager
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.util.control.Breaks
 
 object RoomManager {
 
@@ -29,7 +30,7 @@ object RoomManager {
 
   final case class ChildDead[U](roomId: Long, childRef: ActorRef[U]) extends Command
 
-  case class JoinGame(playerId: String, playerName: String, roomId: Long,isNewJoin:Boolean, userActor: ActorRef[UserActor.Command]) extends Command
+  case class JoinGame(playerId: String, playerName: String, roomId: Long,isNewJoin:Boolean, userActor: ActorRef[UserActor.Command],pwd:Option[String]) extends Command
 
   case class UserLeftRoom(playerId: String, roomId: Long) extends Command
 
@@ -57,6 +58,8 @@ object RoomManager {
 
   case class INeedApple(playerId: String, watcherId: String,roomId:Long) extends Command
 
+  case class CreateRoom(playerId: String, playerName: String, userActor: ActorRef[UserActor.Command],pwd:Option[String]) extends Command
+
   val behaviors: Behavior[Command] = {
     log.info(s"RoomManager start...")
     Behaviors.setup[Command] {
@@ -67,25 +70,43 @@ object RoomManager {
             val roomNumMap = mutable.HashMap.empty[Long, Int]
             //userId->(roomId,userName)
             val userRoomMap = mutable.HashMap.empty[String, (Long, String)]
-            idle(roomNumMap, userRoomMap)
+            val userRoomPwdMap = mutable.HashMap.empty[Long,(String,String)]   //房间-->[创建者，密码]
+            idle(roomNumMap, userRoomMap,userRoomPwdMap)
         }
     }
   }
 
-	
-	
+
+  import Breaks.{break, breakable}
 	private def idle(roomNumMap: mutable.HashMap[Long, Int],
-                   userRoomMap: mutable.HashMap[String, (Long, String)])
+                   userRoomMap: mutable.HashMap[String, (Long, String)],
+                   userRoomPwdMap:mutable.HashMap[Long, (String, String)])
                   (implicit timer: TimerScheduler[Command]) =
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
-          case JoinGame(playerId, playerName, roomId, isNewJoin, userActor) =>
+          case JoinGame(playerId, playerName, roomId, isNewJoin, userActor,password) =>
             //分配房间 启动相应actor
             if (roomId == -1) {
-              //未指定房间
-              if (roomNumMap.exists(_._2 < maxUserNum)) {
-                val randomRoomId = roomNumMap.filter(_._2 < maxUserNum).head._1
+              //未指定房间，带密码也没有意义，直接寻找房间人数未满且不带密码的
+              val fewNumRoom = roomNumMap.filter(_._2<maxUserNum)//先选出房间人数未满的房间
+              var randomRoomId = Long.MinValue
+              if(!fewNumRoom.isEmpty){
+                breakable{
+                  for((k0,_)<- fewNumRoom){
+                    breakable{
+                      for ((k1, (_, v2)) <- userRoomPwdMap) {
+                        if (k0 == k1 && v2 == "") {   //再在人数未满的房间寻找不带密码的
+                          randomRoomId = k0
+                          break()
+                        }
+                      }
+                    }
+                    if(randomRoomId!=Long.MinValue) break()
+                  }
+                }
+              }
+              if(randomRoomId !=Long.MinValue){
                 timer.cancel(RoomEmptyTimerKey(randomRoomId))
                 //新加入游戏的 roomNum加一 否则不变
                 if(isNewJoin){
@@ -93,17 +114,14 @@ object RoomManager {
                 }
                 userRoomMap.put(playerId, (randomRoomId, playerName))
                 userActor ! UserActor.JoinRoomSuccess(randomRoomId, getRoomActor(ctx, randomRoomId))
-              } else {
-                val newRoomId = idGenerator.getAndIncrement()
-                log.info(s"room full ,start a new room.. ")
-                roomNumMap.put(newRoomId, 1)
-                userRoomMap.put(playerId, (newRoomId, playerName))
-                userActor ! UserActor.JoinRoomSuccess(newRoomId, getRoomActor(ctx, newRoomId))
+              }else {         //如果房间人数全满  或者 存在人数未满但有密码的房间,那么就新建一个房间
+                log.info(s"all room is full or you have not permissions to enter any room,or you are the first ,start a new room.. ")
+                ctx.self ! CreateRoom(playerId,playerName,userActor,password)
               }
             } else {
               //指定房间号
-              if (roomNumMap.get(roomId).nonEmpty) {
-                //房间已存在
+              if (roomNumMap.get(roomId).nonEmpty && userRoomPwdMap(roomId)._2.equals(password.get)) {
+                //房间已存在并且密码匹配
                 if (roomNumMap(roomId) >= maxUserNum) {
                   //房间已满
                   userActor ! UserActor.JoinRoomFailure(roomId, 100001, s"room $roomId has been full!")
@@ -118,17 +136,29 @@ object RoomManager {
                 }
               } else {
                 //房间不存在
-                userActor ! UserActor.JoinRoomFailure(roomId, 100002, s"room$roomId  doesn't exist!")
+                userActor ! UserActor.JoinRoomFailure(roomId, 100002, s"room   $roomId  doesn't exist!")
               }
             }
-
             Behaviors.same
 
+          case CreateRoom(playerId, playerName, userActor,password) =>
+            val newRoomId = idGenerator.getAndIncrement()
+            log.info(s"create a new room.. ")
+            roomNumMap.put(newRoomId, 1)
+            userRoomMap.put(playerId, (newRoomId, playerName))
+            userRoomPwdMap.put(newRoomId,(playerId,password.getOrElse("")))
+            userActor ! UserActor.JoinRoomSuccess(newRoomId, getRoomActor(ctx, newRoomId))
+            println("userRoomPwdMap:   "+userRoomPwdMap)
+            Behavior.same
+
+
           case UserLeftRoom(playerId, roomId) =>
+
             if(userRoomMap.get(playerId).nonEmpty){
               if(roomNumMap.get(roomId).nonEmpty) {
-                if (roomNumMap(roomId) - 1 <= 0) {
+                if (roomNumMap(roomId) - 1 <= 0) {   //如果房间人数为0
                   roomNumMap.update(roomId, 0)
+                  userRoomPwdMap.remove(roomId)      //删除
                   timer.startSingleTimer(RoomEmptyTimerKey(roomId), RoomEmptyKill(roomId), UserLeftRoomTime)
                 } else {
                   roomNumMap.update(roomId, roomNumMap(roomId) - 1)
