@@ -13,6 +13,7 @@ import com.neo.sk.medusa.snake._
 import com.neo.sk.medusa.ClientBoot.{executor, scheduler}
 import javafx.scene.input.KeyCode
 import org.seekloud.esheepapi.pb.actions._
+import org.seekloud.esheepapi.pb.observations._
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration._
@@ -28,9 +29,12 @@ import javafx.scene.effect.DropShadow
 import javafx.scene.image.{Image, WritableImage}
 import javafx.scene.paint.Color
 import javafx.scene.text.Font
+import org.seekloud.esheepapi.pb.api._
 import org.slf4j.LoggerFactory
 import akka.actor.{ActorSystem, Scheduler}
 import akka.actor.typed.scaladsl.adapter._
+import akka.japi.Option
+import com.google.protobuf.ByteString
 import com.neo.sk.medusa.common.AppSettings.config
 
 /**
@@ -80,7 +84,7 @@ object GameController {
 			case _ => KeyEvent.VK_F2
 		}
 	}
-	def canvas2byteArray(canvas: Canvas):Array[Int] = {
+	def canvas2byteArray(canvas: Canvas):Array[Byte] = {
     try {
       val params = new SnapshotParameters
       val w = canvas.getWidth.toInt
@@ -90,10 +94,10 @@ object GameController {
       canvas.snapshot(params, wi) //从画布中复制绘图并复制到writableImage
       SwingFXUtils.fromFXImage(wi, bi)
       val argb =  bi.getRGB(0, 0, w, h, null, 0, w)
-      argb
+      argb.toArray[Byte]
     }catch {
       case e: Exception=>
-        val a = new Array[Int](0)
+        val a = new Array[Byte](0)
         a
     }
 	}
@@ -101,6 +105,24 @@ object GameController {
   def drawTextLine(ctx: GraphicsContext, str: String, x: Double, lineNum: Int, lineBegin: Int = 0):Unit = {
     ctx.fillText(str, x, (lineNum + lineBegin - 1) * 14 )
   }
+
+
+  sealed trait Command
+
+  case class GetMapByte(mapByte: Array[Byte]) extends Command
+
+  case class GetInfoByte(infoByte: Array[Byte]) extends Command
+
+  case class GetAppleByte(appleByte: Array[Byte]) extends Command
+
+  case class GetAllSnakesByte(snakesByte: Array[Byte]) extends Command
+
+  case class GetMySnakeByte(mySnakeByte: Array[Byte]) extends Command
+
+  case class GetBackGroundByte(backGroundByte: Array[Byte]) extends Command
+
+  case class GetObservation(sender:ActorRef[ObservationRsp]) extends Command
+
 
 
 }
@@ -123,21 +145,6 @@ class GameController(id: String,
   val centerY = (windowHeight / 2).toInt
   val scale = 0.25
 
-  sealed trait Command
-
-  case class GetMapByte(mapByte: Array[Int]) extends Command
-
-  case class GetInfoByte(infoByte: Array[Int]) extends Command
-
-  case class GetAppleByte(appleByte: Array[Int]) extends Command
-
-  case class GetAllSnakesByte(snakesByte: Array[Int]) extends Command
-
-  case class GetMySnakeByte(mySnakeByte: Array[Int]) extends Command
-
-  case class GetBackGroundByte(backGroundByte: Array[Int]) extends Command
-
-  case class GetObservation(mapByte: Array[Int], infoByte: Array[Int], appleByte: Array[Int], snakesByte: Array[Int], mysnakeByte: Array[Int], bgByte: Array[Int])
 
   implicit val system = ActorSystem("medusa", config)
 
@@ -146,11 +153,11 @@ class GameController(id: String,
   def create(): Behavior[Command] = {
     Behaviors.setup[Command] {
       _ =>
-        idle(ListBuffer[Array[Int]](), ListBuffer[Array[Int]](), ListBuffer[Array[Int]](), ListBuffer[Array[Int]](), ListBuffer[Array[Int]](), ListBuffer[Array[Int]]())
+        idle(ListBuffer[Array[Byte]](), ListBuffer[Array[Byte]](), ListBuffer[Array[Byte]](), ListBuffer[Array[Byte]](), ListBuffer[Array[Byte]](), ListBuffer[Array[Byte]]())
     }
   }
 
-  def idle(mapByteList: ListBuffer[Array[Int]], bgByteList: ListBuffer[Array[Int]], appleByteList: ListBuffer[Array[Int]], allSnakeByteList: ListBuffer[Array[Int]], mySnakeByteList: ListBuffer[Array[Int]], infoByteList: ListBuffer[Array[Int]]): Behavior[Command] = {
+  def idle(mapByteList: ListBuffer[Array[Byte]], bgByteList: ListBuffer[Array[Byte]], appleByteList: ListBuffer[Array[Byte]], allSnakeByteList: ListBuffer[Array[Byte]], mySnakeByteList: ListBuffer[Array[Byte]], infoByteList: ListBuffer[Array[Byte]]): Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
@@ -180,8 +187,14 @@ class GameController(id: String,
             Behaviors.same
 
           case t: GetObservation =>
-            val observation = (mapByteList, bgByteList, appleByteList, allSnakeByteList, mySnakeByteList, infoByteList)
-            println(observation)
+            val layer = LayeredObservation(
+              Some(ImgData(windowWidth, windowHeight, mapByteList.last.length,ByteString.copyFrom(mapByteList.last))),
+              Some(ImgData(windowWidth, windowHeight, bgByteList.last.length, ByteString.copyFrom(bgByteList.last))),
+              Some(ImgData(windowWidth, windowHeight, appleByteList.last.length, ByteString.copyFrom(appleByteList.last))),
+              Some(ImgData(windowWidth, windowHeight, allSnakeByteList.last.length, ByteString.copyFrom(allSnakeByteList.last))),
+              Some(ImgData(windowWidth, windowHeight, mySnakeByteList.last.length, ByteString.copyFrom(mySnakeByteList.last))),
+              Some(ImgData(windowWidth, windowHeight, infoByteList.last.length, ByteString.copyFrom(infoByteList.last))))
+            val observation = ObservationRsp(Some(layer), Some(ImgData(windowWidth, windowHeight, 0, ByteString.copyFrom(infoByteList.last))))
             Behaviors.same
         }
     }
@@ -235,7 +248,7 @@ class GameController(id: String,
     stageCtx.closeStage()
   }
 
-  val a = new Array[Int](0)
+  val a = new Array[Byte](0)
 
   //视野在整个地图中的位置
   def getMapByte(flag: Boolean) = {

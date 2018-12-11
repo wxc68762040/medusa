@@ -15,6 +15,7 @@ object LayerScene{
   trait LayerSceneListener {
     def onKeyPressed(e: KeyCode): Unit
   }
+
 }
 class LayerScene {
 
@@ -24,7 +25,6 @@ class LayerScene {
   val scene = new Scene(group, 1400,700)
   val layerWidth = 400
   val layerHeight = 300
-
   val layerMapCanvas = new Canvas(layerWidth,layerHeight)
   val layerInfoCanvas = new Canvas(layerWidth,layerHeight)
   val layerBgCanvas = new Canvas(layerWidth,layerHeight)
