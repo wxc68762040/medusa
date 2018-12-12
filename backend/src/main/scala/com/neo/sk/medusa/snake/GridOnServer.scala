@@ -89,7 +89,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
 
   private[this] def updateRanks() = {
     currentRank = snakes.values.map(s => Score(s.id, s.name, s.kill, s.length)).toList.sorted
-    topCurrentRank = snakes.values.map(s => Score(s.id, s.name, s.kill, s.length)).toList.sortBy(s => s.l).reverse.slice(0,5)
+    topCurrentRank = snakes.values.map(s => Score(s.id, s.name, s.kill, s.length)).toList.sortBy(s => s.l).reverse.slice(0,10)
 
     var historyChange = false
     currentRank.foreach { cScore =>

@@ -5,11 +5,9 @@ import java.io.File
 import com.neo.sk.medusa.snake.{Grid, Point}
 import javafx.scene.effect.{BlendMode, Bloom, BoxBlur}
 import javafx.scene.image.Image
-
 import com.neo.sk.medusa.snake.Protocol.{GridDataSync, _}
 import com.neo.sk.medusa.snake._
 import javafx.scene.paint.Color
-
 import com.neo.sk.medusa.controller.GameController._
 import javafx.scene.text.Font
 import javafx.scene.{Group, Scene}
@@ -184,7 +182,6 @@ class GameViewCanvas(canvas: Canvas, gameScene: GameScene) {
       ctx.fillRect(0 + deviationX, Boundary.h * scaleH + deviationY, Boundary.w * scaleW, boundaryWidth * scaleH)
       ctx.fillRect(Boundary.w * scaleW + deviationX, 0 + deviationY, boundaryWidth * scaleW, Boundary.h * scaleH)
       ctx.restore()
-
       ctx.setFill(Color.web("rgb(250, 250, 250)"))
       //      ctx.setTextAlign()
       //      ctx.setTextBaseline()

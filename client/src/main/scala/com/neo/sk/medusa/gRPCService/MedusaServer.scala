@@ -8,10 +8,12 @@ import akka.stream.scaladsl.Keep
 import com.neo.sk.medusa.actor.WSClient
 import com.neo.sk.medusa.common.StageContext
 import com.neo.sk.medusa.controller.GameController
-import com.neo.sk.medusa.scene.GameScene
+
+import akka.actor.typed.scaladsl.AskPattern._
+import com.neo.sk.medusa.scene.{GameScene, LayerScene}
 import com.neo.sk.medusa.snake.Protocol
 import com.neo.sk.medusa.snake.Protocol.WsMsgSource
-import com.neo.sk.medusa.ClientBoot.{system, materializer, executor}
+import com.neo.sk.medusa.ClientBoot.{executor, materializer, system,timeout,scheduler}
 import io.grpc.{Server, ServerBuilder}
 import org.seekloud.esheepapi.pb.api._
 import org.seekloud.esheepapi.pb.actions._
@@ -21,6 +23,7 @@ import org.slf4j.LoggerFactory
 import com.neo.sk.medusa.actor.WSClient.Stop
 import scala.concurrent.{ExecutionContext, Future}
 import com.neo.sk.medusa.utils.AuthUtils.checkBotToken
+import com.neo.sk.medusa.controller.GameController
 /**
 	* Created by wangxicheng on 2018/11/29.
 	*/
@@ -67,7 +70,8 @@ class MedusaServer(
 		val connected = response.flatMap { upgrade =>
 			if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
 				val gameScene = new GameScene()
-				val gameController = new GameController(request.playerId, request.playerId, request.apiToken, stageCtx, gameScene, stream)
+				val layerScene = new LayerScene
+				val gameController = new GameController(request.playerId, request.playerId, request.apiToken, stageCtx, gameScene, layerScene, stream)
 				gameController.connectToGameServer(gameController)
 				Future.successful(s"bot connect success.")
 			} else {
@@ -120,8 +124,11 @@ class MedusaServer(
 	override def observation(request: Credit): Future[ObservationRsp] = {
 		println(s"action Called by [$request")
 		if(checkBotToken(request.playerId, request.apiToken)) {
-			val rsp = ObservationRsp()
-			Future.successful(rsp)
+			val observationRsp: Future[ObservationRsp] = gameController.getObservation ? (GameController.GetObservation(_))
+			observationRsp.map {
+				observation =>
+					ObservationRsp(observation.layeredObservation, observation.humanObservation, gameController.getFrameCount, 0, state, "ok")
+			}
 		}else{
 			Future.successful(ObservationRsp(errCode = 100003, state = State.unknown, msg = "auth error"))
 		}
