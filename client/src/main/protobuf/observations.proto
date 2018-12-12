@@ -36,7 +36,6 @@ message LayeredObservation {
   ImgData self_player = 5;
   ImgData states = 6;
 
-
 }
 
 

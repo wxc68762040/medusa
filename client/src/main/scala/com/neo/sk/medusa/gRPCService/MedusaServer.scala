@@ -8,10 +8,12 @@ import akka.stream.scaladsl.Keep
 import com.neo.sk.medusa.actor.WSClient
 import com.neo.sk.medusa.common.StageContext
 import com.neo.sk.medusa.controller.GameController
+
+import akka.actor.typed.scaladsl.AskPattern._
 import com.neo.sk.medusa.scene.{GameScene, LayerScene}
 import com.neo.sk.medusa.snake.Protocol
 import com.neo.sk.medusa.snake.Protocol.WsMsgSource
-import com.neo.sk.medusa.ClientBoot.{executor, materializer, system}
+import com.neo.sk.medusa.ClientBoot.{executor, materializer, system,timeout,scheduler}
 import io.grpc.{Server, ServerBuilder}
 import org.seekloud.esheepapi.pb.api._
 import org.seekloud.esheepapi.pb.actions._
@@ -21,6 +23,7 @@ import org.slf4j.LoggerFactory
 import com.neo.sk.medusa.actor.WSClient.Stop
 import scala.concurrent.{ExecutionContext, Future}
 import com.neo.sk.medusa.utils.AuthUtils.checkBotToken
+import com.neo.sk.medusa.controller.GameController
 /**
 	* Created by wangxicheng on 2018/11/29.
 	*/
@@ -121,8 +124,11 @@ class MedusaServer(
 	override def observation(request: Credit): Future[ObservationRsp] = {
 		println(s"action Called by [$request")
 		if(checkBotToken(request.playerId, request.apiToken)) {
-			val rsp = ObservationRsp()
-			Future.successful(rsp)
+			val observationRsp: Future[ObservationRsp] = gameController.getObservation ? (GameController.GetObservation(_))
+			observationRsp.map {
+				observation =>
+					ObservationRsp(observation.layeredObservation, observation.humanObservation, gameController.getFrameCount, 0, state, "ok")
+			}
 		}else{
 			Future.successful(ObservationRsp(errCode = 100003, state = State.unknown, msg = "auth error"))
 		}
