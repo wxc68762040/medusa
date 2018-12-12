@@ -37,32 +37,46 @@ object WatcherManager {
 
   final case class GetWebSocketFlow(watcherId:String, playerId: String, roomId: Long, replyTo: ActorRef[Flow[Message, Message, Any]]) extends Command
 
-  case class GetPlayerWatchedRsp(watcherId:String, playerId:String) extends Command
+  case class GetPlayerWatchedRsp(watcherId:String, playerId:String,watcher:ActorRef[WatcherActor.Command]) extends Command
 
   case class WatcherGone(watchedId:String,watcherId:String,roomId:Long) extends Command
+
   val behaviors: Behavior[Command] = {
     log.debug(s"WatchManager start...")
     Behaviors.setup[Command] {
       ctx =>
         Behaviors.withTimers[Command] {
           implicit timer =>
-            val watcherMap = mutable.HashMap.empty[String, (String, Long)] //watcher, player
+            val watcherMap = mutable.HashMap.empty[String, (String, Long,ActorRef[WatcherActor.Command])] //watcher-->(player,roomId,watcherRef)
             idle(watcherMap)
         }
     }
   }
 
-  def idle(watcherMap: mutable.HashMap[String, (String, Long)])(implicit timer: TimerScheduler[Command]): Behavior[Command] =
+  def idle(watcherMap: mutable.HashMap[String, (String, Long,ActorRef[WatcherActor.Command])])(implicit timer: TimerScheduler[Command]): Behavior[Command] =
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
           case t: GetWebSocketFlow =>
-//            if(watcherMap.get(t.watcherId).nonEmpty) { //观看者切换房间以及用户进行观看
+//            if(watcherMap.get(t.watcherId).nonEmpty) { //观看者切换房间以及用户/]////‘'’进行观看
 //              ctx.self ! WatcherGone(t.watcherId)
 //              getWatcherActor(ctx, t.watcherId) ! WatcherActor.KillSelf
 //            }
+            //不管如何，先换roomId
+            val childName = s"WatcherActor-${t.watcherId}"
+            if(ctx.child(childName).nonEmpty) ctx.child(childName).get.upcast[WatcherActor.Command] ! WatcherActor.ChangeRoomId(t.roomId)
+            if(watcherMap.nonEmpty){
+              if(watcherMap.contains(t.watcherId)){
+                //判断当前的watcher是否还是在观看原房间，防止在同一房间刷新出错
+                if(watcherMap(t.watcherId)._2!=t.roomId) {
+                  ctx.self ! WatcherGone(watcherMap(t.watcherId)._1,t.watcherId,watcherMap(t.watcherId)._2)
+                }
+              }
+            }
+
             val watcher = getWatcherActor(ctx, t.watcherId, t.roomId)
-            watcherMap.put(t.watcherId, (t.playerId, t.roomId))
+
+            watcherMap.put(t.watcherId, (t.playerId, t.roomId,watcher))
             roomManager ! RoomManager.GetPlayerByRoomId(t.playerId, t.roomId, t.watcherId, watcher)
             t.replyTo ! getWebSocketFlow(watcher)
             Behaviors.same
@@ -70,8 +84,8 @@ object WatcherManager {
           case t: GetPlayerWatchedRsp =>
             if(t.playerId == ""){
               getWatcherActor(ctx, t.watcherId, 1 ) ! WatcherActor.NoRoom
-            }else {
-              watcherMap.update(t.watcherId, (t.playerId, watcherMap(t.watcherId)._2))
+            }else if(watcherMap.nonEmpty){
+              if(watcherMap.contains(t.watcherId)) watcherMap.update(t.watcherId, (t.playerId, watcherMap(t.watcherId)._2,t.watcher))
             }
             Behaviors.same
 
@@ -80,7 +94,7 @@ object WatcherManager {
             if(playerWatched.nonEmpty) {
 
               roomManager ! YourUserUnwatched(playerWatched.get, t.watcherId,t.roomId)
-              watcherMap.remove(t.watcherId)
+              if(watcherMap(t.watcherId)._2==t.roomId) watcherMap.remove(t.watcherId)
             }
             Behaviors.same
 
