@@ -24,7 +24,7 @@ class LayerScene {
   import LayerScene._
   var layerSceneListener: LayerSceneListener = _
   val group = new Group()
-  val scene = new Scene(group, 800,400)
+  val scene = new Scene(group, 1300,900)
 
   val layerWidth = AppSettings.layerCanvasW
   val layerHeight = AppSettings.layerCanvasH
@@ -44,33 +44,33 @@ class LayerScene {
   layerBgCanvas.setLayoutX(0)
   layerBgCanvas.setLayoutY(0)
   layerMapCanvas.setLayoutX(0)
-  layerMapCanvas.setLayoutY(300)
-  layerAppleCanvas.setLayoutX(500)
+  layerMapCanvas.setLayoutY(250)
+  layerAppleCanvas.setLayoutX(450)
   layerAppleCanvas.setLayoutY(0)
-  layerMySnakeCanvas.setLayoutX(500)
-  layerMySnakeCanvas.setLayoutY(300)
-  layerInfoCanvas.setLayoutX(1000)
+  layerMySnakeCanvas.setLayoutX(450)
+  layerMySnakeCanvas.setLayoutY(250)
+  layerInfoCanvas.setLayoutX(900)
   layerInfoCanvas.setLayoutY(0)
-  layerAllSnakesCanvas.setLayoutX(1000)
-  layerAllSnakesCanvas.setLayoutY(300)
+  layerAllSnakesCanvas.setLayoutX(900)
+  layerAllSnakesCanvas.setLayoutY(250)
+  viewCanvas.setLayoutX(0)
+  viewCanvas.setLayoutY(500)
 
-  if(AppSettings.isView) {
-    group.getChildren.add(viewCanvas)
+  group.getChildren.add(viewCanvas)
 
-    viewCanvas.requestFocus()
-    viewCanvas.setOnKeyPressed(event => layerSceneListener.onKeyPressed(event.getCode))
-  }else{
-    group.getChildren.add(layerMapCanvas)
-    group.getChildren.add(layerInfoCanvas)
-    group.getChildren.add(layerBgCanvas)
-    group.getChildren.add(layerAllSnakesCanvas)
-    group.getChildren.add(layerAppleCanvas)
-    group.getChildren.add(layerMySnakeCanvas)
+  viewCanvas.requestFocus()
+  viewCanvas.setOnKeyPressed(event => layerSceneListener.onKeyPressed(event.getCode))
 
-    layerMySnakeCanvas.requestFocus()
-    layerMySnakeCanvas.setOnKeyPressed(event => layerSceneListener.onKeyPressed(event.getCode))
+  group.getChildren.add(layerMapCanvas)
+  group.getChildren.add(layerInfoCanvas)
+  group.getChildren.add(layerBgCanvas)
+  group.getChildren.add(layerAllSnakesCanvas)
+  group.getChildren.add(layerAppleCanvas)
+  group.getChildren.add(layerMySnakeCanvas)
 
-  }
+  layerMySnakeCanvas.requestFocus()
+  layerMySnakeCanvas.setOnKeyPressed(event => layerSceneListener.onKeyPressed(event.getCode))
+
 
 
   def setLayerSceneListener(listener: LayerSceneListener): Unit = {

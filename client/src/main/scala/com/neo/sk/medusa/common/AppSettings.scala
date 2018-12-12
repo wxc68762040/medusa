@@ -45,6 +45,5 @@ object AppSettings {
   val viewCanvasW = appConfig.getInt("viewCanvas.w")
   val viewCanvasH = appConfig.getInt("viewCanvas.h")
 
-  val isView = appConfig.getBoolean("isView")
 
 }

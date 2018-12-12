@@ -108,9 +108,15 @@ object GameController {
     }
 	}
 
-  def drawTextLine(ctx: GraphicsContext, str: String, x: Double, lineNum: Int, lineBegin: Int = 0):Unit = {
-    ctx.fillText(str, x, (lineNum + lineBegin - 1) * 14 )
+  def drawTextLine(ctx: GraphicsContext, str: String, x: Double, lineNum: Int, lineBegin: Int = 0, scale: Double):Unit = {
+    ctx.fillText(str, x, (lineNum + lineBegin - 1) * 14 * scale )
   }
+  sealed trait Command
+
+  case class GetByte(mapByte: Array[Byte], bgByte: Array[Byte], appleByte: Array[Byte], allSnakebyte: Array[Byte], mySnakeByte: Array[Byte], infoByte: Array[Byte], viewByte: Array[Byte]) extends Command
+
+  case class GetObservation(sender:ActorRef[ObservationRsp]) extends Command
+
 
 
 }
@@ -144,11 +150,6 @@ class GameController(id: String,
   val scale = 0.5
   val scaleView = 0.5
 
-  sealed trait Command
-
-  case class GetByte(mapByte: Array[Byte], bgByte: Array[Byte], appleByte: Array[Byte], allSnakebyte: Array[Byte], mySnakeByte: Array[Byte], infoByte: Array[Byte], viewByte: Array[Byte]) extends Command
-
-  case class GetObservation(mapByte: Array[Byte], infoByte: Array[Byte], appleByte: Array[Byte], snakesByte: Array[Byte], mySnakeByte: Array[Byte], bgByte: Array[Byte], viewByte: Array[Byte]) extends Command
 
   implicit val system = ActorSystem("medusa", config)
 
@@ -157,31 +158,27 @@ class GameController(id: String,
   def create(): Behavior[Command] = {
     Behaviors.setup[Command] {
       _ =>
-        idle()
+        idle(Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte]())
     }
   }
 
-  def idle(): Behavior[Command] = {
+  def idle(mapByte: Array[Byte], bgByte: Array[Byte], appleByte: Array[Byte], allSnakesByte: Array[Byte], mySnakeByte: Array[Byte], infoByte: Array[Byte],viewByte: Array[Byte]): Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
 
           case t: GetByte =>
-           val byte = (t.mapByte, t.bgByte, t.appleByte, t.allSnakebyte, t.mySnakeByte, t.infoByte, t.viewByte)
-           // println(byte)
-            Behaviors.same
+          idle(t.mapByte, t.bgByte,t.appleByte, t.allSnakebyte, t.mySnakeByte, t.infoByte, t.viewByte)
 
           case t: GetObservation =>
-            val observation = (t.mapByte, t.bgByte, t.appleByte, t.snakesByte, t.mySnakeByte, t.infoByte, t.viewByte)
-           // println(observation)
             val layer = LayeredObservation(
-              Some(ImgData(windowWidth, windowHeight, mapByteList.last.length,ByteString.copyFrom(mapByteList.last))),
-              Some(ImgData(windowWidth, windowHeight, bgByteList.last.length, ByteString.copyFrom(bgByteList.last))),
-              Some(ImgData(windowWidth, windowHeight, appleByteList.last.length, ByteString.copyFrom(appleByteList.last))),
-              Some(ImgData(windowWidth, windowHeight, allSnakeByteList.last.length, ByteString.copyFrom(allSnakeByteList.last))),
-              Some(ImgData(windowWidth, windowHeight, mySnakeByteList.last.length, ByteString.copyFrom(mySnakeByteList.last))),
-              Some(ImgData(windowWidth, windowHeight, infoByteList.last.length, ByteString.copyFrom(infoByteList.last))))
-            val observation = ObservationRsp(Some(layer), Some(ImgData(windowWidth, windowHeight, 0, ByteString.copyFrom(infoByteList.last))))
+              Some(ImgData(windowWidth, windowHeight, mapByte.length,ByteString.copyFrom(mapByte))),
+              Some(ImgData(windowWidth, windowHeight, bgByte.length, ByteString.copyFrom(bgByte))),
+              Some(ImgData(windowWidth, windowHeight, appleByte.length, ByteString.copyFrom(appleByte))),
+              Some(ImgData(windowWidth, windowHeight, allSnakesByte.length, ByteString.copyFrom(allSnakesByte))),
+              Some(ImgData(windowWidth, windowHeight, mySnakeByte.length, ByteString.copyFrom(mySnakeByte))),
+              Some(ImgData(windowWidth, windowHeight, infoByte.length, ByteString.copyFrom(infoByte))))
+            val observation = ObservationRsp(Some(layer), Some(ImgData(windowWidth, windowHeight, 0, ByteString.copyFrom(infoByte))))
             Behaviors.same
         }
     }
@@ -219,7 +216,8 @@ class GameController(id: String,
           getAllSnakeByte(false)
           getAppleByte(false)
           getbackgroundByte(false)
-          getInfoByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, false)
+          getInfoByte(grid.currentRank,grid.myRank, false)
+          getViewByte(grid.currentRank, grid.historyRank,grid.myRank, grid.loginAgain, false)
         } else {
           gameScene.draw(grid.myId, grid.getGridSyncData4Client, grid.historyRank, grid.currentRank, grid.loginAgain, grid.myRank, scaleW, scaleH)
         }

@@ -129,7 +129,7 @@ class MedusaServer(
 			val observationRsp: Future[ObservationRsp] = gameController.getObservation ? (GameController.GetObservation(_))
 			observationRsp.map {
 				observation =>
-					ObservationRsp(observation.layeredObservation, observation.humanObservation, gameController.getFrameCount, 0, state, "ok")
+					ObservationRsp(observation.layeredObservation, observation.humanObservation, gameController.getFrameCount.toInt, 0, state, "ok")
 			}
 		}else{
 			Future.successful(ObservationRsp(errCode = 100003, state = State.unknown, msg = "auth error"))
