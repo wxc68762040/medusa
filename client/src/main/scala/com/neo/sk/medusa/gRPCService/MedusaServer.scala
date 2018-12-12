@@ -76,7 +76,9 @@ class MedusaServer(
 			}
 		} //链接建立时
 		connected.onComplete(i => log.info(i.toString))
-		state = State.init_game
+//		state = State.init_game
+
+		val state = State.init_game
 		Future.successful(CreateRoomRsp(errCode = 101, state = state, msg = "ok"))
 	}
 	
@@ -111,7 +113,7 @@ class MedusaServer(
 		println(s"action Called by [$request")
 		if(request.credit.nonEmpty && checkBotToken(request.credit.get.playerId, request.credit.get.apiToken)) {
 			gameController.gameActionReceiver(request.move)
-			val rsp = ActionRsp(frameIndex = gameController.getFrameCount, errCode = 13, state = state, msg = "ok")
+			val rsp = ActionRsp(frameIndex = gameController.getFrameCount.toInt, errCode = 13, state = state, msg = "ok")
 			Future.successful(rsp)
 		}else{
 			Future.successful(ActionRsp(errCode = 100002, state = State.unknown, msg = "auth error"))
