@@ -217,7 +217,7 @@ object RoomManager {
                 t.playerId
               }
             }
-            watchManager ! WatcherManager.GetPlayerWatchedRsp(t.watcherId, playerId)
+            watchManager ! WatcherManager.GetPlayerWatchedRsp(t.watcherId, playerId,t.watcherRef)
             if(playerId.trim != "") {
               getRoomActor(ctx, t.roomId) ! RoomActor.YourUserIsWatched(playerId, t.watcherRef, t.watcherId)
             }

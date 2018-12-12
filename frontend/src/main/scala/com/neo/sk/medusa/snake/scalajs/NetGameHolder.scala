@@ -50,6 +50,7 @@ object NetGameHolder extends js.JSApp {
   var eatenApples  = Map[String, List[AppleWithFrame]]()
 
   var isTest = false
+  var isWatchGame = false
   val grid = new GridOnClient(bounds)
   var firstCome = true
   var wsSetup = false // WebSocket是否连接中
@@ -102,6 +103,9 @@ object NetGameHolder extends js.JSApp {
           isTest = true
         }
     }
+    if(dom.window.location.pathname.contains("watchGame")){
+      isWatchGame = true
+    }
 
     state = dom.window.location.pathname.replace("medusa", "").drop(1)
     val roomId = dom.document.getElementById("room").asInstanceOf[Input]
@@ -112,7 +116,6 @@ object NetGameHolder extends js.JSApp {
 
     val gameStream = createConnection(state, dom.window.location.search)
     gameStream.onopen = { (event0: Event) =>
-      println(123)
       dom.window.setInterval(() => {
         val pingMsg = netInfoHandler.refreshNetInfo()
         gameStream.send(pingMsg)
@@ -121,7 +124,7 @@ object NetGameHolder extends js.JSApp {
       GameView.drawGameOn()
 
       wsSetup = true
-      if (state.contains("playGame") && !isTest) {
+      if ((state.contains("playGame")) && !isTest) {
         //GameView.canvas.focus()
         GameView.canvas.onkeydown = {
           (e: dom.KeyboardEvent) =>
@@ -160,27 +163,36 @@ object NetGameHolder extends js.JSApp {
       }
       event0
     }
+    if(!isWatchGame){
+      joinRoomBtn.onclick ={ _ =>
+        mask.setAttribute("style","display:none")
+        login.setAttribute("style","display:none")
+        var roomTrueId:Long = -1L
+        var passTrueWd:String = ""
+        if(!roomId.value.isEmpty) roomTrueId = roomId.value.toLong
+        if(!password.value.isEmpty) passTrueWd = password.value
+        joinGame(gameStream,roomTrueId,passTrueWd,0,isWatchGame)
 
-    joinRoomBtn.onclick ={ _ =>
+      }
+
+      createRoomBtn.onclick ={ _ =>
+        mask.setAttribute("style","display:none")
+        login.setAttribute("style","display:none")
+        var roomTrueId:Long = -1L
+        var passTrueWd:String = ""
+        if(!roomId.value.isEmpty) roomTrueId = roomId.value.toLong
+        if(!password.value.isEmpty) passTrueWd = password.value
+        joinGame(gameStream,roomTrueId,passTrueWd,1,isWatchGame)
+      }
+    }else{
       mask.setAttribute("style","display:none")
       login.setAttribute("style","display:none")
       var roomTrueId:Long = -1L
       var passTrueWd:String = ""
-      if(!roomId.value.isEmpty) roomTrueId = roomId.value.toLong
-      if(!password.value.isEmpty) passTrueWd = password.value
-      joinGame(gameStream,roomTrueId,passTrueWd,0)
-
+      println("12345")
+      joinGame(gameStream,roomTrueId,passTrueWd,1,isWatchGame)
     }
 
-    createRoomBtn.onclick ={ _ =>
-      mask.setAttribute("style","display:none")
-      login.setAttribute("style","display:none")
-      var roomTrueId:Long = -1L
-      var passTrueWd:String = ""
-      if(!roomId.value.isEmpty) roomTrueId = roomId.value.toLong
-      if(!password.value.isEmpty) passTrueWd = password.value
-      joinGame(gameStream,roomTrueId,passTrueWd,1)
-    }
 
     dom.window.requestAnimationFrame(drawLoop())
   }
@@ -323,7 +335,7 @@ object NetGameHolder extends js.JSApp {
   }
 
 
-  def joinGame(gameStream:WebSocket,roomId:Long,password:String,JorC:Int): Unit = {
+  def joinGame(gameStream:WebSocket,roomId:Long,password:String,JorC:Int,isWatchGame:Boolean): Unit = {
 //    val gameStream = createConnection(path: String, parameters: String)
     println(gameStream.url)
 
@@ -334,20 +346,19 @@ object NetGameHolder extends js.JSApp {
       wsSetup = false
 
     }
-
-    if(JorC==0){
-      val msg1:Protocol.UserAction = JoinRoom(roomId,password)
-      msg1.fillMiddleBuffer(sendBuffer) //encode msg
-      val ab1: ArrayBuffer = sendBuffer.result() //get encoded data.
-      gameStream.send(ab1) // send data.
-    }else{
-      val msg1:Protocol.UserAction = CreateRoom(roomId,password)
-      msg1.fillMiddleBuffer(sendBuffer) //encode msg
-      val ab1: ArrayBuffer = sendBuffer.result() //get encoded data.
-      gameStream.send(ab1) // send data.
+    if(!isWatchGame){
+      if(JorC==0){
+        val msg1:Protocol.UserAction = JoinRoom(roomId,password)
+        msg1.fillMiddleBuffer(sendBuffer) //encode msg
+        val ab1: ArrayBuffer = sendBuffer.result() //get encoded data.
+        gameStream.send(ab1) // send data.
+      }else{
+        val msg1:Protocol.UserAction = CreateRoom(roomId,password)
+        msg1.fillMiddleBuffer(sendBuffer) //encode msg
+        val ab1: ArrayBuffer = sendBuffer.result() //get encoded data.
+        gameStream.send(ab1) // send data.
+      }
     }
-
-
 
 
     gameStream.onmessage = { (event: MessageEvent) =>
@@ -486,6 +497,7 @@ object NetGameHolder extends js.JSApp {
                     syncData = Some(data)
                     justSynced = true
                   }
+                  println(data)
 
                 case data:Protocol.GridDataSyncNoApp =>
                   infoState = "normal"
@@ -494,6 +506,7 @@ object NetGameHolder extends js.JSApp {
 										syncDataNoApp = Some(data)
                   	justSynced = true
                   }
+                  println(data)
 
                 case Protocol.NetDelayTest(createTime) =>
                   val receiveTime = System.currentTimeMillis()
