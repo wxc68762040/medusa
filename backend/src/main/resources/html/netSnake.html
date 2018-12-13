@@ -25,27 +25,26 @@
     position:absolute;
     left:50%;
     top:50%;
+    padding: 10px;
+    border-radius: 10px;
     margin-left:-200px;
     margin-top:-125px;
-  }
-  #login #close_login{
-    position:absolute;
-    left:350px;
-    top:10px;
-    font-size:20px;
-    width:20px;
-    height:20px;
-    background:skyblue;
-    cursor:pointer;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
   }
   input{
     position: relative;
     left: 100px;
+    top:40px;
   }
   button{
     position: relative;
     left: 100px;
-    top: 30px;
+    top: 70px;
+  }
+  label{
+    position: relative;
+    top: 40px;
   }
 </style>
 <body>
@@ -58,11 +57,11 @@
   <canvas id="GameInfo" tabindex="2" style="position:absolute;z-index:4;left: 0px; top:0px;"></canvas>
   <canvas id="GameView" tabindex="1"  style="position:absolute;z-index:1;left: 0px; top: 0px;"></canvas>
 <!--0 .0 -->
-  <div id="startBg"  tabindex="4" style="position:absolute;z-index: 5;left: 0px; top: 0px;background: rgba(0, 0, 0, 0.9)">
+  <div id="startBg"  tabindex="4" style="position:absolute;z-index: 5;left: 600px; top: 300px;background: rgba(0, 0, 0, 0.9)">
     <div id="mask" style=""></div>
     <div id="login" style="">
-      <input type="radio" name="model" value="join" onchange="change()">加入房间<input id="room" name="room" placeholder="请输入房间号(可选)"> <br>
-      <input type="radio" name="model" value="create" onchange="change()">创建房间<input id="password" name="password" placeholder="请输入房间密码"><br>
+      <input type="radio" name="model" value="join" onchange="change()"><label>加入房间</label><input id="room" name="room" placeholder="请输入房间号(可选)"> <br>
+      <input type="radio" name="model" value="create" onchange="change()"><label>创建房间</label><input id="password" name="password" placeholder="请输入房间密码(字母，数字组合)"><br>
       <button id="joinRoom" disabled="disabled">Join Room</button> &nbsp;
       <button id="createRoom" disabled="disabled">Create Room</button>
     </div>
