@@ -79,7 +79,7 @@ trait LinkService extends ServiceUtils {
     }
   }
  
-  val linkRoute =  (pathPrefix("link") & get) {
+  val linkRoute = (pathPrefix("link") & get) {
      playGameRoute ~ playGameClientRoute ~watchGameRoute ~ watchRecordRoute
   }
 
