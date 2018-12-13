@@ -3,12 +3,15 @@ package com.neo.sk.medusa.actor
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors, StashBuffer, TimerScheduler}
 import com.neo.sk.medusa.ClientBoot
+import com.neo.sk.medusa.common.InfoHandler
 import com.neo.sk.medusa.controller.GameController
 import com.neo.sk.medusa.model.GridOnClient
 import com.neo.sk.medusa.snake.Protocol._
 import com.neo.sk.medusa.snake.{Apple, Point, Protocol}
 import org.slf4j.LoggerFactory
+
 import scala.concurrent.duration._
+
 
 /**
 	* Created by wangxicheng on 2018/10/19.
@@ -51,6 +54,8 @@ object GameMessageReceiver {
 			}
 		}
 	}
+
+	val infoHandler = new InfoHandler
 	
 	private def running(myId: String, myRoomId: Long, gameController: GameController)
 										 (implicit 	stashBuffer: StashBuffer[WsMsgSource],
@@ -184,7 +189,9 @@ object GameMessageReceiver {
 					grid.justSynced = true
 					Behavior.same
 				
-				case Protocol.NetDelayTest(_) =>
+				case Protocol.NetDelayTest(createTime) =>
+					val receiveTime = System.currentTimeMillis()
+					infoHandler.ping = receiveTime - createTime
 					Behavior.same
 				
 				case Protocol.DeadInfo(id,myName, myLength, myKill, killerId, killer) =>

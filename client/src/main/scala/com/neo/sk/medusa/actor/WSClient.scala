@@ -14,7 +14,7 @@ import akka.util.ByteString
 import akka.http.scaladsl.server.Directives._
 import com.neo.sk.medusa.common.{AppSettings, StageContext}
 import com.neo.sk.medusa.controller.{GameController, LoginController}
-import com.neo.sk.medusa.scene.{GameScene, LoginScene}
+import com.neo.sk.medusa.scene.{GameScene, LayerScene, LoginScene}
 import com.neo.sk.medusa.snake.Protocol._
 import com.neo.sk.medusa.snake.Protocol4Agent.{Ws4AgentResponse, WsResponse}
 import org.seekloud.byteobject.ByteObject._
@@ -26,7 +26,7 @@ import java.net.URLEncoder
 import cats.instances.stream
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContextExecutor, Future}
+import scala.concurrent.{ExecutionContextExecutor, Future}
 import com.neo.sk.medusa.controller.Api4GameAgent._
 import com.neo.sk.medusa.gRPCService.{MedusaServer, MedusaTestClient}
 import com.neo.sk.medusa.snake.Protocol

@@ -1,6 +1,5 @@
 package com.neo.sk.utils
 
-import com.neo.sk.medusa.common.AppSettings._
 import io.circe.{Decoder, Json}
 import io.circe.generic.auto._
 import io.circe.parser.decode

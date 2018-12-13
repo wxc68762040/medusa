@@ -38,4 +38,12 @@ object AppSettings {
   val gameDomain = appConfig.getString("gameServer.domain")
   val botSecure = (appConfig.getString("botSecure.playerId"), appConfig.getString("botSecure.apiToken"))
 
+  val isLayer = appConfig.getBoolean("isLayer")
+  val layerCanvasW = appConfig.getInt("layerCanvas.w")
+  val layerCanvasH = appConfig.getInt("layerCanvas.h")
+
+  val viewCanvasW = appConfig.getInt("viewCanvas.w")
+  val viewCanvasH = appConfig.getInt("viewCanvas.h")
+
+
 }

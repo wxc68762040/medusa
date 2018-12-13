@@ -39,11 +39,9 @@ message Credit{
 }
 
 message CreateRoomReq{
-     Credit credit = 1;
-     string password = 2;
+  Credit credit = 1;
+  string password = 2;
 }
-
-
 
 message CreateRoomRsp {
   string room_id = 1;
@@ -52,10 +50,10 @@ message CreateRoomRsp {
   string msg = 15;
 }
 
-
 message JoinRoomReq {
-  string room_id = 1;
-  CreateRoomReq creatRoomReq = 15;
+  Credit credit = 1;
+  string password = 2;
+  string room_id = 3;
 }
 
 

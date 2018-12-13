@@ -5,9 +5,7 @@ import javafx.scene.image.Image
 import com.neo.sk.medusa.snake.Protocol.{GridDataSync, _}
 import com.neo.sk.medusa.snake._
 import javafx.scene.paint.Color
-
 import com.neo.sk.medusa.controller.GameController._
-
 import javafx.scene.canvas.Canvas
 /**
   * User: gaohan

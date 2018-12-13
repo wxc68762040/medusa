@@ -8,10 +8,12 @@ import akka.stream.scaladsl.Keep
 import com.neo.sk.medusa.actor.WSClient
 import com.neo.sk.medusa.common.StageContext
 import com.neo.sk.medusa.controller.GameController
-import com.neo.sk.medusa.scene.GameScene
+
+import akka.actor.typed.scaladsl.AskPattern._
+import com.neo.sk.medusa.scene.{GameScene, LayerScene}
 import com.neo.sk.medusa.snake.Protocol
 import com.neo.sk.medusa.snake.Protocol.{CreateRoom, WsMsgSource, WsSendMsg}
-import com.neo.sk.medusa.ClientBoot.{executor, materializer, system}
+import com.neo.sk.medusa.ClientBoot.{executor, materializer, system,timeout,scheduler}
 import io.grpc.{Server, ServerBuilder}
 import org.seekloud.esheepapi.pb.api._
 import org.seekloud.esheepapi.pb.actions._
@@ -22,6 +24,7 @@ import com.neo.sk.medusa.actor.WSClient.Stop
 
 import scala.concurrent.{ExecutionContext, Future}
 import com.neo.sk.medusa.utils.AuthUtils.checkBotToken
+import com.neo.sk.medusa.controller.GameController
 /**
 	* Created by wangxicheng on 2018/11/29.
 	*/
@@ -97,7 +100,7 @@ class MedusaServer(
 	override def actionSpace(request: Credit): Future[ActionSpaceRsp] = {
 		println(s"actionSpace Called by [$request")
 		if(checkBotToken(request.playerId,request.apiToken)) {
-			val rsp = ActionSpaceRsp(move = List(Move.up, Move.down, Move.left, Move.right),
+			val rsp = ActionSpaceRsp(move = List(Move.up, Move.down, Move.left, Move.right), swing = false,
 				fire = List(), apply = List(), errCode = 13, state = state, msg = "ok")
 			Future.successful(rsp)
 		}else{
@@ -108,7 +111,7 @@ class MedusaServer(
 		println(s"action Called by [$request")
 		if(request.credit.nonEmpty && checkBotToken(request.credit.get.playerId, request.credit.get.apiToken)) {
 			gameController.gameActionReceiver(request.move)
-			val rsp = ActionRsp(frameIndex = gameController.getFrameCount, errCode = 13, state = state, msg = "ok")
+			val rsp = ActionRsp(frameIndex = gameController.getFrameCount.toInt, errCode = 13, state = state, msg = "ok")
 			Future.successful(rsp)
 		}else{
 			Future.successful(ActionRsp(errCode = 100002, state = State.unknown, msg = "auth error"))
@@ -118,8 +121,11 @@ class MedusaServer(
 	override def observation(request: Credit): Future[ObservationRsp] = {
 		println(s"action Called by [$request")
 		if(checkBotToken(request.playerId, request.apiToken)) {
-			val rsp = ObservationRsp()
-			Future.successful(rsp)
+			val observationRsp: Future[ObservationRsp] = gameController.getObservation ? (GameController.GetObservation(_))
+			observationRsp.map {
+				observation =>
+					ObservationRsp(observation.layeredObservation, observation.humanObservation, gameController.getFrameCount.toInt, 0, state, "ok")
+			}
 		}else{
 			Future.successful(ObservationRsp(errCode = 100003, state = State.unknown, msg = "auth error"))
 		}

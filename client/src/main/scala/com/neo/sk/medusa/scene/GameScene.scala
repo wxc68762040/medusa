@@ -22,8 +22,8 @@ object GameScene{
 	trait GameSceneListener {
 		def onKeyPressed(e: KeyCode): Unit
 	}
-	val initWindowWidth = 1450
-	val initWindowHeight = 816
+	val initWindowWidth = 1600
+	val initWindowHeight = 800
 }
 
 class GameScene() {
@@ -31,11 +31,11 @@ class GameScene() {
 	import GameScene._
 	var gameSceneListener: GameSceneListener = _
 	var widthMap: Double= 400
-	var heightMap: Double = 816
-	var viewWidth: Double= 1450
-	var viewHeight: Double = 816
-	var infoWidth: Double = 1450
-	var infoHeight: Double = 816
+	var heightMap: Double = 800
+	var viewWidth: Double= 1600
+	var viewHeight: Double = 800
+	var infoWidth: Double = 1600
+	var infoHeight: Double = 800
 	val initWindowWidth = viewWidth
 	val initWindowHeight = viewHeight
 	val group = new Group
