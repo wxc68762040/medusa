@@ -5,13 +5,13 @@ import java.io.ByteArrayInputStream
 import akka.actor.typed.ActorRef
 import com.neo.sk.medusa.ClientBoot
 import com.neo.sk.medusa.actor.WSClient
-import com.neo.sk.medusa.actor.WSClient.{BotStart, ConnectGame, EstablishConnectionEs, GetLoginInfo}
+import com.neo.sk.medusa.actor.WSClient.{BotStart, EstablishConnectionEs, JoinRoom}
 import com.neo.sk.medusa.common.{AppSettings, StageContext}
 import com.neo.sk.medusa.scene.LoginScene
-import com.neo.sk.medusa.utils.Api4GameAgent._
+import com.neo.sk.medusa.controller.Api4GameAgent._
 import org.slf4j.LoggerFactory
-import com.neo.sk.medusa.utils.AuthUtils._
-import com.neo.sk.medusa.ClientBoot.executor
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
 	* Created by wangxicheng on 2018/10/25.
@@ -21,38 +21,24 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 											stageCtx: StageContext) {
 	
 	private[this] val log = LoggerFactory.getLogger(this.getClass)
-	private	val gameId = AppSettings.gameId
+	val gameId: Long = AppSettings.gameId
 	private var playerId = ""
 	private var nickname = ""
 	private var userToken = ""
 	
 	loginScene.setLoginSceneListener(new LoginScene.LoginSceneListener {
-		override def onButtonConnect(email:String, pw:String): Unit = {
-        getInfoByEmail(email, pw).map{
-					case Right(info) =>
-//						wsClient ! GetLoginInfo(info., nickname, token)
-					case Left(e) =>
-						log.error("--get userInfo by email fail--:" + e)
-				}
-//			getLoginResponseFromEs().map {
-//				case Right(r) =>
-//					loginScene.drawScanUrl(imageFromBase64(r.data.scanUrl))
-//					wsClient ! EstablishConnectionEs(r.data.wsUrl, r.data.scanUrl)
-//				case Left(e) =>
-//					log.error(s"$e")
-//			}
+		override def onButtonConnect(): Unit = {
+			getLoginResponseFromEs().map {
+				case Right(r) =>
+					loginScene.drawScanUrl(imageFromBase64(r.data.scanUrl))
+					wsClient ! EstablishConnectionEs(r.data.wsUrl, r.data.scanUrl)
+				case Left(e) =>
+					log.error(s"$e")
+			}
 		}
 		
 		override def onButtonJoin(): Unit = {
-			linkGameAgent(gameId, playerId, userToken).map {
-				case Right(resl) =>
-					log.debug("accessCode: " + resl.accessCode)
-					wsClient ! ConnectGame(playerId, nickname, resl.accessCode)
-				
-				case Left(l) =>
-					log.error("link error!")
-			}
-			
+			wsClient ! JoinRoom(playerId,nickname, -1)
 		}
 		
 		override def onButtonBotJoin(): Unit = {

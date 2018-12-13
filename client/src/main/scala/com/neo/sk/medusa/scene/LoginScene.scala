@@ -12,7 +12,6 @@ import akka.actor.typed.ActorRef
 import akka.japi.Effect
 import com.neo.sk.medusa.ClientBoot
 import com.neo.sk.medusa.actor.WSClient
-import com.neo.sk.medusa.actor.WSClient.ConnectGame
 import com.neo.sk.medusa.common.StageContext
 import com.neo.sk.medusa.controller.GameController
 import javafx.scene.image.Image

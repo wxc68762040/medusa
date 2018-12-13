@@ -1,8 +1,10 @@
 package com.neo.sk.medusa.controller
 
 import javafx.animation.{AnimationTimer, KeyFrame}
+import javafx.util.Duration
+
 import akka.actor.typed.{ActorRef, Behavior}
-import com.neo.sk.medusa.ClientBoot
+import com.neo.sk.medusa.{ClientBoot, snake}
 import com.neo.sk.medusa.ClientBoot.gameMessageReceiver
 import com.neo.sk.medusa.actor.GameMessageReceiver.ControllerInitial
 import com.neo.sk.medusa.common.{AppSettings, StageContext}
@@ -12,6 +14,7 @@ import com.neo.sk.medusa.snake.Protocol.{Key, NetTest}
 import com.neo.sk.medusa.snake._
 import com.neo.sk.medusa.ClientBoot.{executor, scheduler}
 import javafx.scene.input.KeyCode
+
 import org.seekloud.esheepapi.pb.actions._
 import org.seekloud.esheepapi.pb.observations._
 
@@ -30,8 +33,9 @@ import javafx.scene.effect.DropShadow
 import javafx.scene.image.{Image, WritableImage}
 import javafx.scene.paint.Color
 import javafx.scene.text.Font
+
 import org.seekloud.esheepapi.pb.api._
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 import akka.actor.{ActorSystem, Scheduler}
 import akka.actor.typed.scaladsl.adapter._
 import akka.japi.Option
@@ -42,16 +46,15 @@ import com.neo.sk.medusa.common.AppSettings.config
 	* Created by wangxicheng on 2018/10/25.
 	*/
 object GameController {
-
 	val bounds = Point(Boundary.w, Boundary.h)
 	val grid = new GridOnClient(bounds)
-	var myRoomId = -1l
+	var myRoomId: Long = -1l
 	var basicTime = 0l
 	var myProportion = 1.0
 	var firstCome = true
 	var lagging = true
-	val log = LoggerFactory.getLogger("GameController")
-  val a = new Array[Byte](0)
+	val log:Logger = LoggerFactory.getLogger("GameController")
+  val emptyArray = new Array[Byte](0)
 
 	val watchKeys = Set(
 		KeyCode.SPACE,
@@ -104,7 +107,7 @@ object GameController {
       new Array[Byte](0)
     }catch {
       case e: Exception=>
-        a
+        emptyArray
     }
 	}
 
@@ -121,9 +124,8 @@ object GameController {
 
 }
 
-class GameController(id: String,
+class   GameController(id: String,
 										 name: String,
-										 accessCode: String,
 										 stageCtx: StageContext,
 										 gameScene: GameScene,
                      layerScene: LayerScene,
@@ -144,7 +146,7 @@ class GameController(id: String,
   val maxImage = new Image("champion.png")
   val bgImage = new Image("bg.png")
   val championImage = new Image("champion.png")
-  val a = new Array[Byte](0)
+  val emptyArray = new Array[Byte](0)
 
 
   val scale = 0.5
@@ -179,6 +181,7 @@ class GameController(id: String,
               Some(ImgData(windowWidth, windowHeight, mySnakeByte.length, ByteString.copyFrom(mySnakeByte))),
               Some(ImgData(windowWidth, windowHeight, infoByte.length, ByteString.copyFrom(infoByte))))
             val observation = ObservationRsp(Some(layer), Some(ImgData(windowWidth, windowHeight, 0, ByteString.copyFrom(infoByte))))
+            t.sender ! observation
             Behaviors.same
         }
     }
@@ -197,11 +200,13 @@ class GameController(id: String,
     }
   }
 
-	def getFrameCount = grid.frameCount
+  def getServerActor: ActorRef[WsSendMsg] =serverActor
 
-	def getScore = grid.myRank
+	def getFrameCount: Long = grid.frameCount
 
-	def startGameLoop() = {
+	def getScore: (Int, snake.Score) = grid.myRank
+
+	def startGameLoop(): Unit = {
 		basicTime = System.currentTimeMillis()
 		gameScene.startRefreshInfo
 		val animationTimer = new AnimationTimer() {
@@ -229,9 +234,9 @@ class GameController(id: String,
     animationTimer.start()
   }
 
-  def gameStop() = {
-    stageCtx.closeStage()
-  }
+	def gameStop(): Unit = {
+		stageCtx.closeStage()
+	}
 
 
   //视野在整个地图中的位置
@@ -312,7 +317,7 @@ class GameController(id: String,
     if (flag) {
       canvas2byteArray(layerMapCanvas)
     } else {
-      a
+      emptyArray
     }
 
   }
@@ -399,7 +404,7 @@ class GameController(id: String,
     if (flag) {
       canvas2byteArray(layerInfoCanvas)
     } else {
-      a
+      emptyArray
     }
   }
 
@@ -459,7 +464,7 @@ class GameController(id: String,
    if(flag) {
      canvas2byteArray(layerBgCanvas)
    }else{
-     a
+     emptyArray
    }
   }
 
@@ -505,7 +510,7 @@ class GameController(id: String,
     if(flag){
       canvas2byteArray(layerAppleCanvas)
     }else{
-      a
+      emptyArray
     }
 
   }
@@ -604,7 +609,7 @@ class GameController(id: String,
     if(flag) {
       canvas2byteArray(layerAllSnakesCanvas)
     }else{
-      a
+      emptyArray
     }
   }
 
@@ -709,7 +714,7 @@ class GameController(id: String,
     if(flag) {
       canvas2byteArray(layerMySnakeCanvas)
     }else{
-      a
+      emptyArray
     }
 
   }
@@ -987,11 +992,11 @@ class GameController(id: String,
     if(flag){
       canvas2byteArray(viewCanvas)
     }else{
-      a
+      emptyArray
     }
   }
 
-	private def logicLoop() = {
+	private def logicLoop(): Unit = {
 		basicTime = System.currentTimeMillis()
 		if(!lagging) {
 			if (!grid.justSynced) {
