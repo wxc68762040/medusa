@@ -26,7 +26,7 @@ object GameScene{
 	val initWindowHeight = 800
 }
 
-class     GameScene() {
+class GameScene() {
 
 	import GameScene._
 	var gameSceneListener: GameSceneListener = _

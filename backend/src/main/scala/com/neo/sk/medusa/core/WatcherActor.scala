@@ -55,6 +55,8 @@ object WatcherActor {
   
   case class FrontLeft(frontActor: ActorRef[WsMsgSource]) extends Command
 
+  case class ChangeRoomId(roomId:Long) extends Command
+
   case object NoRoom extends Command
   
   case object WatcherReady extends Command
@@ -80,6 +82,7 @@ object WatcherActor {
           case UserFrontActor(frontActor) =>
             ctx.watchWith(frontActor, FrontLeft(frontActor))
             ctx.self ! WatcherReady
+            println("w i : "+roomId)
             roomManager ! RoomManager.INeedApple(watchedId,watcherId,roomId)
             switchBehavior(ctx, "idle", idle(watcherId, watchedId, roomId, frontActor,waitTip))
 						
@@ -91,7 +94,8 @@ object WatcherActor {
             watchManager ! WatcherManager.WatcherGone(watchedId,watcherId,roomId)
             log.info(s"${ctx.self.path} is time out when init,msg=$m")
             Behaviors.stopped
-						
+          case ChangeRoomId(roomID) =>
+            switchBehavior(ctx, "init", init(watcherId, watchedId, roomID,waitTip))
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when init:$x")
             stashBuffer.stash(x)
@@ -104,6 +108,8 @@ object WatcherActor {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
+          case ChangeRoomId(roomID) =>
+            switchBehavior(ctx, "idle", idle(watcherId, watchedId, roomID,frontActor,waitTip))
           case WatcherReady =>
             frontActor ! Protocol.JoinRoomSuccess(watchedId, roomId)
             Behaviors.same

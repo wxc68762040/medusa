@@ -38,6 +38,15 @@
     background:skyblue;
     cursor:pointer;
   }
+  input{
+    position: relative;
+    left: 100px;
+  }
+  button{
+    position: relative;
+    left: 100px;
+    top: 30px;
+  }
 </style>
 <body>
 
@@ -48,14 +57,14 @@
   <canvas id="GameMap" tabindex="3" style="position:absolute;z-index:3;left: 0px; bottom: 0px;"></canvas>
   <canvas id="GameInfo" tabindex="2" style="position:absolute;z-index:4;left: 0px; top:0px;"></canvas>
   <canvas id="GameView" tabindex="1"  style="position:absolute;z-index:1;left: 0px; top: 0px;"></canvas>
-
+<!--0 .0 -->
   <div id="startBg"  tabindex="4" style="position:absolute;z-index: 5;left: 0px; top: 0px;background: rgba(0, 0, 0, 0.9)">
     <div id="mask" style=""></div>
     <div id="login" style="">
-      <input id="room" name="room" placeholder="RoomId">
-      <input id="password" name="password" placeholder="Password"><br>
-      <button id="joinRoom">Join Room</button>
-      <button id="createRoom">Create Room</button>
+      <input type="radio" name="model" value="join" onchange="change()">加入房间<input id="room" name="room" placeholder="请输入房间号(可选)"> <br>
+      <input type="radio" name="model" value="create" onchange="change()">创建房间<input id="password" name="password" placeholder="请输入房间密码"><br>
+      <button id="joinRoom" disabled="disabled">Join Room</button> &nbsp;
+      <button id="createRoom" disabled="disabled">Create Room</button>
     </div>
     <form action="#" style=" width: 300px;margin: 200px auto;">
       <!--<div id="nameExist" style="font-size: larger;height: 50px;width: 300px;color: red;text-align: center"> </div>-->
@@ -69,7 +78,32 @@
   <img id="championSnake" src="/medusa/static/img/championSnake.png" style="width: 0px;">
 
 
+  <script type="text/javascript">
+    function change() {
+        var radio = document.getElementsByName("model")
+        var jBt = document.getElementById("joinRoom")
+        var cBt = document.getElementById("createRoom")
+        var rInput = document.getElementById("room")
+        for(var i = 0; i < radio.length; i++) {
+            if (radio[i].checked) {
 
+                i++;
+
+                if(radio[--i].value == "join"){
+                    cBt.disabled = true
+                    jBt.disabled = false
+                    rInput.disabled = false
+                }else{
+                    jBt.disabled = true
+                    cBt.disabled = false
+                    rInput.disabled = true
+                }
+
+            }
+
+        }
+    }
+  </script>
 
   <script type="text/javascript" src="/medusa/static/sjsout/frontend-fastopt.js"></script>
   <!--<script type="text/javascript" src="/medusa/frontend-launcher.js"></script>-->
