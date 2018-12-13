@@ -4,7 +4,7 @@ import javafx.animation.{AnimationTimer, KeyFrame}
 import javafx.util.Duration
 
 import akka.actor.typed.ActorRef
-import com.neo.sk.medusa.ClientBoot
+import com.neo.sk.medusa.{ClientBoot, snake}
 import com.neo.sk.medusa.ClientBoot.gameMessageReceiver
 import com.neo.sk.medusa.actor.GameMessageReceiver.ControllerInitial
 import com.neo.sk.medusa.common.StageContext
@@ -15,24 +15,27 @@ import com.neo.sk.medusa.snake.{Boundary, Point, Protocol}
 import com.neo.sk.medusa.common.StageContext._
 import com.neo.sk.medusa.ClientBoot.{executor, scheduler}
 import javafx.scene.input.KeyCode
+
 import org.seekloud.esheepapi.pb.actions._
+
 import scala.concurrent.duration._
 import com.neo.sk.medusa.snake.Protocol._
 import java.awt.event.KeyEvent
 
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
+import sun.security.util.Password
 /**
 	* Created by wangxicheng on 2018/10/25.
 	*/
 object GameController {
 	val bounds = Point(Boundary.w, Boundary.h)
 	val grid = new GridOnClient(bounds)
-	var myRoomId = -1l
+	var myRoomId: Long = -1l
 	var basicTime = 0l
 	var myProportion = 1.0
 	var firstCome = true
 	var lagging = true
-	val log = LoggerFactory.getLogger("GameController")
+	val log: Logger = LoggerFactory.getLogger("GameController")
 
 	val watchKeys = Set(
 		KeyCode.SPACE,
@@ -71,25 +74,26 @@ object GameController {
 
 class GameController(id: String,
 										 name: String,
-										 accessCode: String,
 										 stageCtx: StageContext,
 										 gameScene: GameScene,
 										 serverActor: ActorRef[Protocol.WsSendMsg]) {
 
 	import GameController._
 
-	def connectToGameServer(gameController: GameController) = {
+	def connectToGameServer(gameController: GameController): Unit = {
 		ClientBoot.addToPlatform {
-			stageCtx.switchScene(gameScene.scene, "Gaming", true)
+			stageCtx.switchScene(gameScene.scene, "Gaming", flag = true)
 			gameMessageReceiver ! ControllerInitial(gameController)
 		}
 	}
 
-	def getFrameCount = grid.frameCount
+  def getServerActor: ActorRef[WsSendMsg] =serverActor
 
-	def getScore = grid.myRank
+	def getFrameCount: Long = grid.frameCount
 
-	def startGameLoop() = {
+	def getScore: (Int, snake.Score) = grid.myRank
+
+	def startGameLoop(): Unit = {
 		basicTime = System.currentTimeMillis()
 		gameScene.startRefreshInfo
 		val animationTimer = new AnimationTimer() {
@@ -107,11 +111,11 @@ class GameController(id: String,
 		animationTimer.start()
 	}
 
-	def gameStop() = {
+	def gameStop(): Unit = {
 		stageCtx.closeStage()
 	}
 
-	private def logicLoop() = {
+	private def logicLoop(): Unit = {
 		basicTime = System.currentTimeMillis()
 		if(!lagging) {
 			if (!grid.justSynced) {

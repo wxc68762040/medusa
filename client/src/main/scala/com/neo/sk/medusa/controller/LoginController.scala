@@ -5,7 +5,7 @@ import java.io.ByteArrayInputStream
 import akka.actor.typed.ActorRef
 import com.neo.sk.medusa.ClientBoot
 import com.neo.sk.medusa.actor.WSClient
-import com.neo.sk.medusa.actor.WSClient.{BotStart, ConnectGame, EstablishConnectionEs}
+import com.neo.sk.medusa.actor.WSClient.{BotStart, EstablishConnectionEs, JoinRoom}
 import com.neo.sk.medusa.common.{AppSettings, StageContext}
 import com.neo.sk.medusa.scene.LoginScene
 import com.neo.sk.medusa.controller.Api4GameAgent._
@@ -21,7 +21,7 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 											stageCtx: StageContext) {
 	
 	private[this] val log = LoggerFactory.getLogger(this.getClass)
-	private	val gameId = AppSettings.gameId
+	val gameId: Long = AppSettings.gameId
 	private var playerId = ""
 	private var nickname = ""
 	private var userToken = ""
@@ -38,15 +38,7 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 		}
 		
 		override def onButtonJoin(): Unit = {
-			linkGameAgent(gameId, playerId, userToken).map {
-				case Right(resl) =>
-					log.debug("accessCode: " + resl.accessCode)
-					wsClient ! ConnectGame(playerId, nickname, resl.accessCode)
-				
-				case Left(l) =>
-					log.error("link error!")
-			}
-			
+			wsClient ! JoinRoom(playerId,nickname, -1)
 		}
 		
 		override def onButtonBotJoin(): Unit = {

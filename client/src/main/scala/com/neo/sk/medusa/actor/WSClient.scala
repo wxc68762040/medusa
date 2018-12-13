@@ -11,6 +11,7 @@ import akka.stream.scaladsl.{Flow, Keep, Sink}
 import akka.stream.typed.scaladsl.{ActorSink, _}
 import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.ByteString
+import akka.http.scaladsl.server.Directives._
 import com.neo.sk.medusa.common.{AppSettings, StageContext}
 import com.neo.sk.medusa.controller.{GameController, LoginController}
 import com.neo.sk.medusa.scene.{GameScene, LoginScene}
@@ -22,10 +23,15 @@ import org.slf4j.LoggerFactory
 import io.circe.parser.decode
 import java.net.URLEncoder
 
+import cats.instances.stream
+
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 import com.neo.sk.medusa.controller.Api4GameAgent._
 import com.neo.sk.medusa.gRPCService.{MedusaServer, MedusaTestClient}
+import com.neo.sk.medusa.snake.Protocol
+
+import scala.util.Success
 /**
 	* Created by wangxicheng on 2018/10/19.
 	*/
@@ -34,8 +40,10 @@ object WSClient {
 	
 	sealed trait WsCommand
 	case object BotStart extends WsCommand
-	case class ConnectGame(id: String, name: String, accessCode: String) extends WsCommand
+  case class CreateRoom(playerId:String,name:String,password:String)extends  WsCommand
+	case class JoinRoom(playerId:String,name:String, roomId:Long,password:String="") extends WsCommand
 	case class GetLoginInfo(id: String, name: String, access: String) extends WsCommand
+  case class GetSeverActor(severActor: ActorRef[WsSendMsg])extends WsCommand
 	case class EstablishConnectionEs(ws:String,scanUrl:String) extends WsCommand
 	case object Stop extends WsCommand
 	case object ClientTest extends WsCommand
@@ -44,68 +52,65 @@ object WSClient {
 
 	private val log = LoggerFactory.getLogger("WSClient")
 	private val logPrefix = "WSClient"
-	def create(gameMessageReceiver: ActorRef[WsMsgSource],stageCtx: StageContext, _system: ActorSystem, _materializer: Materializer, _executor: ExecutionContextExecutor): Behavior[WsCommand] = {
+	def create(gameMessageReceiver: ActorRef[WsMsgSource],stageCtx: StageContext)
+            (implicit _system: ActorSystem, _materializer: Materializer, _executor: ExecutionContextExecutor): Behavior[WsCommand] = {
 		Behaviors.setup[WsCommand] { ctx =>
 			Behaviors.withTimers { timer =>
 				val loginScene = new LoginScene()
 				val loginController = new LoginController(ctx.self, loginScene, stageCtx)
 				loginController.showScene()
-				working(gameMessageReceiver, loginController, stageCtx)(timer, _system, _materializer, _executor)
+				working(gameMessageReceiver,null,loginController, stageCtx,null)(timer, _system, _materializer, _executor)
 			}
 		}
 	}
 	
 	private def working(gameMessageReceiver: ActorRef[WsMsgSource],
+                      serverActor:ActorRef[WsSendMsg],
 											loginController: LoginController,
-											stageCtx: StageContext)
+											stageCtx: StageContext,
+                      gameController: GameController,
+                      )
 										 (implicit timer: TimerScheduler[WsCommand],
 											system: ActorSystem,
 											materializer: Materializer,
 											executor: ExecutionContextExecutor): Behavior[WsCommand] = {
 		Behaviors.receive[WsCommand] { (ctx, msg) =>
 			msg match {
-				case ConnectGame(id, name, accessCode) =>
-					val url = getWebSocketUri(id, name, accessCode)
-					val webSocketFlow = Http().webSocketClientFlow(WebSocketRequest(url))
-					val source = getSource(ctx.self)
-					val sink = getSink(gameMessageReceiver)
-					val ((stream, response), _) =
-						source
-				  	.viaMat(webSocketFlow)(Keep.both)
-				  	.toMat(sink)(Keep.both)
-				  	.run()
-					
-					val connected = response.flatMap { upgrade =>
-						if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
-							val gameScene = new GameScene()
-							val gameController = new GameController(id, name, accessCode, stageCtx, gameScene, stream)
-							gameController.connectToGameServer(gameController)
-							Future.successful(s"$logPrefix connect success.")
-						} else {
-							throw new RuntimeException(s"WSClient connection failed: ${upgrade.response.status}")
-						}
-					} //链接建立时
-					connected.onComplete(i => log.info(i.toString))
-//					closed.onComplete { i =>
-//						log.error(s"$logPrefix connection closed!")
-//					} //链接断开时
-					Behaviors.same
+        case  CreateRoom(playerId,name, password)=>
+          //fixme  此处的gameController应该在Receiver方
+          val gameScene = new GameScene()
+          val gController = new GameController(playerId, name,  stageCtx, gameScene, serverActor)
+          gController.connectToGameServer(gController)
+          serverActor ! Protocol.CreateRoom(-1,password)
+          working(gameMessageReceiver,serverActor,loginController,stageCtx,gController)
+
+				case JoinRoom(playerId,name,roomId,password) =>
+          //fixme  此处的gameController应该在Receiver方
+          val gameScene = new GameScene()
+          val gController = new GameController(playerId, name, stageCtx, gameScene, serverActor)
+          gController.connectToGameServer(gController)
+          serverActor ! Protocol.JoinRoom(roomId,password)
+          working(gameMessageReceiver,serverActor,loginController,stageCtx,gController)
 
 				case BotStart	=>
+          val gameScene = new GameScene()
+          val gController = new GameController("test", "test", stageCtx, gameScene, serverActor)
+          gController.connectToGameServer(gController)
 					val port = 5321
-					val server = MedusaServer.build(port, executor, ctx.self, gameMessageReceiver, stageCtx)
+					val server = MedusaServer.build(port, executor, ctx.self,gController, gameMessageReceiver, stageCtx)
 					server.start()
 					log.info(s"Server started at $port")
-					
+
 					sys.addShutdownHook {
 						log.info("JVM SHUT DOWN.")
 						server.shutdown()
 						log.info("SHUT DOWN.")
 					}
-					timer.startSingleTimer(TimerKeyForTest, ClientTest, 20.seconds)
-					Behavior.same
+					timer.startSingleTimer(TimerKeyForTest, ClientTest, 3.seconds)
+          working(gameMessageReceiver,serverActor,loginController,stageCtx,gController)
 
-				case EstablishConnectionEs(wsUrl, scanUrl) =>
+				case EstablishConnectionEs(wsUrl, _) =>
+          log.info(wsUrl)
 					val webSocketFlow = Http().webSocketClientFlow(WebSocketRequest(wsUrl))
 					val source = getSource(ctx.self)
 					val sink = getSinkDup(ctx.self)
@@ -126,18 +131,52 @@ object WSClient {
 
 				case GetLoginInfo(id, name, token) =>
 					loginController.setUserInfo(id, name, token)
-					Behavior.same
-				
+          linkGameAgent(gameId = loginController.gameId,id,token).map{
+            case Right(resl) =>
+              log.debug("accessCode: " + resl.accessCode)
+              val url = getWebSocketUri(id, name,resl.accessCode)
+              val webSocketFlow = Http().webSocketClientFlow(WebSocketRequest(url))
+              val source = getSource(ctx.self)
+              val sink = getSink(gameMessageReceiver)
+              val (stream, response) =
+                source
+                  .viaMat(webSocketFlow)(Keep.both)
+                  .toMat(sink)(Keep.left)
+                  .run()
+
+              val connected = response.flatMap { upgrade =>
+                if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
+                  //fixme  存疑
+                  ctx.self ! GetSeverActor(stream)
+                  Future.successful(s"$logPrefix connect success.")
+                } else {
+                  throw new RuntimeException(s"WSClient connection failed: ${upgrade.response.status}")
+                }
+              } //链接建立时
+              connected.onComplete(i => log.info(i.toString))
+            //					closed.onComplete { i =>
+            //						log.error(s"$logPrefix connection closed!")
+            //					} //链接断开时
+
+            case Left(l) =>
+              log.error("link error!")
+          }
+           Behaviors.same
+
+        case GetSeverActor(sActor)=>
+          working(gameMessageReceiver,sActor,loginController,stageCtx,gameController)
+
 				case ClientTest =>
-					log.info("get clientTest")
-					val host = "127.0.0.1"
-					val port = 5321
-					val playerId = "rua~"
-					val apiToken = "lala"
-					val client = new MedusaTestClient(host, port, playerId, apiToken)
-					val rsp1 = client.createRoom()
-					rsp1.onComplete(println(_))
-					Behavior.same
+          log.info("get clientTest")
+          val host = "127.0.0.1"
+          val port = 5321
+          val playerId = "test"
+          val apiToken = "test"
+          val password="1"
+          val client = new MedusaTestClient(host, port, playerId, apiToken)
+          val rsp1 = client.createRoom(password)
+          rsp1.onComplete(println(_))
+          Behavior.same
 					
 				case Stop =>
 					log.info("WSClient now stop.")
@@ -207,7 +246,8 @@ object WSClient {
 			case WsSendComplete =>
 				log.info("WebSocket Complete")
 				wsClient ! Stop
-		}, failureMatcher = {
+		},
+    failureMatcher = {
 			case WsSendFailed(ex) ⇒
 				ex
 		},

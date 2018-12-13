@@ -1,9 +1,10 @@
 package com.neo.sk.medusa.gRPCService
 
 import io.grpc.{ManagedChannel, ManagedChannelBuilder}
-import org.seekloud.esheepapi.pb.api.{CreateRoomRsp, Credit, ObservationRsp, SimpleRsp}
+import org.seekloud.esheepapi.pb.api._
 import org.seekloud.esheepapi.pb.service.EsheepAgentGrpc
 import org.seekloud.esheepapi.pb.service.EsheepAgentGrpc.EsheepAgentStub
+import sun.security.util.Password
 
 import scala.concurrent.Future
 
@@ -20,8 +21,18 @@ class MedusaTestClient (
 	private[this] val channel: ManagedChannel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build
 	private val esheepStub: EsheepAgentStub = EsheepAgentGrpc.stub(channel)
 	val credit = Credit(playerId = playerId, apiToken = apiToken)
-	
-	def createRoom(): Future[CreateRoomRsp] = esheepStub.createRoom(credit)
-	
-	def observation(): Future[ObservationRsp] = esheepStub.observation(credit)
+
+	def createRoom(password:String): Future[CreateRoomRsp] = esheepStub.createRoom(CreateRoomReq(password,Some(credit)))
+
+  def joinRoom(roomId:String,password: String):Future[SimpleRsp]= esheepStub.joinRoom(JoinRoomReq(roomId,password,Some(credit)))
+
+  def leaveRoom():Future[SimpleRsp] =esheepStub.leaveRoom(credit)
+
+  def actionSpace():Future[ActionSpaceRsp] =esheepStub.actionSpace(credit)
+
+  def action() :Future[ActionRsp] =esheepStub.action(ActionReq())
+
+  def observation(): Future[ObservationRsp] = esheepStub.observation(credit)
+
+  def inform():Future[InformRsp]=esheepStub.inform(credit)
 }

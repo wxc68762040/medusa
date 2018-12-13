@@ -59,6 +59,7 @@ object GameMessageReceiver {
 		Behaviors.receive[WsMsgSource] { (ctx, msg) =>
 			msg match {
 				case Protocol.JoinRoomSuccess(id, roomId)=>
+					log.info(s"$id join room success")
 					ClientBoot.addToPlatform {
 						grid.myId = id
 						GameController.myRoomId = roomId
