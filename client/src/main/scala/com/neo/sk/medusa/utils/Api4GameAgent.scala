@@ -1,15 +1,14 @@
-package com.neo.sk.medusa.controller
+package com.neo.sk.medusa.utils
 
-
-import org.slf4j.LoggerFactory
+import com.neo.sk.medusa.common.AppSettings._
 import com.neo.sk.medusa.snake.Protocol4Agent._
-import com.neo.sk.medusa.utils.HttpUtil
 import io.circe.generic.auto._
 import io.circe.parser.decode
 import io.circe.syntax._
-import com.neo.sk.medusa.common.AppSettings._
+import org.slf4j.LoggerFactory
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import com.neo.sk.medusa.ClientBoot.executor
+
 /**
   * Created by nwh on 2018/10/24.
   */

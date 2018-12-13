@@ -5,13 +5,13 @@ import java.io.ByteArrayInputStream
 import akka.actor.typed.ActorRef
 import com.neo.sk.medusa.ClientBoot
 import com.neo.sk.medusa.actor.WSClient
-import com.neo.sk.medusa.actor.WSClient.{BotStart, ConnectGame, EstablishConnectionEs}
+import com.neo.sk.medusa.actor.WSClient.{BotStart, ConnectGame, EstablishConnectionEs, GetLoginInfo}
 import com.neo.sk.medusa.common.{AppSettings, StageContext}
 import com.neo.sk.medusa.scene.LoginScene
-import com.neo.sk.medusa.controller.Api4GameAgent._
+import com.neo.sk.medusa.utils.Api4GameAgent._
 import org.slf4j.LoggerFactory
-
-import scala.concurrent.ExecutionContext.Implicits.global
+import com.neo.sk.medusa.utils.AuthUtils._
+import com.neo.sk.medusa.ClientBoot.executor
 
 /**
 	* Created by wangxicheng on 2018/10/25.
@@ -27,14 +27,20 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 	private var userToken = ""
 	
 	loginScene.setLoginSceneListener(new LoginScene.LoginSceneListener {
-		override def onButtonConnect(): Unit = {
-			getLoginResponseFromEs().map {
-				case Right(r) =>
-					loginScene.drawScanUrl(imageFromBase64(r.data.scanUrl))
-					wsClient ! EstablishConnectionEs(r.data.wsUrl, r.data.scanUrl)
-				case Left(e) =>
-					log.error(s"$e")
-			}
+		override def onButtonConnect(email:String, pw:String): Unit = {
+        getInfoByEmail(email, pw).map{
+					case Right(info) =>
+//						wsClient ! GetLoginInfo(info., nickname, token)
+					case Left(e) =>
+						log.error("--get userInfo by email fail--:" + e)
+				}
+//			getLoginResponseFromEs().map {
+//				case Right(r) =>
+//					loginScene.drawScanUrl(imageFromBase64(r.data.scanUrl))
+//					wsClient ! EstablishConnectionEs(r.data.wsUrl, r.data.scanUrl)
+//				case Left(e) =>
+//					log.error(s"$e")
+//			}
 		}
 		
 		override def onButtonJoin(): Unit = {

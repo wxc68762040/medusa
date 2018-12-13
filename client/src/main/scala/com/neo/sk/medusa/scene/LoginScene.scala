@@ -5,7 +5,7 @@ import java.io.ByteArrayInputStream
 import javafx.geometry.Insets
 import javafx.scene.canvas.Canvas
 import javafx.scene.{Group, Scene}
-import javafx.scene.control.Button
+import javafx.scene.control.{Button, TextField}
 import javafx.scene.layout.{GridPane, Pane}
 import javafx.scene.paint.{Color, Paint}
 import akka.actor.typed.ActorRef
@@ -20,6 +20,7 @@ import com.neo.sk.medusa.controller.LoginController
 import com.sun.xml.internal.messaging.saaj.util.ByteInputStream
 import javafx.scene.effect.{BoxBlur, DropShadow}
 import javafx.scene.text.Font
+import javafx.scene.text.Text
 import javafx.scene.text.FontWeight
 import javafx.scene.text.FontPosture
 
@@ -28,7 +29,7 @@ import javafx.scene.text.FontPosture
 	*/
 object LoginScene {
 	trait LoginSceneListener {
-		def onButtonConnect()
+		def onButtonConnect(email:String, pw:String)
 		def onButtonJoin()
 		def onButtonBotJoin()
 	}
@@ -40,7 +41,11 @@ class LoginScene() {
 	val width = 500
 	val height = 500
 	val group = new Group
-	val loginButton = new Button("Login")
+	val emailInput = new TextField("email")
+	val pwInput = new TextField("password")
+	val warningText = new Text("")
+
+	val qrLoginButton = new Button("Login")
 	val joinButton = new Button("Join")
 	val botJoinButton = new Button("BotJoin")
 
@@ -48,10 +53,18 @@ class LoginScene() {
 	val canvasCtx = canvas.getGraphicsContext2D
 	var loginSceneListener: LoginSceneListener = _
 	
-	
-	loginButton.setLayoutX(220)
-	loginButton.setLayoutY(240)
-	loginButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+	emailInput.setLayoutX(170)
+	emailInput.setLayoutY(150)
+
+	pwInput.setLayoutX(170)
+	pwInput.setLayoutY(190)
+
+	warningText.setLayoutX(170)
+	warningText.setLayoutY(210)
+
+	qrLoginButton.setLayoutX(240)
+	qrLoginButton.setLayoutY(240)
+	qrLoginButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
 	
 	joinButton.setLayoutX(180)
 	joinButton.setLayoutY(240)
@@ -69,19 +82,32 @@ class LoginScene() {
 	canvasCtx.fillRect(0, 0, width, height)
 	canvasCtx.setFont(Font.font("Helvetica", FontWeight.BOLD ,FontPosture.ITALIC,28))
 	canvasCtx.setFill(Color.web("rgb(250, 250, 250)"))
-	canvasCtx.fillText(s"Welcome to medusa!",100,125)
+	canvasCtx.fillText(s"Welcome to medusa!",100,80)
 	group.getChildren.add(canvas)
-	group.getChildren.add(loginButton)
+	group.getChildren.add(emailInput)
+	group.getChildren.add(pwInput)
+	group.getChildren.add(qrLoginButton)
+
 
 	val scene = new Scene(group)
 	
-	loginButton.setOnAction(_ => loginSceneListener.onButtonConnect())
+	qrLoginButton.setOnAction { _ =>
+		val email = emailInput.getText()
+		val pw = pwInput.getText()
+		if (email == "") {
+			warningText.setText("email不能为空")
+		} else if (pw == "") {
+			warningText.setText("password不能为空")
+		} else {
+			loginSceneListener.onButtonConnect(email, pw)
+		}
+	}
 	joinButton.setOnAction(_ => loginSceneListener.onButtonJoin())
 	botJoinButton.setOnAction(_ => loginSceneListener.onButtonBotJoin())
 	
 	def drawScanUrl(imageStream:ByteArrayInputStream) = {
 		ClientBoot.addToPlatform{
-			group.getChildren.remove(loginButton)
+			group.getChildren.remove(qrLoginButton)
 			val img = new Image(imageStream)
 			canvasCtx.drawImage(img, 100, 100)
 			canvasCtx.setFont(Font.font("Helvetica", FontWeight.BOLD ,FontPosture.ITALIC,28))

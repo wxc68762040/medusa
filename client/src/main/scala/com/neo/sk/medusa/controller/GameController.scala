@@ -98,10 +98,10 @@ object GameController {
       argb.foreach{ e =>
         byteBuffer.putInt(e)
       }
-
       byteBuffer.flip()
       byteBuffer.array().take(byteBuffer.limit)
-
+      argb
+      new Array[Byte](0)
     }catch {
       case e: Exception=>
         a

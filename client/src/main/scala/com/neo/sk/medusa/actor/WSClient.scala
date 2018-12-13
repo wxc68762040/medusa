@@ -24,7 +24,6 @@ import java.net.URLEncoder
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
-import com.neo.sk.medusa.controller.Api4GameAgent._
 import com.neo.sk.medusa.gRPCService.{MedusaServer, MedusaTestClient}
 /**
 	* Created by wangxicheng on 2018/10/19.
