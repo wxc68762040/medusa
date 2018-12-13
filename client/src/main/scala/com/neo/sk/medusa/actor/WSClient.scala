@@ -162,7 +162,14 @@ object WSClient {
                 val playerId = "user" + res.Ws4AgentRsp.data.userId.toString
                 val nickname = res.Ws4AgentRsp.data.nickname
 								val token = res.Ws4AgentRsp.data.token
-              	self ! GetLoginInfo(playerId, nickname, token)
+								linkGameAgent(gameId, playerId, token).map {
+									case Right(resl) =>
+										log.debug("accessCode: " + resl.accessCode)
+										self ! ConnectGame(playerId, nickname, resl.accessCode)
+									case Left(l) =>
+										log.error("link error!")
+								}
+              	//self ! GetLoginInfo(playerId, nickname, token)
               } else {
                 log.error("link error!")
               }
