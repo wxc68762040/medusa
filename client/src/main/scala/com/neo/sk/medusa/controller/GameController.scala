@@ -54,7 +54,7 @@ object GameController {
 	var firstCome = true
 	var lagging = true
 	val log:Logger = LoggerFactory.getLogger("GameController")
-  val a = new Array[Byte](0)
+  val emptyArray = new Array[Byte](0)
 
 	val watchKeys = Set(
 		KeyCode.SPACE,
@@ -107,7 +107,7 @@ object GameController {
 
     }catch {
       case e: Exception=>
-        a
+        emptyArray
     }
 	}
 
@@ -124,7 +124,7 @@ object GameController {
 
 }
 
-class GameController(id: String,
+class   GameController(id: String,
 										 name: String,
 										 stageCtx: StageContext,
 										 gameScene: GameScene,
@@ -146,7 +146,7 @@ class GameController(id: String,
   val maxImage = new Image("champion.png")
   val bgImage = new Image("bg.png")
   val championImage = new Image("champion.png")
-  val a = new Array[Byte](0)
+  val emptyArray = new Array[Byte](0)
 
 
   val scale = 0.5
@@ -181,6 +181,7 @@ class GameController(id: String,
               Some(ImgData(windowWidth, windowHeight, mySnakeByte.length, ByteString.copyFrom(mySnakeByte))),
               Some(ImgData(windowWidth, windowHeight, infoByte.length, ByteString.copyFrom(infoByte))))
             val observation = ObservationRsp(Some(layer), Some(ImgData(windowWidth, windowHeight, 0, ByteString.copyFrom(infoByte))))
+            t.sender ! observation
             Behaviors.same
         }
     }
@@ -316,7 +317,7 @@ class GameController(id: String,
     if (flag) {
       canvas2byteArray(layerMapCanvas)
     } else {
-      a
+      emptyArray
     }
 
   }
@@ -403,7 +404,7 @@ class GameController(id: String,
     if (flag) {
       canvas2byteArray(layerInfoCanvas)
     } else {
-      a
+      emptyArray
     }
   }
 
@@ -463,7 +464,7 @@ class GameController(id: String,
    if(flag) {
      canvas2byteArray(layerBgCanvas)
    }else{
-     a
+     emptyArray
    }
   }
 
@@ -509,7 +510,7 @@ class GameController(id: String,
     if(flag){
       canvas2byteArray(layerAppleCanvas)
     }else{
-      a
+      emptyArray
     }
 
   }
@@ -608,7 +609,7 @@ class GameController(id: String,
     if(flag) {
       canvas2byteArray(layerAllSnakesCanvas)
     }else{
-      a
+      emptyArray
     }
   }
 
@@ -713,7 +714,7 @@ class GameController(id: String,
     if(flag) {
       canvas2byteArray(layerMySnakeCanvas)
     }else{
-      a
+      emptyArray
     }
 
   }
@@ -991,7 +992,7 @@ class GameController(id: String,
     if(flag){
       canvas2byteArray(viewCanvas)
     }else{
-      a
+      emptyArray
     }
   }
 

@@ -22,9 +22,9 @@ class MedusaTestClient (
 	private val esheepStub: EsheepAgentStub = EsheepAgentGrpc.stub(channel)
 	val credit = Credit(playerId = playerId, apiToken = apiToken)
 
-	def createRoom(password:String): Future[CreateRoomRsp] = esheepStub.createRoom(CreateRoomReq(password,Some(credit)))
+	def createRoom(password:String): Future[CreateRoomRsp] = esheepStub.createRoom(CreateRoomReq(Some(credit),password))
 
-  def joinRoom(roomId:String,password: String):Future[SimpleRsp]= esheepStub.joinRoom(JoinRoomReq(roomId,password,Some(credit)))
+  def joinRoom(roomId:String,password: String):Future[SimpleRsp]= esheepStub.joinRoom(JoinRoomReq(Some(credit),password,roomId))
 
   def leaveRoom():Future[SimpleRsp] =esheepStub.leaveRoom(credit)
 

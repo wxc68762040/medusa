@@ -77,24 +77,26 @@ object WSClient {
 		Behaviors.receive[WsCommand] { (ctx, msg) =>
 			msg match {
         case  CreateRoom(playerId,name, password)=>
-          //fixme  此处的gameController应该在Receiver方
+          //fixme  此处的gameController最好应该在Receiver方
           val gameScene = new GameScene()
-          val gController = new GameController(playerId, name,  stageCtx, gameScene, serverActor)
+          val layerScene = new LayerScene
+          val gController = new GameController(playerId, name,  stageCtx, gameScene,layerScene, serverActor)
           gController.connectToGameServer(gController)
           serverActor ! Protocol.CreateRoom(-1,password)
           working(gameMessageReceiver,serverActor,loginController,stageCtx,gController)
 
 				case JoinRoom(playerId,name,roomId,password) =>
-          //fixme  此处的gameController应该在Receiver方
           val gameScene = new GameScene()
-          val gController = new GameController(playerId, name, stageCtx, gameScene, serverActor)
+          val layerScene = new LayerScene
+          val gController = new GameController(playerId, name, stageCtx, gameScene,layerScene, serverActor)
           gController.connectToGameServer(gController)
           serverActor ! Protocol.JoinRoom(roomId,password)
           working(gameMessageReceiver,serverActor,loginController,stageCtx,gController)
 
 				case BotStart	=>
           val gameScene = new GameScene()
-          val gController = new GameController("test", "test", stageCtx, gameScene, serverActor)
+          val layerScene = new LayerScene
+          val gController = new GameController("test", "test", stageCtx, gameScene,layerScene, serverActor)
           gController.connectToGameServer(gController)
 					val port = 5321
 					val server = MedusaServer.build(port, executor, ctx.self,gController, gameMessageReceiver, stageCtx)
