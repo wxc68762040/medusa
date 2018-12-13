@@ -22,7 +22,7 @@ import org.seekloud.byteobject.MiddleBufferInJvm
 import org.slf4j.LoggerFactory
 import io.circe.parser.decode
 import java.net.URLEncoder
-
+import com.neo.sk.medusa.utils.Api4GameAgent._
 import cats.instances.stream
 
 import scala.concurrent.duration._

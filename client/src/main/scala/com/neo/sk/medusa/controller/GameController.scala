@@ -204,6 +204,8 @@ class   GameController(id: String,
 
 	def getFrameCount: Long = grid.frameCount
 
+  def getLiveState = grid.liveState
+
 	def getScore: (Int, snake.Score) = grid.myRank
 
 	def startGameLoop(): Unit = {

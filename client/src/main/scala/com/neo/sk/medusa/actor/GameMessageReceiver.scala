@@ -67,6 +67,7 @@ object GameMessageReceiver {
 					log.info(s"$id join room success")
 					ClientBoot.addToPlatform {
 						grid.myId = id
+						grid.liveState = true
 						GameController.myRoomId = roomId
 					}
 					running(id, roomId, gameController)
@@ -96,6 +97,7 @@ object GameMessageReceiver {
 				case Protocol.SnakeDead(id) =>
 					ClientBoot.addToPlatform {
 						grid.removeSnake(id)
+						grid.liveState = false
 					}
 					Behavior.same
 				

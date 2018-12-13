@@ -44,7 +44,8 @@ class LoginScene() {
 	val pwInput = new TextField("password")
 	val warningText = new Text("")
 
-	val qrLoginButton = new Button("Login")
+	val qrLoginButton = new Button("二维码登录")
+	val emailLoginButton = new Button("邮箱登录")
 	val joinButton = new Button("Join")
 	val botJoinButton = new Button("BotJoin")
 
@@ -61,11 +62,17 @@ class LoginScene() {
 	warningText.setLayoutX(170)
 	warningText.setLayoutY(210)
 
-	qrLoginButton.setLayoutX(240)
+	qrLoginButton.setLayoutX(180)
 	qrLoginButton.setLayoutY(240)
-	qrLoginButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+	qrLoginButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); " +
+												 "-fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
+	emailLoginButton.setLayoutX(280)
+	emailLoginButton.setLayoutY(240)
+	emailLoginButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); " +
+												 "-fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
 	
-	joinButton.setLayoutX(180)
+	joinButton.setLayoutX(240)
 	joinButton.setLayoutY(240)
 	joinButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
 	
@@ -101,6 +108,7 @@ class LoginScene() {
 			loginSceneListener.onButtonConnect(email, pw)
 		}
 	}
+
 	joinButton.setOnAction(_ => loginSceneListener.onButtonJoin())
 	botJoinButton.setOnAction(_ => loginSceneListener.onButtonBotJoin())
 	

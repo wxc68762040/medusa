@@ -19,6 +19,7 @@ import com.neo.sk.medusa.ClientBoot.{executor, materializer, scheduler, system, 
 import io.grpc.{Server, ServerBuilder}
 import org.seekloud.esheepapi.pb.api._
 import org.seekloud.esheepapi.pb.actions._
+import org.seekloud.esheepapi.pb.service._
 import org.seekloud.esheepapi.pb.service.EsheepAgentGrpc
 import org.seekloud.esheepapi.pb.service.EsheepAgentGrpc.EsheepAgent
 import org.slf4j.LoggerFactory
@@ -123,14 +124,18 @@ class MedusaServer(
 	
 	override def observation(request: Credit): Future[ObservationRsp] = {
 		println(s"action Called by [$request")
-		if(checkBotToken(request.playerId, request.apiToken)) {
+		if(checkBotToken(request.playerId, request.apiToken) && gameController.getLiveState) {
 			val observationRsp: Future[ObservationRsp] = gameController.getObservation ? GameController.GetObservation
 			observationRsp.map {
 				observation =>
 					ObservationRsp(observation.layeredObservation, observation.humanObservation, gameController.getFrameCount.toInt, 0, state, "ok")
 			}
 		}else{
-			Future.successful(ObservationRsp(errCode = 100003, state = State.unknown, msg = "auth error"))
+			if(!gameController.getLiveState) {
+				Future.successful(ObservationRsp(errCode = 100003, state = State.unknown, msg = "dead snake can't get observation"))
+			}else{
+				Future.successful(ObservationRsp(errCode = 100003, state = State.unknown, msg = "auth error"))
+			}
 		}
 	}
 	
