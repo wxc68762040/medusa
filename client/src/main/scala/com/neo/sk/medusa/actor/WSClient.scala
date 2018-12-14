@@ -22,12 +22,11 @@ import org.seekloud.byteobject.MiddleBufferInJvm
 import org.slf4j.LoggerFactory
 import io.circe.parser.decode
 import java.net.URLEncoder
-
+import com.neo.sk.medusa.utils.Api4GameAgent._
 import cats.instances.stream
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
-import com.neo.sk.medusa.controller.Api4GameAgent._
 import com.neo.sk.medusa.gRPCService.{MedusaServer, MedusaTestClient}
 import com.neo.sk.medusa.snake.Protocol
 
@@ -202,10 +201,11 @@ object WSClient {
                 val playerId = "user" + res.Ws4AgentRsp.data.userId.toString
                 val nickname = res.Ws4AgentRsp.data.nickname
 								val token = res.Ws4AgentRsp.data.token
-              	self ! GetLoginInfo(playerId, nickname, token)
-              } else {
-                log.error("link error!")
-              }
+								self ! GetLoginInfo(playerId, nickname, token)
+							} else {
+								log.error("link error!")
+							}
+              	//self ! GetLoginInfo(playerId, nickname, token)
             case Left(le) =>
               println("===========================================================")
               log.error(s"decode esheep webmsg error! Error information:${le}")

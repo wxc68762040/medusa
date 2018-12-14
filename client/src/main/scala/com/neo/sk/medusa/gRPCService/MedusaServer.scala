@@ -19,6 +19,7 @@ import com.neo.sk.medusa.ClientBoot.{executor, materializer, scheduler, system, 
 import io.grpc.{Server, ServerBuilder}
 import org.seekloud.esheepapi.pb.api._
 import org.seekloud.esheepapi.pb.actions._
+import org.seekloud.esheepapi.pb.service._
 import org.seekloud.esheepapi.pb.service.EsheepAgentGrpc
 import org.seekloud.esheepapi.pb.service.EsheepAgentGrpc.EsheepAgent
 import org.slf4j.LoggerFactory
@@ -30,8 +31,8 @@ import com.neo.sk.medusa.controller.GameController
 import com.neo.sk.medusa.snake.Protocol4Agent.JoinRoomRsp
 
 /**
-  * Created by wangxicheng on 2018/11/29.
-  */
+	* Created by wangxicheng on 2018/11/29.
+	*/
 
 object MedusaServer {
 
@@ -141,7 +142,11 @@ class MedusaServer(
           ObservationRsp(observation.layeredObservation, observation.humanObservation, gameController.getFrameCount.toInt, 0, state, "ok")
       }
     } else {
-      Future.successful(ObservationRsp(errCode = 100003, state = State.unknown, msg = "auth error"))
+      if(!gameController.getLiveState) {
+        Future.successful(ObservationRsp(errCode = 100003, state = State.unknown, msg = "dead snake can't get observation"))
+      }else{
+        Future.successful(ObservationRsp(errCode = 100003, state = State.unknown, msg = "auth error"))
+      }
     }
   }
 

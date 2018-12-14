@@ -68,6 +68,7 @@ object GameMessageReceiver {
 					log.info(s"$id join room success")
 					ClientBoot.addToPlatform {
 						grid.myId = id
+						grid.liveState = true
 						GameController.myRoomId = roomId
             if(GameController.SDKReplyTo != null){
               GameController.SDKReplyTo ! JoinRoomRsp(roomId)
@@ -104,6 +105,7 @@ object GameMessageReceiver {
 				case Protocol.SnakeDead(id) =>
 					ClientBoot.addToPlatform {
 						grid.removeSnake(id)
+						grid.liveState = false
 					}
 					Behavior.same
 				

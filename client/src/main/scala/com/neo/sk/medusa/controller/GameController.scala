@@ -104,10 +104,10 @@ object GameController {
       argb.foreach{ e =>
         byteBuffer.putInt(e)
       }
-
       byteBuffer.flip()
       byteBuffer.array().take(byteBuffer.limit)
-
+      argb
+      new Array[Byte](0)
     }catch {
       case e: Exception=>
         emptyArray
@@ -219,6 +219,8 @@ class   GameController(id: String,
 
 	def getFrameCount: Long = grid.frameCount
 
+  def getLiveState = grid.liveState
+
 	def getScore: (Int, snake.Score) = grid.myRank
 
 	def startGameLoop(): Unit = {
@@ -271,12 +273,12 @@ class   GameController(id: String,
 
     mapCtx.setFill(Color.BLACK)
     mapCtx.clearRect(0, 0, 400, 200)
-    mapCtx.setGlobalAlpha(0.5)
+   // mapCtx.setGlobalAlpha(0.5)
     mapCtx.fillRect(0, 0, 400, 200)
 
     mapCtx.beginPath()
     mapCtx.setStroke(Color.WHITE)
-    mapCtx.setGlobalAlpha(0.8)
+    //mapCtx.setGlobalAlpha(0.8)
     mapCtx.drawImage(maxImage, maxLength.x * LittleMap.w / Boundary.w - 7,  maxLength.y * LittleMap.h / Boundary.h - 7, 15, 15)
 
     if (snakes.nonEmpty && snakes.exists(_.id == grid.myId)) {

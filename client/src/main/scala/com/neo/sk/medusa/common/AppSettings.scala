@@ -37,7 +37,6 @@ object AppSettings {
   val gameHost = appConfig.getString("gameServer.host")
   val gameDomain = appConfig.getString("gameServer.domain")
   val botSecure = (appConfig.getString("botSecure.playerId"), appConfig.getString("botSecure.apiToken"))
-
   val isLayer = appConfig.getBoolean("isLayer")
   val layerCanvasW = appConfig.getInt("layerCanvas.w")
   val layerCanvasH = appConfig.getInt("layerCanvas.h")
@@ -45,5 +44,8 @@ object AppSettings {
   val viewCanvasW = appConfig.getInt("viewCanvas.w")
   val viewCanvasH = appConfig.getInt("viewCanvas.h")
 
+
+  val isView = appConfig.getBoolean("isView")
+  val emailInfo = (appConfig.getString("emailInfo.email"), appConfig.getString("emailInfo.passwd"))
 
 }
