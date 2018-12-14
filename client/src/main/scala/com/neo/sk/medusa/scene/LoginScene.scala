@@ -40,7 +40,7 @@ object LoginScene {
 
 
 		def onButtonHumanJoin(account: String, pwd: String)  //用户加入游戏
-		def onButtonBotJoin(botID: String, pwd: String)    //Bot加入游戏
+		def onButtonBotJoin(botId: String, botKey: String)    //Bot加入游戏
 
 	}
 }

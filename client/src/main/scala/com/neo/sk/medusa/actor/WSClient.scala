@@ -38,7 +38,7 @@ import scala.util.Success
 object WSClient {
 	
 	sealed trait WsCommand
-	case object BotStart extends WsCommand
+	case class BotLogin(botId:String,botKey:String) extends WsCommand
   case class CreateRoom(playerId:String,name:String,password:String)extends  WsCommand
 	case class JoinRoom(playerId:String,name:String, roomId:Long,password:String="") extends WsCommand
 	case class GetLoginInfo(id: String, name: String, access: String) extends WsCommand
@@ -92,22 +92,53 @@ object WSClient {
           serverActor ! Protocol.JoinRoom(roomId,password)
           working(gameMessageReceiver,serverActor,loginController,stageCtx,gController)
 
-				case BotStart	=>
+				case BotLogin(botId,botKey)	=>
           val gameScene = new GameScene()
           val layerScene = new LayerScene
-          val gController = new GameController("test", "test", stageCtx, gameScene,layerScene, serverActor)
+          val gController = new GameController(botId, botId, stageCtx, gameScene,layerScene, serverActor)
           gController.connectToGameServer(gController)
-					val port = 5321
-					val server = MedusaServer.build(port, executor, ctx.self,gController, gameMessageReceiver, stageCtx)
-					server.start()
-					log.info(s"Server started at $port")
+         getBotToken(botId,botKey).map{
+            case Right(t)=>
+              getBotAccessCode(t.token).map{
+                case Right(accessCode)=>
+                  loginController.setUserInfo(botId, t.botName, t.token)
+                  val url = getWebSocketUri(botId, t.botName,accessCode)
+                  val webSocketFlow = Http().webSocketClientFlow(WebSocketRequest(url))
+                  val source = getSource(ctx.self)
+                  val sink = getSink(gameMessageReceiver)
+                  val (stream, response) =
+                    source
+                      .viaMat(webSocketFlow)(Keep.both)
+                      .toMat(sink)(Keep.left)
+                      .run()
+                  val connected = response.flatMap { upgrade =>
+                    if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
+                      ctx.self ! GetSeverActor(stream)
+                      val port = 5321
+                      val server = MedusaServer.build(port, executor, ctx.self,gController, gameMessageReceiver, stageCtx)
+                      server.start()
+                      log.info(s"Server started at $port")
+                      sys.addShutdownHook {
+                        log.info("JVM SHUT DOWN.")
+                        server.shutdown()
+                        log.info("SHUT DOWN.")
+                      }
+                      Future.successful(s"$logPrefix connect success.")
+                    } else {
+                      throw new RuntimeException(s"WSClient connection failed: ${upgrade.response.status}")
+                    }
+                  } //链接建立时
+                  connected.onComplete(i => log.info(i.toString))
+                //					closed.onComplete { i =>
+                //						log.error(s"$logPrefix connection closed!")
+                //					} //链接断开时
+                case Left(e)=>
+                  log.error(s"bot get access code error: $e")
+              }
+            case Left(e)=>
+              log.error(s"bot get token error: $e")
 
-					sys.addShutdownHook {
-						log.info("JVM SHUT DOWN.")
-						server.shutdown()
-						log.info("SHUT DOWN.")
-					}
-					timer.startSingleTimer(TimerKeyForTest, ClientTest, 3.seconds)
+          }
           working(gameMessageReceiver,serverActor,loginController,stageCtx,gController)
 
 				case EstablishConnectionEs(wsUrl, _) =>

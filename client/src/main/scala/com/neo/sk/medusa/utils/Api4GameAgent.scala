@@ -53,8 +53,21 @@ object Api4GameAgent extends  HttpUtil{
 
   }
 
-  def getBotToken(botId:String,botKey:String) ={
+  def getBotToken(botId:String,botKey:String): Future[Either[String, BotInfo]] ={
     val url = esheepProtocol + "://" + esheepHost + "/esheep/api/sdk/botKey2Token"
+    val data = BotKeyReq(botId,botKey).asJson.noSpaces
+    postJsonRequestSend("post",url,Nil,data).map{
+      case Right(r)=>
+        decode[BotKeyRes](r) match {
+          case Right(res)=>
+            if(res.errCode==0) Right(res.data)
+            else Left(res.msg)
+          case Left(e)=>
+            Left(s"decode error: $e")
+        }
+      case Left(e)=>
+        Left(s"getBotToken error: $e")
+    }
 
   }
 
@@ -70,7 +83,7 @@ object Api4GameAgent extends  HttpUtil{
             Left(s"decode error: $err")
         }
       case Left(e)=>
-        Left(s"getLoginResponse error: $e")
+        Left(s"getBotAccessCode error: $e")
     }
   }
 

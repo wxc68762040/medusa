@@ -63,7 +63,7 @@ object Protocol4Agent {
   case class AccessCode(accessCode: String)
 
   case class BotKeyReq(
-                   botId:Long,
+                   botId:String,
                    botKey: String
                    )
   case class BotKeyRes(
