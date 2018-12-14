@@ -5,7 +5,7 @@ import java.io.ByteArrayInputStream
 import akka.actor.typed.ActorRef
 import com.neo.sk.medusa.ClientBoot
 import com.neo.sk.medusa.actor.WSClient
-import com.neo.sk.medusa.actor.WSClient.{BotLogin, BotStart, EstablishConnectionEs, JoinRoom}
+import com.neo.sk.medusa.actor.WSClient.{BotLogin, EstablishConnectionEs}
 import com.neo.sk.medusa.common.{AppSettings, StageContext}
 import com.neo.sk.medusa.scene.LoginScene
 import com.neo.sk.medusa.utils.Api4GameAgent._
