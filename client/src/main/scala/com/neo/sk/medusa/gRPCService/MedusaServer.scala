@@ -68,7 +68,7 @@ class MedusaServer(
   private var state: State = State.unknown
 
   override def createRoom(request: CreateRoomReq): Future[CreateRoomRsp] = {
-    if (checkBotToken(request.credit.get.playerId, request.credit.get.apiToken)) {
+    if (checkBotToken(request.credit.get.apiToken)) {
       log.info(s"createRoom Called by [$request")
       state = State.init_game
       val getRoomIdRsp: Future[JoinRoomRsp] = gameController.botInfoActor ? (GameController.CreateRoomReq(request.password, _))
@@ -85,7 +85,7 @@ class MedusaServer(
 
   override def joinRoom(request: JoinRoomReq): Future[SimpleRsp] = {
     println(s"joinRoom Called by [$request")
-    if (checkBotToken(request.credit.get.playerId, request.credit.get.apiToken)) {
+    if (checkBotToken( request.credit.get.apiToken)) {
       state = State.in_game
       val joinRoomRsp: Future[JoinRoomRsp] = gameController.botInfoActor ? (GameController.JoinRoomReq(request.roomId.toLong,request.password, _))
       joinRoomRsp.map {
@@ -102,7 +102,7 @@ class MedusaServer(
 
   override def leaveRoom(request: Credit): Future[SimpleRsp] = {
     println(s"leaveRoom Called by [$request")
-    if (checkBotToken(request.playerId, request.apiToken)) {
+    if (checkBotToken( request.apiToken)) {
       wsClient ! Stop
       state = State.ended
       Future.successful(SimpleRsp(state = state, msg = "ok"))
@@ -113,7 +113,7 @@ class MedusaServer(
 
   override def actionSpace(request: Credit): Future[ActionSpaceRsp] = {
     println(s"actionSpace Called by [$request")
-    if (checkBotToken(request.playerId, request.apiToken)) {
+    if (checkBotToken(request.apiToken)) {
       val rsp = ActionSpaceRsp(move = List(Move.up, Move.down, Move.left, Move.right),
         fire = List(), apply = List(), state = state, msg = "ok")
       Future.successful(rsp)
@@ -124,7 +124,7 @@ class MedusaServer(
 
   override def action(request: ActionReq): Future[ActionRsp] = {
     println(s"action Called by [$request")
-    if (request.credit.nonEmpty && checkBotToken(request.credit.get.playerId, request.credit.get.apiToken)) {
+    if (request.credit.nonEmpty && checkBotToken( request.credit.get.apiToken)) {
       gameController.gameActionReceiver(request.move)
       val rsp = ActionRsp(frameIndex = gameController.getFrameCount.toInt, state = state, msg = "ok")
       Future.successful(rsp)
@@ -135,7 +135,7 @@ class MedusaServer(
 
   override def observation(request: Credit): Future[ObservationRsp] = {
     println(s"action Called by [$request")
-    if (checkBotToken(request.playerId, request.apiToken)) {
+    if (checkBotToken( request.apiToken)) {
       val observationRsp: Future[ObservationRsp] = gameController.botInfoActor ? GameController.GetObservation
       observationRsp.map {
         observation =>
@@ -152,7 +152,7 @@ class MedusaServer(
 
   override def inform(request: Credit): Future[InformRsp] = {
     println(s"action Called by [$request")
-    if (checkBotToken(request.playerId, request.apiToken)) {
+    if (checkBotToken( request.apiToken)) {
       val rsp = InformRsp(score = gameController.getScore._2.l, kills = gameController.getScore._2.k,
         if (state == State.in_game) 1 else 0, state = state, msg = "ok")
       Future.successful(rsp)
@@ -162,7 +162,7 @@ class MedusaServer(
   }
 
   override def reincarnation(request: Credit): Future[SimpleRsp] = {
-    if (checkBotToken(request.playerId, request.apiToken)) {
+    if (checkBotToken( request.apiToken)) {
       GameController.grid.addActionWithFrame(GameController.grid.myId, KeyEvent.VK_SPACE, GameController.grid.frameCount + Protocol.operateDelay)
       gameController.getServerActor ! Protocol.Key(GameController.grid.myId, KeyEvent.VK_SPACE, GameController.grid.frameCount + Protocol.operateDelay + Protocol.advanceFrame)
       Future.successful(SimpleRsp(state = state, msg = "ok"))
