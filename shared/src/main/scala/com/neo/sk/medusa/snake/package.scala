@@ -282,10 +282,6 @@ package object snake {
     val w = 400
     val h = 200
   }
-  object LittleMap4Bot {
-    val w = 400
-    val h = 200
-  }
   object gameInfo{
     val w = 1600
     val h = 900

@@ -27,11 +27,27 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 	private var userToken = ""
 	
 	loginScene.setLoginSceneListener(new LoginScene.LoginSceneListener {
-		override def onButtonConnect(): Unit = {
+
+		override def onButtonHumanLogin(): Unit = {
+			loginScene.drawHumanLogin
+		}
+
+		override def onButtonBotLogin(): Unit = {
+     loginScene.drawBotLogin
+		}
+
+		override def onButtonHumanScan(): Unit = {
 			getLoginResponseFromEs().map {
 				case Right(r) =>
 					loginScene.drawScanUrl(imageFromBase64(r.data.scanUrl))
 					wsClient ! EstablishConnectionEs(r.data.wsUrl, r.data.scanUrl)
+//					linkGameAgent(gameId, playerId, userToken).map {
+//						case Right(resl) =>
+//							log.debug("accessCode: " + resl.accessCode)
+//							wsClient ! ConnectGame(playerId, nickname, resl.accessCode)
+//						case Left(l) =>
+//							log.error("link error!")
+//									}
 				case Left(e) =>
 					log.error(s"$e")
 			}
@@ -40,11 +56,34 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 		override def onButtonJoin(): Unit = {
 			wsClient ! JoinRoom(playerId,nickname, -1)
 		}
-		
+
 		override def onButtonBotJoin(): Unit = {
 			wsClient ! BotStart
 		}
-		
+
+
+//		override def onButtonConnect(): Unit = {
+//			getLoginResponseFromEs().map {
+//				case Right(r) =>
+//					loginScene.drawScanUrl(imageFromBase64(r.data.scanUrl))
+//					wsClient ! EstablishConnectionEs(r.data.wsUrl, r.data.scanUrl)
+//				case Left(e) =>
+//					log.error(s"$e")
+//			}
+//		}
+//
+//		override def onButtonJoin(): Unit = {
+//			linkGameAgent(gameId, playerId, userToken).map {
+//				case Right(resl) =>
+//					log.debug("accessCode: " + resl.accessCode)
+//					wsClient ! ConnectGame(playerId, nickname, resl.accessCode)
+//
+//				case Left(l) =>
+//					log.error("link error!")
+//			}
+//
+//		}
+
 	})
 	
 	stageCtx.setStageListener(new StageContext.StageListener {
@@ -76,7 +115,7 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 		playerId = pId
 		nickname = name
 		userToken = token
-		loginScene.readyToJoin
+		//loginScene.readyToJoin
 	}
 
 }

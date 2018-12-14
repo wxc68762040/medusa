@@ -6,17 +6,21 @@ import javafx.geometry.Insets
 import javafx.scene.canvas.Canvas
 import javafx.scene.{Group, Scene}
 import javafx.scene.control.{Button, TextField}
+import javafx.scene.control.{Button, Label, TextField}
 import javafx.scene.layout.{GridPane, Pane}
 import javafx.scene.paint.{Color, Paint}
 import akka.actor.typed.ActorRef
 import akka.japi.Effect
 import com.neo.sk.medusa.ClientBoot
 import com.neo.sk.medusa.actor.WSClient
+import com.neo.sk.medusa.actor.WSClient.ConnectGame
 import com.neo.sk.medusa.common.StageContext
 import com.neo.sk.medusa.controller.GameController
 import javafx.scene.image.Image
 import com.neo.sk.medusa.controller.LoginController
 import com.sun.xml.internal.messaging.saaj.util.ByteInputStream
+import javafx.collections.FXCollections
+import javafx.scene.control.cell.PropertyValueFactory
 import javafx.scene.effect.{BoxBlur, DropShadow}
 import javafx.scene.text.Font
 import javafx.scene.text.Text
@@ -28,9 +32,17 @@ import javafx.scene.text.FontPosture
 	*/
 object LoginScene {
 	trait LoginSceneListener {
-		def onButtonConnect(email:String, pw:String)
-		def onButtonJoin()
-		def onButtonBotJoin()
+
+		def onButtonHumanLogin() //用户登录
+		def onButtonBotLogin()   //Bot登录
+
+		def onButtonHumanScan()  //用户扫码登录
+		def onButtonHumanEmail() //用户邮箱登录
+
+
+		def onButtonHumanJoin()  //用户加入游戏
+		def onButtonBotJoin()    //Bot加入游戏
+
 	}
 }
 class LoginScene() {
@@ -40,59 +52,105 @@ class LoginScene() {
 	val width = 500
 	val height = 500
 	val group = new Group
-	val emailInput = new TextField("email")
-	val pwInput = new TextField("password")
-	val warningText = new Text("")
-
-	val qrLoginButton = new Button("二维码登录")
-	val emailLoginButton = new Button("邮箱登录")
-	val joinButton = new Button("Join")
+	//val joinButton = new Button("Join")
+	val humanLoginButton = new Button("HumanLogin")
+	val botLoginButton = new Button("BotLogin")
+	val scanButton = new Button("扫码登录")
+	val emailButton = new Button("邮箱登录")
+	val humanJoinButton = new Button("HumanJoin")
 	val botJoinButton = new Button("BotJoin")
+
+  val idLabel = new Label("BotID:")
+  val botId = new TextField()
+
+	val keyLable = new Label("BotKey:")
+	val botKey = new TextField()
+
+	val accountLabel = new Label("Account:")
+	val accountInput = new TextField()
+
+	val passwordLabel = new Label("PassWord:")
+	val pwdInput = new TextField()
 
 	val canvas = new Canvas(width, height)
 	val canvasCtx = canvas.getGraphicsContext2D
 	var loginSceneListener: LoginSceneListener = _
+
+
+	humanLoginButton.setLayoutX(130)
+	humanLoginButton.setLayoutY(240)
+	humanLoginButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
 	
-	emailInput.setLayoutX(170)
-	emailInput.setLayoutY(150)
+	botLoginButton.setLayoutX(280)
+	botLoginButton.setLayoutY(240)
+	botLoginButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
 
-	pwInput.setLayoutX(170)
-	pwInput.setLayoutY(190)
+	scanButton.setLayoutX(130)
+	scanButton.setLayoutY(240)
+	scanButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
 
-	warningText.setLayoutX(170)
-	warningText.setLayoutY(210)
+	emailButton.setLayoutX(280)
+	emailButton.setLayoutY(240)
+	emailButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
 
-	qrLoginButton.setLayoutX(180)
-	qrLoginButton.setLayoutY(240)
-	qrLoginButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); " +
-												 "-fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+	botId.setLayoutX(150)
+	botId.setLayoutY(200)
+	botId.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
 
-	emailLoginButton.setLayoutX(280)
-	emailLoginButton.setLayoutY(240)
-	emailLoginButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); " +
-												 "-fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
-	
-	joinButton.setLayoutX(240)
-	joinButton.setLayoutY(240)
-	joinButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
-	
-	botJoinButton.setLayoutX(260)
-	botJoinButton.setLayoutY(240)
+	botKey.setLayoutX(150)
+	botKey.setLayoutY(240)
+	botKey.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
+	idLabel.setLayoutX(80)
+	idLabel.setLayoutY(210)
+	idLabel.setTextFill(Color.WHITE)
+	idLabel.setStyle("-fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
+	keyLable.setLayoutX(80)
+	keyLable.setLayoutY(250)
+	keyLable.setTextFill(Color.WHITE)
+	keyLable.setStyle("-fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
+	botJoinButton.setLayoutX(200)
+	botJoinButton.setLayoutY(300)
 	botJoinButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
-	
-	
-	
+
+
+	accountInput.setLayoutX(150)
+	accountInput.setLayoutY(200)
+	accountInput.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
+	pwdInput.setLayoutX(150)
+	pwdInput.setLayoutY(240)
+	pwdInput.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
+	accountLabel.setLayoutX(75)
+	accountLabel.setLayoutY(210)
+	accountLabel.setTextFill(Color.WHITE)
+	accountLabel.setStyle("-fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
+	passwordLabel.setLayoutX(75)
+	passwordLabel.setLayoutY(250)
+	passwordLabel.setTextFill(Color.WHITE)
+	passwordLabel.setStyle("-fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
+	humanJoinButton.setLayoutX(200)
+	humanJoinButton.setLayoutY(300)
+	humanJoinButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
+
+
+
 	//canvasCtx.setFill(Color.rgb(153, 255, 153))
 	val bgColor = new Color(0.003, 0.176, 0.176, 1.0)
 	canvasCtx.setFill(bgColor)
 	canvasCtx.fillRect(0, 0, width, height)
 	canvasCtx.setFont(Font.font("Helvetica", FontWeight.BOLD ,FontPosture.ITALIC,28))
 	canvasCtx.setFill(Color.web("rgb(250, 250, 250)"))
-	canvasCtx.fillText(s"Welcome to medusa!",100,80)
+	canvasCtx.fillText(s"Welcome to medusa!",100,125)
 	group.getChildren.add(canvas)
-	group.getChildren.add(emailInput)
-	group.getChildren.add(pwInput)
-	group.getChildren.add(qrLoginButton)
+	group.getChildren.add(humanLoginButton)
+	group.getChildren.add(botLoginButton)
 
 
 	val scene = new Scene(group)
@@ -110,18 +168,56 @@ class LoginScene() {
 	}
 
 	joinButton.setOnAction(_ => loginSceneListener.onButtonJoin())
+
+	humanLoginButton.setOnAction(_ => loginSceneListener.onButtonHumanLogin())
+	scanButton.setOnAction(_ => loginSceneListener.onButtonHumanScan())
+	emailButton.setOnAction(_ => loginSceneListener.onButtonHumanEmail())
+	botLoginButton.setOnAction(_ => loginSceneListener.onButtonBotLogin())
+	humanJoinButton.setOnAction(_ => loginSceneListener.onButtonHumanJoin())
 	botJoinButton.setOnAction(_ => loginSceneListener.onButtonBotJoin())
-	
+
+
+	def drawHumanLogin = {
+		ClientBoot.addToPlatform{
+			group.getChildren.remove(humanLoginButton)
+			group.getChildren.remove(botLoginButton)
+			group.getChildren.addAll(scanButton,emailButton)
+		}
+	}
+
+	def drawBotLogin ={
+		ClientBoot.addToPlatform{
+			group.getChildren.remove(humanLoginButton)
+			group.getChildren.remove(botLoginButton)
+			group.getChildren.addAll(idLabel, botId)
+			group.getChildren.addAll(keyLable, botKey)
+			group.getChildren.add(botJoinButton)
+		}
+	}
+
+
 	def drawScanUrl(imageStream:ByteArrayInputStream) = {
 		ClientBoot.addToPlatform{
-			group.getChildren.remove(qrLoginButton)
+			group.getChildren.remove(emailButton)
+			group.getChildren.remove(scanButton)
 			val img = new Image(imageStream)
 			canvasCtx.drawImage(img, 100, 100)
 			canvasCtx.setFont(Font.font("Helvetica", FontWeight.BOLD ,FontPosture.ITALIC,28))
 			canvasCtx.fillText(s"请扫码登录！", 160, 70)
 		}
 	}
-	
+
+	def humanEmail = {
+		ClientBoot.addToPlatform{
+			group.getChildren.remove(emailButton)
+			group.getChildren.remove(scanButton)
+			group.getChildren.addAll(accountLabel, accountInput)
+			group.getChildren.addAll(passwordLabel,pwdInput)
+			group.getChildren.add(humanJoinButton)
+		}
+
+	}
+
 	def readyToJoin = {
 		ClientBoot.addToPlatform {
 			canvasCtx.setFill(bgColor)
@@ -129,8 +225,8 @@ class LoginScene() {
 			canvasCtx.setFont(Font.font("Helvetica", FontWeight.BOLD ,FontPosture.ITALIC,28))
 			canvasCtx.setFill(Color.web("rgb(250, 250, 250)"))
 			canvasCtx.fillText(s"Welcome to medusa!",100,125)
-			group.getChildren.add(joinButton)
-			group.getChildren.add(botJoinButton)
+			//group.getChildren.add(joinButton)
+			//group.getChildren.add(botLoginButton)
 		}
 	}
 	
