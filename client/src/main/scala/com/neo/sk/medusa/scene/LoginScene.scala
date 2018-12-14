@@ -13,7 +13,6 @@ import akka.actor.typed.ActorRef
 import akka.japi.Effect
 import com.neo.sk.medusa.ClientBoot
 import com.neo.sk.medusa.actor.WSClient
-import com.neo.sk.medusa.actor.WSClient.ConnectGame
 import com.neo.sk.medusa.common.StageContext
 import com.neo.sk.medusa.controller.GameController
 import javafx.scene.image.Image
@@ -40,8 +39,8 @@ object LoginScene {
 		def onButtonHumanEmail() //用户邮箱登录
 
 
-		def onButtonHumanJoin()  //用户加入游戏
-		def onButtonBotJoin()    //Bot加入游戏
+		def onButtonHumanJoin(account: String, pwd: String)  //用户加入游戏
+		def onButtonBotJoin(botID: String, pwd: String)    //Bot加入游戏
 
 	}
 }
@@ -71,7 +70,7 @@ class LoginScene() {
 
 	val passwordLabel = new Label("PassWord:")
 	val pwdInput = new TextField()
-
+  val warningText = new Text()
 	val canvas = new Canvas(width, height)
 	val canvasCtx = canvas.getGraphicsContext2D
 	var loginSceneListener: LoginSceneListener = _
@@ -154,27 +153,38 @@ class LoginScene() {
 
 
 	val scene = new Scene(group)
-	
-	qrLoginButton.setOnAction { _ =>
-		val email = emailInput.getText()
-		val pw = pwInput.getText()
-		if (email == "") {
-			warningText.setText("email不能为空")
-		} else if (pw == "") {
-			warningText.setText("password不能为空")
-		} else {
-			loginSceneListener.onButtonConnect(email, pw)
-		}
-	}
 
-	joinButton.setOnAction(_ => loginSceneListener.onButtonJoin())
+
+	//joinButton.setOnAction(_ => loginSceneListener.onButtonJoin())
 
 	humanLoginButton.setOnAction(_ => loginSceneListener.onButtonHumanLogin())
 	scanButton.setOnAction(_ => loginSceneListener.onButtonHumanScan())
 	emailButton.setOnAction(_ => loginSceneListener.onButtonHumanEmail())
 	botLoginButton.setOnAction(_ => loginSceneListener.onButtonBotLogin())
-	humanJoinButton.setOnAction(_ => loginSceneListener.onButtonHumanJoin())
-	botJoinButton.setOnAction(_ => loginSceneListener.onButtonBotJoin())
+
+	humanJoinButton.setOnAction{ _ =>
+		val account = accountInput.getText()
+		val pwd = pwdInput.getText()
+		if (account == "") {
+			warningText.setText("email不能为空")
+		} else if (pwd == "") {
+			warningText.setText("password不能为空")
+		} else {
+			loginSceneListener.onButtonHumanJoin(account, pwd)
+		}
+	}
+
+	botJoinButton.setOnAction { _ =>
+		val botID = accountInput.getText()
+		val botKey = pwdInput.getText()
+		if (botID == "") {
+			warningText.setText("email不能为空")
+		} else if (botKey == "") {
+			warningText.setText("password不能为空")
+		} else {
+			loginSceneListener.onButtonBotJoin(botID, botKey)
+		}
+	}
 
 
 	def drawHumanLogin = {
@@ -225,8 +235,7 @@ class LoginScene() {
 			canvasCtx.setFont(Font.font("Helvetica", FontWeight.BOLD ,FontPosture.ITALIC,28))
 			canvasCtx.setFill(Color.web("rgb(250, 250, 250)"))
 			canvasCtx.fillText(s"Welcome to medusa!",100,125)
-			//group.getChildren.add(joinButton)
-			//group.getChildren.add(botLoginButton)
+
 		}
 	}
 	
