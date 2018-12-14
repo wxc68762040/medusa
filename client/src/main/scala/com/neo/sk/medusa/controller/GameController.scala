@@ -256,12 +256,12 @@ class GameController(id: String,
 
     mapCtx.setFill(Color.BLACK)
     mapCtx.clearRect(0, 0, 400, 200)
-    mapCtx.setGlobalAlpha(0.5)
+   // mapCtx.setGlobalAlpha(0.5)
     mapCtx.fillRect(0, 0, 400, 200)
 
     mapCtx.beginPath()
     mapCtx.setStroke(Color.WHITE)
-    mapCtx.setGlobalAlpha(0.8)
+    //mapCtx.setGlobalAlpha(0.8)
     mapCtx.drawImage(championImage, maxLength.x * LittleMap.w / Boundary.w - 7,  maxLength.y * LittleMap.h / Boundary.h - 7, 15, 15)
 
     if (snakes.nonEmpty && snakes.exists(_.id == grid.myId)) {

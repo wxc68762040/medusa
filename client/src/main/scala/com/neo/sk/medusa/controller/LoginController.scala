@@ -8,7 +8,7 @@ import com.neo.sk.medusa.actor.WSClient
 import com.neo.sk.medusa.actor.WSClient.{BotStart, EstablishConnectionEs, JoinRoom}
 import com.neo.sk.medusa.common.{AppSettings, StageContext}
 import com.neo.sk.medusa.scene.LoginScene
-import com.neo.sk.medusa.controller.Api4GameAgent._
+import com.neo.sk.medusa.utils.Api4GameAgent._
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -27,7 +27,16 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 	private var userToken = ""
 	
 	loginScene.setLoginSceneListener(new LoginScene.LoginSceneListener {
-		override def onButtonConnect(): Unit = {
+
+		override def onButtonHumanLogin(): Unit = {
+			loginScene.drawHumanLogin
+		}
+
+		override def onButtonBotLogin(): Unit = {
+			loginScene.drawBotLogin
+		}
+
+		override def onButtonHumanScan(): Unit = {
 			getLoginResponseFromEs().map {
 				case Right(r) =>
 					loginScene.drawScanUrl(imageFromBase64(r.data.scanUrl))
@@ -36,17 +45,24 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 					log.error(s"$e")
 			}
 		}
-		
-		override def onButtonJoin(): Unit = {
-			wsClient ! JoinRoom(playerId,nickname, -1)
+
+		override def onButtonHumanEmail(): Unit = {
+			loginScene.humanEmail
 		}
-		
-		override def onButtonBotJoin(): Unit = {
+
+		override def onButtonHumanJoin(account: String, pwd: String): Unit = {
+
+		}
+
+		override def onButtonBotJoin(botID: String, pwd: String): Unit = {
 			wsClient ! BotStart
 		}
-		
+
+
+
+
 	})
-	
+
 	stageCtx.setStageListener(new StageContext.StageListener {
 		override def onCloseRequest(): Unit = {
 			stageCtx.closeStage()
@@ -76,7 +92,7 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 		playerId = pId
 		nickname = name
 		userToken = token
-		loginScene.readyToJoin
+		//loginScene.readyToJoin
 	}
 
 }
