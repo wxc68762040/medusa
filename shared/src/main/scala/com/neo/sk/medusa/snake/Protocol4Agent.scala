@@ -1,6 +1,14 @@
 package com.neo.sk.medusa.snake
 
+
 object Protocol4Agent {
+
+    case class JoinRoomRsp(
+                             roomId: Long,
+                             errCode:Int =0,
+                             msg:String="ok"
+                           )
+
   //申请登陆
     case class UrlData(
                       wsUrl:String,
@@ -46,5 +54,28 @@ object Protocol4Agent {
                           errCode:Int = 0,
                           msg:String = "ok"
                           )
+
+  case class GetAccessCodeRes(
+                          data:AccessCode,
+                          errCode:Int=0,
+                          msg:String="ok"
+                          )
+  case class AccessCode(accessCode: String)
+
+  case class BotKeyReq(
+                   botId:Long,
+                   botKey: String
+                   )
+  case class BotKeyRes(
+                      data: BotInfo,
+                      errCode:Int=0,
+                      msg:String="ok"
+                      )
+  case class BotInfo(
+                    botName:String,
+                    token:String,
+                    expireTime:Long
+                    )
+
 
 }

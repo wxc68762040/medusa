@@ -10,6 +10,7 @@ import io.circe.syntax._
 import com.neo.sk.medusa.common.AppSettings._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 /**
   * Created by nwh on 2018/10/24.
   */
@@ -18,10 +19,10 @@ object Api4GameAgent extends  HttpUtil{
 
   private[this] val log = LoggerFactory.getLogger("Api4GameAgent")
 
-  def getLoginResponseFromEs()={
+  def getLoginResponseFromEs(): Future[Either[String, LoginResponse]] ={
     val methodName = "GET"
     val url = esheepProtocol + "://" + esheepHost + "/esheep/api/gameAgent/login"
-    getRequestSend(methodName, url, Nil,"UTF-8").map{
+    getRequestSend(methodName, url, Nil).map{
       case Right(r) =>
         decode[LoginResponse](r) match {
           case Right(rin) =>
@@ -34,7 +35,7 @@ object Api4GameAgent extends  HttpUtil{
     }
   }
 //没有处理机器人bot的情况
-  def linkGameAgent(gameId:Long,playerId:String,token:String) ={
+  def linkGameAgent(gameId:Long,playerId:String,token:String): Future[Either[String, LinkResElement]] ={
     val data = LinkGameData(gameId,playerId).asJson.noSpaces
 //    if()
     val url  = esheepProtocol + "://" + esheepHost + "/esheep/api/gameAgent/joinGame?token="+token
@@ -53,6 +54,28 @@ object Api4GameAgent extends  HttpUtil{
     }
 
   }
+
+  def getBotToken(botId:String,botKey:String) ={
+    val url = esheepProtocol + "://" + esheepHost + "/esheep/api/sdk/botKey2Token"
+
+  }
+
+  def getBotAccessCode(token:String): Future[Either[String, String]] ={
+    val url = esheepProtocol + "://" + esheepHost + "/esheep/api/admin/getAccessCode?token="+token
+    getRequestSend("GET",url,Nil).map{
+      case Right(r)=>
+        decode[GetAccessCodeRes](r) match {
+          case Right(res)=>
+            if(res.errCode==0) Right(res.data.accessCode)
+            else Left(res.msg)
+          case Left(err)=>
+            Left(s"decode error: $err")
+        }
+      case Left(e)=>
+        Left(s"getLoginResponse error: $e")
+    }
+  }
+
 
 }
 
