@@ -115,7 +115,7 @@ class MedusaServer(
 		println(s"action Called by [$request")
 		if(request.credit.nonEmpty && checkBotToken(request.credit.get.playerId, request.credit.get.apiToken)) {
 			gameController.gameActionReceiver(request.move)
-			val rsp = ActionRsp(frameIndex = gameController.getFrameCount.toInt, state = state, msg = "ok")
+			val rsp = ActionRsp(frameIndex = gameController.getFrameCount, state = state, msg = "ok")
 			Future.successful(rsp)
 		}else{
 			Future.successful(ActionRsp(errCode = 100002, state = State.unknown, msg = "auth error"))
@@ -128,7 +128,7 @@ class MedusaServer(
 			val observationRsp: Future[ObservationRsp] = gameController.getObservation ? GameController.GetObservation
 			observationRsp.map {
 				observation =>
-					ObservationRsp(observation.layeredObservation, observation.humanObservation, gameController.getFrameCount.toInt, 0, state, "ok")
+					ObservationRsp(observation.layeredObservation, observation.humanObservation, gameController.getFrameCount, 0, state, "ok")
 			}
 		}else{
 			if(!gameController.getLiveState) {
