@@ -131,14 +131,12 @@ object GameController {
 }
 
 class   GameController(id: String,
-										 name: String,
 										 stageCtx: StageContext,
 										 gameScene: GameScene,
                      layerScene: LayerScene,
 										 serverActor: ActorRef[Protocol.WsSendMsg]) {
 
   import GameController._
-
 
   val windowWidth: Int = layerScene.layerWidth
   val windowHeight: Int = layerScene.layerHeight
@@ -161,7 +159,7 @@ class   GameController(id: String,
 
   implicit val system: ActorSystem = ActorSystem("medusa", config)
 
-  val botInfoActor: ActorRef[Command] = system.spawn(create(), "getObservation")
+  val botInfoActor: ActorRef[Command] = system.spawn(create(), "botInfoActor")
 
   def create(): Behavior[Command] = {
     Behaviors.setup[Command] {

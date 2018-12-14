@@ -55,11 +55,10 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 		}
 
 		override def onButtonBotJoin(botId: String, botKey: String): Unit = {
+      log.info(s"bot join ")
+      loginScene.botJoinButton.setDisable(true)
 			wsClient ! BotLogin(botId,botKey)
 		}
-
-
-
 
 	})
 
@@ -94,5 +93,7 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 		userToken = token
 		//loginScene.readyToJoin
 	}
+
+  def getLoginScence()=loginScene
 
 }
