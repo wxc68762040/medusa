@@ -7,6 +7,7 @@ import com.neo.sk.medusa.common.InfoHandler
 import com.neo.sk.medusa.controller.GameController
 import com.neo.sk.medusa.model.GridOnClient
 import com.neo.sk.medusa.snake.Protocol._
+import com.neo.sk.medusa.snake.Protocol4Agent.JoinRoomRsp
 import com.neo.sk.medusa.snake.{Apple, Point, Protocol}
 import org.slf4j.LoggerFactory
 
@@ -69,12 +70,19 @@ object GameMessageReceiver {
 						grid.myId = id
 						grid.liveState = true
 						GameController.myRoomId = roomId
+            if(GameController.SDKReplyTo != null){
+              GameController.SDKReplyTo ! JoinRoomRsp(roomId)
+            }
+
 					}
 					running(id, roomId, gameController)
 					
 				case Protocol.JoinRoomFailure(_, _, errCode, errMsg) =>
 					log.error(s"join room failed $errCode: $errMsg")
 					ClientBoot.addToPlatform {
+            if(GameController.SDKReplyTo != null){
+              GameController.SDKReplyTo ! JoinRoomRsp(-1,errCode,errMsg)
+            }
 						gameController.gameStop()
 					}
 					Behavior.stopped

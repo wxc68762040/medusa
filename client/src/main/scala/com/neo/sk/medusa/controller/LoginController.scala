@@ -7,7 +7,8 @@ import akka.actor.typed.ActorRef
 import com.neo.sk.medusa.ClientBoot.{executor, materializer, scheduler, system, timeout}
 import com.neo.sk.medusa.ClientBoot
 import com.neo.sk.medusa.actor.WSClient
-import com.neo.sk.medusa.actor.WSClient.{BotStart, CreateRoom, EstablishConnectionEs, JoinRoom}
+import com.neo.sk.medusa.actor.WSClient.{BotLogin, EstablishConnectionEs}
+import com.neo.sk.medusa.actor.WSClient.{BotLogin, CreateRoom, EstablishConnectionEs, JoinRoom}
 import com.neo.sk.medusa.common.{AppSettings, StageContext}
 import com.neo.sk.medusa.scene.LoginScene
 import com.neo.sk.medusa.utils.Api4GameAgent._
@@ -75,8 +76,10 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
       }
 		}
 
-		override def onButtonBotJoin(botID: String, pwd: String): Unit = {
-			wsClient ! BotStart
+		override def onButtonBotJoin(botId: String, botKey: String): Unit = {
+      log.info(s"bot join ")
+      loginScene.botJoinButton.setDisable(true)
+			wsClient ! BotLogin(botId,botKey)
 		}
 
 	})
@@ -112,5 +115,7 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 		userToken = token
 		//loginScene.readyToJoin
 	}
+
+  def getLoginScence()=loginScene
 
 }

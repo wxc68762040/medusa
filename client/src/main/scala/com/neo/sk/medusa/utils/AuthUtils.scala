@@ -15,11 +15,9 @@ import io.circe.syntax._
   */
 object AuthUtils extends HttpUtil {
 
-  def checkBotToken(playerId: String, apiToken: String) = {
-    if(playerId == botSecure._1 && apiToken == botSecure._2)
-      true
-    else
-      false
+  def checkBotToken(apiToken: String) = {
+    if(apiToken == botSecure) true
+    else false
   }
 
   def getInfoByEmail(email:String, passwd:String)={

@@ -296,14 +296,14 @@ class LoginScene() {
   }
 
 	botJoinButton.setOnAction { _ =>
-		val botID = accountInput.getText()
-		val botKey = pwdInput.getText()
-		if (botID == "") {
+    val Id = botId.getText()
+    val Key = botKey.getText()
+    if (Id.trim() == "") {
 			warningText.setText("botId不能为空")
-		} else if (botKey == "") {
-			warningText.setText("password不能为空")
+		} else if (Key.trim() == "") {
+			warningText.setText("botKey不能为空")
 		} else {
-			loginSceneListener.onButtonBotJoin(botID, botKey)
+			loginSceneListener.onButtonBotJoin(Id, Key)
 		}
 	}
 
