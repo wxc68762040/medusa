@@ -36,6 +36,7 @@ object AuthUtils extends HttpUtil {
             Left("decode error: "+le)
         }
       case Left(erStr) =>
+        log.error("email auth post fail")
         Left("get return error:"+erStr)
     }
 
