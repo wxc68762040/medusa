@@ -41,20 +41,22 @@ class LayerScene {
 
   val viewCanvas = new Canvas(800,400)
 
-  layerBgCanvas.setLayoutX(0)
+  layerBgCanvas.setLayoutX(800)
   layerBgCanvas.setLayoutY(0)
-  layerMapCanvas.setLayoutX(0)
-  layerMapCanvas.setLayoutY(250)
-  layerAppleCanvas.setLayoutX(450)
-  layerAppleCanvas.setLayoutY(0)
-  layerMySnakeCanvas.setLayoutX(450)
-  layerMySnakeCanvas.setLayoutY(250)
-  layerInfoCanvas.setLayoutX(900)
+  layerInfoCanvas.setLayoutX(1200)
   layerInfoCanvas.setLayoutY(0)
-  layerAllSnakesCanvas.setLayoutX(900)
-  layerAllSnakesCanvas.setLayoutY(250)
+  layerMySnakeCanvas.setLayoutX(800)
+  layerMySnakeCanvas.setLayoutY(400)
+  layerAllSnakesCanvas.setLayoutX(1200)
+  layerAllSnakesCanvas.setLayoutY(400)
+  layerMapCanvas.setLayoutX(800)
+  layerMapCanvas.setLayoutY(600)
+  layerAppleCanvas.setLayoutX(1200)
+  layerAppleCanvas.setLayoutY(600)
+
+
   viewCanvas.setLayoutX(0)
-  viewCanvas.setLayoutY(500)
+  viewCanvas.setLayoutY(100)
 
   group.getChildren.add(viewCanvas)
 
