@@ -59,6 +59,8 @@ class LoginScene() {
 	val humanJoinButton = new Button("HumanJoin")
 	val botJoinButton = new Button("BotJoin")
 
+	//humanJoinButton.setDisable(true)
+
   val idLabel = new Label("BotID:")
   val botId = new TextField()
 
