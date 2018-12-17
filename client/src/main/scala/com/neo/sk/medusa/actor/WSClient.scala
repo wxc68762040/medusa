@@ -38,11 +38,12 @@ import scala.util.Success
 object WSClient {
 	
 	sealed trait WsCommand
-	case object BotStart extends WsCommand
+	case class BotLogin(botId:String,botKey:String) extends WsCommand
   case class CreateRoom(playerId:String,name:String,password:String)extends  WsCommand
 	case class JoinRoom(playerId:String,name:String, roomId:Long,password:String="") extends WsCommand
 	case class GetLoginInfo(id: String, name: String, access: String) extends WsCommand
   case class GetSeverActor(severActor: ActorRef[WsSendMsg])extends WsCommand
+  case class GetGameController(playerId: String,isBot:Boolean=false)extends WsCommand
 	case class EstablishConnectionEs(ws:String,scanUrl:String) extends WsCommand
 	case object Stop extends WsCommand
 	case object ClientTest extends WsCommand
@@ -77,38 +78,57 @@ object WSClient {
 			msg match {
         case  CreateRoom(playerId,name, password)=>
           //fixme  此处的gameController最好应该在Receiver方
-          val gameScene = new GameScene()
-          val layerScene = new LayerScene
-          val gController = new GameController(playerId, name,  stageCtx, gameScene,layerScene, serverActor)
-          gController.connectToGameServer(gController)
           serverActor ! Protocol.CreateRoom(-1,password)
-          working(gameMessageReceiver,serverActor,loginController,stageCtx,gController)
+          ctx.self ! GetGameController(playerId)
+          Behaviors.same
 
 				case JoinRoom(playerId,name,roomId,password) =>
-          val gameScene = new GameScene()
-          val layerScene = new LayerScene
-          val gController = new GameController(playerId, name, stageCtx, gameScene,layerScene, serverActor)
-          gController.connectToGameServer(gController)
           serverActor ! Protocol.JoinRoom(roomId,password)
-          working(gameMessageReceiver,serverActor,loginController,stageCtx,gController)
+          ctx.self ! GetGameController(playerId)
+          Behaviors.same
 
-				case BotStart	=>
-          val gameScene = new GameScene()
-          val layerScene = new LayerScene
-          val gController = new GameController("test", "test", stageCtx, gameScene,layerScene, serverActor)
-          gController.connectToGameServer(gController)
-					val port = 5321
-					val server = MedusaServer.build(port, executor, ctx.self,gController, gameMessageReceiver, stageCtx)
-					server.start()
-					log.info(s"Server started at $port")
+				case BotLogin(botId,botKey)	=>
+          log.info(s"bot req token and accessCode")
+          //fixme 此处若拿不到token或accessCode则存在问题
+         getBotToken(botId,botKey).map{
+            case Right(t)=>
+              getBotAccessCode(t.token).map{
+                case Right(accessCode)=>
+                  val url = getWebSocketUri(botId, t.botName,accessCode)
+                  val webSocketFlow = Http().webSocketClientFlow(WebSocketRequest(url))
+                  val source = getSource(ctx.self)
+                  val sink = getSink(gameMessageReceiver)
+                  val (stream, response) =
+                    source
+                      .viaMat(webSocketFlow)(Keep.both)
+                      .toMat(sink)(Keep.left)
+                      .run()
+                  val connected = response.flatMap { upgrade =>
+                    if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
+                      ctx.self ! GetGameController(botId)
+                      ctx.self ! GetSeverActor(stream)
+                      loginController.setUserInfo(botId, t.botName, t.token)
+                      Future.successful(s"$logPrefix connect success.")
+                    } else {
+                      throw new RuntimeException(s"WSClient connection failed: ${upgrade.response.status}")
+                    }
+                  } //链接建立时
+                  connected.onComplete(i => log.info(i.toString))
+                //					closed.onComplete { i =>
+                //						log.error(s"$logPrefix connection closed!")
+                //					} //链接断开时
+                case Left(e)=>
+                  loginController.getLoginScence().warningText.setText("get accessCode error")
+                  loginController.getLoginScence().botJoinButton.setDisable(false)
+                  log.error(s"bot get access code error: $e")
+              }
+            case Left(e)=>
+              loginController.getLoginScence().warningText.setText("get token error")
+              loginController.getLoginScence().botJoinButton.setDisable(false)
+              log.error(s"bot get token error: $e")
 
-					sys.addShutdownHook {
-						log.info("JVM SHUT DOWN.")
-						server.shutdown()
-						log.info("SHUT DOWN.")
-					}
-					timer.startSingleTimer(TimerKeyForTest, ClientTest, 3.seconds)
-          working(gameMessageReceiver,serverActor,loginController,stageCtx,gController)
+          }
+          Behaviors.same
 
 				case EstablishConnectionEs(wsUrl, _) =>
           log.info(wsUrl)
@@ -166,6 +186,24 @@ object WSClient {
 
         case GetSeverActor(sActor)=>
           working(gameMessageReceiver,sActor,loginController,stageCtx,gameController)
+
+        case GetGameController(playerId,isBot)=>
+          val gameScene = new GameScene()
+          val layerScene = new LayerScene
+          val gController = new GameController(playerId, stageCtx, gameScene,layerScene, serverActor)
+          gController.connectToGameServer(gController)
+          if(isBot){
+            val port = 5321
+            val server = MedusaServer.build(port, executor, ctx.self,gController, gameMessageReceiver, stageCtx)
+            server.start()
+            log.info(s"Server started at $port")
+            sys.addShutdownHook {
+              log.info("JVM SHUT DOWN.")
+              server.shutdown()
+              log.info("SHUT DOWN.")
+            }
+          }
+          working(gameMessageReceiver,serverActor,loginController,stageCtx,gController)
 
 				case ClientTest =>
           log.info("get clientTest")

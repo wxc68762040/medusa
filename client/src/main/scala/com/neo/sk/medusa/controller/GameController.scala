@@ -41,6 +41,8 @@ import akka.actor.typed.scaladsl.adapter._
 import akka.japi.Option
 import com.google.protobuf.ByteString
 import com.neo.sk.medusa.common.AppSettings.config
+import com.neo.sk.medusa.snake.Protocol4Agent.JoinRoomRsp
+import slick.collection.heterogeneous.Zero.+
 
 /**
 	* Created by wangxicheng on 2018/10/25.
@@ -53,6 +55,7 @@ object GameController {
 	var myProportion = 1.0
 	var firstCome = true
 	var lagging = true
+  var SDKReplyTo:ActorRef[JoinRoomRsp] = _
 	val log:Logger = LoggerFactory.getLogger("GameController")
   val emptyArray = new Array[Byte](0)
 
@@ -119,12 +122,14 @@ object GameController {
 
   case class GetObservation(sender:ActorRef[ObservationRsp]) extends Command
 
+  case class CreateRoomReq(password:String,sender:ActorRef[JoinRoomRsp]) extends Command
+
+  case class JoinRoomReq(roomId:Long,password:String,sender:ActorRef[JoinRoomRsp]) extends Command
 
 
 }
 
 class GameController(id: String,
-										 name: String,
 										 stageCtx: StageContext,
 										 gameScene: GameScene,
                      layerScene: LayerScene,
@@ -132,15 +137,14 @@ class GameController(id: String,
 
   import GameController._
 
+  val windowWidth: Int = layerScene.layerWidth
+  val windowHeight: Int = layerScene.layerHeight
 
-  val windowWidth = layerScene.layerWidth
-  val windowHeight = layerScene.layerHeight
+  val centerX: Int = windowWidth / 2
+  val centerY: Int = windowHeight / 2
 
-  val centerX = windowWidth / 2
-  val centerY = windowHeight / 2
-
-  val viewWidth = layerScene.viewWidth
-  val viewHeight = layerScene.viewHeight
+  val viewWidth: Int = layerScene.viewWidth
+  val viewHeight: Int = layerScene.viewHeight
 
   val bgImage = new Image("bg.png")
   val championImage = new Image("champion.png")
@@ -151,9 +155,9 @@ class GameController(id: String,
   val scaleView = 0.5
 
 
-  implicit val system = ActorSystem("medusa", config)
+  implicit val system: ActorSystem = ActorSystem("medusa", config)
 
-  val getObservation = system.spawn(create(), "getObservation")
+  val botInfoActor: ActorRef[Command] = system.spawn(create(), "botInfoActor")
 
   def create(): Behavior[Command] = {
     Behaviors.setup[Command] {
@@ -181,6 +185,15 @@ class GameController(id: String,
             val observation = ObservationRsp(Some(layer), Some(ImgData(windowWidth, windowHeight, 0, ByteString.copyFrom(infoByte))))
             t.sender ! observation
             Behaviors.same
+          case t: CreateRoomReq =>
+            SDKReplyTo=t.sender
+            serverActor ! Protocol.CreateRoom(-1,t.password)
+            Behaviors.same
+
+          case t:JoinRoomReq=>
+            SDKReplyTo=t.sender
+            serverActor ! Protocol.JoinRoom(t.roomId,t.password)
+            Behaviors.same
         }
     }
 
@@ -190,9 +203,9 @@ class GameController(id: String,
   def connectToGameServer(gameController: GameController) = {
     ClientBoot.addToPlatform {
       if (AppSettings.isLayer) {
-        stageCtx.switchScene(layerScene.scene, "Layer", true)
+        stageCtx.switchScene(layerScene.scene, "Layer", flag = true)
       } else {
-        stageCtx.switchScene(gameScene.scene, "Gaming", true)
+        stageCtx.switchScene(gameScene.scene, "Gaming", flag = true)
       }
       gameMessageReceiver ! ControllerInitial(gameController)
     }
@@ -221,8 +234,8 @@ class GameController(id: String,
           getAllSnakeByte(false)
           getAppleByte(false)
           getbackgroundByte(false)
-          getInfoByte(grid.currentRank,grid.myRank, false)
-          getViewByte(grid.currentRank, grid.historyRank,grid.myRank, grid.loginAgain, false)
+          getInfoByte(grid.currentRank,grid.myRank, flag = false)
+          getViewByte(grid.currentRank, grid.historyRank,grid.myRank, grid.loginAgain, flag = false)
         } else {
           gameScene.draw(grid.myId, grid.getGridSyncData4Client, grid.historyRank, grid.currentRank, grid.loginAgain, grid.myRank, scaleW, scaleH)
         }
@@ -1011,7 +1024,7 @@ class GameController(id: String,
 
       if (AppSettings.isLayer) {
         ClientBoot.addToPlatform {
-          getObservation ! GetByte(getMapByte(true), getbackgroundByte(true), getAppleByte(true), getAllSnakeByte(true), getMySnakeByte(true), getInfoByte(grid.currentRank, grid.myRank, true), getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, true))
+          botInfoActor ! GetByte(getMapByte(true), getbackgroundByte(true), getAppleByte(true), getAllSnakeByte(true), getMySnakeByte(true), getInfoByte(grid.currentRank, grid.myRank, true), getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, true))
         }
       }
 

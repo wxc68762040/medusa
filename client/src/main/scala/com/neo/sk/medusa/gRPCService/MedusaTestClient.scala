@@ -20,7 +20,7 @@ class MedusaTestClient (
 ) {
 	private[this] val channel: ManagedChannel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build
 	private val esheepStub: EsheepAgentStub = EsheepAgentGrpc.stub(channel)
-	val credit = Credit(playerId = playerId, apiToken = apiToken)
+	val credit = Credit( apiToken = apiToken)
 
 	def createRoom(password:String): Future[CreateRoomRsp] = esheepStub.createRoom(CreateRoomReq(Some(credit),password))
 

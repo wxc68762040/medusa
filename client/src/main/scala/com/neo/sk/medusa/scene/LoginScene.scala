@@ -40,7 +40,7 @@ object LoginScene {
 
 
 		def onButtonHumanJoin(account: String, pwd: String)  //用户加入游戏
-		def onButtonBotJoin(botID: String, pwd: String)    //Bot加入游戏
+		def onButtonBotJoin(botId: String, botKey: String)    //Bot加入游戏
 
 	}
 }
@@ -58,6 +58,8 @@ class LoginScene() {
 	val emailButton = new Button("邮箱登录")
 	val humanJoinButton = new Button("HumanJoin")
 	val botJoinButton = new Button("BotJoin")
+
+	//humanJoinButton.setDisable(true)
 
   val idLabel = new Label("BotID:")
   val botId = new TextField()
@@ -165,9 +167,9 @@ class LoginScene() {
 	humanJoinButton.setOnAction{ _ =>
 		val account = accountInput.getText()
 		val pwd = pwdInput.getText()
-		if (account == "") {
+		if (account.trim() == "") {
 			warningText.setText("email不能为空")
-		} else if (pwd == "") {
+		} else if (pwd.trim() == "") {
 			warningText.setText("password不能为空")
 		} else {
 			loginSceneListener.onButtonHumanJoin(account, pwd)
@@ -175,14 +177,14 @@ class LoginScene() {
 	}
 
 	botJoinButton.setOnAction { _ =>
-		val botID = accountInput.getText()
-		val botKey = pwdInput.getText()
-		if (botID == "") {
-			warningText.setText("email不能为空")
-		} else if (botKey == "") {
-			warningText.setText("password不能为空")
+		val Id = botId.getText()
+		val Key = botKey.getText()
+		if (Id.trim() == "") {
+			warningText.setText("botId不能为空")
+		} else if (Key.trim() == "") {
+			warningText.setText("botKey不能为空")
 		} else {
-			loginSceneListener.onButtonBotJoin(botID, botKey)
+			loginSceneListener.onButtonBotJoin(Id, Key)
 		}
 	}
 
