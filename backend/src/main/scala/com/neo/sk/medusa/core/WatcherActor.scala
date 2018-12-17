@@ -70,12 +70,12 @@ object WatcherActor {
         Behaviors.withTimers[Command] {
           implicit timer =>
             log.info(s"id at create: $watcherId")
-            switchBehavior(ctx, "init", init(watcherId,"", roomId,true), InitTime, TimeOut("init"))
+            switchBehavior(ctx, "init", init(watcherId, "", roomId, true), InitTime, TimeOut("init"))
         }
     }
   }
 
-  private def init(watcherId: String, watchedId:String, roomId:Long,waitTip:Boolean)(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]):Behavior[Command] =
+  private def init(watcherId: String, watchedId:String, roomId:Long, waitTip:Boolean)(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]):Behavior[Command] =
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
@@ -97,8 +97,8 @@ object WatcherActor {
           case ChangeRoomId(roomID) =>
             switchBehavior(ctx, "init", init(watcherId, watchedId, roomID,waitTip))
           case x =>
-            log.error(s"${ctx.self.path} receive an unknown msg when init:$x")
-            stashBuffer.stash(x)
+//            log.error(s"${ctx.self.path} receive an unknown msg when init:$x")
+//            stashBuffer.stash(x)
             Behaviors.same
         }
     }
@@ -124,7 +124,7 @@ object WatcherActor {
 
           case PlayerWait =>
             frontActor ! Protocol.PlayerWaitingJoin
-            idle(watcherId, watchedId, roomId, frontActor,false)
+            idle(watcherId, watchedId, roomId, frontActor, false)
 
           case UserFrontActor(newFront) =>
             ctx.unwatch(frontActor)
