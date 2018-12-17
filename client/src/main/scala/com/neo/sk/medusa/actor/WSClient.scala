@@ -77,7 +77,6 @@ object WSClient {
 		Behaviors.receive[WsCommand] { (ctx, msg) =>
 			msg match {
         case  CreateRoom(playerId,name, password)=>
-          //fixme  此处的gameController最好应该在Receiver方
           serverActor ! Protocol.CreateRoom(-1,password)
           ctx.self ! GetGameController(playerId)
           Behaviors.same
@@ -88,8 +87,6 @@ object WSClient {
           Behaviors.same
 
 				case BotLogin(botId,botKey)	=>
-          log.info(s"bot req token and accessCode")
-          //fixme 此处若拿不到token或accessCode则存在问题
          getBotToken(botId,botKey).map{
             case Right(t)=>
               getBotAccessCode(t.token).map{
@@ -114,9 +111,6 @@ object WSClient {
                     }
                   } //链接建立时
                   connected.onComplete(i => log.info(i.toString))
-                //					closed.onComplete { i =>
-                //						log.error(s"$logPrefix connection closed!")
-                //					} //链接断开时
                 case Left(e)=>
                   loginController.getLoginScence().warningText.setText("get accessCode error")
                   loginController.getLoginScence().botJoinButton.setDisable(false)

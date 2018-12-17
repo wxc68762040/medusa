@@ -142,8 +142,7 @@ object UserManager {
             RoomActor.speedLength = 0l
             RoomActor.rankLength = 0l
 
-            timer.startSingleTimer(Timer4MsgAdd, ClearMsgLength
-              ,10000.milli)
+            timer.startSingleTimer(Timer4MsgAdd, ClearMsgLength,10000.milli)
             Behaviors.same
 
           case t: YourUserUnwatched =>
