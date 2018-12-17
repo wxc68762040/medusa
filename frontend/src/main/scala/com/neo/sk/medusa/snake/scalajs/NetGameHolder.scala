@@ -563,7 +563,7 @@ object NetGameHolder extends js.JSApp {
 										syncDataNoApp = Some(data)
                   	justSynced = true
                   }
-                  println(data)
+//                  println(data)
 
                 case Protocol.NetDelayTest(createTime) =>
                   val receiveTime = System.currentTimeMillis()
@@ -575,7 +575,7 @@ object NetGameHolder extends js.JSApp {
                   }
 
                 case Protocol.DeadInfo(id,myName, myLength, myKill, killerId, killer) =>
-                  println(DeadInfo)
+//                  println(DeadInfo)
                   if(playerState._2 && id==playerState._1) {
                     grid.removeSnake(myId)
                     playerState = (myId, false)
