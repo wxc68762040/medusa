@@ -246,7 +246,16 @@ object NetGameHolder extends js.JSApp {
 
   def moveEatenApple(): Unit = {
     val invalidApple = Ap(0, 0, 0, 0, 0)
-    eatenApples = eatenApples.filterNot { apple => !grid.snakes4client.exists(_._2.id == apple._1) }
+    val badApples = eatenApples.filter { apple =>
+      !grid.snakes4client.exists(_._2.id == apple._1)
+    }.flatMap(_._2)
+    badApples.foreach { apple =>
+      grid.grid -= Point(apple.apple.x, apple.apple.y)
+    }
+    
+    eatenApples = eatenApples.filter {
+      apple => grid.snakes4client.exists(_._2.id == apple._1)
+    }
 
     eatenApples.foreach { info =>
       val snakeOpt = grid.snakes4client.get(info._1)
