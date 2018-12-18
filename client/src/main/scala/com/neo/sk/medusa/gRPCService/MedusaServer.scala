@@ -24,7 +24,6 @@ import org.seekloud.esheepapi.pb.service.EsheepAgentGrpc
 import org.seekloud.esheepapi.pb.service.EsheepAgentGrpc.EsheepAgent
 import org.slf4j.LoggerFactory
 import com.neo.sk.medusa.actor.WSClient.Stop
-
 import scala.concurrent.{ExecutionContext, Future}
 import com.neo.sk.medusa.utils.AuthUtils.checkBotToken
 import com.neo.sk.medusa.controller.GameController

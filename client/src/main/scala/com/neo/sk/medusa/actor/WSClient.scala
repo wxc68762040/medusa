@@ -40,9 +40,11 @@ object WSClient {
 	sealed trait WsCommand
 	case class BotLogin(botId:String,botKey:String) extends WsCommand
   case class CreateRoom(playerId:String,name:String,password:String)extends  WsCommand
-	case class JoinRoom(playerId:String,name:String, roomId:Long,password:String="") extends WsCommand
+	case class JoinRoom(playerId:String, name:String, roomId:Long, password:String="") extends WsCommand
 	case class GetLoginInfo(id: String, name: String, access: String) extends WsCommand
   case class GetSeverActor(severActor: ActorRef[WsSendMsg])extends WsCommand
+	case class LinkResult(isSuccess:Boolean)
+	case class EstablishConnectionEs(ws:String,scanUrl:String,sender:ActorRef[LinkResult]) extends WsCommand
   case class GetGameController(playerId: String,isBot:Boolean=false)extends WsCommand
 	case class EstablishConnectionEs(ws:String,scanUrl:String) extends WsCommand
 	case object Stop extends WsCommand
@@ -52,6 +54,8 @@ object WSClient {
 
 	private val log = LoggerFactory.getLogger("WSClient")
 	private val logPrefix = "WSClient"
+
+	private var scanSender:ActorRef[LinkResult] = null
 	def create(gameMessageReceiver: ActorRef[WsMsgSource],stageCtx: StageContext)
             (implicit _system: ActorSystem, _materializer: Materializer, _executor: ExecutionContextExecutor): Behavior[WsCommand] = {
 		Behaviors.setup[WsCommand] { ctx =>
@@ -132,8 +136,9 @@ object WSClient {
           }
           Behaviors.same
 
-				case EstablishConnectionEs(wsUrl, _) =>
+				case EstablishConnectionEs(wsUrl, _, sender) =>
           log.info(wsUrl)
+					scanSender = sender
 					val webSocketFlow = Http().webSocketClientFlow(WebSocketRequest(wsUrl))
 					val source = getSource(ctx.self)
 					val sink = getSinkDup(ctx.self)
@@ -149,7 +154,9 @@ object WSClient {
 							throw new RuntimeException(s"WSClient connection failed: ${upgrade.response.status}")
 						}
 					} //链接建立时
-					connected.onComplete(i => log.info(i.toString))
+					connected.onComplete { i =>
+						log.info(i.toString)
+					}
 					Behavior.same
 
 				case GetLoginInfo(id, name, token) =>
@@ -168,14 +175,20 @@ object WSClient {
                   .run()
 
               val connected = response.flatMap { upgrade =>
-                if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
-                  //fixme  存疑
-                  ctx.self ! GetSeverActor(stream)
-                  Future.successful(s"$logPrefix connect success.")
-                } else {
-                  throw new RuntimeException(s"WSClient connection failed: ${upgrade.response.status}")
-                }
-              } //链接建立时
+								if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
+									//fixme  存疑
+									if(scanSender != null) {
+										scanSender ! LinkResult(true)
+									}
+									ctx.self ! GetSeverActor(stream)
+									Future.successful(s"$logPrefix connect success.")
+								} else {
+									if(scanSender != null) {
+										scanSender ! LinkResult(false)
+									}
+									throw new RuntimeException(s"WSClient connection failed: ${upgrade.response.status}")
+								}
+							} //链接建立时
               connected.onComplete(i => log.info(i.toString))
             //					closed.onComplete { i =>
             //						log.error(s"$logPrefix connection closed!")
