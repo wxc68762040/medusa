@@ -16,7 +16,7 @@ import org.scalajs.dom.raw._
   * Time: 下午3:43
   * 游戏操作界面
   */
-object GameView  {
+object  GameView  {
 
   val canvasUnit = 7
 
@@ -92,6 +92,7 @@ object GameView  {
     cacheCtx.scale(1/myProportion, 1/myProportion)
     cacheCtx.translate(-windowWidth/2, -windowHeight/2 )
     cacheCtx.drawImage(canvasPic, 0 + deviationX, 0 + deviationY, Boundary.w * scaleW, Boundary.h * scaleH)
+
     //cacheCtx.drawImage(canvasPic,0 + deviationX ,0 + deviationY , Boundary.w * scaleW, Boundary.h * scaleH)
 
     apples.filterNot( a=> a.x * scaleW < myHead.x * scaleW - windowWidth/2 * myProportion || a.y * scaleH < myHead.y * scaleH - windowHeight/2 * myProportion || a.x * scaleW > myHead.x * scaleW + windowWidth/2 * myProportion|| a.y * scaleH > myHead.y * scaleH + windowHeight/2* myProportion).foreach {
