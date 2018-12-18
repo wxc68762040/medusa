@@ -32,25 +32,25 @@ object Api4GameAgent extends  HttpUtil{
         Left(s"getLoginResponse error: $e")
     }
   }
-//没有处理机器人bot的情况
-  def linkGameAgent(gameId:Long,playerId:String,token:String): Future[Either[String, LinkResElement]] ={
-    val data = LinkGameData(gameId,playerId).asJson.noSpaces
-//    if()
-    val url  = esheepProtocol + "://" + esheepHost + "/esheep/api/gameAgent/joinGame?token="+token
 
+  def linkGameAgent(gameId:Long, playerId:String, token:String): Future[Either[String, LinkResElement]] ={
+    val data = LinkGameData(gameId,playerId).asJson.noSpaces
+    val url  = esheepProtocol + "://" + esheepHost + "/esheep/api/gameAgent/joinGame?token="+token
     postJsonRequestSend("post",url,Nil,data).map{
       case Right(jsonStr) =>
-
         decode[LinkGameRes](jsonStr) match {
           case Right(res) =>
-            Right(LinkResElement(res.data.accessCode,res.data.gsPrimaryInfo))
+            if(res.errCode==0) {
+              Right(LinkResElement(res.data.accessCode, res.data.gsPrimaryInfo))
+            } else {
+              Left(res.msg)
+            }
           case Left(le) =>
             Left("decode error: "+le)
         }
       case Left(erStr) =>
         Left("get return error:"+erStr)
     }
-
   }
 
   def getBotToken(botId:String,botKey:String): Future[Either[String, BotInfo]] ={
@@ -70,23 +70,6 @@ object Api4GameAgent extends  HttpUtil{
     }
 
   }
-
-  def getBotAccessCode(token:String): Future[Either[String, String]] ={
-    val url = esheepProtocol + "://" + esheepHost + "/esheep/api/admin/getAccessCode?token="+token
-    getRequestSend("GET",url,Nil).map{
-      case Right(r)=>
-        decode[GetAccessCodeRes](r) match {
-          case Right(res)=>
-            if(res.errCode==0) Right(res.data.accessCode)
-            else Left(res.msg)
-          case Left(err)=>
-            Left(s"decode error: $err")
-        }
-      case Left(e)=>
-        Left(s"getBotAccessCode error: $e")
-    }
-  }
-
 
 }
 

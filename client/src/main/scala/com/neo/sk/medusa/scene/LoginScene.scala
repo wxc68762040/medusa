@@ -37,8 +37,7 @@ object LoginScene {
 
 		def onButtonHumanScan()  //用户扫码登录
 		def onButtonHumanEmail() //用户邮箱登录
-
-
+		
 		def onButtonHumanJoin(account: String, pwd: String)  //用户加入游戏
 		def onButtonBotJoin(botId: String, botKey: String)    //Bot加入游戏
 

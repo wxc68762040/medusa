@@ -76,25 +76,27 @@ object WSClient {
 											executor: ExecutionContextExecutor): Behavior[WsCommand] = {
 		Behaviors.receive[WsCommand] { (ctx, msg) =>
 			msg match {
-        case  CreateRoom(playerId,name, password)=>
+        case  CreateRoom(playerId, name, password)=>
           //fixme  此处的gameController最好应该在Receiver方
           serverActor ! Protocol.CreateRoom(-1,password)
           ctx.self ! GetGameController(playerId)
           Behaviors.same
 
-				case JoinRoom(playerId,name,roomId,password) =>
-          serverActor ! Protocol.JoinRoom(roomId,password)
+				case JoinRoom(playerId, name, roomId, password) =>
+          serverActor ! Protocol.JoinRoom(roomId, password)
           ctx.self ! GetGameController(playerId)
           Behaviors.same
 
-				case BotLogin(botId,botKey)	=>
+				case BotLogin(botId, botKey)	=>
           log.info(s"bot req token and accessCode")
           //fixme 此处若拿不到token或accessCode则存在问题
-         getBotToken(botId,botKey).map{
+          getBotToken(botId, botKey).map {
             case Right(t)=>
-              getBotAccessCode(t.token).map{
-                case Right(accessCode)=>
-                  val url = getWebSocketUri(botId, t.botName,accessCode)
+							val playerId = "bot" + botId
+							linkGameAgent(loginController.gameId, playerId, t.token).map{
+                case Right(res)=>
+									val accessCode = res.accessCode
+                  val url = getWebSocketUri(playerId, t.botName, accessCode)
                   val webSocketFlow = Http().webSocketClientFlow(WebSocketRequest(url))
                   val source = getSource(ctx.self)
                   val sink = getSink(gameMessageReceiver)
@@ -105,9 +107,9 @@ object WSClient {
                       .run()
                   val connected = response.flatMap { upgrade =>
                     if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
-                      ctx.self ! GetGameController(botId)
+                      ctx.self ! GetGameController(playerId)
                       ctx.self ! GetSeverActor(stream)
-                      loginController.setUserInfo(botId, t.botName, t.token)
+                      loginController.setUserInfo(playerId, t.botName, t.token)
                       Future.successful(s"$logPrefix connect success.")
                     } else {
                       throw new RuntimeException(s"WSClient connection failed: ${upgrade.response.status}")
@@ -152,7 +154,7 @@ object WSClient {
 
 				case GetLoginInfo(id, name, token) =>
 					loginController.setUserInfo(id, name, token)
-          linkGameAgent(gameId = loginController.gameId,id,token).map{
+          linkGameAgent(gameId = loginController.gameId, id, token).map{
             case Right(resl) =>
               log.debug("accessCode: " + resl.accessCode)
               val url = getWebSocketUri(id, name,resl.accessCode)
@@ -187,7 +189,7 @@ object WSClient {
         case GetSeverActor(sActor)=>
           working(gameMessageReceiver,sActor,loginController,stageCtx,gameController)
 
-        case GetGameController(playerId,isBot)=>
+        case GetGameController(playerId, isBot)=>
           val gameScene = new GameScene()
           val layerScene = new LayerScene
           val gController = new GameController(playerId, stageCtx, gameScene,layerScene, serverActor)
