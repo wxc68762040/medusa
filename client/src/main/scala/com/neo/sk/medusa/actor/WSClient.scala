@@ -41,7 +41,7 @@ object WSClient {
 	case class BotLogin(botId:String,botKey:String) extends WsCommand
   case class CreateRoom(playerId:String,name:String,password:String)extends  WsCommand
 	case class JoinRoom(playerId:String, name:String, roomId:Long, password:String="") extends WsCommand
-	case class GetLoginInfo(id: String, name: String, access: String) extends WsCommand
+	case class GetLoginInfo(id: String, name: String, token: String, sender:ActorRef[LinkResult]) extends WsCommand
   case class GetSeverActor(severActor: ActorRef[WsSendMsg])extends WsCommand
 	case class LinkResult(isSuccess:Boolean)
 	case class EstablishConnectionEs(ws:String,scanUrl:String,sender:ActorRef[LinkResult]) extends WsCommand
@@ -158,7 +158,7 @@ object WSClient {
 					}
 					Behavior.same
 
-				case GetLoginInfo(id, name, token) =>
+				case GetLoginInfo(id, name, token, sender) =>
 					loginController.setUserInfo(id, name, token)
           linkGameAgent(gameId = loginController.gameId, id, token).map{
             case Right(resl) =>
@@ -179,12 +179,18 @@ object WSClient {
 									if(scanSender != null) {
 										scanSender ! LinkResult(true)
 									}
+                  if(sender != null){
+                    sender ! LinkResult(true)
+                  }
 									ctx.self ! GetSeverActor(stream)
 									Future.successful(s"$logPrefix connect success.")
 								} else {
 									if(scanSender != null) {
 										scanSender ! LinkResult(false)
 									}
+                  if(sender != null){
+                    sender ! LinkResult(false)
+                  }
 									throw new RuntimeException(s"WSClient connection failed: ${upgrade.response.status}")
 								}
 							} //链接建立时
@@ -253,7 +259,7 @@ object WSClient {
                 val playerId = "user" + res.Ws4AgentRsp.data.userId.toString
                 val nickname = res.Ws4AgentRsp.data.nickname
 								val token = res.Ws4AgentRsp.data.token
-								self ! GetLoginInfo(playerId, nickname, token)
+								self ! GetLoginInfo(playerId, nickname, token, null)
 							} else {
 								log.error("link error!")
 							}
