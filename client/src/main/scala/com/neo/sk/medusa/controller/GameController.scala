@@ -1019,7 +1019,6 @@ class GameController(id: String,
 			if (!grid.justSynced) {
 				grid.update(false)
 			} else {
-				log.info(s"now sync: ${grid.frameCount}")
 				grid.sync(grid.syncData, grid.syncDataNoApp)
 				grid.syncData = None
 				grid.update(true)
@@ -1044,12 +1043,13 @@ class GameController(id: String,
   layerScene.setLayerSceneListener(new LayerScene.LayerSceneListener {
     override def onKeyPressed(key: KeyCode): Unit = {
       if (watchKeys.contains(key)) {
-        val msg: Protocol.UserAction = if (key == KeyCode.F2) {
-          NetTest(grid.myId, System.currentTimeMillis())
-        } else {
-          grid.addActionWithFrame(grid.myId, keyCode2Int(key), grid.frameCount + operateDelay)
-          Key(grid.myId, keyCode2Int(key), grid.frameCount + advanceFrame + operateDelay)
-        }
+        val msg: Protocol.UserAction =
+          if (key == KeyCode.F2) {
+            NetTest(grid.myId, System.currentTimeMillis())
+          } else {
+            grid.addActionWithFrame(grid.myId, keyCode2Int(key), grid.frameCount + operateDelay)
+            Key(grid.myId, keyCode2Int(key), grid.frameCount + advanceFrame + operateDelay)
+          }
         serverActor ! msg
       }
     }
@@ -1058,12 +1058,13 @@ class GameController(id: String,
 	gameScene.setGameSceneListener(new GameScene.GameSceneListener {
 		override def onKeyPressed(key: KeyCode): Unit = {
 			if (watchKeys.contains(key)) {
-				val msg: Protocol.UserAction = if (key == KeyCode.F2) {
-					NetTest(grid.myId, System.currentTimeMillis())
-				} else {
-					grid.addActionWithFrame(grid.myId, keyCode2Int(key), grid.frameCount + operateDelay)
-					Key(grid.myId, keyCode2Int(key), grid.frameCount + advanceFrame + operateDelay)
-				}
+				val msg: Protocol.UserAction =
+          if (key == KeyCode.F2) {
+            NetTest(grid.myId, System.currentTimeMillis())
+          } else {
+            grid.addActionWithFrame(grid.myId, keyCode2Int(key), grid.frameCount + operateDelay)
+            Key(grid.myId, keyCode2Int(key), grid.frameCount + advanceFrame + operateDelay)
+          }
 				serverActor ! msg
 			}
 		}
