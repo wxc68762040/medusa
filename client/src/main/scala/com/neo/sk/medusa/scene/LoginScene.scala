@@ -238,7 +238,7 @@ class LoginScene() {
     ClientBoot.addToPlatform{
       clearCanvas()
       errorCode match {
-        case _ =>
+        case 0 =>
           group.getChildren.removeAll(emailPwInput, emailInput, emailButton)
           group.getChildren.addAll(createRoomChoice, someRoomChoice,
             humanJoinButton, roomPwInput, roomIdInput)

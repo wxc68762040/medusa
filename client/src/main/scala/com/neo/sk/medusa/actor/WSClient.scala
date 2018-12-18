@@ -46,7 +46,6 @@ object WSClient {
 	case class LinkResult(isSuccess:Boolean)
 	case class EstablishConnectionEs(ws:String,scanUrl:String,sender:ActorRef[LinkResult]) extends WsCommand
   case class GetGameController(playerId: String,isBot:Boolean=false)extends WsCommand
-	case class EstablishConnectionEs(ws:String,scanUrl:String) extends WsCommand
 	case object Stop extends WsCommand
 	case object ClientTest extends WsCommand
 	
