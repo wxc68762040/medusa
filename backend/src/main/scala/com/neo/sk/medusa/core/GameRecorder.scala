@@ -101,7 +101,7 @@ object GameRecorder {
     Behaviors.setup { ctx =>
       log.info(s"${ctx.self.path} is starting..")
       implicit val stashBuffer: StashBuffer[Command] = StashBuffer[Command](Int.MaxValue)
-      implicit val middleBuffer: MiddleBufferInJvm = new MiddleBufferInJvm(10 * 4096)
+      implicit val middleBuffer: MiddleBufferInJvm = new MiddleBufferInJvm(100 * 4096)
       Behaviors.withTimers[Command] { implicit timer =>
         val index = CountUtils.getId()
         val fileRecorder = initFileRecorder(fileName, index, gameInformation, initStateOpt)

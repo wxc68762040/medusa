@@ -15,4 +15,4 @@ CREATE TABLE records_user_map (
   player_id   VARCHAR(127) NOT NULL,
   nickname    VARCHAR(127) NOT NULL,
   play_period TEXT         NOT NULL
-)
+);
