@@ -107,8 +107,8 @@ object WSClient {
                       .run()
                   val connected = response.flatMap { upgrade =>
                     if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
-                      ctx.self ! GetGameController(playerId)
                       ctx.self ! GetSeverActor(stream)
+											ctx.self ! GetGameController(playerId)
                       loginController.setUserInfo(playerId, t.botName, t.token)
                       Future.successful(s"$logPrefix connect success.")
                     } else {
@@ -192,7 +192,7 @@ object WSClient {
         case GetGameController(playerId, isBot)=>
           val gameScene = new GameScene()
           val layerScene = new LayerScene
-          val gController = new GameController(playerId, stageCtx, gameScene,layerScene, serverActor)
+          val gController = new GameController(playerId, stageCtx, gameScene, layerScene, serverActor)
           gController.connectToGameServer(gController)
           if(isBot){
             val port = 5321
