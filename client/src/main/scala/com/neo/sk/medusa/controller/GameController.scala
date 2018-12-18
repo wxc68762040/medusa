@@ -41,7 +41,7 @@ import akka.actor.typed.scaladsl.adapter._
 import akka.japi.Option
 import com.google.protobuf.ByteString
 import com.neo.sk.medusa.common.AppSettings.config
-import com.neo.sk.medusa.snake.Protocol4Agent. JoinRoomRsp
+import com.neo.sk.medusa.snake.Protocol4Agent.JoinRoomRsp
 import slick.collection.heterogeneous.Zero.+
 
 /**
@@ -97,18 +97,17 @@ object GameController {
       val h = canvas.getHeight.toInt
       val wi = new WritableImage(w, h)
       val bi = new BufferedImage(w, h, 2)
+      params.setFill(Color.TRANSPARENT)
       canvas.snapshot(params, wi) //从画布中复制绘图并复制到writableImage
       SwingFXUtils.fromFXImage(wi, bi)
-      val argb =  bi.getRGB(0, 0, w, h, null, 0, w)
+      val argb = bi.getRGB(0, 0, w, h, null, 0, w)
       val byteBuffer = ByteBuffer.allocate(4 * 800 * 400)
       argb.foreach{ e =>
         byteBuffer.putInt(e)
       }
       byteBuffer.flip()
       byteBuffer.array().take(byteBuffer.limit)
-      argb
-      new Array[Byte](0)
-    }catch {
+    } catch {
       case e: Exception=>
         emptyArray
     }
@@ -130,7 +129,7 @@ object GameController {
 
 }
 
-class   GameController(id: String,
+class GameController(id: String,
 										 stageCtx: StageContext,
 										 gameScene: GameScene,
                      layerScene: LayerScene,
@@ -147,7 +146,6 @@ class   GameController(id: String,
   val viewWidth: Int = layerScene.viewWidth
   val viewHeight: Int = layerScene.viewHeight
 
-  val maxImage = new Image("champion.png")
   val bgImage = new Image("bg.png")
   val championImage = new Image("champion.png")
   val emptyArray = new Array[Byte](0)
@@ -277,7 +275,7 @@ class   GameController(id: String,
     mapCtx.beginPath()
     mapCtx.setStroke(Color.WHITE)
     //mapCtx.setGlobalAlpha(0.8)
-    mapCtx.drawImage(maxImage, maxLength.x * LittleMap.w / Boundary.w - 7,  maxLength.y * LittleMap.h / Boundary.h - 7, 15, 15)
+    mapCtx.drawImage(championImage, maxLength.x * LittleMap.w / Boundary.w - 7,  maxLength.y * LittleMap.h / Boundary.h - 7, 15, 15)
 
     if (snakes.nonEmpty && snakes.exists(_.id == grid.myId)) {
       snakes.foreach { snake =>
@@ -787,7 +785,7 @@ class   GameController(id: String,
     viewCtx.beginPath()
     viewCtx.setStroke(Color.WHITE)
     //viewCtx.setGlobalAlpha(0.5)
-    viewCtx.drawImage(maxImage,maxLength.x * LittleMap.w * scaleView /Boundary.w * myProportion  - 7,  maxLength.y * LittleMap.h * scaleView / Boundary.h * myProportion - 7 + 300 * myProportion, 15 * scaleView, 15 * scaleView)
+    viewCtx.drawImage(championImage, maxLength.x * LittleMap.w * scaleView /Boundary.w * myProportion  - 7, maxLength.y * LittleMap.h * scaleView / Boundary.h * myProportion - 7 + 300 * myProportion, 15 * scaleView, 15 * scaleView)
 
     apples.filterNot(a => a.x * scaleView < myHead.x * scaleView - windowWidth / 2 * myProportion || a.y * scaleView < myHead.y * scaleView  - windowHeight / 2  * myProportion|| a.x * scaleView > myHead.x * scaleView + windowWidth / 2 * myProportion || a.y * scaleView  > myHead.y * scaleView + windowHeight / 2 * myProportion ).foreach {
       case Ap(score, _, x, y, _, _) =>

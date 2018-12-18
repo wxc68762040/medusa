@@ -38,6 +38,7 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 
 		override def onButtonBotLogin(): Unit = {
 			loginScene.drawBotLogin
+
 		}
 
 		override def onButtonHumanScan(callback:Boolean => Unit): Unit = {

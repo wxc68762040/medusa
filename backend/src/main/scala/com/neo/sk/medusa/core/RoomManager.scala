@@ -85,7 +85,7 @@ object RoomManager {
             //分配房间 启动相应actor
             if (roomId == -1) {
               //未指定房间，带密码也没有意义，直接寻找房间人数未满且不带密码的
-              val randomRoomIdOpt = roomInfoMap.find(e => e._2._1<maxUserNum &&e._2._2=="").map(_._1)
+              val randomRoomIdOpt = roomInfoMap.filter(e => e._2._1 < maxUserNum && e._2._2 == "").keys.toList.sorted.headOption
               if(randomRoomIdOpt.nonEmpty){
                 val randomRoomId = randomRoomIdOpt.get
                 timer.cancel(RoomEmptyTimerKey(randomRoomId))
@@ -95,7 +95,7 @@ object RoomManager {
                 }
                 userRoomMap.put(playerId, (randomRoomId, playerName))
                 userActor ! UserActor.JoinRoomSuccess(randomRoomId, getRoomActor(ctx, randomRoomId))
-              }else {         //如果房间人数全满  或者 存在人数未满但有密码的房间,那么就新建一个房间
+              } else {         //如果房间人数全满  或者 存在人数未满但有密码的房间,那么就新建一个房间
                 log.info(s"all room is full or you have not permissions to enter any room,or you are the first ,start a new room.. ")
                 ctx.self ! CreateRoom(playerId,playerName,userActor,password)
               }
