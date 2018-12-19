@@ -191,6 +191,7 @@ class GameController(id: String,
             Behaviors.same
 
           case t:JoinRoomReq=>
+            log.info("bot join room ..")
             SDKReplyTo=t.sender
             serverActor ! Protocol.JoinRoom(t.roomId,t.password)
             Behaviors.same

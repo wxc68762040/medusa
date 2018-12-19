@@ -22,6 +22,7 @@ import org.seekloud.byteobject.MiddleBufferInJvm
 import org.slf4j.LoggerFactory
 import io.circe.parser.decode
 import java.net.URLEncoder
+
 import com.neo.sk.medusa.utils.Api4GameAgent._
 import cats.instances.stream
 
@@ -29,6 +30,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import com.neo.sk.medusa.gRPCService.{MedusaServer, MedusaTestClient}
 import com.neo.sk.medusa.snake.Protocol
+import org.seekloud.esheepapi.pb.actions.Move
 
 import scala.util.Success
 /**
@@ -47,7 +49,7 @@ object WSClient {
 	case class EstablishConnectionEs(ws:String,scanUrl:String,sender:ActorRef[LinkResult]) extends WsCommand
   case class GetGameController(playerId: String,isBot:Boolean=false)extends WsCommand
 	case object Stop extends WsCommand
-	case object ClientTest extends WsCommand
+	case class ClientTest(roomId:Long) extends WsCommand
 	
 	case object TimerKeyForTest
 
@@ -110,8 +112,10 @@ object WSClient {
                   val connected = response.flatMap { upgrade =>
                     if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
                       ctx.self ! GetSeverActor(stream)
-											ctx.self ! GetGameController(playerId)
+											ctx.self ! GetGameController(playerId,true)
                       loginController.setUserInfo(playerId, t.botName, t.token)
+                      //fixme test bot sdk
+                      timer.startSingleTimer(TimerKeyForTest, ClientTest(100002),10.seconds)
                       Future.successful(s"$logPrefix connect success.")
                     } else {
                       throw new RuntimeException(s"WSClient connection failed: ${upgrade.response.status}")
@@ -154,7 +158,7 @@ object WSClient {
 
 				case GetLoginInfo(id, name, token) =>
 					loginController.setUserInfo(id, name, token)
-          linkGameAgent(gameId = loginController.gameId, id, token).map{
+          linkGameAgent(gameId = loginController.gameId,id,token).map{
             case Right(resl) =>
               log.debug("accessCode: " + resl.accessCode)
               val url = getWebSocketUri(id, name,resl.accessCode)
@@ -213,15 +217,15 @@ object WSClient {
           }
           working(gameMessageReceiver,serverActor,loginController,stageCtx,gController)
 
-				case ClientTest =>
+				case ClientTest(roomId) =>
           log.info("get clientTest")
           val host = "127.0.0.1"
           val port = 5321
           val playerId = "test"
           val apiToken = "test"
-          val password="1"
+          val password=""
           val client = new MedusaTestClient(host, port, playerId, apiToken)
-          val rsp1 = client.createRoom(password)
+          val rsp1 = client.joinRoom(roomId.toString,password)
           rsp1.onComplete(println(_))
           Behavior.same
 					

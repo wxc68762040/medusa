@@ -357,7 +357,7 @@ object NetGameHolder extends js.JSApp {
       GameView.drawGameOn()
 
       wsSetup = true
-      if ((state.contains("playGame")) && !isTest) {
+      if (state.contains("playGame") && !isTest) {
         //GameView.canvas.focus()
         GameView.canvas.onkeydown = {
           (e: dom.KeyboardEvent) =>
