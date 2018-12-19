@@ -24,7 +24,7 @@ class LayerScene {
   import LayerScene._
   var layerSceneListener: LayerSceneListener = _
   val group = new Group()
-  val scene = new Scene(group, 1300,900)
+  val scene = new Scene(group, 1600,600)
 
   val layerWidth = AppSettings.layerCanvasW
   val layerHeight = AppSettings.layerCanvasH
@@ -43,16 +43,17 @@ class LayerScene {
 
   layerBgCanvas.setLayoutX(800)
   layerBgCanvas.setLayoutY(0)
-  layerInfoCanvas.setLayoutX(1200)
+  layerInfoCanvas.setLayoutX(1210)
   layerInfoCanvas.setLayoutY(0)
   layerMySnakeCanvas.setLayoutX(800)
-  layerMySnakeCanvas.setLayoutY(400)
-  layerAllSnakesCanvas.setLayoutX(1200)
-  layerAllSnakesCanvas.setLayoutY(400)
+  layerMySnakeCanvas.setLayoutY(210)
+  layerAllSnakesCanvas.setLayoutX(1210)
+  layerAllSnakesCanvas.setLayoutY(210)
   layerMapCanvas.setLayoutX(800)
-  layerMapCanvas.setLayoutY(600)
-  layerAppleCanvas.setLayoutX(1200)
-  layerAppleCanvas.setLayoutY(600)
+  layerMapCanvas.setLayoutY(420)
+  layerAppleCanvas.setLayoutX(1210)
+  layerAppleCanvas.setLayoutY(420)
+
 
 
   viewCanvas.setLayoutX(0)
@@ -60,8 +61,8 @@ class LayerScene {
 
   group.getChildren.add(viewCanvas)
 
-  viewCanvas.requestFocus()
-  viewCanvas.setOnKeyPressed(event => layerSceneListener.onKeyPressed(event.getCode))
+//  viewCanvas.requestFocus()
+//  viewCanvas.setOnKeyPressed(event => layerSceneListener.onKeyPressed(event.getCode))
 
   group.getChildren.add(layerMapCanvas)
   group.getChildren.add(layerInfoCanvas)

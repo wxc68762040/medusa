@@ -94,6 +94,7 @@ object WSClient {
 				case BotLogin(botId,botKey)	=>
           log.info(s"bot req token and accessCode")
           //fixme 此处若拿不到token或accessCode则存在问题
+					AppSettings.isLayer = true
          getBotToken(botId,botKey).map{
             case Right(t)=>
 							val playerId = "bot" + botId
