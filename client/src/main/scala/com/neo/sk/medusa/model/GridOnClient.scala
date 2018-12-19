@@ -61,15 +61,6 @@ class GridOnClient(override val boundary: Point) extends Grid {
     val newSpeed = snake.speed
     
     val newHead = snake.head + snake.direction * newSpeed.toInt
-//    val oldHead = snake.head
-//
-//    val foodEaten = eatFood(snake.id, newHead, newSpeed, speedOrNot)
-//    val foodSum = if (foodEaten.nonEmpty) {
-//      newSpeed = foodEaten.get._2
-//      speedOrNot = foodEaten.get._3
-//      foodEaten.get._1
-//    } else 0
-    
     val len = snake.length
     
     //处理身体及尾巴的移动
@@ -97,21 +88,12 @@ class GridOnClient(override val boundary: Point) extends Grid {
         newJoints = newJoints.dequeue._2
       }
     }
-    
-//    val newFreeFrame = if (speedInfoOpt.nonEmpty) {
-//      if(speedOrNot) 0 else snake.freeFrame + 1
-//    } else snake.freeFrame
-    
+
     Right(snake.copy(head = newHead, tail = newTail, direction = newDirection,
       joints = newJoints, speed = newSpeed, length = len, extend = newExtend))
   }
   
   override def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[String] = None): Unit = {} //do nothing.
-
-  override def eatFood(snakeId: String, newHead: Point, newSpeedInit: Double, speedOrNotInit: Boolean): Option[(Int, Double, Boolean)] = None
-
-//  override def speedUp(snake: Snake4Client, newDirection: Point): Option[(Boolean, Double)] = None
-  
   override def countBody(): Unit = None
   
   var init: Boolean = false
@@ -178,6 +160,18 @@ class GridOnClient(override val boundary: Point) extends Grid {
 				snakes4client += ((mySnake.id, mySnake))
 			}
 		}
+	}
+	def getGridSyncData4Client = {
+		var appleDetails: List[Ap] = Nil
+		grid.foreach {
+			case (p, Apple(score, appleType, frame, targetAppleOpt)) => appleDetails ::= Ap(score, appleType, p.x, p.y, frame, targetAppleOpt)
+			case _ =>
+		}
+		Protocol.GridDataSync(
+			frameCount,
+			snakes4client.values.toList,
+			appleDetails
+		)
 	}
 	
 	def moveEatenApple(): Unit = {

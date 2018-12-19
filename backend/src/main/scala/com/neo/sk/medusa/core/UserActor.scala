@@ -127,6 +127,7 @@ object UserActor {
 
           case TimeOut(m) =>
             log.debug(s"${ctx.self.path} is time out when busy,msg=$m")
+            userManager ! UserManager.UserGone(playerId)
             Behaviors.stopped
 
           case FrontLeft(frontActor) =>
@@ -366,10 +367,13 @@ object UserActor {
 
           case FrontLeft(front) =>
             log.info(s"${ctx.self.path} left while wait")
+            println("-----------------------------------")
             ctx.unwatch(front)
             roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
             Behaviors.stopped
 
+          case UserLeft =>
+            switchBehavior(ctx,"init",init(playerId,playerName,password),Some(10.seconds),TimeOut("UserLeft"))
 
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when wait:$x")

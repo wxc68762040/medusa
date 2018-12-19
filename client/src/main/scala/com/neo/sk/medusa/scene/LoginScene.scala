@@ -69,10 +69,12 @@ class LoginScene() {
 	val keyLable = new Label("BotKey:")
 	val botKey = new TextField()
 
-  val emailInput = new TextField()
+  val emailInput = new TextField("")
   emailInput.setPromptText("email")
-  val emailPwInput = new TextField()
+  val emailPwInput = new PasswordField()
   emailPwInput.setPromptText("password")
+
+  val emailLoginButton = new Button("Login")
 
 	val accountLabel = new Label("Account:")
 	val accountInput = new TextField()
@@ -84,9 +86,9 @@ class LoginScene() {
   someRoomChoice.requestFocus()
 	someRoomChoice.setToggleGroup(joinGroup)
 
-	val roomIdInput = new TextField()
+	val roomIdInput = new TextField("")
   roomIdInput.setPromptText("房间号")
-	val roomPwInput = new TextField()
+	val roomPwInput = new TextField("")
   roomPwInput.setPromptText("房间密码")
 
 	val passwordLabel = new Label("PassWord:")
@@ -135,9 +137,14 @@ class LoginScene() {
 
 	emailButton.setLayoutX(280)
 	emailButton.setLayoutY(240)
-	emailButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+  emailButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
 
-	botId.setLayoutX(150)
+  emailLoginButton.setLayoutX(210)
+  emailLoginButton.setLayoutY(240)
+  emailLoginButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
+
+  botId.setLayoutX(150)
 	botId.setLayoutY(200)
 	botId.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
 
@@ -236,10 +243,11 @@ class LoginScene() {
 
   def emailCallback(errorCode:Int) = {
     ClientBoot.addToPlatform{
-      clearCanvas()
+			warningText.setText("")
       errorCode match {
         case 0 =>
-          group.getChildren.removeAll(emailPwInput, emailInput, emailButton)
+					clearCanvas()
+          group.getChildren.removeAll(emailPwInput, emailInput, emailLoginButton)
           group.getChildren.addAll(createRoomChoice, someRoomChoice,
             humanJoinButton, roomPwInput, roomIdInput)
         case 180006 =>
@@ -253,25 +261,24 @@ class LoginScene() {
   }
 
 	def clearCanvas() = {
+    warningText.setText("")
 		canvasCtx.setFill(bgColor)
 		canvasCtx.fillRect(0, 0, width, height)
 	}
 
+  emailLoginButton.setOnAction { _ =>
+    if(emailPwInput.getText() != "" && emailInput.getText() != "") {
+      loginSceneListener.onButtonHumanEmail(emailInput.getText(), emailPwInput.getText(), emailCallback)
+    }else{
+      warningText.setText("邮箱以及密码均不能为空")
+    }
+  }
 
   emailButton.setOnAction{_ =>
     ClientBoot.addToPlatform{
       group.getChildren.remove(emailButton)
       group.getChildren.remove(scanButton)
-      emailButton.setLayoutX(210)
-      emailButton.setLayoutY(300)
-      emailButton.setOnAction { _ =>
-        if(emailPwInput.getText() != "" && emailInput.getText() != "") {
-          loginSceneListener.onButtonHumanEmail(emailInput.getText(), emailPwInput.getText(), emailCallback)
-        }else{
-          warningText.setText("邮箱以及密码均不能为空")
-        }
-      }
-      group.getChildren.addAll(emailInput, emailPwInput, emailButton,warningText )
+      group.getChildren.addAll(emailInput, emailPwInput, emailLoginButton,warningText )
     }
   }
 

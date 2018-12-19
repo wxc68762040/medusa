@@ -56,17 +56,25 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 		}
 
 		override def onButtonHumanEmail(email:String, pw:String, callback:Int => Unit): Unit = {
-			AuthUtils.getInfoByEmail(email, pw).map{
-        case Right(value) =>
-          if(value.errCode == 0){
-            setUserInfo("user" + value.userId, value.userName, value.token)
-            callback(0)
-          }else{
-            callback(value.errCode)
-          }
-        case Left(e) =>
-          callback(9)
-      }
+			AuthUtils.getInfoByEmail(email, pw).map {
+				case Right(value) =>
+					if (value.errCode == 0) {
+						val isSuccess:Future[WSClient.LinkResult] = wsClient ? (WSClient.GetLoginInfo("user"+ value.userId, value.userName, value.token, _))
+						isSuccess.map {
+							r =>
+								if (r.isSuccess) {
+									callback(0)
+								}else{
+									callback(9)
+								}
+						}
+						setUserInfo("user" + value.userId, value.userName, value.token)
+					} else {
+						callback(value.errCode)
+					}
+				case Left(e) =>
+					callback(9)
+			}
 		}
 
 		override def onButtonHumanJoin(roomId: Long, pwd: String, isCreate:Boolean): Unit = {
