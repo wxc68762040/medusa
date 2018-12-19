@@ -97,7 +97,7 @@ object GameController {
       val h = canvas.getHeight.toInt
       val wi = new WritableImage(w, h)
       val bi = new BufferedImage(w, h, 2)
-      params.setFill(Color.TRANSPARENT)
+      //params.setFill(Color.TRANSPARENT)
       canvas.snapshot(params, wi) //从画布中复制绘图并复制到writableImage
       SwingFXUtils.fromFXImage(wi, bi)
       val argb = bi.getRGB(0, 0, w, h, null, 0, w)
@@ -147,6 +147,7 @@ class GameController(id: String,
   val viewHeight: Int = layerScene.viewHeight
 
   val bgImage = new Image("bg.png")
+  val bgColor = new Color(0.003, 0.176, 0.176, 1.0)
   val championImage = new Image("champion.png")
   val emptyArray = new Array[Byte](0)
 
@@ -260,10 +261,9 @@ class GameController(id: String,
     val mapWidth = layerScene.layerWidth
     val mapHeight = layerScene.layerHeight
     val snakes = grid.getGridSyncData4Client.snakes
+    val period = (System.currentTimeMillis() - basicTime).toInt
     val maxLength = if (snakes.nonEmpty) snakes.sortBy(r => (r.length, r.id)).reverse.head.head else Point(0, 0)
     val maxId = if (snakes.nonEmpty) snakes.sortBy(r => (r.length, r.id)).reverse.head.id else 0L
-    val period = (System.currentTimeMillis() - basicTime).toInt
-
     layerMapCanvas.setWidth(mapWidth)
     layerMapCanvas.setHeight(mapHeight)
 
@@ -433,7 +433,6 @@ class GameController(id: String,
     layerBgCanvas.setWidth(windowWidth)
     layerBgCanvas.setHeight(windowHeight)
 
-    val bgColor = new Color(0.003, 0.176, 0.176, 1.0)
     val snakes = grid.getGridSyncData4Client.snakes
     val period = (System.currentTimeMillis() - basicTime).toInt
 
@@ -461,11 +460,9 @@ class GameController(id: String,
     val deviationY = centerY - myHead.y * scale
 
     val bgCtx = layerBgCanvas.getGraphicsContext2D
-    //bgCtx.save()
-    bgCtx.setFill(Color.BLACK)
-    bgCtx.clearRect(0, 0, 400, 200)
     bgCtx.setFill(bgColor)
     bgCtx.fillRect(0, 0, 400, 200)
+    bgCtx.save()
 
     bgCtx.drawImage(bgImage, 0 + deviationX, 0 + deviationY , Boundary.w * scale , Boundary.h * scale)
 
@@ -475,8 +472,8 @@ class GameController(id: String,
     bgCtx.fillRect(0 + deviationX, 0 + deviationY, boundaryWidth * scale, Boundary.h * scale)
     bgCtx.fillRect(0 + deviationX, Boundary.h * scale + deviationY, Boundary.w * scale, boundaryWidth * scale)
     bgCtx.fillRect(Boundary.w * scale + deviationX, 0 + deviationY, boundaryWidth * scale, Boundary.h * scale)
-//    bgCtx.restore()
-//    bgCtx.setFill(Color.web("rgb(250, 250, 250)"))
+    bgCtx.restore()
+    bgCtx.setFill(Color.web("rgb(250, 250, 250)"))
 
    if(flag) {
      canvas2byteArray(layerBgCanvas)
@@ -742,7 +739,6 @@ class GameController(id: String,
     viewCanvas.setHeight(viewHeight)
     val viewCtx = viewCanvas.getGraphicsContext2D
     val period = (System.currentTimeMillis() - basicTime).toInt
-    val bgColor = new Color(0.003, 0.176, 0.176, 1.0)
 
 
     val snakes = grid.getGridSyncData4Client.snakes
@@ -911,7 +907,6 @@ class GameController(id: String,
           drawTextLine(viewCtx, s"name=[${mySnake.name.take(32)}]", leftBegin, 2, baseLine, scaleView)
           drawTextLine(viewCtx, s"your kill = $kill", leftBegin, 3, baseLine, scaleView)
           drawTextLine(viewCtx, s"your length = ${mySnake.length} ", leftBegin, 4, baseLine, scaleView)
-          //drawTextLine(viewCtx, s"fps: ${gameScene.infoHandler.fps.formatted("%.2f")} ping:${gameScene.infoHandler.ping.formatted("%.2f")} dataps:${gameScene.infoHandler.dataps.formatted("%.2f")}b/s", leftBegin, 5, baseLine, scale)
           drawTextLine(viewCtx, s"drawTimeAverage: ${gameScene.infoHandler.drawTimeAverage}", leftBegin, 5, baseLine, scaleView)
           drawTextLine(viewCtx, s"roomId: $myRoomId", leftBegin, 6, baseLine, scaleView)
           drawTextLine(viewCtx, s"snakeNum: $snakeNum", leftBegin, 7, baseLine, scaleView)
@@ -1031,7 +1026,7 @@ class GameController(id: String,
           botInfoActor ! GetByte(getMapByte(true), getbackgroundByte(true), getAppleByte(true), getAllSnakeByte(true), getMySnakeByte(true), getInfoByte(grid.currentRank, grid.myRank, true), getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, true))
           val b = System.currentTimeMillis()
           val c = b - a
-          println(c)
+          //println(c)
         }
       }
 
