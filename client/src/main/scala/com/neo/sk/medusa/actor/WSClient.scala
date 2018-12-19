@@ -115,7 +115,7 @@ object WSClient {
 											ctx.self ! GetGameController(playerId,true)
                       loginController.setUserInfo(playerId, t.botName, t.token)
                       //fixme test bot sdk
-                      timer.startSingleTimer(TimerKeyForTest, ClientTest(100002),10.seconds)
+                      timer.startSingleTimer(TimerKeyForTest, ClientTest(1000001),10.seconds)
                       Future.successful(s"$logPrefix connect success.")
                     } else {
                       throw new RuntimeException(s"WSClient connection failed: ${upgrade.response.status}")
@@ -232,6 +232,7 @@ object WSClient {
           val password=""
           val client = new MedusaTestClient(host, port, playerId, apiToken)
           val rsp1 = client.joinRoom(roomId.toString,password)
+          client.action(Move.up)
           rsp1.onComplete(println(_))
           Behavior.same
 					
