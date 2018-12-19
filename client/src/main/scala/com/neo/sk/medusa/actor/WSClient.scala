@@ -122,6 +122,10 @@ object WSClient {
                     }
                   } //链接建立时
                   connected.onComplete(i => log.info(i.toString))
+                //					closed.onComplete { i =>
+                //						log.error(s"$logPrefix connection closed!")
+                //					} //链接断开时
+									timer.startSingleTimer(TimerKeyForTest, ClientTest(0),1000.seconds)
                 case Left(e)=>
                   loginController.getLoginScence().warningText.setText("get accessCode error")
                   loginController.getLoginScence().botJoinButton.setDisable(false)
