@@ -246,11 +246,12 @@ object RoomActor {
                 eventList.append(Protocol.MyRank(k, myIndex, myScore))
                 dispatchTo(Protocol.MyRank(k, myIndex, myScore), u._1, watcherMap, k)
               }
+              if ((tickCount  - u._3) % 300 == 6) {
+                dispatchTo(Protocol.SyncApples(grid.getGridSyncData.appleDetails),u._1, watcherMap, k)
+                eventList.append(Protocol.SyncApples(grid.getGridSyncData.appleDetails))
+              }
             }
-            if (tickCount % 300 == 1) {
-              //              dispatch(UserActor.DispatchMsg(Protocol.SyncApples(grid.getGridSyncData.appleDetails.get)), userMap)
-              eventList.append(Protocol.SyncApples(grid.getGridSyncData.appleDetails))
-            }
+
 
             if (feedApples.nonEmpty) {
               eventList.append(Protocol.FeedApples(feedApples))
