@@ -237,7 +237,8 @@ object UserActor {
           case UnKnowAction(unknownMsg) =>
             log.info(s"${ctx.self.path} receive an UnKnowAction when play:$unknownMsg")
             Behaviors.same
-
+          case UserLeft =>
+            switchBehavior(ctx,"init",init(playerId,playerName,password),Some(10.seconds),TimeOut("UserLeft"))
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")
             Behaviors.unhandled
