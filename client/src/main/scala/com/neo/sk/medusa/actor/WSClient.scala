@@ -22,6 +22,7 @@ import org.seekloud.byteobject.MiddleBufferInJvm
 import org.slf4j.LoggerFactory
 import io.circe.parser.decode
 import java.net.URLEncoder
+
 import com.neo.sk.medusa.utils.Api4GameAgent._
 import cats.instances.stream
 
@@ -29,6 +30,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import com.neo.sk.medusa.gRPCService.{MedusaServer, MedusaTestClient}
 import com.neo.sk.medusa.snake.Protocol
+import org.seekloud.esheepapi.pb.actions.Move
 
 import scala.util.Success
 /**
@@ -47,7 +49,7 @@ object WSClient {
 	case class EstablishConnectionEs(ws:String,scanUrl:String,sender:ActorRef[LinkResult]) extends WsCommand
   case class GetGameController(playerId: String,isBot:Boolean=false)extends WsCommand
 	case object Stop extends WsCommand
-	case object ClientTest extends WsCommand
+	case class ClientTest(roomId:Long) extends WsCommand
 	
 	case object TimerKeyForTest
 
@@ -79,8 +81,7 @@ object WSClient {
 											executor: ExecutionContextExecutor): Behavior[WsCommand] = {
 		Behaviors.receive[WsCommand] { (ctx, msg) =>
 			msg match {
-        case  CreateRoom(playerId, name, password)=>
-          //fixme  此处的gameController最好应该在Receiver方
+        case  CreateRoom(playerId,name, password)=>
           serverActor ! Protocol.CreateRoom(-1,password)
           ctx.self ! GetGameController(playerId)
           Behaviors.same
@@ -90,10 +91,11 @@ object WSClient {
           ctx.self ! GetGameController(playerId)
           Behaviors.same
 
-				case BotLogin(botId, botKey)	=>
+				case BotLogin(botId,botKey)	=>
           log.info(s"bot req token and accessCode")
           //fixme 此处若拿不到token或accessCode则存在问题
-          getBotToken(botId, botKey).map {
+					AppSettings.isLayer = true
+         getBotToken(botId,botKey).map{
             case Right(t)=>
 							val playerId = "bot" + botId
 							linkGameAgent(loginController.gameId, playerId, t.token).map{
@@ -111,17 +113,16 @@ object WSClient {
                   val connected = response.flatMap { upgrade =>
                     if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
                       ctx.self ! GetSeverActor(stream)
-											ctx.self ! GetGameController(playerId)
+											ctx.self ! GetGameController(playerId,true)
                       loginController.setUserInfo(playerId, t.botName, t.token)
+                      //fixme test bot sdk
+                      timer.startSingleTimer(TimerKeyForTest, ClientTest(100002),10.seconds)
                       Future.successful(s"$logPrefix connect success.")
                     } else {
                       throw new RuntimeException(s"WSClient connection failed: ${upgrade.response.status}")
                     }
                   } //链接建立时
                   connected.onComplete(i => log.info(i.toString))
-                //					closed.onComplete { i =>
-                //						log.error(s"$logPrefix connection closed!")
-                //					} //链接断开时
                 case Left(e)=>
                   loginController.getLoginScence().warningText.setText("get accessCode error")
                   loginController.getLoginScence().botJoinButton.setDisable(false)
@@ -153,14 +154,12 @@ object WSClient {
 							throw new RuntimeException(s"WSClient connection failed: ${upgrade.response.status}")
 						}
 					} //链接建立时
-					connected.onComplete { i =>
-						log.info(i.toString)
-					}
+					connected.onComplete(i => log.info(i.toString))
 					Behavior.same
 
 				case GetLoginInfo(id, name, token, sender) =>
 					loginController.setUserInfo(id, name, token)
-          linkGameAgent(gameId = loginController.gameId, id, token).map{
+          linkGameAgent(gameId = loginController.gameId,id,token).map{
             case Right(resl) =>
               log.debug("accessCode: " + resl.accessCode)
               val url = getWebSocketUri(id, name,resl.accessCode)
@@ -225,15 +224,15 @@ object WSClient {
           }
           working(gameMessageReceiver,serverActor,loginController,stageCtx,gController)
 
-				case ClientTest =>
+				case ClientTest(roomId) =>
           log.info("get clientTest")
           val host = "127.0.0.1"
           val port = 5321
           val playerId = "test"
           val apiToken = "test"
-          val password="1"
+          val password=""
           val client = new MedusaTestClient(host, port, playerId, apiToken)
-          val rsp1 = client.createRoom(password)
+          val rsp1 = client.joinRoom(roomId.toString,password)
           rsp1.onComplete(println(_))
           Behavior.same
 					

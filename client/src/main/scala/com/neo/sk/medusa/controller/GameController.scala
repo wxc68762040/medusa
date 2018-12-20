@@ -191,6 +191,7 @@ class GameController(id: String,
             Behaviors.same
 
           case t:JoinRoomReq=>
+            log.info("bot join room ..")
             SDKReplyTo=t.sender
             serverActor ! Protocol.JoinRoom(t.roomId,t.password)
             Behaviors.same
@@ -304,6 +305,9 @@ class GameController(id: String,
           val recY = (joints.head.y * LittleMap.h) / Boundary.h - GameScene.initWindowHeight.toFloat / Boundary.h * LittleMap.h / 2
           val recW = GameScene.initWindowWidth.toFloat / Boundary.w * LittleMap.w
           val recH = GameScene.initWindowHeight.toFloat / Boundary.h * LittleMap.h
+          mapCtx.setGlobalAlpha(0.5)
+          mapCtx.setFill(Color.GRAY)
+          mapCtx.fillRect(recX, recY, recW, recH)
           mapCtx.moveTo(recX, recY)
           mapCtx.lineTo(recX, recY + recH)
           mapCtx.lineTo(recX + recW, recY + recH)
@@ -311,6 +315,7 @@ class GameController(id: String,
           mapCtx.lineTo(recX, recY)
           mapCtx.stroke()
           mapCtx.closePath()
+          mapCtx.setGlobalAlpha(1)
         }
         if (snake.id != maxId && snake.id == grid.myId) {
           mapCtx.beginPath()
@@ -457,9 +462,9 @@ class GameController(id: String,
     val deviationY = centerY - myHead.y * scale
 
     val bgCtx = layerBgCanvas.getGraphicsContext2D
-    //bgCtx.save()
-    bgCtx.setFill(Color.BLACK)
-    bgCtx.clearRect(0, 0, 400, 200)
+    bgCtx.save()
+    //bgCtx.setFill(Color.BLACK)
+    //bgCtx.clearRect(0, 0, 400, 200)
     bgCtx.setFill(bgColor)
     bgCtx.fillRect(0, 0, 400, 200)
 
@@ -471,8 +476,8 @@ class GameController(id: String,
     bgCtx.fillRect(0 + deviationX, 0 + deviationY, boundaryWidth * scale, Boundary.h * scale)
     bgCtx.fillRect(0 + deviationX, Boundary.h * scale + deviationY, Boundary.w * scale, boundaryWidth * scale)
     bgCtx.fillRect(Boundary.w * scale + deviationX, 0 + deviationY, boundaryWidth * scale, Boundary.h * scale)
-//    bgCtx.restore()
-//    bgCtx.setFill(Color.web("rgb(250, 250, 250)"))
+    bgCtx.restore()
+    bgCtx.setFill(Color.web("rgb(250, 250, 250)"))
 
    if(flag) {
      canvas2byteArray(layerBgCanvas)

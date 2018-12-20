@@ -112,7 +112,7 @@ object UserActor {
         }
     }
   }
-//var frontActor1:ListBuffer[ActorRef[Protocol.WsMsgSource]] = ListBuffer.empty[ActorRef[Protocol.WsMsgSource]]
+
   private def init(playerId: String, playerName: String,password:String)(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]):Behavior[Command] =
     Behaviors.receive[Command] {
       (ctx, msg) =>
