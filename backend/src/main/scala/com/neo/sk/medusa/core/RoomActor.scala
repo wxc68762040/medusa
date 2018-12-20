@@ -146,11 +146,7 @@ case class  BotJoinGame(botId:String,botName:String,botActor:ActorRef[BotActor.C
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserJoinRoom(t.playerId, t.playerName, grid.frameCount)
             }
 
-
            idle(roomId,tickCount,eventList,userMap,watcherMap,deadUserList,grid,emptyKeepTime.toMillis/AppSettings.frameRate)//---
-
-
-
 
           case t: UserDead =>
             if(t.userId.contains("bot")){
@@ -193,10 +189,8 @@ case class  BotJoinGame(botId:String,botName:String,botActor:ActorRef[BotActor.C
             }
             Behavior.same
 
-
           case t: Key =>
             if (t.frame >= grid.frameCount) {
-
               grid.addActionWithFrame(t.id, t.keyCode, t.frame)
               eventList.append(Protocol.SnakeAction(t.id, t.keyCode, t.frame))
               dispatch(userMap, watcherMap, Protocol.SnakeAction(t.id, t.keyCode, t.frame))
