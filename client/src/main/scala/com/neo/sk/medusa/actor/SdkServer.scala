@@ -2,14 +2,7 @@ package com.neo.sk.medusa.actor
 
 import akka.actor.{ActorSystem, PoisonPill}
 import akka.actor.typed._
-import akka.actor.typed.scaladsl.{Behaviors, TimerScheduler}
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.ws.{WebSocketRequest, _}
-import akka.stream.scaladsl.{Flow, Keep, Sink}
-import akka.stream.typed.scaladsl.{ActorSink, _}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors, StashBuffer, TimerScheduler}
-import com.neo.sk.medusa.actor.WSClient.{ClientTest, TimerKeyForTest, log}
 import com.neo.sk.medusa.common.StageContext
 import com.neo.sk.medusa.controller.GameController
 import com.neo.sk.medusa.gRPCService.MedusaServer

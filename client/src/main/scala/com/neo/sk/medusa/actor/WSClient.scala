@@ -11,7 +11,6 @@ import akka.stream.scaladsl.{Flow, Keep, Sink}
 import akka.stream.typed.scaladsl.{ActorSink, _}
 import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.ByteString
-import akka.http.scaladsl.server.Directives._
 import com.neo.sk.medusa.common.{AppSettings, StageContext}
 import com.neo.sk.medusa.controller.{GameController, LoginController}
 import com.neo.sk.medusa.scene.{GameScene, LayerScene, LoginScene}
@@ -22,21 +21,13 @@ import org.seekloud.byteobject.MiddleBufferInJvm
 import org.slf4j.LoggerFactory
 import io.circe.parser.decode
 import java.net.URLEncoder
-
 import com.neo.sk.medusa.utils.Api4GameAgent._
-import cats.instances.stream
 import com.neo.sk.medusa.ClientBoot
-import com.neo.sk.medusa.controller.GameController.GetObservation
-
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
-import com.neo.sk.medusa.gRPCService.{MedusaServer, MedusaTestClient}
+import com.neo.sk.medusa.gRPCService.MedusaTestClient
 import com.neo.sk.medusa.snake.Protocol
-import org.seekloud.esheepapi.pb.actions.Move
-import com.neo.sk.medusa.ClientBoot.system
-import com.neo.sk.medusa.common.AppSettings.config
 
-import scala.util.Success
 /**
 	* Created by wangxicheng on 2018/10/19.
 	*/
