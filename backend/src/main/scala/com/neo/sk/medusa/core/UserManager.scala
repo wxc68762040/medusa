@@ -57,18 +57,16 @@ object UserManager {
       _ =>
         Behaviors.withTimers[Command] {
           implicit timer =>
-            val userRoomMap = mutable.HashMap.empty[String, (Long, String)]
             val userRecMap = mutable.HashMap.empty[String, UserActor.ReplayGame]
             val allUser = mutable.HashMap.empty[String, ActorRef[UserActor.Command]]
             val userCreateRoom = mutable.HashMap.empty[String,Int]
             timer.startSingleTimer(Timer4MsgAdd, ClearMsgLength, 10000.milli)
-            idle(userRoomMap,userRecMap,userCreateRoom, allUser)
+            idle(userRecMap,userCreateRoom, allUser)
         }
     }
   }
 
-  def idle(userRoomMap: mutable.HashMap[String, (Long, String)],
-           userRecMap: mutable.HashMap[String, UserActor.ReplayGame],
+  def idle(userRecMap: mutable.HashMap[String, UserActor.ReplayGame],
            userCreateRoom:mutable.HashMap[String,Int],
            allUser:mutable.HashMap[String, ActorRef[UserActor.Command]])(implicit timer: TimerScheduler[Command]): Behavior[Command] =
     Behaviors.receive[Command] {
@@ -78,15 +76,8 @@ object UserManager {
             //此处的roomId是没有任何作用的
             val user = getUserActor(ctx, playerId, playerName,password.getOrElse(""))
             allUser.put(playerId, user)
-            if (userRoomMap.get(playerId).nonEmpty) {
-              userRoomMap.update(playerId, (roomId, playerName))
-            } else {
-              userRoomMap.put(playerId, (roomId, playerName))
-            }
             replyTo ! getWebSocketFlow(user,isCreating)
             Behaviors.same
-
-
 
           case GetReplayWebSocketFlow(recordId, playerId, watchPlayerId, frame, replyTo) =>
             //watchPlayerId 被观看的人
@@ -142,8 +133,7 @@ object UserManager {
             RoomActor.speedLength = 0l
             RoomActor.rankLength = 0l
 
-            timer.startSingleTimer(Timer4MsgAdd, ClearMsgLength
-              ,10000.milli)
+            timer.startSingleTimer(Timer4MsgAdd, ClearMsgLength,10000.milli)
             Behaviors.same
 
           case t: YourUserUnwatched =>

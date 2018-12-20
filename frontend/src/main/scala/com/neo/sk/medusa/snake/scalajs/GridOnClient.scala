@@ -2,7 +2,7 @@ package com.neo.sk.medusa.snake.scalajs
 
 import java.awt.event.KeyEvent
 
-import com.neo.sk.medusa.snake.{Grid, Point, Snake4Client, SnakeInfo}
+import com.neo.sk.medusa.snake._
 
 /**
   * User: Taoz
@@ -100,11 +100,22 @@ class GridOnClient(override val boundary: Point) extends Grid {
       joints = newJoints, speed = newSpeed, length = len, extend = newExtend))
   }
 
+  def getGridSyncData4Client = {
+    var appleDetails: List[Ap] = Nil
+    grid.foreach {
+      case (p, Apple(score, appleType, frame, targetAppleOpt)) => appleDetails ::= Ap(score, appleType, p.x, p.y, frame, targetAppleOpt)
+      case _ =>
+    }
+    Protocol.GridDataSync(
+      frameCount,
+      snakes4client.values.toList,
+      appleDetails
+    )
+  }
+
   override def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[String] = None): Unit = {} //do nothing.
 
-  override def eatFood(snakeId: String, newHead: Point, newSpeedInit: Double, speedOrNotInit: Boolean): Option[(Int, Double, Boolean)] = None
-
-//  override def speedUp(snake: SnakeInfo, newDirection: Point): Option[(Boolean, Double)] = None
+//  override def eatFood(snakeId: String, newHead: Point, newSpeedInit: Double, speedOrNotInit: Boolean): Option[(Int, Double, Boolean)] = None
 
   override def countBody(): Unit = None
   

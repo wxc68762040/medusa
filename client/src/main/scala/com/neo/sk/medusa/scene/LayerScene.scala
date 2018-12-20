@@ -55,10 +55,14 @@ class LayerScene {
   layerAppleCanvas.setLayoutY(420)
 
 
+
   viewCanvas.setLayoutX(0)
   viewCanvas.setLayoutY(100)
 
   group.getChildren.add(viewCanvas)
+
+//  viewCanvas.requestFocus()
+//  viewCanvas.setOnKeyPressed(event => layerSceneListener.onKeyPressed(event.getCode))
 
   group.getChildren.add(layerMapCanvas)
   group.getChildren.add(layerInfoCanvas)
@@ -67,11 +71,8 @@ class LayerScene {
   group.getChildren.add(layerAppleCanvas)
   group.getChildren.add(layerMySnakeCanvas)
 
-  viewCanvas.requestFocus()
-  viewCanvas.setOnKeyPressed(event => layerSceneListener.onKeyPressed(event.getCode))
-
-//  layerMySnakeCanvas.requestFocus()
-//  layerMySnakeCanvas.setOnKeyPressed(event => layerSceneListener.onKeyPressed(event.getCode))
+  layerMySnakeCanvas.requestFocus()
+  layerMySnakeCanvas.setOnKeyPressed(event => layerSceneListener.onKeyPressed(event.getCode))
 
 
 

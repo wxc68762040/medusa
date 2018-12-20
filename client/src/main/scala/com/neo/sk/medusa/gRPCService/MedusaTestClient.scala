@@ -1,6 +1,7 @@
 package com.neo.sk.medusa.gRPCService
 
 import io.grpc.{ManagedChannel, ManagedChannelBuilder}
+import org.seekloud.esheepapi.pb.actions.Move
 import org.seekloud.esheepapi.pb.api._
 import org.seekloud.esheepapi.pb.service.EsheepAgentGrpc
 import org.seekloud.esheepapi.pb.service.EsheepAgentGrpc.EsheepAgentStub
@@ -22,6 +23,8 @@ class MedusaTestClient (
 	private val esheepStub: EsheepAgentStub = EsheepAgentGrpc.stub(channel)
 	val credit = Credit( apiToken = apiToken)
 
+  val actionReq=ActionReq(Move.up,None,0,0,Some(credit))
+
 	def createRoom(password:String): Future[CreateRoomRsp] = esheepStub.createRoom(CreateRoomReq(Some(credit),password))
 
   def joinRoom(roomId:String,password: String):Future[SimpleRsp]= esheepStub.joinRoom(JoinRoomReq(Some(credit),password,roomId))
@@ -30,9 +33,11 @@ class MedusaTestClient (
 
   def actionSpace():Future[ActionSpaceRsp] =esheepStub.actionSpace(credit)
 
-  def action() :Future[ActionRsp] =esheepStub.action(ActionReq())
+  def action() :Future[ActionRsp] =esheepStub.action(actionReq)
 
   def observation(): Future[ObservationRsp] = esheepStub.observation(credit)
 
   def inform():Future[InformRsp]=esheepStub.inform(credit)
+
+  def reincarnation():Future[SimpleRsp]=esheepStub.reincarnation(credit)
 }

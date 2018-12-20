@@ -31,12 +31,8 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
   private[this] var deadBodies: List[Ap] = Nil
   private [this] var eatenApples = Map.empty[String, List[AppleWithFrame]]
   private [this] var speedUpInfo = List.empty[SpeedUpInfo]
-
-
   var currentRank = List.empty[Score]
   var topCurrentRank = List.empty[Score]
- // var myRank =Map.empty[Int, Score]
-  //var myId = ""
   private[this] var historyRankMap = Map.empty[String, Score]
   var historyRankList = historyRankMap.values.toList.sortBy(_.l).reverse
 
@@ -58,7 +54,6 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
     }
     color
   }
-
 
   def genWaitingSnake() = {
     val oldSnakes = snakes
@@ -85,6 +80,30 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
       }
       r
     }
+  }
+
+  def randomHeadEmptyPoint(): Point = {
+    var p = randomPoint()
+    while (grid.contains(p)) {
+      p = randomPoint()
+    }
+    p
+  }
+
+  def randomEmptyPoint(): Point = {
+    var p = Point(random.nextInt(boundary.x - 2 * boundaryWidth) + boundaryWidth, random.nextInt(boundary.y - 2 * boundaryWidth) + boundaryWidth)
+    while (grid.contains(p)) {
+      p = Point(random.nextInt(boundary.x), random.nextInt(boundary.y))
+    }
+    p
+  }
+
+  def getSafeDirection(p: Point) = {
+    val down = (p.y, Point(0, 1))
+    val up = (boundary.y - p.y, Point(0, -1))
+    val right = (p.x, Point(1, 0))
+    val left = (boundary.x - p.x, Point(-1, 0))
+    List(down, up, right, left).minBy(_._1)._2
   }
 
   private[this] def updateRanks() = {
@@ -175,7 +194,6 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
         case None => s
       }
     }
-  
     snakes = newSnakes.map(s => (s.id, s)).toMap
   }
   
@@ -293,34 +311,18 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
       }
 
       var appleNeeded = appleNum - appleCount - appleDecrease
-
-      if (appleNeeded > 0) {
-        while (appleNeeded > 0) {
-          val p = randomEmptyPoint()
-          val score = random.nextDouble() match {
-            case x if x > 0.95 => 50
-            case x if x > 0.8 => 25
-            case x => 5
-          }
-          val randomFrame = 400 + random.nextInt(200)
-          val apple = Apple(score, appleType, frameCount + randomFrame)
-          feededApples ::= Ap(score, appleType, p.x, p.y, frameCount + randomFrame)
-          grid += (p -> apple)
-          appleNeeded -= 1
+      while (appleNeeded > 0) {
+        val p = randomEmptyPoint()
+        val score = random.nextDouble() match {
+          case x if x > 0.95 => 50
+          case x if x > 0.8 => 25
+          case x => 5
         }
-      } else {
-        grid.filter {
-          _._2 match {
-            case x: Apple if x.appleType == FoodType.normal => true
-            case _ => false
-          }
-        }.foreach {
-          apple =>
-            if (appleNeeded != 0) {
-              grid -= apple._1
-              appleNeeded += 1
-            }
-        }
+        val randomFrame = 400 + random.nextInt(200)
+        val apple = Apple(score, appleType, frameCount + randomFrame)
+        feededApples ::= Ap(score, appleType, p.x, p.y, frameCount + randomFrame)
+        grid += (p -> apple)
+        appleNeeded -= 1
       }
     } else {
       def pointAroundSnack(newBound: Point): Point = {
@@ -363,12 +365,10 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
             appleNeeded -= 1
           }
       }
-
     }
-
   }
 
-  override def eatFood(snakeId: String, newHead: Point, newSpeedInit: Double, speedOrNotInit: Boolean): Option[(Int, Double, Boolean)] = {
+  def eatFood(snakeId: String, newHead: Point, newSpeedInit: Double, speedOrNotInit: Boolean): Option[(Int, Double, Boolean)] = {
     var totalScore = 0
     var newSpeed = newSpeedInit
     var speedOrNot = speedOrNotInit
@@ -459,7 +459,32 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
     speedUpInfo = Nil
   }
 
+  def getGridSyncDataNoApp = {
+    val snake4client = snakes.values.map{
+      s => Snake4Client(s.id, s.name, s.head, s.tail, s.color, s.direction, s.joints, s.speed,s.length, s.extend)
+    }
+    Protocol.GridDataSyncNoApp(
+      frameCount,
+      snake4client.toList
+    )
+  }
 
+  def getGridSyncData = {
+    var appleDetails: List[Ap] = Nil
+    grid.foreach {
+      case (p, Apple(score, appleType, frame, targetAppleOpt)) => appleDetails ::= Ap(score, appleType, p.x, p.y, frame, targetAppleOpt)
+      case _ =>
+    }
+    val snake4client = snakes.values.map{
+      s => Snake4Client(s.id, s.name, s.head, s.tail, s.color, s.direction, s.joints, s.speed,s.length, s.extend)
+    }
+    Protocol.GridDataSync(
+      frameCount,
+      snake4client.toList,
+      appleDetails,
+      System.currentTimeMillis()
+    )
+  }
 
 
   override def countBody(): Unit = {

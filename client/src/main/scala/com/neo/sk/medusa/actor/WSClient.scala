@@ -11,7 +11,6 @@ import akka.stream.scaladsl.{Flow, Keep, Sink}
 import akka.stream.typed.scaladsl.{ActorSink, _}
 import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.ByteString
-import akka.http.scaladsl.server.Directives._
 import com.neo.sk.medusa.common.{AppSettings, StageContext}
 import com.neo.sk.medusa.controller.{GameController, LoginController}
 import com.neo.sk.medusa.scene.{GameScene, LayerScene, LoginScene}
@@ -23,14 +22,12 @@ import org.slf4j.LoggerFactory
 import io.circe.parser.decode
 import java.net.URLEncoder
 import com.neo.sk.medusa.utils.Api4GameAgent._
-import cats.instances.stream
-
+import com.neo.sk.medusa.ClientBoot
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
-import com.neo.sk.medusa.gRPCService.{MedusaServer, MedusaTestClient}
+import com.neo.sk.medusa.gRPCService.MedusaTestClient
 import com.neo.sk.medusa.snake.Protocol
 
-import scala.util.Success
 /**
 	* Created by wangxicheng on 2018/10/19.
 	*/
@@ -41,15 +38,27 @@ object WSClient {
 	case class BotLogin(botId:String,botKey:String) extends WsCommand
   case class CreateRoom(playerId:String,name:String,password:String)extends  WsCommand
 	case class JoinRoom(playerId:String, name:String, roomId:Long, password:String="") extends WsCommand
-	case class GetLoginInfo(id: String, name: String, access: String) extends WsCommand
+	case class GetLoginInfo(id: String, name: String, token: String, sender:ActorRef[LinkResult]) extends WsCommand
   case class GetSeverActor(severActor: ActorRef[WsSendMsg])extends WsCommand
 	case class LinkResult(isSuccess:Boolean)
 	case class EstablishConnectionEs(ws:String,scanUrl:String,sender:ActorRef[LinkResult]) extends WsCommand
   case class GetGameController(playerId: String,isBot:Boolean=false)extends WsCommand
 	case object Stop extends WsCommand
-	case object ClientTest extends WsCommand
+	case class ClientTest(roomId:Long) extends WsCommand
+
+	case class GetObservationTest() extends WsCommand
+	case class ActionSpaceTest() extends WsCommand
+	case class ActionTest() extends WsCommand
+	case class LeaveRoomTest() extends WsCommand
 	
 	case object TimerKeyForTest
+
+	val host = "127.0.0.1"
+	val port = 5321
+	val playerId = "test"
+	val apiToken = "test"
+	val password=""
+	val client = new MedusaTestClient(host, port, playerId, apiToken)
 
 	private val log = LoggerFactory.getLogger("WSClient")
 	private val logPrefix = "WSClient"
@@ -59,9 +68,16 @@ object WSClient {
             (implicit _system: ActorSystem, _materializer: Materializer, _executor: ExecutionContextExecutor): Behavior[WsCommand] = {
 		Behaviors.setup[WsCommand] { ctx =>
 			Behaviors.withTimers { timer =>
-				val loginScene = new LoginScene()
-				val loginController = new LoginController(ctx.self, loginScene, stageCtx)
-				loginController.showScene()
+
+				val loginController =
+					if(AppSettings.isView){
+					val loginScene = new LoginScene()
+					val loginController = new LoginController(ctx.self, Some(loginScene), stageCtx)
+					loginController.showScene()
+					loginController
+				}else{
+					new LoginController(ctx.self, None, stageCtx)
+				}
 				working(gameMessageReceiver,null,loginController, stageCtx,null)(timer, _system, _materializer, _executor)
 			}
 		}
@@ -79,8 +95,7 @@ object WSClient {
 											executor: ExecutionContextExecutor): Behavior[WsCommand] = {
 		Behaviors.receive[WsCommand] { (ctx, msg) =>
 			msg match {
-        case  CreateRoom(playerId, name, password)=>
-          //fixme  此处的gameController最好应该在Receiver方
+        case  CreateRoom(playerId,name, password)=>
           serverActor ! Protocol.CreateRoom(-1,password)
           ctx.self ! GetGameController(playerId)
           Behaviors.same
@@ -90,11 +105,12 @@ object WSClient {
           ctx.self ! GetGameController(playerId)
           Behaviors.same
 
-				case BotLogin(botId, botKey)	=>
+				case BotLogin(botId,botKey)	=>
           log.info(s"bot req token and accessCode")
 					AppSettings.isLayer = true
           //fixme 此处若拿不到token或accessCode则存在问题
-          getBotToken(botId, botKey).map {
+					AppSettings.isLayer = true
+         getBotToken(botId,botKey).map{
             case Right(t)=>
 							val playerId = "bot" + botId
 							linkGameAgent(loginController.gameId, playerId, t.token).map{
@@ -112,25 +128,28 @@ object WSClient {
                   val connected = response.flatMap { upgrade =>
                     if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
                       ctx.self ! GetSeverActor(stream)
-											ctx.self ! GetGameController(playerId)
+											ctx.self ! GetGameController(playerId,true)
                       loginController.setUserInfo(playerId, t.botName, t.token)
+                      //fixme test bot sdk
+											timer.startSingleTimer(TimerKeyForTest, ClientTest(1),10.seconds)
                       Future.successful(s"$logPrefix connect success.")
                     } else {
                       throw new RuntimeException(s"WSClient connection failed: ${upgrade.response.status}")
                     }
                   } //链接建立时
                   connected.onComplete(i => log.info(i.toString))
-                //					closed.onComplete { i =>
-                //						log.error(s"$logPrefix connection closed!")
-                //					} //链接断开时
                 case Left(e)=>
-                  loginController.getLoginScence().warningText.setText("get accessCode error")
-                  loginController.getLoginScence().botJoinButton.setDisable(false)
+									if(AppSettings.isView) {
+										loginController.getLoginScence().warningText.setText("get accessCode error")
+										loginController.getLoginScence().botJoinButton.setDisable(false)
+									}
                   log.error(s"bot get access code error: $e")
               }
             case Left(e)=>
-              loginController.getLoginScence().warningText.setText("get token error")
-              loginController.getLoginScence().botJoinButton.setDisable(false)
+							if(AppSettings.isView) {
+								loginController.getLoginScence().warningText.setText("get token error")
+								loginController.getLoginScence().botJoinButton.setDisable(false)
+							}
               log.error(s"bot get token error: $e")
 
           }
@@ -154,14 +173,12 @@ object WSClient {
 							throw new RuntimeException(s"WSClient connection failed: ${upgrade.response.status}")
 						}
 					} //链接建立时
-					connected.onComplete { i =>
-						log.info(i.toString)
-					}
+					connected.onComplete(i => log.info(i.toString))
 					Behavior.same
 
-				case GetLoginInfo(id, name, token) =>
+				case GetLoginInfo(id, name, token, sender) =>
 					loginController.setUserInfo(id, name, token)
-          linkGameAgent(gameId = loginController.gameId, id, token).map{
+          linkGameAgent(gameId = loginController.gameId,id,token).map{
             case Right(resl) =>
               log.debug("accessCode: " + resl.accessCode)
               val url = getWebSocketUri(id, name,resl.accessCode)
@@ -180,19 +197,22 @@ object WSClient {
 									if(scanSender != null) {
 										scanSender ! LinkResult(true)
 									}
+                  if(sender != null){
+                    sender ! LinkResult(true)
+                  }
 									ctx.self ! GetSeverActor(stream)
 									Future.successful(s"$logPrefix connect success.")
 								} else {
 									if(scanSender != null) {
 										scanSender ! LinkResult(false)
 									}
+                  if(sender != null){
+                    sender ! LinkResult(false)
+                  }
 									throw new RuntimeException(s"WSClient connection failed: ${upgrade.response.status}")
 								}
 							} //链接建立时
               connected.onComplete(i => log.info(i.toString))
-            //					closed.onComplete { i =>
-            //						log.error(s"$logPrefix connection closed!")
-            //					} //链接断开时
 
             case Left(l) =>
               log.error("link error!")
@@ -203,37 +223,76 @@ object WSClient {
           working(gameMessageReceiver,sActor,loginController,stageCtx,gameController)
 
         case GetGameController(playerId, isBot)=>
-          val gameScene = new GameScene()
+          val gameScene = new GameScene(isBot)
           val layerScene = new LayerScene
           val gController = new GameController(playerId, stageCtx, gameScene, layerScene, serverActor)
           gController.connectToGameServer(gController)
           if(isBot){
-            val port = 5321
-            val server = MedusaServer.build(port, executor, ctx.self,gController, gameMessageReceiver, stageCtx)
-            server.start()
-            log.info(s"Server started at $port")
-            sys.addShutdownHook {
-              log.info("JVM SHUT DOWN.")
-              server.shutdown()
-              log.info("SHUT DOWN.")
-            }
+						val port = 5321
+						ClientBoot.sdkServer ! SdkServer.BuildServer(port, executor, ctx.self,gController, gameMessageReceiver, stageCtx)
           }
           working(gameMessageReceiver,serverActor,loginController,stageCtx,gController)
 
-				case ClientTest =>
+				case ClientTest(roomId) =>
           log.info("get clientTest")
-          val host = "127.0.0.1"
-          val port = 5321
-          val playerId = "test"
-          val apiToken = "test"
-          val password="1"
-          val client = new MedusaTestClient(host, port, playerId, apiToken)
-          val rsp1 = client.createRoom(password)
-          rsp1.onComplete(println(_))
+
+          val rsp1 = client.createRoom("")
+          rsp1.onComplete{
+						a=>println(a)
+							println("======")
+							timer.startSingleTimer(TimerKeyForTest, GetObservationTest(), 5.seconds)
+					}
+
           Behavior.same
+
+					case GetObservationTest() =>
+						log.info("get observationTest")
+
+						val rsp1 = client.observation()
+						rsp1.onComplete{
+							a=>println(a)
+								println("======")
+								timer.startSingleTimer(TimerKeyForTest, ActionSpaceTest(), 5.seconds)
+						}
+					Behaviors.same
+
+					case ActionSpaceTest() =>
+						log.info("get actionspaceTest")
+
+						val rsp1 = client.actionSpace()
+						rsp1.onComplete{
+							a=>println(a)
+								println("======")
+								timer.startSingleTimer(TimerKeyForTest, ActionTest(), 5.seconds)
+						}
+						Behaviors.same
+
+					case LeaveRoomTest() =>
+						log.info("get leaveRoomTest")
+
+						val rsp1 = client.leaveRoom()
+						rsp1.onComplete{
+							a=>println(a)
+								println("======")
+						}
+					Behaviors.same
+
+					case ActionTest() =>
+
+						log.info("get leaveRoomTest")
+
+						val rsp1 = client.action()
+						rsp1.onComplete{
+							a=>println(a)
+								println("======")
+								timer.startSingleTimer(TimerKeyForTest, LeaveRoomTest(), 5.seconds)
+						}
+						Behaviors.same
+
 					
 				case Stop =>
 					log.info("WSClient now stop.")
+					System.exit(0)
 					Behaviors.stopped
 			}
 		}
@@ -246,7 +305,7 @@ object WSClient {
 				import io.circe.generic.auto._
 				import scala.concurrent.ExecutionContext.Implicits.global
 				log.debug(s"msg from webSocket: $msg")
-				val gameId = AppSettings.gameId
+				val gameId = 1000000001
         if(msg.length > 50) {
           decode[Ws4AgentResponse](msg) match {
             case Right(res) =>
@@ -254,7 +313,7 @@ object WSClient {
                 val playerId = "user" + res.Ws4AgentRsp.data.userId.toString
                 val nickname = res.Ws4AgentRsp.data.nickname
 								val token = res.Ws4AgentRsp.data.token
-								self ! GetLoginInfo(playerId, nickname, token)
+								self ! GetLoginInfo(playerId, nickname, token, null)
 							} else {
 								log.error("link error!")
 							}
@@ -310,6 +369,7 @@ object WSClient {
 		overflowStrategy = OverflowStrategy.fail
 	).collect {
 		case message: UserAction =>
+			println(message)
 			val sendBuffer = new MiddleBufferInJvm(409600)
 			BinaryMessage.Strict(ByteString(
 				message.fillMiddleBuffer(sendBuffer).result()

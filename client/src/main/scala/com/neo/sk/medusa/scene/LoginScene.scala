@@ -21,11 +21,6 @@ import com.neo.sk.medusa.actor.WSClient
 import com.neo.sk.medusa.common.StageContext
 import com.neo.sk.medusa.controller.GameController
 import javafx.scene.image.Image
-import com.neo.sk.medusa.controller.LoginController
-import com.sun.xml.internal.messaging.saaj.util.ByteInputStream
-import javafx.collections.FXCollections
-import javafx.scene.control.cell.PropertyValueFactory
-import javafx.scene.effect.{BoxBlur, DropShadow}
 import javafx.scene.text.Font
 import javafx.scene.text.Text
 import javafx.scene.text.FontWeight
@@ -69,10 +64,12 @@ class LoginScene() {
 	val keyLable = new Label("BotKey:")
 	val botKey = new TextField()
 
-  val emailInput = new TextField()
+  val emailInput = new TextField("")
   emailInput.setPromptText("email")
-  val emailPwInput = new TextField()
+  val emailPwInput = new PasswordField()
   emailPwInput.setPromptText("password")
+
+  val emailLoginButton = new Button("Login")
 
 	val accountLabel = new Label("Account:")
 	val accountInput = new TextField()
@@ -84,9 +81,9 @@ class LoginScene() {
   someRoomChoice.requestFocus()
 	someRoomChoice.setToggleGroup(joinGroup)
 
-	val roomIdInput = new TextField()
+	val roomIdInput = new TextField("")
   roomIdInput.setPromptText("房间号")
-	val roomPwInput = new TextField()
+	val roomPwInput = new TextField("")
   roomPwInput.setPromptText("房间密码")
 
 	val passwordLabel = new Label("PassWord:")
@@ -95,93 +92,6 @@ class LoginScene() {
 	val canvas = new Canvas(width, height)
 	val canvasCtx = canvas.getGraphicsContext2D
 	var loginSceneListener: LoginSceneListener = _
-	roomPwInput.setLayoutX(185)
-	roomPwInput.setLayoutY(110)
-	roomIdInput.setLayoutX(185)
-	roomIdInput.setLayoutY(160)
-
-  emailInput.setLayoutX(165)
-  emailInput.setLayoutY(150)
-
-  emailPwInput.setLayoutX(165)
-  emailPwInput.setLayoutY(180)
-
-  warningText.setLayoutX(185)
-  warningText.setLayoutY(220)
-  warningText.setFill(Color.WHITE)
-
-	createRoomChoice.setLayoutX(50)
-	createRoomChoice.setLayoutY(140)
-	createRoomChoice.setTextFill(Color.WHITE)
-	createRoomChoice.setStyle("-fx-font:14 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic; ")
-
-	someRoomChoice.setLayoutX(50)
-	someRoomChoice.setLayoutY(110)
-	someRoomChoice.setTextFill(Color.WHITE)
-	someRoomChoice.setStyle("-fx-font:14 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic; ")
-
-
-	humanLoginButton.setLayoutX(130)
-	humanLoginButton.setLayoutY(240)
-	humanLoginButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
-
-	botLoginButton.setLayoutX(280)
-	botLoginButton.setLayoutY(240)
-	botLoginButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
-
-	scanButton.setLayoutX(130)
-	scanButton.setLayoutY(240)
-	scanButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
-
-	emailButton.setLayoutX(280)
-	emailButton.setLayoutY(240)
-	emailButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
-
-	botId.setLayoutX(150)
-	botId.setLayoutY(200)
-	botId.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
-
-	botKey.setLayoutX(150)
-	botKey.setLayoutY(240)
-	botKey.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
-
-	idLabel.setLayoutX(80)
-	idLabel.setLayoutY(210)
-	idLabel.setTextFill(Color.WHITE)
-	idLabel.setStyle("-fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
-
-	keyLable.setLayoutX(80)
-	keyLable.setLayoutY(250)
-	keyLable.setTextFill(Color.WHITE)
-	keyLable.setStyle("-fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
-
-	botJoinButton.setLayoutX(200)
-	botJoinButton.setLayoutY(300)
-	botJoinButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
-
-
-	accountInput.setLayoutX(150)
-	accountInput.setLayoutY(200)
-	accountInput.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
-
-	pwdInput.setLayoutX(150)
-	pwdInput.setLayoutY(240)
-	pwdInput.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
-
-	accountLabel.setLayoutX(75)
-	accountLabel.setLayoutY(210)
-	accountLabel.setTextFill(Color.WHITE)
-	accountLabel.setStyle("-fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
-
-	passwordLabel.setLayoutX(75)
-	passwordLabel.setLayoutY(250)
-	passwordLabel.setTextFill(Color.WHITE)
-	passwordLabel.setStyle("-fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
-
-	humanJoinButton.setLayoutX(210)
-	humanJoinButton.setLayoutY(300)
-	humanJoinButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
-
 
   joinGroup.selectedToggleProperty().addListener(
 		new ChangeListener[Toggle]() {
@@ -218,10 +128,6 @@ class LoginScene() {
 
 	val scene = new Scene(group)
 
-
-	//joinButton.setOnAction(_ => loginSceneListener.onButtonJoin())
-
-
   def scanCallback(ifSuccess:Boolean) = {
 		ClientBoot.addToPlatform {
       clearCanvas()
@@ -236,10 +142,11 @@ class LoginScene() {
 
   def emailCallback(errorCode:Int) = {
     ClientBoot.addToPlatform{
-      clearCanvas()
+			warningText.setText("")
       errorCode match {
         case 0 =>
-          group.getChildren.removeAll(emailPwInput, emailInput, emailButton)
+					clearCanvas()
+          group.getChildren.removeAll(emailPwInput, emailInput, emailLoginButton)
           group.getChildren.addAll(createRoomChoice, someRoomChoice,
             humanJoinButton, roomPwInput, roomIdInput)
         case 180006 =>
@@ -253,25 +160,24 @@ class LoginScene() {
   }
 
 	def clearCanvas() = {
+    warningText.setText("")
 		canvasCtx.setFill(bgColor)
 		canvasCtx.fillRect(0, 0, width, height)
 	}
 
+  emailLoginButton.setOnAction { _ =>
+    if(emailPwInput.getText() != "" && emailInput.getText() != "") {
+      loginSceneListener.onButtonHumanEmail(emailInput.getText(), emailPwInput.getText(), emailCallback)
+    }else{
+      warningText.setText("邮箱以及密码均不能为空")
+    }
+  }
 
   emailButton.setOnAction{_ =>
     ClientBoot.addToPlatform{
       group.getChildren.remove(emailButton)
       group.getChildren.remove(scanButton)
-      emailButton.setLayoutX(210)
-      emailButton.setLayoutY(300)
-      emailButton.setOnAction { _ =>
-        if(emailPwInput.getText() != "" && emailInput.getText() != "") {
-          loginSceneListener.onButtonHumanEmail(emailInput.getText(), emailPwInput.getText(), emailCallback)
-        }else{
-          warningText.setText("邮箱以及密码均不能为空")
-        }
-      }
-      group.getChildren.addAll(emailInput, emailPwInput, emailButton,warningText )
+      group.getChildren.addAll(emailInput, emailPwInput, emailLoginButton,warningText )
     }
   }
 
@@ -346,11 +252,100 @@ class LoginScene() {
 			canvasCtx.setFont(Font.font("Helvetica", FontWeight.BOLD ,FontPosture.ITALIC,28))
 			canvasCtx.setFill(Color.web("rgb(250, 250, 250)"))
 			canvasCtx.fillText(s"Welcome to medusa!",100,125)
-
 		}
 	}
 	
 	def setLoginSceneListener(listener: LoginSceneListener) {
 		loginSceneListener = listener
 	}
+
+	roomPwInput.setLayoutX(185)
+	roomPwInput.setLayoutY(110)
+	roomIdInput.setLayoutX(185)
+	roomIdInput.setLayoutY(160)
+
+	emailInput.setLayoutX(165)
+	emailInput.setLayoutY(150)
+
+	emailPwInput.setLayoutX(165)
+	emailPwInput.setLayoutY(180)
+
+	warningText.setLayoutX(185)
+	warningText.setLayoutY(220)
+	warningText.setFill(Color.WHITE)
+
+	createRoomChoice.setLayoutX(50)
+	createRoomChoice.setLayoutY(140)
+	createRoomChoice.setTextFill(Color.WHITE)
+	createRoomChoice.setStyle("-fx-font:14 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic; ")
+
+	someRoomChoice.setLayoutX(50)
+	someRoomChoice.setLayoutY(110)
+	someRoomChoice.setTextFill(Color.WHITE)
+	someRoomChoice.setStyle("-fx-font:14 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic; ")
+
+	humanLoginButton.setLayoutX(130)
+	humanLoginButton.setLayoutY(240)
+	humanLoginButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
+	botLoginButton.setLayoutX(280)
+	botLoginButton.setLayoutY(240)
+	botLoginButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
+	scanButton.setLayoutX(130)
+	scanButton.setLayoutY(240)
+	scanButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
+	emailButton.setLayoutX(280)
+	emailButton.setLayoutY(240)
+	emailButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
+	emailLoginButton.setLayoutX(210)
+	emailLoginButton.setLayoutY(240)
+	emailLoginButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
+	botId.setLayoutX(150)
+	botId.setLayoutY(200)
+	botId.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
+	botKey.setLayoutX(150)
+	botKey.setLayoutY(240)
+	botKey.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
+	idLabel.setLayoutX(80)
+	idLabel.setLayoutY(210)
+	idLabel.setTextFill(Color.WHITE)
+	idLabel.setStyle("-fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
+	keyLable.setLayoutX(80)
+	keyLable.setLayoutY(250)
+	keyLable.setTextFill(Color.WHITE)
+	keyLable.setStyle("-fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
+	botJoinButton.setLayoutX(200)
+	botJoinButton.setLayoutY(300)
+	botJoinButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
+	accountInput.setLayoutX(150)
+	accountInput.setLayoutY(200)
+	accountInput.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
+	pwdInput.setLayoutX(150)
+	pwdInput.setLayoutY(240)
+	pwdInput.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
+	accountLabel.setLayoutX(75)
+	accountLabel.setLayoutY(210)
+	accountLabel.setTextFill(Color.WHITE)
+	accountLabel.setStyle("-fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
+	passwordLabel.setLayoutX(75)
+	passwordLabel.setLayoutY(250)
+	passwordLabel.setTextFill(Color.WHITE)
+	passwordLabel.setStyle("-fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
+	humanJoinButton.setLayoutX(210)
+	humanJoinButton.setLayoutY(300)
+	humanJoinButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
 }

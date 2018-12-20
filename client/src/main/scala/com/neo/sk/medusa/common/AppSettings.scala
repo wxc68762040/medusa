@@ -24,12 +24,6 @@ object AppSettings {
 
   val frameRate = appConfig.getInt("sync.frameRate")
   val syncDelay = appConfig.getInt("sync.delay")
-
-  val appId = appConfig.getString("gameInfo.AppId")
-  val secureKey = appConfig.getString("gameInfo.SecureKey")
-  val gsKey = appConfig.getString("gameInfo.gsKey")
-  val gameId = appConfig.getLong("gameInfo.gameId")
-  val esheepSecureKey =  "kdfd4e560mdfnx"
   val esheepProtocol = appConfig.getString("esheepServer.protocol")
   val esheepHost = appConfig.getString("esheepServer.host")
   
@@ -45,7 +39,10 @@ object AppSettings {
   val viewCanvasH = appConfig.getInt("viewCanvas.h")
 
 
-  //val isView = appConfig.getBoolean("isView")
-  val emailInfo = (appConfig.getString("emailInfo.email"), appConfig.getString("emailInfo.passwd"))
+  val isView = appConfig.getBoolean("isView")
+
+  val botInfo = if(!isView) {
+      (appConfig.getString("botInfo.botId"), appConfig.getString("botInfo.botKey"))
+    } else("","")
 
 }

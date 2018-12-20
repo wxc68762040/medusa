@@ -24,7 +24,7 @@ trait Grid {
   val random = new Random(System.nanoTime())
 
   val defaultLength = 5
-  val appleNum = 25
+  val appleNum = 50
   val appleLife = 500
   val historyRankLength = 5
   val basicSpeed = 10.0
@@ -50,18 +50,12 @@ trait Grid {
 		}
   }
 
-
-  def addAction(id: String, keyCode: Int) = {
-    addActionWithFrame(id, keyCode, frameCount)
-  }
-
   def addActionWithFrame(id: String, keyCode: Int, frame: Long) = {
     val map = actionMap.getOrElse(frame, Map.empty)
     val tmp = map + (id -> keyCode)
     actionMap += (frame -> tmp)
     actionMap = actionMap.filter(_._1 > frame - 15)
   }
-
 
   def update(isSynced: Boolean) = {
     if(!isSynced) {
@@ -71,17 +65,12 @@ trait Grid {
     if(isSynced) {
       frameCount -= 1
     }
-//    actionMap -= (frameCount - Protocol.advanceFrame)
     frameCount += 1
   }
 
   def countBody(): Unit
   
   def feedApple(appleCount: Int, appleType: Int, deadSnake: Option[String] = None): Unit
-
-  def eatFood(snakeId: String, newHead: Point, newSpeedInit: Double, speedOrNotInit: Boolean): Option[(Int, Double, Boolean)]
-
-//  def speedUp(snake: SnakeInfo, newDirection: Point): Option[(Boolean, Double)]
 
   private[this] def updateSpots(front: Boolean) = {
     var appleCount = 0
@@ -116,7 +105,7 @@ trait Grid {
 
       case x => x
     }
-    countBody()
+    countBody() // 将更新的蛇的point存进grid
     feedApple(appleCount, FoodType.normal)
   }
 
@@ -132,78 +121,8 @@ trait Grid {
       case _ =>
         Point(random.nextInt(Boundary.w -200)  + 100, random.nextInt(100)  + Boundary.h -200)
     }
-
     rPoint
   }
 
-
-  def randomHeadEmptyPoint(): Point = {
-    var p = randomPoint()
-    while (grid.contains(p)) {
-      p = randomPoint()
-    }
-    p
-  }
-
-  def randomEmptyPoint(): Point = {
-    var p = Point(random.nextInt(boundary.x - 2 * boundaryWidth) + boundaryWidth, random.nextInt(boundary.y - 2 * boundaryWidth) + boundaryWidth)
-    while (grid.contains(p)) {
-      p = Point(random.nextInt(boundary.x), random.nextInt(boundary.y))
-    }
-    p
-  }
-  
-  def getSafeDirection(p: Point) = {
-    val down = (p.y, Point(0, 1))
-    val up = (boundary.y - p.y, Point(0, -1))
-    val right = (p.x, Point(1, 0))
-    val left = (boundary.x - p.x, Point(-1, 0))
-    List(down, up, right, left).minBy(_._1)._2
-  }
-  
   def updateSnakes():Unit
-//  def updateASnake(snake: SnakeInfo, actMap: Map[String, Int]): Either[String, SnakeInfo]
-
-  
-  def getGridSyncData = {
-    var appleDetails: List[Ap] = Nil
-    grid.foreach {
-      case (p, Apple(score, appleType, frame, targetAppleOpt)) => appleDetails ::= Ap(score, appleType, p.x, p.y, frame, targetAppleOpt)
-      case _ =>
-    }
-    val snake4client = snakes.values.map{
-      s => Snake4Client(s.id, s.name, s.head, s.tail, s.color, s.direction, s.joints, s.speed,s.length, s.extend)
-    }
-    Protocol.GridDataSync(
-      frameCount,
-      snake4client.toList,
-      appleDetails,
-      System.currentTimeMillis()
-    )
-  }
-  def getGridSyncData4Client = {
-    var appleDetails: List[Ap] = Nil
-    grid.foreach {
-      case (p, Apple(score, appleType, frame, targetAppleOpt)) => appleDetails ::= Ap(score, appleType, p.x, p.y, frame, targetAppleOpt)
-      case _ =>
-    }
-    Protocol.GridDataSync(
-      frameCount,
-      snakes4client.values.toList,
-      appleDetails
-    )
-
-  }
-
-  def getGridSyncDataNoApp = {
-    val snake4client = snakes.values.map{
-      s => Snake4Client(s.id, s.name, s.head, s.tail, s.color, s.direction, s.joints, s.speed,s.length, s.extend)
-    }
-    Protocol.GridDataSyncNoApp(
-      frameCount,
-      snake4client.toList
-    )
-  }
-
-
 }
