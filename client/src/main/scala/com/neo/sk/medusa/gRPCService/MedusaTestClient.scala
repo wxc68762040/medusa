@@ -33,13 +33,11 @@ class MedusaTestClient (
 
   def actionSpace():Future[ActionSpaceRsp] =esheepStub.actionSpace(credit)
 
-  def action(move: Move) :Future[ActionRsp] =esheepStub.action(ActionReq(move = move,credit=Some(credit)))
+  def action() :Future[ActionRsp] =esheepStub.action(actionReq)
 
   def observation(): Future[ObservationRsp] = esheepStub.observation(credit)
 
   def inform():Future[InformRsp]=esheepStub.inform(credit)
 
   def reincarnation():Future[SimpleRsp]=esheepStub.reincarnation(credit)
-
-	def reLive():Future[SimpleRsp] = esheepStub.reincarnation(credit)
 }
