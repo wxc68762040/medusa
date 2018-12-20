@@ -139,7 +139,6 @@ object GameRecorder {
 
         case t: GameRecord =>
           data.gameRecordBuffer = t :: data.gameRecordBuffer
-
           if (data.gameRecordBuffer.size > maxRecordNum) {
             val rs = data.gameRecordBuffer.reverse
             rs.headOption.foreach { e =>

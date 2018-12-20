@@ -188,6 +188,7 @@ class GameController(id: String,
           case t: CreateRoomReq =>
             SDKReplyTo=t.sender
             serverActor ! Protocol.CreateRoom(-1,t.password)
+            println(serverActor.path)
             Behaviors.same
 
           case t:JoinRoomReq=>

@@ -62,8 +62,6 @@ class MedusaServer(
                   ) extends EsheepAgent {
 
   private[this] val log = LoggerFactory.getLogger(this.getClass)
-  //private var sActor: ActorRef[Protocol.WsSendMsg] = serverActor
-  //private var gameController: GameController = null
   private var state: State = State.unknown
 
   override def createRoom(request: CreateRoomReq): Future[CreateRoomRsp] = {
@@ -92,7 +90,6 @@ class MedusaServer(
           if (rsp.errCode == 0) SimpleRsp(0, state, "ok")
           else SimpleRsp(rsp.errCode, state, rsp.msg)
       }
-
     } else {
       Future.successful(SimpleRsp(errCode = 102, state = State.unknown, msg = "auth error"))
     }
@@ -102,9 +99,11 @@ class MedusaServer(
   override def leaveRoom(request: Credit): Future[SimpleRsp] = {
     println(s"leaveRoom Called by [$request")
     if (checkBotToken(request.apiToken)) {
-      wsClient ! Stop
       state = State.ended
-      Future.successful(SimpleRsp(state = state, msg = "ok"))
+      Future.successful {
+        wsClient ! Stop
+        SimpleRsp(state = state, msg = "ok")
+      }
     } else {
       Future.successful(SimpleRsp(errCode = 103, state = State.unknown, msg = "auth error"))
     }
