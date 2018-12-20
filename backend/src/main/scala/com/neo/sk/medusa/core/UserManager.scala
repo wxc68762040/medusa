@@ -108,12 +108,12 @@ object UserManager {
 
           case StartMsgAddLength =>
             msgLength = 0
-            RoomActor.keyLength = 0l
-            RoomActor.eatAppLength = 0l
-            RoomActor.feedAppLength = 0l
-            RoomActor.syncLength = 0l
-            RoomActor.speedLength = 0l
-            RoomActor.rankLength = 0l
+//            RoomActor.keyLength = 0l
+//            RoomActor.eatAppLength = 0l
+//            RoomActor.feedAppLength = 0l
+//            RoomActor.syncLength = 0l
+//            RoomActor.speedLength = 0l
+//            RoomActor.rankLength = 0l
             timer.startSingleTimer(TimerForMsgClear,ClearMsgLength,100.milli)
             Behaviors.same
 
@@ -126,12 +126,12 @@ object UserManager {
 //            log.info(s"speedLength:${RoomActor.speedLength/10}B/s")
 //            log.info(s"rankLength:${RoomActor.rankLength/10}B/s")
             msgLength = 0
-            RoomActor.keyLength = 0l
-            RoomActor.eatAppLength = 0l
-            RoomActor.feedAppLength = 0l
-            RoomActor.syncLength = 0l
-            RoomActor.speedLength = 0l
-            RoomActor.rankLength = 0l
+//            RoomActor.keyLength = 0l
+//            RoomActor.eatAppLength = 0l
+//            RoomActor.feedAppLength = 0l
+//            RoomActor.syncLength = 0l
+//            RoomActor.speedLength = 0l
+//            RoomActor.rankLength = 0l
 
             timer.startSingleTimer(Timer4MsgAdd, ClearMsgLength,10000.milli)
             Behaviors.same
