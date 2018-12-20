@@ -59,7 +59,7 @@ object SdkServer {
           log.info(s"Server started at $port")
           sys.addShutdownHook {
             log.info("JVM SHUT DOWN.")
-            server.shutdownNow()
+            server.shutdown()
             log.info("SHUT DOWN.")
           }
           server.awaitTermination()

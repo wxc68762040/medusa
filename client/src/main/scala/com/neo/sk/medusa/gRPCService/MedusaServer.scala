@@ -99,9 +99,11 @@ class MedusaServer(
   override def leaveRoom(request: Credit): Future[SimpleRsp] = {
     println(s"leaveRoom Called by [$request")
     if (checkBotToken(request.apiToken)) {
-      wsClient ! Stop
       state = State.ended
-      Future.successful(SimpleRsp(state = state, msg = "ok"))
+      Future.successful {
+        wsClient ! Stop
+        SimpleRsp(state = state, msg = "ok")
+      }
     } else {
       Future.successful(SimpleRsp(errCode = 103, state = State.unknown, msg = "auth error"))
     }

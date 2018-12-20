@@ -114,7 +114,6 @@ object WSClient {
 							val playerId = "bot" + botId
 							linkGameAgent(loginController.gameId, playerId, t.token).map{
                 case Right(res)=>
-									println("================")
 									val accessCode = res.accessCode
                   val url = getWebSocketUri(playerId, t.botName, accessCode)
                   val webSocketFlow = Http().webSocketClientFlow(WebSocketRequest(url))
@@ -139,13 +138,17 @@ object WSClient {
                   } //链接建立时
                   connected.onComplete(i => log.info(i.toString))
                 case Left(e)=>
-                  loginController.getLoginScence().warningText.setText("get accessCode error")
-                  loginController.getLoginScence().botJoinButton.setDisable(false)
+									if(AppSettings.isView) {
+										loginController.getLoginScence().warningText.setText("get accessCode error")
+										loginController.getLoginScence().botJoinButton.setDisable(false)
+									}
                   log.error(s"bot get access code error: $e")
               }
             case Left(e)=>
-              loginController.getLoginScence().warningText.setText("get token error")
-              loginController.getLoginScence().botJoinButton.setDisable(false)
+							if(AppSettings.isView) {
+								loginController.getLoginScence().warningText.setText("get token error")
+								loginController.getLoginScence().botJoinButton.setDisable(false)
+							}
               log.error(s"bot get token error: $e")
 
           }
