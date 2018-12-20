@@ -20,8 +20,10 @@ import com.neo.sk.medusa.core.UserActor.{DispatchMsg, YouAreUnwatched}
 import com.neo.sk.medusa.snake.Protocol.WsMsgSource
 import net.sf.ehcache.transaction.xa.commands.Command
 import org.seekloud.byteobject.MiddleBufferInJvm
+import com.neo.sk.medusa.common.AppSettings._
 
 import scala.collection.mutable
+import scala.util.Random
 
 object RoomActor {
 
@@ -75,7 +77,7 @@ case class  BotJoinGame(botId:String,botName:String,botActor:ActorRef[BotActor.C
   var speedLength = 0l
   var syncLength = 0l
   var rankLength = 0l
-  var first = true
+
   def create(roomId: Long): Behavior[Command] = {
     Behaviors.setup[Command] {
       ctx =>
@@ -88,16 +90,18 @@ case class  BotJoinGame(botId:String,botName:String,botActor:ActorRef[BotActor.C
             if (isRecord) {
               getGameRecorder(ctx, grid, roomId)
             }
-            idle(roomId, 0, ListBuffer[Protocol.GameMessage](), mutable.HashMap[String, (ActorRef[UserActor.Command], String,Long)](), mutable.HashMap[String,mutable.HashMap[String, ActorRef[WatcherActor.Command]]](),mutable.ListBuffer[String](), grid, emptyKeepTime.toMillis / AppSettings.frameRate)
+            val first = true
+            idle(roomId, 0, ListBuffer[Protocol.GameMessage](), mutable.HashMap[String, (ActorRef[UserActor.Command], String,Long)](), mutable.HashMap[String,mutable.HashMap[String, ActorRef[WatcherActor.Command]]](),mutable.ListBuffer[String](), grid, emptyKeepTime.toMillis / AppSettings.frameRate,
+              mutable.HashMap.empty[String,String],mutable.HashMap.empty[String,String],first)
         }
     }
   }
-  private val botALiveMap = mutable.HashMap.empty[String,String]
-  private val botDeadMap = mutable.HashMap.empty[String,String]
+
   private def idle( roomId: Long, tickCount: Long, eventList:ListBuffer[Protocol.GameMessage],
                    userMap: mutable.HashMap[String, (ActorRef[UserActor.Command], String, Long)],
                    watcherMap: mutable.HashMap[String,mutable.HashMap[String, ActorRef[WatcherActor.Command]]],  //watcherMap:  playerId -> Map[watcherId -> watchActor]
-                  deadUserList:mutable.ListBuffer[String], grid: GridOnServer, roomEmptyCount: Long)
+                  deadUserList:mutable.ListBuffer[String], grid: GridOnServer, roomEmptyCount: Long,
+                    botALiveMap:mutable.HashMap[String,String],botDeadMap:mutable.HashMap[String,String],first:Boolean)
                   (implicit timer: TimerScheduler[RoomActor.Command]): Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
@@ -120,7 +124,7 @@ case class  BotJoinGame(botId:String,botName:String,botActor:ActorRef[BotActor.C
             if(isRecord){
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserJoinRoom(t.botId, t.botName, grid.frameCount)
             }
-            idle(roomId,tickCount,eventList,userMap,watcherMap,deadUserList,grid,emptyKeepTime.toMillis/AppSettings.frameRate)//---
+            idle(roomId,tickCount,eventList,userMap,watcherMap,deadUserList,grid,emptyKeepTime.toMillis/AppSettings.frameRate,botALiveMap,botDeadMap,first)//---
 
 
 
@@ -128,14 +132,13 @@ case class  BotJoinGame(botId:String,botName:String,botActor:ActorRef[BotActor.C
             log.info(s"room $roomId got a new player: ${t.playerId}")
             timer.cancel(TimerKey4CloseRec)
             userMap.put(t.playerId, (t.userActor, t.playerName, tickCount))
-
             if(first){
-              ctx.self ! BotJoinGame("bot1001","蛮族之王",getBotActor(ctx,"bot1001","蛮族之王"))
-              ctx.self ! BotJoinGame("bot1002","无极剑圣",getBotActor(ctx,"bot1002","无极剑圣"))
-              ctx.self ! BotJoinGame("bot1003","德邦总管",getBotActor(ctx,"bot1003","德邦总管"))
-              first = false
-            }
+              val listIndex = createRandomNum(3)
 
+              ctx.self ! BotJoinGame("bot1001",botName.get(listIndex.apply(0)).toString,getBotActor(ctx,"bot1001",botName.get(listIndex.apply(0)).toString))
+              ctx.self ! BotJoinGame("bot1002",botName.get(listIndex.apply(1)).toString,getBotActor(ctx,"bot1002",botName.get(listIndex.apply(1)).toString))
+              ctx.self ! BotJoinGame("bot1003",botName.get(listIndex.apply(2)).toString,getBotActor(ctx,"bot1003",botName.get(listIndex.apply(2)).toString))
+            }
             deadUserList -= t.playerId
             grid.addSnake(t.playerId, t.playerName)
             //dispatchTo(t.playerId, UserActor.DispatchMsg(Protocol.Id(t.playerId)), userMap)
@@ -145,10 +148,7 @@ case class  BotJoinGame(botId:String,botName:String,botActor:ActorRef[BotActor.C
             if(isRecord){
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserJoinRoom(t.playerId, t.playerName, grid.frameCount)
             }
-
-
-           idle(roomId,tickCount,eventList,userMap,watcherMap,deadUserList,grid,emptyKeepTime.toMillis/AppSettings.frameRate)//---
-
+            idle(roomId,tickCount,eventList,userMap,watcherMap,deadUserList,grid,emptyKeepTime.toMillis/AppSettings.frameRate,botALiveMap,botDeadMap,false)//---
 
 
 
@@ -353,7 +353,7 @@ case class  BotJoinGame(botId:String,botName:String,botActor:ActorRef[BotActor.C
               //房间空了 数据已经同步一分钟了
               //do nothing
             }
-            idle(roomId, newTick, ListBuffer[Protocol.GameMessage](), userMap,watcherMap, deadUserList,grid,rEmptyCount)  //---
+            idle(roomId, newTick, ListBuffer[Protocol.GameMessage](), userMap,watcherMap, deadUserList,grid,rEmptyCount,botALiveMap,botDeadMap,first)  //---
 
           case NetTest(id,createTime) =>
             if(userMap.get(id).nonEmpty) {
@@ -436,6 +436,16 @@ case class  BotJoinGame(botId:String,botName:String,botActor:ActorRef[BotActor.C
             Behaviors.same
         }
     }
+  }
+  def createRandomNum(n:Int)={
+    var resultList:List[Int]=Nil
+    while(resultList.length<n){
+      val randomNum=(new Random).nextInt(12)
+      if(!resultList.exists(s=>s==randomNum)){
+        resultList=resultList:::List(randomNum)
+      }
+    }
+    resultList
   }
 
 
