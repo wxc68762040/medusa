@@ -2,14 +2,13 @@ package com.neo.sk.medusa
 
 import javafx.application.Platform
 import javafx.stage.Stage
-
 import akka.actor.typed.ActorRef
 import akka.actor.{ActorSystem, Scheduler}
 import akka.stream.ActorMaterializer
 import com.neo.sk.medusa.common.AppSettings._
 import akka.actor.typed.scaladsl.adapter._
 import akka.util.Timeout
-import com.neo.sk.medusa.actor.{GameMessageReceiver, WSClient}
+import com.neo.sk.medusa.actor.{GameMessageReceiver, SdkServer, WSClient}
 import com.neo.sk.medusa.common.StageContext
 import com.neo.sk.medusa.snake.Protocol
 
@@ -26,7 +25,8 @@ object ClientBoot {
 	implicit val timeout: Timeout = Timeout(20.seconds) // for actor ask
 
   lazy val gameMessageReceiver: ActorRef[Protocol.WsMsgSource] = system.spawn(GameMessageReceiver.create(), "gameController")
-	
+	val sdkServer: ActorRef[SdkServer.Command] = system.spawn(SdkServer.create(),"sdkServer")
+
 	def addToPlatform(fun: => Unit) = {
 		Platform.runLater(() => fun)
 	}
@@ -44,6 +44,7 @@ class ClientBoot extends javafx.application.Application {
 		}
 		val context = new StageContext(mainStage)
 		system.spawn(WSClient.create(gameMessageReceiver, context), "WSClient")
+
 	}
 	
 }

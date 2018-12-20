@@ -14,8 +14,10 @@ import com.neo.sk.medusa.snake._
 import com.neo.sk.medusa.BotActor
 import com.neo.sk.medusa.common.AppSettings
 import org.seekloud.byteobject.MiddleBufferInJvm
+import com.neo.sk.medusa.common.AppSettings._
 
 import scala.collection.mutable
+import scala.util.Random
 
 object RoomActor {
 
@@ -69,6 +71,7 @@ object RoomActor {
 //  var speedLength = 0l
 //  var syncLength = 0l
 //  var rankLength = 0l
+  
   def create(roomId: Long): Behavior[Command] = {
     Behaviors.setup[Command] {
       ctx =>

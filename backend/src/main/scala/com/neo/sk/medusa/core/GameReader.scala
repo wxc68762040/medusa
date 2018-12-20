@@ -86,7 +86,6 @@ object GameReader {
                 log.info(s"don't have this player$watchPlayerId")
                 timer.startSingleTimer(BehaviorWaitKey,TimeOut("wait time out"),waitTime)
                 work(isFirst = true, recordId,frameIndex, frameCount, userActor, fileReader, userMap)
-
             }
 
           case GetFrameCount(f) =>

@@ -26,7 +26,7 @@ object GameScene{
 	val initWindowHeight = 800
 }
 
-class GameScene() {
+class GameScene(isBot:Boolean = false) {
 
 	import GameScene._
 	var gameSceneListener: GameSceneListener = _
@@ -54,8 +54,10 @@ class GameScene() {
   val view = new GameViewCanvas(viewCanvas,GameScene.this)
 	val map = new GameMapCanvas(mapCanvas, GameScene.this)
 	val info = new GameInfoCanvas(infoCanvas, GameScene.this)
-  viewCanvas.requestFocus()
-	viewCanvas.setOnKeyPressed(event => gameSceneListener.onKeyPressed(event.getCode))
+	if(! isBot) {
+		viewCanvas.requestFocus()
+		viewCanvas.setOnKeyPressed(event => gameSceneListener.onKeyPressed(event.getCode))
+	}
 
 	val infoHandler = new InfoHandler
 
