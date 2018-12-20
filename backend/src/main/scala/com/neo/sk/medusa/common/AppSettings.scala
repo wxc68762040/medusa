@@ -38,7 +38,7 @@ object AppSettings {
   val autoBotConfig = appConfig.getConfig("autoBotSetting")
   val isAutoBotEnable = autoBotConfig.getBoolean("isAutoBotEnable")
   val autoBotNumber = autoBotConfig.getInt("autoBotNumber")
-  val botNameList = autoBotConfig.getStringList("autoBotNumber").asScala
+  val botNameList = autoBotConfig.getStringList("botNameList").asScala
   require(botNameList.lengthCompare(autoBotNumber) >= 0)
 
   val slickConfig = config.getConfig("slick.db")
