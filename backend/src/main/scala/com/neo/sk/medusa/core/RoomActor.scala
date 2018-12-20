@@ -41,7 +41,7 @@ object RoomActor {
 
   case class UserJoinGame(playerId: String, playerName: String, userActor: ActorRef[UserActor.Command]) extends Command
 case class  BotJoinGame(botId:String,botName:String,botActor:ActorRef[BotActor.Command]) extends  Command
-  case class BotGetFrame(botActor:ActorRef[BotActor.Command]) extends  Command
+  case class BotGetFrame(botId:String,botActor:ActorRef[BotActor.Command]) extends  Command
   case class UserDead(userId: String, deadInfo: DeadInfo) extends Command
 
   case class DeadInfo(name: String, length: Int, kill: Int, killerId: String, killer: String)
@@ -107,7 +107,7 @@ case class  BotJoinGame(botId:String,botName:String,botActor:ActorRef[BotActor.C
             botALiveMap.put(t.botId,t.botName)
             if(botDeadMap.contains(t.botId)) botDeadMap.remove(t.botId)
 
-            t.botActor ! BotActor.RandomMove()
+            t.botActor ! BotActor.CreateTimer(t.botId)
 
 
             log.info(s"room $roomId got a new player: ${t.botId}")
@@ -130,14 +130,10 @@ case class  BotJoinGame(botId:String,botName:String,botActor:ActorRef[BotActor.C
             userMap.put(t.playerId, (t.userActor, t.playerName, tickCount))
 
             if(first){
-              ctx.self ! BotJoinGame("bot1001","bot1",getBotActor(ctx,"bot1001","bot1"))
-              ctx.self ! BotJoinGame("bot1002","bot2",getBotActor(ctx,"bot1002","bot2"))
-              ctx.self ! BotJoinGame("bot1003","bot3",getBotActor(ctx,"bot1003","bot3"))
+              ctx.self ! BotJoinGame("bot1001","蛮族之王",getBotActor(ctx,"bot1001","蛮族之王"))
+              ctx.self ! BotJoinGame("bot1002","无极剑圣",getBotActor(ctx,"bot1002","无极剑圣"))
+              ctx.self ! BotJoinGame("bot1003","德邦总管",getBotActor(ctx,"bot1003","德邦总管"))
               first = false
-            }
-            if((userMap.size+deadUserList.size)<3){
-              val randomId = botDeadMap.headOption
-              if(randomId.nonEmpty) ctx.self ! BotJoinGame(randomId.get._1,randomId.get._2,getBotActor(ctx,randomId.get._1,randomId.get._2))
             }
 
             deadUserList -= t.playerId
@@ -158,9 +154,11 @@ case class  BotJoinGame(botId:String,botName:String,botActor:ActorRef[BotActor.C
 
           case t: UserDead =>
             if(t.userId.contains("bot")){
+              val botActor = getBotActor(ctx,t.userId,t.deadInfo.name)
+              botActor ! BotActor.CancelTimer(t.userId)
               log.info(s"room $roomId lost a botPlayer ${t.userId}")
               if((userMap.size+deadUserList.length)<3){
-                ctx.self ! BotJoinGame(t.userId,t.deadInfo.name,getBotActor(ctx,t.userId,t.deadInfo.name))
+                ctx.self ! BotJoinGame(t.userId,t.deadInfo.name,botActor)
               }else{
                 botDeadMap.put(t.userId,t.deadInfo.name)
               }
@@ -187,7 +185,12 @@ case class  BotJoinGame(botId:String,botName:String,botActor:ActorRef[BotActor.C
             Behaviors.same
 
           case t:BotGetFrame =>
-            t.botActor ! BotActor.BotMove(grid.frameCount)
+            val snakes = grid.getGridSyncData.snakes
+            grid.getGridSyncData.snakes.map{ s=>
+              if(s.id.equals(t.botId)){
+                t.botActor ! BotActor.BotMove(s.head.x,s.head.y,s.direction,grid.frameCount,snakes)
+              }
+            }
             Behavior.same
 
 
@@ -225,6 +228,7 @@ case class  BotJoinGame(botId:String,botName:String,botActor:ActorRef[BotActor.C
             if (isRecord) {
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserLeftRoom(t.playerId, userMap(t.playerId)._2, grid.frameCount)
             }
+
             userMap.remove(t.playerId)
             deadUserList -= t.playerId
             if (userMap.isEmpty && !deadUserList.contains(t.playerId)) {

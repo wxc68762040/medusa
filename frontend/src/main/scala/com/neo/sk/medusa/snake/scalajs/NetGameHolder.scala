@@ -479,7 +479,6 @@ object NetGameHolder extends js.JSApp {
                   grid.removeSnake(id)
 
                 case Protocol.SnakeAction(id, keyCode, frame) =>
-                  println(id+"  "+keyCode+ "  "+frame)
                   if (state.contains("playGame")) {
                     if (id != myId || !playerState._2) {
                       grid.addActionWithFrame(id, keyCode, frame)
