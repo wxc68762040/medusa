@@ -149,6 +149,7 @@ class GameController(id: String,
   val bgImage = new Image("bg.png")
   val championImage = new Image("champion.png")
   val emptyArray = new Array[Byte](0)
+  val bgColor = new Color(0.003, 0.176, 0.176, 1.0)
 
 
   val scale = 0.5
@@ -435,7 +436,6 @@ class GameController(id: String,
     layerBgCanvas.setWidth(windowWidth)
     layerBgCanvas.setHeight(windowHeight)
 
-    val bgColor = new Color(0.003, 0.176, 0.176, 1.0)
     val snakes = grid.getGridSyncData4Client.snakes
     val period = (System.currentTimeMillis() - basicTime).toInt
 
@@ -463,11 +463,9 @@ class GameController(id: String,
     val deviationY = centerY - myHead.y * scale
 
     val bgCtx = layerBgCanvas.getGraphicsContext2D
-    bgCtx.save()
-    //bgCtx.setFill(Color.BLACK)
-    //bgCtx.clearRect(0, 0, 400, 200)
     bgCtx.setFill(bgColor)
     bgCtx.fillRect(0, 0, 400, 200)
+    bgCtx.save()
 
     bgCtx.drawImage(bgImage, 0 + deviationX, 0 + deviationY , Boundary.w * scale , Boundary.h * scale)
 
@@ -744,8 +742,6 @@ class GameController(id: String,
     viewCanvas.setHeight(viewHeight)
     val viewCtx = viewCanvas.getGraphicsContext2D
     val period = (System.currentTimeMillis() - basicTime).toInt
-    val bgColor = new Color(0.003, 0.176, 0.176, 1.0)
-
 
     val snakes = grid.getGridSyncData4Client.snakes
     val apples = grid.getGridSyncData4Client.appleDetails

@@ -44,7 +44,7 @@ object GameView  {
   }
 
   def drawGrid(uid: String, data: GridDataSync, scaleW: Double, scaleH: Double): Unit = {
-    val cacheCanvas = dom.document.createElement("canvas").asInstanceOf[Canvas]
+    var cacheCanvas = dom.document.createElement("canvas").asInstanceOf[Canvas]
     val cacheCtx = cacheCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
     canvas.width = canvasBoundary.x
@@ -208,6 +208,11 @@ object GameView  {
     ctx.fillStyle = "#012d2d"
     ctx.fillRect(0, 0, canvas.width, canvas.height)
     ctx.drawImage(cacheCanvas, 0, 0)
+
+    //解决safari内存溢出
+    cacheCanvas.width = 0
+    cacheCanvas.height = 0
+    cacheCanvas = null
 
   }
 }
