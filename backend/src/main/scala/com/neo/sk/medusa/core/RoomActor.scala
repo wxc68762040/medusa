@@ -147,7 +147,7 @@ object RoomActor {
               val botActor = getBotActor(ctx, t.userId, t.deadInfo.name)
               botActor ! BotActor.CancelTimer
               log.info(s"room $roomId lost a botPlayer ${t.userId}")
-              if (userMap.size <= 3) {
+              if (userMap.size <= 3 && userMap.nonEmpty) {
                 ctx.self ! BotJoinGame(t.userId, t.deadInfo.name, botActor)
               } else {
                 botMap.put(t.userId, (t.deadInfo.name, false))
