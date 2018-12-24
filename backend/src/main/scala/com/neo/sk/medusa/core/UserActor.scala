@@ -377,9 +377,6 @@ object UserActor {
             userManager ! UserManager.UserGone(playerId)
             Behaviors.stopped
 
-          case UserLeft =>
-            switchBehavior(ctx,"init",init(playerId,playerName,password),Some(10.seconds),TimeOut("UserLeft"))
-
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when wait:$x")
             Behaviors.unhandled
