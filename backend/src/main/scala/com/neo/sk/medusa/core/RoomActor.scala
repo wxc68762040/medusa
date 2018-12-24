@@ -135,6 +135,11 @@ object RoomActor {
             if(isRecord){
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserJoinRoom(t.playerId, t.playerName, grid.frameCount)
             }
+            if(userMap.size <= 3) {
+              botMap.filter(!_._2._2).foreach { deadBot =>
+                ctx.self ! BotJoinGame(deadBot._1, deadBot._2._1, getBotActor(ctx, deadBot._1, deadBot._2._1))
+              }
+            }
             idle(roomId, tickCount, eventList, userMap, watcherMap, botMap, deadUserList, grid, emptyKeepTime.toMillis/AppSettings.frameRate)
             
           case t: UserDead =>
@@ -215,9 +220,15 @@ object RoomActor {
               timer.startSingleTimer(TimerKey4CloseRec, CloseRecorder, emptyKeepTime)
             }
             if (deadUserList.contains(t.playerId)) deadUserList -= t.playerId
-            if(userMap.size <= 3){
+            if(userMap.size <= 3 && userMap.nonEmpty){
               botMap.filter(!_._2._2).foreach { deadBot =>
                 ctx.self ! BotJoinGame(deadBot._1, deadBot._2._1, getBotActor(ctx, deadBot._1, deadBot._2._1))
+              }
+            } else if (userMap.isEmpty) {
+              botMap.filter(_._2._2).foreach { aliveBot =>
+                val botActor = getBotActor(ctx, aliveBot._1, aliveBot._2._1)
+                botActor ! BotActor.CancelTimer
+                botMap.put(aliveBot._1, (aliveBot._2._1, false))
               }
             }
             Behaviors.same
