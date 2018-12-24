@@ -113,7 +113,8 @@ object UserActor {
     }
   }
 
-  private def init(playerId: String, playerName: String,password:String)(implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]):Behavior[Command] =
+  private def init(playerId: String, playerName: String,password:String)
+                  (implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]):Behavior[Command] =
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
@@ -126,7 +127,7 @@ object UserActor {
             switchBehavior(ctx, "idle", idle(playerId, playerName,password, frontActor))
 
           case TimeOut(m) =>
-            log.debug(s"${ctx.self.path} is time out when busy,msg=$m")
+            log.debug(s"${ctx.self.path} is time out when init,msg=$m")
             userManager ! UserManager.UserGone(playerId)
             Behaviors.stopped
 
@@ -276,7 +277,7 @@ object UserActor {
                 if(t.id == playerId) {
                   timer.startSingleTimer(UserDeadTimerKey, FrontLeft(frontActor), UserLeftTime)
                   frontActor ! t
-                  switchBehavior(ctx, "wait", wait(playerId, playerName,password, roomId, startTime, frontActor)) //------------
+                  switchBehavior(ctx, "wait", wait(playerId, playerName,password, roomId, startTime, frontActor, roomActor))
                 } else {
                   frontActor ! t
                   Behaviors.same
@@ -333,7 +334,8 @@ object UserActor {
   }
 
   private def wait(playerId: String, playerName: String,password:String, roomId: Long, startTime: Long,
-                   frontActor: ActorRef[Protocol.WsMsgSource]
+                   frontActor: ActorRef[Protocol.WsMsgSource],
+                   roomActor: ActorRef[RoomActor.Command]
                   )
                   (implicit timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] =
     Behaviors.receive[Command] {
@@ -371,6 +373,8 @@ object UserActor {
             println("-----------------------------------")
             ctx.unwatch(front)
             roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
+            roomActor ! RoomActor.UserLeft(playerId)
+            userManager ! UserManager.UserGone(playerId)
             Behaviors.stopped
 
           case UserLeft =>
