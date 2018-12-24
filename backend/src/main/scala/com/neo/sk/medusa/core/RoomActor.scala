@@ -209,7 +209,6 @@ object RoomActor {
             Behaviors.same
 
           case t:UserLeft =>
-            log.info(s"get userLeft: $t")
             grid.removeSnake(t.playerId)
             dispatch(userMap, watcherMap, Protocol.SnakeDead(t.playerId))
             eventList.append(Protocol.SnakeDead(t.playerId))
@@ -217,7 +216,6 @@ object RoomActor {
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserLeftRoom(t.playerId, userMap(t.playerId)._2, grid.frameCount)
             }
             userMap.remove(t.playerId)
-            log.info(s"userMap size : ${userMap.size} ${userMap.isEmpty}")
             deadUserList -= t.playerId
             if (userMap.isEmpty && !deadUserList.contains(t.playerId)) {
               //非正常死亡退出
