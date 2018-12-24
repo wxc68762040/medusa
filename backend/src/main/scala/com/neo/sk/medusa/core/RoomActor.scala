@@ -84,16 +84,18 @@ object RoomActor {
             if (isRecord) {
               getGameRecorder(ctx, grid, roomId)
             }
+            val botMap = mutable.HashMap.empty[String, (String, Boolean)]
             if (AppSettings.isAutoBotEnable) {
               for(i <- 1 to AppSettings.autoBotNumber) {
                 val botId = "bot" + (i + 1000)
                 val botName = AppSettings.botNameList(i - 1)
                 ctx.self ! BotJoinGame(botId, botName, getBotActor(ctx, botId, botName))
+                botMap.put(botId, (botName, true))
               }
             }
             idle(roomId, 0, ListBuffer[Protocol.GameMessage](), mutable.HashMap[String, (ActorRef[UserActor.Command], String,Long)](),
               mutable.HashMap[String,mutable.HashMap[String, ActorRef[WatcherActor.Command]]](),
-              mutable.HashMap.empty[String, (String, Boolean)], mutable.ListBuffer[String](),
+              botMap, mutable.ListBuffer[String](),
               grid, emptyKeepTime.toMillis / AppSettings.frameRate)
         }
     }
@@ -207,6 +209,7 @@ object RoomActor {
             Behaviors.same
 
           case t:UserLeft =>
+            log.info(s"get userLeft: $t")
             grid.removeSnake(t.playerId)
             dispatch(userMap, watcherMap, Protocol.SnakeDead(t.playerId))
             eventList.append(Protocol.SnakeDead(t.playerId))
@@ -214,6 +217,7 @@ object RoomActor {
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserLeftRoom(t.playerId, userMap(t.playerId)._2, grid.frameCount)
             }
             userMap.remove(t.playerId)
+            log.info(s"userMap size : ${userMap.size} ${userMap.isEmpty}")
             deadUserList -= t.playerId
             if (userMap.isEmpty && !deadUserList.contains(t.playerId)) {
               //非正常死亡退出
