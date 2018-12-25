@@ -37,14 +37,14 @@ object GameView  {
       myProportion = 1.0
     } else {
       ctx.font = "36px Helvetica"
-      ctx.fillText("Ops, connection lost.", windowWidth / 2 - 250, windowHeight / 2 - 200)
+      ctx.fillText("Ops, connection lost.", windowWidth / 2 - 150, windowHeight / 2 - 150)
 
       myProportion = 1.0
     }
   }
 
   def drawGrid(uid: String, data: GridDataSync, scaleW: Double, scaleH: Double): Unit = {
-    var cacheCanvas = dom.document.createElement("canvas").asInstanceOf[Canvas]
+    val cacheCanvas = dom.document.createElement("canvas").asInstanceOf[Canvas]
     val cacheCtx = cacheCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
     canvas.width = canvasBoundary.x
@@ -208,11 +208,6 @@ object GameView  {
     ctx.fillStyle = "#012d2d"
     ctx.fillRect(0, 0, canvas.width, canvas.height)
     ctx.drawImage(cacheCanvas, 0, 0)
-
-    //解决safari内存溢出
-    cacheCanvas.width = 0
-    cacheCanvas.height = 0
-    cacheCanvas = null
 
   }
 }
