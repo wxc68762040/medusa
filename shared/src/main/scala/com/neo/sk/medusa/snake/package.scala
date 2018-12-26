@@ -239,6 +239,7 @@ package object snake {
     direction: Point = Point(1, 0),
     joints: Queue[Point] = Queue(),
     speed: Double = Protocol.fSpeed,
+    freeFrame: Int = 0,
     length: Int = 100,
     extend: Int = 100, //需要伸长的量
   )
