@@ -20,7 +20,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
 	var liveState = false
 
 	private[this] var speedUpInfo = List.empty[SpeedUpInfo]
-	//private[this] var eatenApples = Map.empty[String, List[AppleWithFrame]]
+	private[this] var eatenApple = Map.empty[String, List[AppleWithFrame]]
   override def debug(msg: String): Unit = println(msg)
 
   override def info(msg: String): Unit = println(msg)
@@ -134,6 +134,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
 					if(x.appleType != FoodType.intermediate){
 						grid -= e
 						totalScore += x.score
+						newSpeed += 0.1
 						speedOrNot = true
 						apples ::= Ap(x.score, x.appleType, e.x, e.y, x.frame)
 
@@ -142,7 +143,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
 			}
 		}
 		if(apples.nonEmpty) {
-			eatenApples += (snakeId -> apples.map(a => AppleWithFrame(frameCount, a)))
+			eatenApple += (snakeId -> apples.map(a => AppleWithFrame(frameCount, a)))
 		}
 		Some((totalScore, newSpeed, speedOrNot))
 	}
