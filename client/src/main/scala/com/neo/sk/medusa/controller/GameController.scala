@@ -149,7 +149,8 @@ class GameController(id: String,
   val bgImage = new Image("bg.png")
   val championImage = new Image("champion.png")
   val emptyArray = new Array[Byte](0)
-
+  val bgColor = new Color(0.003, 0.176, 0.176, 1.0)
+  val viewMapCanvas = new Canvas
 
   val scale = 0.5
   val scaleView = 0.5
@@ -191,7 +192,6 @@ class GameController(id: String,
             Behaviors.same
 
           case t:JoinRoomReq=>
-            log.info("bot join room ..")
             SDKReplyTo=t.sender
             serverActor ! Protocol.JoinRoom(t.roomId,t.password)
             Behaviors.same
@@ -268,14 +268,10 @@ class GameController(id: String,
     layerMapCanvas.setWidth(mapWidth)
     layerMapCanvas.setHeight(mapHeight)
 
+
     mapCtx.setFill(Color.BLACK)
-    mapCtx.clearRect(0, 0, 400, 200)
-   // mapCtx.setGlobalAlpha(0.5)
     mapCtx.fillRect(0, 0, 400, 200)
 
-    mapCtx.beginPath()
-    mapCtx.setStroke(Color.WHITE)
-    //mapCtx.setGlobalAlpha(0.8)
     mapCtx.drawImage(championImage, maxLength.x * LittleMap.w / Boundary.w - 7,  maxLength.y * LittleMap.h / Boundary.h - 7, 15, 15)
 
     if (snakes.nonEmpty && snakes.exists(_.id == grid.myId)) {
@@ -300,7 +296,8 @@ class GameController(id: String,
         }
         joints = joints.reverse.enqueue(tail)
         if (snake.id == grid.myId) {
-
+          mapCtx.beginPath()
+          mapCtx.setStroke(Color.WHITE)
           val recX = (joints.head.x * LittleMap.w) / Boundary.w - GameScene.initWindowWidth.toFloat / Boundary.w * LittleMap.w / 2
           val recY = (joints.head.y * LittleMap.h) / Boundary.h - GameScene.initWindowHeight.toFloat / Boundary.h * LittleMap.h / 2
           val recW = GameScene.initWindowWidth.toFloat / Boundary.w * LittleMap.w
@@ -434,7 +431,6 @@ class GameController(id: String,
     layerBgCanvas.setWidth(windowWidth)
     layerBgCanvas.setHeight(windowHeight)
 
-    val bgColor = new Color(0.003, 0.176, 0.176, 1.0)
     val snakes = grid.getGridSyncData4Client.snakes
     val period = (System.currentTimeMillis() - basicTime).toInt
 
@@ -462,11 +458,9 @@ class GameController(id: String,
     val deviationY = centerY - myHead.y * scale
 
     val bgCtx = layerBgCanvas.getGraphicsContext2D
-    bgCtx.save()
-    //bgCtx.setFill(Color.BLACK)
-    //bgCtx.clearRect(0, 0, 400, 200)
     bgCtx.setFill(bgColor)
     bgCtx.fillRect(0, 0, 400, 200)
+    bgCtx.save()
 
     bgCtx.drawImage(bgImage, 0 + deviationX, 0 + deviationY , Boundary.w * scale , Boundary.h * scale)
 
@@ -743,8 +737,6 @@ class GameController(id: String,
     viewCanvas.setHeight(viewHeight)
     val viewCtx = viewCanvas.getGraphicsContext2D
     val period = (System.currentTimeMillis() - basicTime).toInt
-    val bgColor = new Color(0.003, 0.176, 0.176, 1.0)
-
 
     val snakes = grid.getGridSyncData4Client.snakes
     val apples = grid.getGridSyncData4Client.appleDetails
@@ -775,9 +767,9 @@ class GameController(id: String,
     viewCtx.setFill(bgColor)
     viewCtx.fillRect(0, 0, viewWidth, viewHeight)
     viewCtx.save()
-    //viewCtx.translate(viewWidth / 2, viewHeight / 2)
+    viewCtx.translate(viewWidth / 2, viewHeight / 2)
     viewCtx.scale(1 / myProportion, 1 / myProportion)
-    //viewCtx.translate(-viewWidth / 2, - viewHeight / 2)
+    viewCtx.translate(-viewWidth / 2, - viewHeight / 2)
     viewCtx.drawImage(bgImage, 0 + deviationX, 0 + deviationY , Boundary.w * scaleView, Boundary.h * scaleView)
 
 
@@ -787,10 +779,8 @@ class GameController(id: String,
     viewCtx.fillRect(0, 300 * myProportion, 200, 100)
     viewCtx.setGlobalAlpha(1.0)
 
-    viewCtx.beginPath()
-    viewCtx.setStroke(Color.WHITE)
-    //viewCtx.setGlobalAlpha(0.5)
-    viewCtx.drawImage(championImage, maxLength.x * LittleMap.w * scaleView /Boundary.w * myProportion  - 7, maxLength.y * LittleMap.h * scaleView / Boundary.h * myProportion - 7 + 300 * myProportion, 15 * scaleView, 15 * scaleView)
+
+    viewCtx.drawImage(championImage, maxLength.x * LittleMap.w * scaleView /Boundary.w * myProportion  - 7 * myProportion, maxLength.y * LittleMap.h * scaleView / Boundary.h * myProportion - 7 * myProportion + 300 * myProportion, 15 * scaleView, 15 * scaleView)
 
     apples.filterNot(a => a.x * scaleView < myHead.x * scaleView - windowWidth / 2 * myProportion || a.y * scaleView < myHead.y * scaleView  - windowHeight / 2  * myProportion|| a.x * scaleView > myHead.x * scaleView + windowWidth / 2 * myProportion || a.y * scaleView  > myHead.y * scaleView + windowHeight / 2 * myProportion ).foreach {
       case Ap(score, _, x, y, _, _) =>
@@ -804,7 +794,7 @@ class GameController(id: String,
         viewCtx.fillRect(x * scaleView - square * scaleView + deviationX,  y * scaleView - square * scaleView + deviationY, square * 2 * scaleView, square * 2 * scaleView)
     }
 
-
+    viewCtx.setFill(Color.WHITE)
     snakes.foreach { snake =>
       val id = snake.id
       val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
@@ -827,9 +817,9 @@ class GameController(id: String,
       joints = joints.reverse.enqueue(tail)
       if (snake.id == grid.myId) {
         viewCtx.beginPath()
-        viewCtx.setFill(Color.WHITE)
-        //viewCtx.setGlobalAlpha(0.5)
+        viewCtx.setStroke(Color.WHITE)
         viewCtx.setLineWidth(1)
+        viewCtx.setEffect(new DropShadow( 0, Color.web("#FFFFFF")))
         val recX = (joints.head.x * LittleMap.w * scaleView) / Boundary.w - 800.toFloat / Boundary.w * LittleMap.w * scaleView / 2
         val recY = (joints.head.y * LittleMap.h * scaleView) / Boundary.h - 400.toFloat / Boundary.h * LittleMap.h * scaleView / 2
         val recW = 800.toFloat / Boundary.w * LittleMap.w * scaleView
@@ -878,7 +868,7 @@ class GameController(id: String,
           viewCtx.fillRect(x * scaleView - 1.5 * square * scaleView + deviationX, y * scaleView - 1.5 * square * scaleView + deviationY, square * 3 * scaleView, square * 3 * scaleView)
         }
         viewCtx.setFill(Color.web("#FFFFFF"))
-        viewCtx.fillRect(x * scaleView - 1.5 * square * scaleView + deviationX, y * scaleView - 1.5 * square * scaleView + deviationY, square * 2 * scaleView, square * 2 * scaleView)
+        viewCtx.fillRect(x * scaleView -  square * scaleView + deviationX, y * scaleView - square * scaleView + deviationY, square * 2 * scaleView, square * 2 * scaleView)
       }
 
       val nameLength = if (snake.name.length > 15) 15 else snake.name.length

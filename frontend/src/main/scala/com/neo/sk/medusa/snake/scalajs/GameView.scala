@@ -37,7 +37,7 @@ object GameView  {
       myProportion = 1.0
     } else {
       ctx.font = "36px Helvetica"
-      ctx.fillText("Ops, connection lost.", windowWidth / 2 - 250, windowHeight / 2 - 200)
+      ctx.fillText("Ops, connection lost.", windowWidth / 2 - 150, windowHeight / 2 - 150)
 
       myProportion = 1.0
     }

@@ -2,6 +2,7 @@ package com.neo.sk.medusa.common
 
 import com.typesafe.config.ConfigFactory
 import org.slf4j.LoggerFactory
+import collection.JavaConverters._
 
 /**
   * User: Taoz
@@ -9,7 +10,6 @@ import org.slf4j.LoggerFactory
   * Time: 4:29 PM
   */
 object AppSettings {
-
 
   val log = LoggerFactory.getLogger(this.getClass)
   val config = ConfigFactory.parseResources("product.conf").withFallback(ConfigFactory.load())
@@ -20,7 +20,7 @@ object AppSettings {
   val httpPort = appConfig.getInt("http.port")
 
   val boundW = appConfig.getInt("bounds.w")
-  val bountH = appConfig.getInt("bounds.h")
+  val boundH = appConfig.getInt("bounds.h")
 
   val frameRate = appConfig.getInt("sync.frameRate")
   val syncDelay = appConfig.getInt("sync.delay")
@@ -34,7 +34,12 @@ object AppSettings {
   val isAuth = appConfig.getBoolean("isAuth")
   val esheepProtocol = appConfig.getString("esheepServer.protocol")
   val esheepHost = appConfig.getString("esheepServer.host")
-
+  
+  val autoBotConfig = appConfig.getConfig("autoBotSetting")
+  val isAutoBotEnable = autoBotConfig.getBoolean("isAutoBotEnable")
+  val autoBotNumber = autoBotConfig.getInt("autoBotNumber")
+  val botNameList = autoBotConfig.getStringList("botNameList").asScala
+  require(botNameList.lengthCompare(autoBotNumber) >= 0)
 
   val slickConfig = config.getConfig("slick.db")
   val slickUrl = slickConfig.getString("url")
@@ -44,6 +49,5 @@ object AppSettings {
   val slickConnectTimeout = slickConfig.getInt("connectTimeout")
   val slickIdleTimeout = slickConfig.getInt("idleTimeout")
   val slickMaxLifetime = slickConfig.getInt("maxLifetime")
-
 
 }
