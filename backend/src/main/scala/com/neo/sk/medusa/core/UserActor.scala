@@ -370,7 +370,6 @@ object UserActor {
 
           case FrontLeft(front) =>
             log.info(s"${ctx.self.path} left while wait")
-            println("-----------------------------------")
             ctx.unwatch(front)
             roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
             roomActor ! RoomActor.UserLeft(playerId)
