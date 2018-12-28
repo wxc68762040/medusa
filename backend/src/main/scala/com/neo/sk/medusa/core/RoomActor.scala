@@ -87,7 +87,7 @@ object RoomActor {
             val botMap = mutable.HashMap.empty[String, (String, Boolean)]
             if (AppSettings.isAutoBotEnable) {
               for(i <- 1 to AppSettings.autoBotNumber) {
-                val botId = "bot" + (i + 1000)
+                val botId = "auto" + (i + 1000)
                 val botName = AppSettings.botNameList(i - 1)
                 ctx.self ! BotJoinGame(botId, botName, getBotActor(ctx, botId, botName))
                 botMap.put(botId, (botName, true))
@@ -145,7 +145,7 @@ object RoomActor {
             idle(roomId, tickCount, eventList, userMap, watcherMap, botMap, deadUserList, grid, emptyKeepTime.toMillis/AppSettings.frameRate)
             
           case t: UserDead =>
-            if(t.userId.contains("bot")) {
+            if(t.userId.contains("auto")) {
               val botActor = getBotActor(ctx, t.userId, t.deadInfo.name)
               botActor ! BotActor.CancelTimer
               log.info(s"room $roomId lost a botPlayer ${t.userId}")
@@ -272,7 +272,7 @@ object RoomActor {
 							dispatch(userMap, watcherMap, Protocol.DeadList(grid.deadSnakeList.map(_.id)))
 						}
             grid.killMap.foreach { g =>
-              if(!g._1.contains("bot")){
+              if(!g._1.contains("auto")){
                 eventList.append(Protocol.KillList(g._1, g._2))
                 dispatchTo(Protocol.KillList(g._1, g._2), userMap(g._1)._1, watcherMap, g._1)
               }
