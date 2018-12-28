@@ -461,7 +461,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
 
   def getGridSyncDataNoApp = {
     val snake4client = snakes.values.map{
-      s => Snake4Client(s.id, s.name, s.head, s.tail, s.color, s.direction, s.joints, s.speed,s.length, s.extend)
+      s => Snake4Client(s.id, s.name, s.head, s.tail, s.color, s.direction, s.joints, s.speed, s.freeFrame,s.length, s.extend)
     }
     Protocol.GridDataSyncNoApp(
       frameCount,
@@ -476,7 +476,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
       case _ =>
     }
     val snake4client = snakes.values.map{
-      s => Snake4Client(s.id, s.name, s.head, s.tail, s.color, s.direction, s.joints, s.speed,s.length, s.extend)
+      s => Snake4Client(s.id, s.name, s.head, s.tail, s.color, s.direction, s.joints, s.speed, s.freeFrame, s.length, s.extend)
     }
     Protocol.GridDataSync(
       frameCount,

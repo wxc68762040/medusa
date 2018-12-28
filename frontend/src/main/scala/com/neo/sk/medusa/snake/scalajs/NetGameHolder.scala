@@ -195,8 +195,13 @@ object NetGameHolder extends js.JSApp {
 //    }
     var roomTrueId:Long = -1L
     var passTrueWd:String = ""
+    GameInfo.reconnect.onclick = { _ =>
+      GameInfo.reconnect.setAttribute("Style","display:none")
+      joinGame(roomTrueId,passTrueWd,0,isWatchGame)
+    }
     joinGame(roomTrueId,passTrueWd,0,isWatchGame)
     dom.window.requestAnimationFrame(drawLoop())
+
   }
 
   def setLagTrigger(): Unit = {
@@ -311,6 +316,7 @@ object NetGameHolder extends js.JSApp {
       netInfoHandler.drawTimeAverage = drawOnceTime.toInt
     } else {
       GameView.drawGameOff()
+      GameInfo.drawReconnect()
     }
   }
 
@@ -384,7 +390,7 @@ object NetGameHolder extends js.JSApp {
 
             }
         }
-        GameInfo.canvas.onclick = {
+        GameInfo.infoCacheCanvas.onclick = {
           _ => GameView.canvas.focus()
         }
       } else if(isTest) {
@@ -406,7 +412,7 @@ object NetGameHolder extends js.JSApp {
 
     gameStream.onerror = { (event: ErrorEvent) =>
       GameView.drawGameOff()
-
+      GameInfo.drawReconnect()
       wsSetup = false
     }
 //    Don't Delete
@@ -627,7 +633,7 @@ object NetGameHolder extends js.JSApp {
 
     gameStream.onclose = { (event: Event) =>
       GameView.drawGameOff()
-
+      GameInfo.drawReconnect()
       wsSetup = false
 
     }

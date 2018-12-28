@@ -5,7 +5,7 @@ import com.neo.sk.medusa.snake.{scalajs, _}
 import com.neo.sk.medusa.snake.scalajs.NetGameHolder._
 import org.scalajs.dom
 import org.scalajs.dom.ext.Color
-import org.scalajs.dom.html.{Canvas, Document => _}
+import org.scalajs.dom.html.{Button, Canvas, Input, Document => _}
 
 import scala.collection.immutable.Range
 
@@ -26,15 +26,16 @@ object GameInfo {
 
   val textLineHeight = 14
   var basicTime = 0L
-  val canvas = dom.document.getElementById("GameInfo").asInstanceOf[Canvas]
 
   private[this] val startBg = dom.document.getElementById("startBg")
-  val gameInfoCanvas = dom.document.getElementById("GameInfo").asInstanceOf[Canvas]
+  val reconnect = dom.document.getElementById("reconnect").asInstanceOf[Button]
 
+  val infoCacheCanvas = dom.document.getElementById("GameInfo").asInstanceOf[Canvas]
+  val infoCacheCtx = infoCacheCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
 
   def setStartBg()={
-    startBg.setAttribute("style", s"position:absolute;;z-index:4;left: 0px; top: 0px;background: rgba(0, 0, 0, 0.8);height:${canvasBoundary.y}px;width:${canvasBoundary.x}px")
+    startBg.setAttribute("style", s"position:absolute;z-index:4;left: 0px; top: 0px;background: rgba(0, 0, 0, 0.8);height:${canvasBoundary.y}px;width:${canvasBoundary.x}px")
   }
 
   def setStartBgOff()={
@@ -49,24 +50,23 @@ object GameInfo {
     ctx.clearRect(0,0,canvasBoundary.x,canvasBoundary.y)
   }
 
+  def drawReconnect() = {
+   clearInfo(infoCacheCtx)
+   reconnect.setAttribute("style",s"position:absolute;z-index: 6;left: 650px; top: 300px;width: 150px; height: 50px; font-size: 18px; color: #fff; font-weight:bold;  background:	#102928; border-radius: 5px; box-shadow: 3px 2px 2px 2px #16384d")
+  }
+
   def drawInfo(uid: String, data: GridDataSync, scaleW: Double, scaleH: Double): Unit = {
-
-
-    canvas.width = canvasBoundary.x
-    canvas.height = canvasBoundary.y
-    val infoCacheCanvas = dom.document.getElementById("GameInfo").asInstanceOf[Canvas]
-    val infoCacheCtx = infoCacheCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
-
-    //infoCacheCanvas.addEventListener("click",listener =  )
 
     infoCacheCanvas.width = canvasBoundary.x
     infoCacheCanvas.height = canvasBoundary.y
 
+    reconnect.disabled
+    reconnect.setAttribute("style", "display:none")
     clearInfo(infoCacheCtx)
 
     val snakes = data.snakes
     val leftBegin = 10
-    val rightBegin = (canvasBoundary.x - 200 * scaleW).toInt
+    val rightBegin = (canvasBoundary.x - 230 * scaleW).toInt
 
     val centerX = windowWidth/2
     val centerY = windowHeight/2

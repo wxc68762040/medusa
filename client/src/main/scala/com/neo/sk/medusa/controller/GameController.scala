@@ -189,11 +189,9 @@ class GameController(id: String,
           case t: CreateRoomReq =>
             SDKReplyTo=t.sender
             serverActor ! Protocol.CreateRoom(-1,t.password)
-            println(serverActor.path)
             Behaviors.same
 
           case t:JoinRoomReq=>
-            log.info("bot join room ..")
             SDKReplyTo=t.sender
             serverActor ! Protocol.JoinRoom(t.roomId,t.password)
             Behaviors.same
@@ -307,9 +305,6 @@ class GameController(id: String,
           val recY = (joints.head.y * LittleMap.h) / Boundary.h - GameScene.initWindowHeight.toFloat / Boundary.h * LittleMap.h / 2
           val recW = GameScene.initWindowWidth.toFloat / Boundary.w * LittleMap.w
           val recH = GameScene.initWindowHeight.toFloat / Boundary.h * LittleMap.h
-          mapCtx.setGlobalAlpha(0.5)
-          mapCtx.setFill(Color.GRAY)
-          mapCtx.fillRect(recX, recY, recW, recH)
           mapCtx.moveTo(recX, recY)
           mapCtx.lineTo(recX, recY + recH)
           mapCtx.lineTo(recX + recW, recY + recH)
@@ -317,7 +312,6 @@ class GameController(id: String,
           mapCtx.lineTo(recX, recY)
           mapCtx.stroke()
           mapCtx.closePath()
-          mapCtx.setGlobalAlpha(1)
         }
         if (snake.id != maxId && snake.id == grid.myId) {
           mapCtx.beginPath()

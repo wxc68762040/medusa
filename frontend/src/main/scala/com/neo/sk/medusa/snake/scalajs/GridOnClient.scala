@@ -3,6 +3,8 @@ package com.neo.sk.medusa.snake.scalajs
 import java.awt.event.KeyEvent
 
 import com.neo.sk.medusa.snake._
+import com.neo.sk.medusa.snake.Protocol.{fSpeed, square}
+
 
 /**
   * User: Taoz
@@ -14,7 +16,8 @@ class GridOnClient(override val boundary: Point) extends Grid {
   override def debug(msg: String): Unit = println(msg)
 
   override def info(msg: String): Unit = println(msg)
-  
+  private[this] var speedUpInfo = List.empty[SpeedUpInfo]
+  private[this] var eatenApples = Map.empty[String, List[AppleWithFrame]]
   override def update(isSynced: Boolean): Unit = {
     super.update(isSynced: Boolean)
   }
@@ -52,20 +55,33 @@ class GridOnClient(override val boundary: Point) extends Grid {
       }
     }
 
-    val newSpeed = snake.speed
-    
+    val speedInfoOpt = speedUp(snake, newDirection)
+    var newSpeed = if (speedInfoOpt.nonEmpty) speedInfoOpt.get._2 else snake.speed
+    //val newSpeed = snake.speed
+    var speedOrNot = if (speedInfoOpt.nonEmpty) speedInfoOpt.get._1 else false
     val newHead = snake.head + snake.direction * newSpeed.toInt
-//    val oldHead = snake.head
-//
-//    val foodEaten = eatFood(snake.id, newHead, newSpeed, speedOrNot)
-//    val foodSum = if (foodEaten.nonEmpty) {
-//      newSpeed = foodEaten.get._2
-//      speedOrNot = foodEaten.get._3
-//      foodEaten.get._1
-//    } else 0
-    
+    val oldHead = snake.head
+
+    val foodEaten = eatFood(snake.id, newHead, newSpeed, speedOrNot)
+    val foodSum = if (foodEaten.nonEmpty) {
+      newSpeed = foodEaten.get._2
+      speedOrNot = foodEaten.get._3
+      foodEaten.get._1
+    } else 0
+
     val len = snake.length
-    
+
+    var dead = oldHead.frontZone(snake.direction, square * 2, newSpeed.toInt).filter { e =>
+      grid.get(e) match {
+        case Some(x: Body) => true
+        case _ => false
+      }
+    }
+    if(newHead.x < 0 + square + boundaryWidth || newHead.y < 0 + square + boundaryWidth || newHead.x  > Boundary.w - square|| newHead.y > Boundary.h-square) {
+      //log.info(s"snake[${snake.id}] hit wall.")
+      dead = Point(0, 0) :: dead
+    }
+
     //处理身体及尾巴的移动
     var newJoints = snake.joints
     var newTail = snake.tail
@@ -92,12 +108,83 @@ class GridOnClient(override val boundary: Point) extends Grid {
       }
     }
     
-//    val newFreeFrame = if (speedInfoOpt.nonEmpty) {
-//      if(speedOrNot) 0 else snake.freeFrame + 1
-//    } else snake.freeFrame
+    val newFreeFrame = if (speedInfoOpt.nonEmpty) {
+      if(speedOrNot) 0 else snake.freeFrame + 1
+    } else snake.freeFrame
     
     Right(snake.copy(head = newHead, tail = newTail, direction = newDirection,
-      joints = newJoints, speed = newSpeed, length = len, extend = newExtend))
+      joints = newJoints, speed = newSpeed, freeFrame = newFreeFrame, length = len, extend = newExtend))
+  }
+
+  def eatFood(snakeId: String, newHead:Point, newSpeedInit: Double, speedOrNotInit: Boolean): Option[(Int, Double, Boolean)] = {
+    var totalScore = 0
+    var newSpeed = newSpeedInit
+    var speedOrNot = speedOrNotInit
+    var apples = List.empty[Ap]
+    newHead.zone(square * 15).foreach { e =>
+      grid.get(e)match {
+        case Some(x: Apple) =>
+          if(x.appleType != FoodType.intermediate) {
+            grid -= e
+            totalScore += x.score
+            newSpeed += 0.1
+            speedOrNot = true
+            apples ::= Ap(x.score, x.appleType, e.x, e.y, x.frame)
+          }
+        case _ =>
+      }
+    }
+    if(apples.nonEmpty) {
+      eatenApples += (snakeId -> apples.map(a => AppleWithFrame(frameCount, a)))
+    }
+    Some((totalScore, newSpeed, speedOrNot))
+  }
+
+  def speedUp(snake: Snake4Client, newDirection: Point):Option[(Boolean, Double)] = {
+    //检测加速
+    var speedOrNot: Boolean = false
+    var headerLeftRight = if(newDirection.y == 0){
+      Point(snake.head.x - square, snake.head.y - square - speedUpRange).zone(square * 2,(speedUpRange + square) * 2)
+    }else{
+      Point(snake.head.x - square - speedUpRange, snake.head.y - square).zone((speedUpRange + square) * 2,square *2)
+    }
+    headerLeftRight.foreach {
+      s =>
+        grid.get(s) match {
+          case Some(x: Body) =>
+            if(x.id != snake.id) {
+              speedOrNot = true
+            }else {
+              speedOrNot = speedOrNot
+            }
+          case _ =>
+            speedOrNot = speedOrNot
+        }
+    }
+
+    // 加速上限
+    val s = snake.speed match {
+      case x if x >= fSpeed && x <= fSpeed + 4 => 0.3
+      case x if x >= fSpeed && x <= fSpeed + 9 => 0.4
+      case x if x >= fSpeed && x <= fSpeed + 15 => 0.5
+      case _ => 0
+    }
+    val newSpeedUplength = if (snake.speed > 2.5 * fSpeed) 2.5 * fSpeed else snake.speed
+
+    //判断加速减速
+    val newSpeed = if(speedOrNot){
+        newSpeedUplength + s
+      } else if(!speedOrNot && snake.freeFrame <= freeFrameTime){
+        newSpeedUplength
+      }else if(!speedOrNot && snake.freeFrame > freeFrameTime && newSpeedUplength > fSpeed + 0.1){
+        newSpeedUplength - s
+      }else {
+        fSpeed
+    }
+    if(speedOrNot){
+      speedUpInfo ::= SpeedUpInfo(snake.id, newSpeed)
+    }
+    Some((speedOrNot, newSpeed))
   }
 
   def getGridSyncData4Client = {
