@@ -285,7 +285,7 @@ object WSClient {
 						rsp1.onComplete{
 							a=>println(a)
 								println("======")
-								timer.startSingleTimer(TimerKeyForTest, LeaveRoomTest(), 5.seconds)
+								//timer.startSingleTimer(TimerKeyForTest, LeaveRoomTest(), 5.seconds)
 						}
 						Behaviors.same
 
@@ -369,7 +369,7 @@ object WSClient {
 		overflowStrategy = OverflowStrategy.fail
 	).collect {
 		case message: UserAction =>
-			println(message)
+			//println(message)
 			val sendBuffer = new MiddleBufferInJvm(409600)
 			BinaryMessage.Strict(ByteString(
 				message.fillMiddleBuffer(sendBuffer).result()
