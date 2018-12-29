@@ -132,6 +132,7 @@ object WSClient {
 											timer.startSingleTimer(TimerKeyForTest, ClientTest(1),10.seconds)
                       Future.successful(s"$logPrefix connect success.")
                     } else {
+                      loginController.getLoginScence().warningText.setText(s"WSClient connection failed: ${upgrade.response.status}")
                       throw new RuntimeException(s"WSClient connection failed: ${upgrade.response.status}")
                     }
                   } //链接建立时

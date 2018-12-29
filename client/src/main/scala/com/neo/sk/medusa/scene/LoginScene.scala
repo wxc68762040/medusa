@@ -206,15 +206,24 @@ class LoginScene() {
   }
 
 	botJoinButton.setOnAction { _ =>
-    val Id = botId.getText()
-    val Key = botKey.getText()
-    if (Id.trim() == "") {
-			warningText.setText("botId不能为空")
-		} else if (Key.trim() == "") {
-			warningText.setText("botKey不能为空")
-		} else {
-			loginSceneListener.onButtonBotJoin(Id, Key)
-		}
+
+    ClientBoot.addToPlatform{
+      val Id = botId.getText()
+      val Key = botKey.getText()
+      if (Id.trim() == "") {
+        warningText.setLayoutX(205)
+        warningText.setLayoutY(400)
+        warningText.setText("botId不能为空")
+      } else if (Key.trim() == "") {
+        warningText.setLayoutX(205)
+        warningText.setLayoutY(400)
+        warningText.setText("botKey不能为空")
+      } else {
+        warningText.setText("")
+        loginSceneListener.onButtonBotJoin(Id, Key)
+      }
+    }
+
 	}
 
 	back2HumanLogin.setOnAction{ _ =>
@@ -264,6 +273,7 @@ class LoginScene() {
 			group.getChildren.remove(botLoginButton)
 			group.getChildren.addAll(idLabel, botId)
 			group.getChildren.addAll(keyLable, botKey)
+      group.getChildren.add(warningText)
 			group.getChildren.remove(back2First)
 			group.getChildren.addAll(botJoinButton,back2First)
 
