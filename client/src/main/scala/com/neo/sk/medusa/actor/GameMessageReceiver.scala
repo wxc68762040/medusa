@@ -183,6 +183,7 @@ object GameMessageReceiver {
 					ClientBoot.addToPlatform {
 						setLagTrigger
 						if (!grid.init) {
+							log.info("gameController init... ")
 							grid.init = true
 							gameController.startGameLoop()
 						}

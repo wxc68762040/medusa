@@ -1,10 +1,15 @@
 package com.neo.sk.medusa.scene
 
 import com.neo.sk.medusa.common.AppSettings
-import javafx.scene.canvas.Canvas
+import javafx.scene.canvas.{Canvas, GraphicsContext}
 import javafx.scene.input.KeyCode
+import javafx.scene.paint.Color
+import javafx.scene.text.{Font, FontPosture, FontWeight, Text}
 import javafx.scene.{Group, Scene}
+
+import com.neo.sk.medusa.ClientBoot
 import com.neo.sk.medusa.common.AppSettings._
+import com.neo.sk.medusa.controller.GameController
 
 
 /**
@@ -20,7 +25,6 @@ object LayerScene{
 
 }
 class LayerScene {
-
   import LayerScene._
   var layerSceneListener: LayerSceneListener = _
   val group = new Group()
@@ -40,6 +44,7 @@ class LayerScene {
   val layerMySnakeCanvas = new Canvas(layerWidth,layerHeight)
 
   val viewCanvas = new Canvas(800,400)
+  val canvasCtx: GraphicsContext = viewCanvas.getGraphicsContext2D
 
   layerBgCanvas.setLayoutX(800)
   layerBgCanvas.setLayoutY(0)
@@ -59,6 +64,14 @@ class LayerScene {
   viewCanvas.setLayoutX(0)
   viewCanvas.setLayoutY(100)
 
+  if(GameController.grid.myId=="" && AppSettings.isLayer){
+    canvasCtx.setFont(Font.font("Helvetica", FontWeight.BOLD ,FontPosture.ITALIC,30))
+    canvasCtx.setFill(Color.BLACK)
+    canvasCtx.fillText(s"Waiting for bot to join!",layerWidth/2,layerHeight/2)
+    canvasCtx.fillText(s"Please do not worry!",layerWidth/2+100,layerHeight/2+50)
+    canvasCtx.fillText(s"If you are bored!",layerWidth/2+200,layerHeight/2+100)
+    canvasCtx.fillText(s"请玩一会手机!",layerWidth/2+300,layerHeight/2+150)
+  }
   group.getChildren.add(viewCanvas)
 
 //  viewCanvas.requestFocus()

@@ -55,10 +55,9 @@ object WSClient {
 
 	val host = "127.0.0.1"
 	val port = 5321
-	val playerId = "test"
+	val pId = "test"
 	val apiToken = "test"
-	val password=""
-	val client = new MedusaTestClient(host, port, playerId, apiToken)
+	val client = new MedusaTestClient(host, port, pId, apiToken)
 
 	private val log = LoggerFactory.getLogger("WSClient")
 	private val logPrefix = "WSClient"
@@ -109,7 +108,6 @@ object WSClient {
           log.info(s"bot req token and accessCode")
 					AppSettings.isLayer = true
           //fixme 此处若拿不到token或accessCode则存在问题
-					AppSettings.isLayer = true
          getBotToken(botId,botKey).map{
             case Right(t)=>
 							val playerId = "bot" + botId
@@ -128,7 +126,7 @@ object WSClient {
                   val connected = response.flatMap { upgrade =>
                     if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
                       ctx.self ! GetSeverActor(stream)
-											ctx.self ! GetGameController(playerId,true)
+											ctx.self ! GetGameController(playerId,isBot=true)
                       loginController.setUserInfo(playerId, t.botName, t.token)
                       //fixme test bot sdk
 											timer.startSingleTimer(TimerKeyForTest, ClientTest(1),10.seconds)
