@@ -210,16 +210,13 @@ class LoginScene() {
     ClientBoot.addToPlatform{
       val Id = botId.getText()
       val Key = botKey.getText()
+      warningText.setText("")
       if (Id.trim() == "") {
-        warningText.setLayoutX(205)
-        warningText.setLayoutY(400)
         warningText.setText("botId不能为空")
       } else if (Key.trim() == "") {
-        warningText.setLayoutX(205)
-        warningText.setLayoutY(400)
         warningText.setText("botKey不能为空")
       } else {
-        warningText.setText("")
+        botJoinButton.setDisable(true)
         loginSceneListener.onButtonBotJoin(Id, Key)
       }
     }
@@ -319,8 +316,8 @@ class LoginScene() {
 	emailPwInput.setLayoutX(165)
 	emailPwInput.setLayoutY(180)
 
-	warningText.setLayoutX(185)
-	warningText.setLayoutY(220)
+  warningText.setLayoutX(205)
+  warningText.setLayoutY(400)
 	warningText.setFill(Color.WHITE)
 
 	createRoomChoice.setLayoutX(50)

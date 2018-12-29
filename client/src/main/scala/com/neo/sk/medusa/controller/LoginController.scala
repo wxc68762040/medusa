@@ -91,7 +91,6 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 
 			override def onButtonBotJoin(botId: String, botKey: String): Unit = {
 				log.info(s"bot join ")
-				loginScene.botJoinButton.setDisable(true)
 				wsClient ! BotLogin(botId, botKey)
 			}
 
@@ -112,8 +111,6 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 		}
 
 		def imageFromBase64(base64Str: String) = {
-			if (base64Str == null) null
-
 			import sun.misc.BASE64Decoder
 			val decoder = new BASE64Decoder
 			val bytes: Array[Byte] = decoder.decodeBuffer(base64Str)
@@ -128,7 +125,6 @@ class LoginController(wsClient: ActorRef[WSClient.WsCommand],
 			playerId = pId
 			nickname = name
 			userToken = token
-			//loginScene.readyToJoin
 		}
 
 		def getLoginScence() = loginSceneOpt.get
