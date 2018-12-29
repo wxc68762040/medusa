@@ -58,6 +58,9 @@ class LoginScene() {
 	val humanJoinButton = new Button("Join Game")
 	val botJoinButton = new Button("BotJoin")
 
+	val back2HumanLogin = new Button("Back")
+	val back2First = new Button("Back")
+
   val idLabel = new Label("BotID:")
   val botId = new TextField()
 
@@ -177,7 +180,8 @@ class LoginScene() {
     ClientBoot.addToPlatform{
       group.getChildren.remove(emailButton)
       group.getChildren.remove(scanButton)
-      group.getChildren.addAll(emailInput, emailPwInput, emailLoginButton,warningText )
+			group.getChildren.removeAll(emailInput, emailPwInput, emailLoginButton,warningText, back2HumanLogin)
+      group.getChildren.addAll(emailInput, emailPwInput, emailLoginButton,warningText, back2HumanLogin)
     }
   }
 
@@ -213,12 +217,44 @@ class LoginScene() {
 		}
 	}
 
+	back2HumanLogin.setOnAction{ _ =>
+		ClientBoot.addToPlatform{
+			clearCanvas()
+			canvasCtx.setFont(Font.font("Helvetica", FontWeight.BOLD ,FontPosture.ITALIC,30))
+			canvasCtx.setFill(Color.web("rgb(250, 250, 250)"))
+			canvasCtx.fillText(s"Welcome to medusa!",100,125)
+			group.getChildren.remove(humanLoginButton)
+			group.getChildren.remove(botLoginButton)
+			group.getChildren.removeAll(emailInput, emailPwInput, emailLoginButton,warningText, back2HumanLogin)
+			drawHumanLogin
+
+		}
+	}
+	back2First.setOnAction{ _ =>
+		ClientBoot.addToPlatform{
+			clearCanvas()
+			canvasCtx.setFont(Font.font("Helvetica", FontWeight.BOLD ,FontPosture.ITALIC,30))
+			canvasCtx.setFill(Color.web("rgb(250, 250, 250)"))
+			canvasCtx.fillText(s"Welcome to medusa!",100,125)
+			group.getChildren.removeAll(humanLoginButton,botLoginButton)
+			group.getChildren.removeAll(botKey,botId,idLabel,keyLable,botJoinButton)
+			group.getChildren.removeAll(scanButton,emailButton)
+			group.getChildren.add(humanLoginButton)
+			group.getChildren.add(botLoginButton)
+			group.getChildren.remove(back2First)
+		}
+
+	}
+
 
 	def drawHumanLogin = {
 		ClientBoot.addToPlatform{
 			group.getChildren.remove(humanLoginButton)
 			group.getChildren.remove(botLoginButton)
-			group.getChildren.addAll(scanButton,emailButton)
+			//group.getChildren.remove(back2First)
+			group.getChildren.removeAll(scanButton,emailButton,back2First)
+			group.getChildren.addAll(scanButton,emailButton,back2First)
+
 		}
 	}
 
@@ -228,7 +264,9 @@ class LoginScene() {
 			group.getChildren.remove(botLoginButton)
 			group.getChildren.addAll(idLabel, botId)
 			group.getChildren.addAll(keyLable, botKey)
-			group.getChildren.add(botJoinButton)
+			group.getChildren.remove(back2First)
+			group.getChildren.addAll(botJoinButton,back2First)
+
 		}
 	}
 
@@ -237,6 +275,7 @@ class LoginScene() {
 		ClientBoot.addToPlatform{
 			group.getChildren.remove(emailButton)
 			group.getChildren.remove(scanButton)
+			group.getChildren.add(back2HumanLogin)
 			clearCanvas()
 			val img = new Image(imageStream)
 			canvasCtx.drawImage(img, 100, 100)
@@ -347,5 +386,13 @@ class LoginScene() {
 	humanJoinButton.setLayoutX(210)
 	humanJoinButton.setLayoutY(300)
 	humanJoinButton.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
+	back2HumanLogin.setLayoutX(420)
+	back2HumanLogin.setLayoutY(440)
+	back2HumanLogin.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
+
+	back2First.setLayoutX(420)
+	back2First.setLayoutY(440)
+	back2First.setStyle("-fx-background-radius: 5; -fx-border-radius: 5; -fx-effect: dropShadow(three-pass-box, #528B8B, 10.0, 0, 0, 0); -fx-font:17 Helvetica; -fx-font-weight: bold; -fx-font-posture:italic")
 
 }

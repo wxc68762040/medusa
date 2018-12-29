@@ -87,7 +87,7 @@ object RoomActor {
             val botMap = mutable.HashMap.empty[String, (String, Boolean)]
             if (AppSettings.isAutoBotEnable) {
               for(i <- 1 to AppSettings.autoBotNumber) {
-                val botId = "bot" + (i + 1000)
+                val botId = "auto" + (i + 1000)
                 val botName = AppSettings.botNameList(i - 1)
                 ctx.self ! BotJoinGame(botId, botName, getBotActor(ctx, botId, botName))
                 botMap.put(botId, (botName, true))
@@ -145,7 +145,7 @@ object RoomActor {
             idle(roomId, tickCount, eventList, userMap, watcherMap, botMap, deadUserList, grid, emptyKeepTime.toMillis/AppSettings.frameRate)
             
           case t: UserDead =>
-            if(t.userId.contains("bot")) {
+            if(t.userId.contains("auto")) {
               val botActor = getBotActor(ctx, t.userId, t.deadInfo.name)
               botActor ! BotActor.CancelTimer
               log.info(s"room $roomId lost a botPlayer ${t.userId}")
@@ -209,7 +209,6 @@ object RoomActor {
             Behaviors.same
 
           case t:UserLeft =>
-            log.info(s"get userLeft: $t")
             grid.removeSnake(t.playerId)
             dispatch(userMap, watcherMap, Protocol.SnakeDead(t.playerId))
             eventList.append(Protocol.SnakeDead(t.playerId))
@@ -217,7 +216,6 @@ object RoomActor {
               getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserLeftRoom(t.playerId, userMap(t.playerId)._2, grid.frameCount)
             }
             userMap.remove(t.playerId)
-            log.info(s"userMap size : ${userMap.size} ${userMap.isEmpty}")
             deadUserList -= t.playerId
             if (userMap.isEmpty && !deadUserList.contains(t.playerId)) {
               //非正常死亡退出
@@ -274,7 +272,7 @@ object RoomActor {
 							dispatch(userMap, watcherMap, Protocol.DeadList(grid.deadSnakeList.map(_.id)))
 						}
             grid.killMap.foreach { g =>
-              if(!g._1.contains("bot")){
+              if(!g._1.contains("auto")){
                 eventList.append(Protocol.KillList(g._1, g._2))
                 dispatchTo(Protocol.KillList(g._1, g._2), userMap(g._1)._1, watcherMap, g._1)
               }
