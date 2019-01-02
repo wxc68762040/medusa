@@ -767,8 +767,8 @@ class GameController(id: String,
     viewCtx.setFill(bgColor)
     viewCtx.fillRect(0, 0, viewWidth, viewHeight)
     viewCtx.save()
-    viewCtx.translate(viewWidth / 2, viewHeight / 2)
-    viewCtx.translate(-viewWidth / 2, - viewHeight / 2)
+//    viewCtx.translate(viewWidth / 2, viewHeight / 2)
+//    viewCtx.translate(-viewWidth / 2, - viewHeight / 2)
     viewCtx.drawImage(bgImage, 0 + deviationX / myProportion, 0 + deviationY / myProportion, Boundary.w * scaleView / myProportion, Boundary.h * scaleView / myProportion)
 
 
@@ -1026,7 +1026,8 @@ class GameController(id: String,
   }
 
 	private def logicLoop(): Unit = {
-		basicTime = System.currentTimeMillis()
+//		basicTime = System.currentTimeMillis()
+//    println(s"logicloop = ${basicTime}")
 		if(!lagging) {
 			if (!grid.justSynced) {
 				grid.update(false)
@@ -1046,6 +1047,7 @@ class GameController(id: String,
 			grid.savedGrid += (grid.frameCount -> grid.getGridSyncData4Client)
 			grid.savedGrid -= (grid.frameCount - Protocol.savingFrame - Protocol.advanceFrame)
 		}
+    basicTime = System.currentTimeMillis()
 	}
 
   layerScene.setLayerSceneListener(new LayerScene.LayerSceneListener {
