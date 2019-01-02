@@ -9,6 +9,7 @@ import javafx.scene.{Group, Scene}
 
 import com.neo.sk.medusa.ClientBoot
 import com.neo.sk.medusa.common.AppSettings._
+import javafx.scene.paint.Color
 import com.neo.sk.medusa.controller.GameController
 
 
@@ -45,24 +46,25 @@ class LayerScene {
 
   val viewCanvas = new Canvas(800,400)
   val canvasCtx: GraphicsContext = viewCanvas.getGraphicsContext2D
+  val blankCanvas = new Canvas(800,200)
 
-  layerBgCanvas.setLayoutX(800)
+  layerMapCanvas.setLayoutX(805)
+  layerMapCanvas.setLayoutY(0)
+  layerBgCanvas.setLayoutX(1210)
   layerBgCanvas.setLayoutY(0)
-  layerInfoCanvas.setLayoutX(1210)
-  layerInfoCanvas.setLayoutY(0)
-  layerMySnakeCanvas.setLayoutX(800)
-  layerMySnakeCanvas.setLayoutY(210)
+  layerAppleCanvas.setLayoutX(805)
+  layerAppleCanvas.setLayoutY(205)
   layerAllSnakesCanvas.setLayoutX(1210)
-  layerAllSnakesCanvas.setLayoutY(210)
-  layerMapCanvas.setLayoutX(800)
-  layerMapCanvas.setLayoutY(420)
-  layerAppleCanvas.setLayoutX(1210)
-  layerAppleCanvas.setLayoutY(420)
-
-
+  layerAllSnakesCanvas.setLayoutY(205)
+  layerMySnakeCanvas.setLayoutX(805)
+  layerMySnakeCanvas.setLayoutY(410)
+  layerInfoCanvas.setLayoutX(1210)
+  layerInfoCanvas.setLayoutY(410)
+  blankCanvas.setLayoutX(0)
+  blankCanvas.setLayoutY(405)
 
   viewCanvas.setLayoutX(0)
-  viewCanvas.setLayoutY(100)
+  viewCanvas.setLayoutY(0)
 
   if(GameController.grid.myId=="" && AppSettings.isLayer){
     canvasCtx.setFont(Font.font("Helvetica", FontWeight.BOLD ,FontPosture.ITALIC,30))
@@ -73,7 +75,7 @@ class LayerScene {
     canvasCtx.fillText(s"请玩一会手机!",layerWidth/2+300,layerHeight/2+150)
   }
   group.getChildren.add(viewCanvas)
-
+  group.getChildren.add(blankCanvas)
 //  viewCanvas.requestFocus()
 //  viewCanvas.setOnKeyPressed(event => layerSceneListener.onKeyPressed(event.getCode))
 
@@ -87,7 +89,9 @@ class LayerScene {
   layerMySnakeCanvas.requestFocus()
   layerMySnakeCanvas.setOnKeyPressed(event => layerSceneListener.onKeyPressed(event.getCode))
 
-
+  val blankCtx = blankCanvas.getGraphicsContext2D
+  blankCtx.setFill(Color.BLACK)
+  blankCtx.fillRect(0,0,800,195)
 
   def setLayerSceneListener(listener: LayerSceneListener): Unit = {
     layerSceneListener = listener

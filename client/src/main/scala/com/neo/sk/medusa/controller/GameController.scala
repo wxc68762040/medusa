@@ -152,7 +152,7 @@ class GameController(id: String,
   val bgColor = new Color(0.003, 0.176, 0.176, 1.0)
   val viewMapCanvas = new Canvas
 
-  val scale = 0.5
+  val scale = 0.25
   val scaleView = 0.5
 
 
@@ -204,7 +204,7 @@ class GameController(id: String,
   def connectToGameServer(gameController: GameController) = {
     ClientBoot.addToPlatform {
       if (AppSettings.isLayer) {
-        stageCtx.switchScene(layerScene.scene, "Layer", flag = true)
+        stageCtx.switchScene(layerScene.scene, "Layer", flag = false)
       } else {
         stageCtx.switchScene(gameScene.scene, "Gaming", flag = true)
       }
@@ -768,121 +768,11 @@ class GameController(id: String,
     viewCtx.fillRect(0, 0, viewWidth, viewHeight)
     viewCtx.save()
     viewCtx.translate(viewWidth / 2, viewHeight / 2)
-    viewCtx.scale(1 / myProportion, 1 / myProportion)
     viewCtx.translate(-viewWidth / 2, - viewHeight / 2)
-    viewCtx.drawImage(bgImage, 0 + deviationX, 0 + deviationY , Boundary.w * scaleView, Boundary.h * scaleView)
+    viewCtx.drawImage(bgImage, 0 + deviationX / myProportion, 0 + deviationY / myProportion, Boundary.w * scaleView / myProportion, Boundary.h * scaleView / myProportion)
 
 
-    viewCtx.clearRect(0, 300 * myProportion, 200, 100 )
-    viewCtx.setFill(Color.BLACK)
-    viewCtx.setGlobalAlpha(0.5)
-    viewCtx.fillRect(0, 300 * myProportion, 200, 100)
-    viewCtx.setGlobalAlpha(1.0)
-
-
-    viewCtx.drawImage(championImage, maxLength.x * LittleMap.w * scaleView /Boundary.w * myProportion  - 7 * myProportion, maxLength.y * LittleMap.h * scaleView / Boundary.h * myProportion - 7 * myProportion + 300 * myProportion, 15 * scaleView, 15 * scaleView)
-
-    apples.filterNot(a => a.x * scaleView < myHead.x * scaleView - windowWidth / 2 * myProportion || a.y * scaleView < myHead.y * scaleView  - windowHeight / 2  * myProportion|| a.x * scaleView > myHead.x * scaleView + windowWidth / 2 * myProportion || a.y * scaleView  > myHead.y * scaleView + windowHeight / 2 * myProportion ).foreach {
-      case Ap(score, _, x, y, _, _) =>
-        val ApColor = score match {
-          case 50 => "#ffeb3bd9"
-          case 25 => "#1474c1"
-          case _ => "#e91e63ed"
-        }
-        viewCtx.setFill(Color.web(ApColor))
-        viewCtx.setEffect(new DropShadow( 5 * scaleView, Color.web("#FFFFFF")))
-        viewCtx.fillRect(x * scaleView - square * scaleView + deviationX,  y * scaleView - square * scaleView + deviationY, square * 2 * scaleView, square * 2 * scaleView)
-    }
-
-    viewCtx.setFill(Color.WHITE)
-    snakes.foreach { snake =>
-      val id = snake.id
-      val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
-      val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
-      var step = (snake.speed * period / Protocol.frameRate - snake.extend).toInt
-      var tail = snake.tail
-      var joints = snake.joints.enqueue(Point(x.toInt, y.toInt))
-      while (step > 0) {
-        val distance = tail.distance(joints.dequeue._1)
-        if (distance >= step) {
-          val target = tail + tail.getDirection(joints.dequeue._1) * step
-          tail = target
-          step = -1
-        } else {
-          step -= distance
-          tail = joints.dequeue._1
-          joints = joints.dequeue._2
-        }
-      }
-      joints = joints.reverse.enqueue(tail)
-      if (snake.id == grid.myId) {
-        viewCtx.beginPath()
-        viewCtx.setStroke(Color.WHITE)
-        viewCtx.setLineWidth(1)
-        viewCtx.setEffect(new DropShadow( 0, Color.web("#FFFFFF")))
-        val recX = (joints.head.x * LittleMap.w * scaleView) / Boundary.w - 800.toFloat / Boundary.w * LittleMap.w * scaleView / 2
-        val recY = (joints.head.y * LittleMap.h * scaleView) / Boundary.h - 400.toFloat / Boundary.h * LittleMap.h * scaleView / 2
-        val recW = 800.toFloat / Boundary.w * LittleMap.w * scaleView
-        val recH = 400.toFloat / Boundary.h * LittleMap.h * scaleView
-        viewCtx.moveTo(recX , recY + 300 * myProportion)
-        viewCtx.lineTo(recX , recY + recH + 300 * myProportion)
-        viewCtx.lineTo(recX + recW, recY + recH + 300 * myProportion )
-        viewCtx.lineTo(recX + recW, recY + 300 * myProportion)
-        viewCtx.lineTo(recX, recY + 300 * myProportion)
-        viewCtx.stroke()
-        viewCtx.closePath()
-      }
-      if (snake.id != maxId && snake.id == grid.myId) {
-        viewCtx.beginPath()
-        //viewCtx.setGlobalAlpha(0.5)
-        viewCtx.setStroke(Color.WHITE)
-        viewCtx.setLineWidth(2)
-        viewCtx.moveTo((joints.head.x * LittleMap.w * scaleView) / Boundary.w * myProportion, (joints.head.y * LittleMap.h * scaleView / Boundary.h * myProportion) + 300 * myProportion)
-        for (i <- 1 until joints.length) {
-          viewCtx.lineTo((joints(i).x * LittleMap.w * scaleView) / Boundary.w * myProportion, (joints(i).y * LittleMap.h * scaleView / Boundary.h * myProportion) + 300 * myProportion)
-        }
-        viewCtx.stroke()
-        viewCtx.closePath()
-      }
-
-
-      viewCtx.beginPath()
-      viewCtx.setGlobalAlpha(1)
-      viewCtx.setStroke(Color.web(snake.color))
-      viewCtx.setEffect(new DropShadow(5 * scaleView, Color.web(snake.color)))
-      val snakeWidth = square * 2 * scaleView
-      viewCtx.setLineWidth(snakeWidth)
-      viewCtx.moveTo(joints.head.x * scaleView + deviationX, joints.head.y * scaleView + deviationY)
-      for (i <- 1 until joints.length) {
-        viewCtx.lineTo(joints(i).x * scaleView + deviationX, joints(i).y * scaleView + deviationY)
-      }
-      viewCtx.stroke()
-      viewCtx.closePath()
-
-
-      //头部信息
-      if (snake.head.x >= 0 && snake.head.y >= 0 && snake.head.x <= Boundary.w && snake.head.y <= Boundary.h) {
-        if (snake.speed > fSpeed + 1) {
-          viewCtx.setFill(Color.web("#FFFF37"))
-          viewCtx.setEffect(new DropShadow(5 * scaleView, Color.web(snake.color)))
-          viewCtx.fillRect(x * scaleView - 1.5 * square * scaleView + deviationX, y * scaleView - 1.5 * square * scaleView + deviationY, square * 3 * scaleView, square * 3 * scaleView)
-        }
-        viewCtx.setFill(Color.web("#FFFFFF"))
-        viewCtx.fillRect(x * scaleView -  square * scaleView + deviationX, y * scaleView - square * scaleView + deviationY, square * 2 * scaleView, square * 2 * scaleView)
-      }
-
-      val nameLength = if (snake.name.length > 15) 15 else snake.name.length
-      viewCtx.setFill(Color.WHITE)
-      viewCtx.setFont(new Font("Helvetica", 12 * myProportion * scaleView))
-      val snakeName = if (snake.name.length > 15) snake.name.substring(0, 14) else snake.name
-      viewCtx.fillText(snakeName, x * scaleView + deviationX - nameLength * 4, y  * scaleView + deviationY - 15)
-      if (snakes.nonEmpty && snake.id == snakes.sortBy(e => (e.length, e.id)).reverse.map(_.id).head) {
-        viewCtx.drawImage(championImage, x * scaleView + deviationX - 8 * scaleView, y * scaleView + deviationY - 45 * scaleView, 15 * scaleView, 15 * scaleView)
-      }
-
-
-    }
-
+    // 信息
     val leftBegin = 10
     val rightBegin = viewWidth - 250 * scaleView
 
@@ -898,14 +788,14 @@ class GameController(id: String,
           val baseLine = 1
           viewCtx.setFont(Font.font("Helvetica", 12 * scale))
           viewCtx.setFill(Color.web("rgb(250,250,250)"))
-          drawTextLine(viewCtx, s"YOU: id=[${mySnake.id}] ", leftBegin, 1, baseLine, scaleView)
-          drawTextLine(viewCtx, s"name=[${mySnake.name.take(32)}]", leftBegin, 2, baseLine, scaleView)
-          drawTextLine(viewCtx, s"your kill = $kill", leftBegin, 3, baseLine, scaleView)
-          drawTextLine(viewCtx, s"your length = ${mySnake.length} ", leftBegin, 4, baseLine, scaleView)
+          drawTextLine(viewCtx, s"YOU: id=[${mySnake.id}] ", leftBegin, 1, baseLine, scale)
+          drawTextLine(viewCtx, s"name=[${mySnake.name.take(32)}]", leftBegin, 2, baseLine, scale)
+          drawTextLine(viewCtx, s"your kill = $kill", leftBegin, 3, baseLine, scale)
+          drawTextLine(viewCtx, s"your length = ${mySnake.length} ", leftBegin, 4, baseLine, scale)
           //drawTextLine(viewCtx, s"fps: ${gameScene.infoHandler.fps.formatted("%.2f")} ping:${gameScene.infoHandler.ping.formatted("%.2f")} dataps:${gameScene.infoHandler.dataps.formatted("%.2f")}b/s", leftBegin, 5, baseLine, scale)
-          drawTextLine(viewCtx, s"drawTimeAverage: ${gameScene.infoHandler.drawTimeAverage}", leftBegin, 5, baseLine, scaleView)
-          drawTextLine(viewCtx, s"roomId: $myRoomId", leftBegin, 6, baseLine, scaleView)
-          drawTextLine(viewCtx, s"snakeNum: $snakeNum", leftBegin, 7, baseLine, scaleView)
+          drawTextLine(viewCtx, s"drawTimeAverage: ${gameScene.infoHandler.drawTimeAverage}", leftBegin, 5, baseLine, scale)
+          drawTextLine(viewCtx, s"roomId: $myRoomId", leftBegin, 6, baseLine, scale)
+          drawTextLine(viewCtx, s"snakeNum: $snakeNum", leftBegin, 7, baseLine, scale)
 
         case None =>
           if (firstCome) {
@@ -935,7 +825,6 @@ class GameController(id: String,
 
     val currentRankBaseLine = 9
     var index = 0
-    // val myId = myRank.keys.headOption.getOrElse("")
     drawTextLine(viewCtx,s" --- Current Rank --- ", leftBegin, index, currentRankBaseLine, scale)
     if(currentRank.exists(s => s.id == grid.myId)){
       currentRank.foreach { score =>
@@ -986,6 +875,138 @@ class GameController(id: String,
           viewCtx.fillText(s"你自杀了", centerX - 100 * scaleView, i * 20 * scaleView)
         }
         i += 1
+    }
+    //地图
+    viewCtx.clearRect(0, 300, 200, 100 )
+    viewCtx.setFill(Color.BLACK)
+    viewCtx.setGlobalAlpha(0.5)
+    viewCtx.fillRect(0, 300, 200, 100)
+    viewCtx.setGlobalAlpha(1.0)
+
+
+    viewCtx.drawImage(championImage, maxLength.x * LittleMap.w * scaleView /Boundary.w  - 7, maxLength.y * LittleMap.h * scaleView / Boundary.h  - 7  + 300 , 15 * scaleView, 15 * scaleView)
+
+    snakes.foreach { snake =>
+      val id = snake.id
+      val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
+      val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
+      var step = (snake.speed * period / Protocol.frameRate - snake.extend).toInt
+      var tail = snake.tail
+      var joints = snake.joints.enqueue(Point(x.toInt, y.toInt))
+      while (step > 0) {
+        val distance = tail.distance(joints.dequeue._1)
+        if (distance >= step) {
+          val target = tail + tail.getDirection(joints.dequeue._1) * step
+          tail = target
+          step = -1
+        } else {
+          step -= distance
+          tail = joints.dequeue._1
+          joints = joints.dequeue._2
+        }
+      }
+      joints = joints.reverse.enqueue(tail)
+      if (snake.id == grid.myId) {
+        viewCtx.beginPath()
+        viewCtx.setStroke(Color.WHITE)
+        viewCtx.setLineWidth(1)
+        viewCtx.setEffect(new DropShadow(0, Color.web("#FFFFFF")))
+        val recX = (joints.head.x * LittleMap.w * scaleView) / Boundary.w - 800.toFloat / Boundary.w * LittleMap.w * scaleView / 2
+        val recY = (joints.head.y * LittleMap.h * scaleView) / Boundary.h - 400.toFloat / Boundary.h * LittleMap.h * scaleView / 2
+        val recW = 800.toFloat / Boundary.w * LittleMap.w * scaleView
+        val recH = 400.toFloat / Boundary.h * LittleMap.h * scaleView
+        viewCtx.moveTo(recX, recY + 300)
+        viewCtx.lineTo(recX, recY + recH + 300)
+        viewCtx.lineTo(recX + recW, recY + recH + 300)
+        viewCtx.lineTo(recX + recW, recY + 300)
+        viewCtx.lineTo(recX, recY + 300)
+        viewCtx.stroke()
+        viewCtx.closePath()
+      }
+      if (snake.id != maxId && snake.id == grid.myId) {
+        viewCtx.beginPath()
+        //viewCtx.setGlobalAlpha(0.5)
+        viewCtx.setStroke(Color.WHITE)
+        viewCtx.setLineWidth(2)
+        viewCtx.moveTo((joints.head.x * LittleMap.w * scaleView) / Boundary.w, (joints.head.y * LittleMap.h * scaleView / Boundary.h) + 300)
+        for (i <- 1 until joints.length) {
+          viewCtx.lineTo((joints(i).x * LittleMap.w * scaleView) / Boundary.w, (joints(i).y * LittleMap.h * scaleView / Boundary.h) + 300)
+        }
+        viewCtx.stroke()
+        viewCtx.closePath()
+      }
+    }
+
+    viewCtx.scale(1 / myProportion, 1 / myProportion)
+
+    apples.filterNot(a => a.x * scaleView < myHead.x * scaleView - viewWidth / 2 * myProportion || a.y * scaleView < myHead.y * scaleView  - viewHeight / 2  * myProportion|| a.x * scaleView > myHead.x * scaleView + viewWidth / 2 * myProportion || a.y * scaleView  > myHead.y * scaleView + viewHeight / 2 * myProportion ).foreach {
+      case Ap(score, _, x, y, _, _) =>
+        val ApColor = score match {
+          case 50 => "#ffeb3bd9"
+          case 25 => "#1474c1"
+          case _ => "#e91e63ed"
+        }
+        viewCtx.setFill(Color.web(ApColor))
+        viewCtx.setEffect(new DropShadow( 5 * scaleView, Color.web("#FFFFFF")))
+        viewCtx.fillRect(x * scaleView - square * scaleView + deviationX,  y * scaleView - square * scaleView + deviationY, square * 2 * scaleView, square * 2 * scaleView)
+    }
+
+    viewCtx.setFill(Color.WHITE)
+    snakes.foreach { snake =>
+      val id = snake.id
+      val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
+      val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
+      var step = (snake.speed * period / Protocol.frameRate - snake.extend).toInt
+      var tail = snake.tail
+      var joints = snake.joints.enqueue(Point(x.toInt, y.toInt))
+      while (step > 0) {
+        val distance = tail.distance(joints.dequeue._1)
+        if (distance >= step) {
+          val target = tail + tail.getDirection(joints.dequeue._1) * step
+          tail = target
+          step = -1
+        } else {
+          step -= distance
+          tail = joints.dequeue._1
+          joints = joints.dequeue._2
+        }
+      }
+      joints = joints.reverse.enqueue(tail)
+      viewCtx.beginPath()
+      viewCtx.setGlobalAlpha(1)
+      viewCtx.setStroke(Color.web(snake.color))
+      viewCtx.setEffect(new DropShadow(5 * scaleView, Color.web(snake.color)))
+      val snakeWidth = square * 2 * scaleView
+      viewCtx.setLineWidth(snakeWidth)
+      viewCtx.moveTo(joints.head.x * scaleView + deviationX, joints.head.y * scaleView + deviationY)
+      for (i <- 1 until joints.length) {
+        viewCtx.lineTo(joints(i).x * scaleView + deviationX, joints(i).y * scaleView + deviationY)
+      }
+      viewCtx.stroke()
+      viewCtx.closePath()
+
+
+      //头部信息
+      if (snake.head.x >= 0 && snake.head.y >= 0 && snake.head.x <= Boundary.w && snake.head.y <= Boundary.h) {
+        if (snake.speed > fSpeed + 1) {
+          viewCtx.setFill(Color.web("#FFFF37"))
+          viewCtx.setEffect(new DropShadow(5 * scaleView, Color.web(snake.color)))
+          viewCtx.fillRect(x * scaleView - 1.5 * square * scaleView + deviationX, y * scaleView - 1.5 * square * scaleView + deviationY, square * 3 * scaleView, square * 3 * scaleView)
+        }
+        viewCtx.setFill(Color.web("#FFFFFF"))
+        viewCtx.fillRect(x * scaleView -  square * scaleView + deviationX, y * scaleView - square * scaleView + deviationY, square * 2 * scaleView, square * 2 * scaleView)
+      }
+
+      val nameLength = if (snake.name.length > 15) 15 else snake.name.length
+      viewCtx.setFill(Color.WHITE)
+      viewCtx.setFont(new Font("Helvetica", 12 * myProportion * scaleView))
+      val snakeName = if (snake.name.length > 15) snake.name.substring(0, 14) else snake.name
+      viewCtx.fillText(snakeName, x * scaleView + deviationX - nameLength * 4, y  * scaleView + deviationY - 15)
+      if (snakes.nonEmpty && snake.id == snakes.sortBy(e => (e.length, e.id)).reverse.map(_.id).head) {
+        viewCtx.drawImage(championImage, x * scaleView + deviationX - 8 * scaleView, y * scaleView + deviationY - 45 * scaleView, 15 * scaleView, 15 * scaleView)
+      }
+
+
     }
 
     viewCtx.setFill(Color.web("#FFFFFF"))
