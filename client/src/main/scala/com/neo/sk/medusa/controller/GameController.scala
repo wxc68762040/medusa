@@ -183,7 +183,7 @@ class GameController(id: String,
               Some(ImgData(windowWidth, windowHeight, allSnakesByte.length, ByteString.copyFrom(allSnakesByte))),
               Some(ImgData(windowWidth, windowHeight, mySnakeByte.length, ByteString.copyFrom(mySnakeByte))),
               Some(ImgData(windowWidth, windowHeight, infoByte.length, ByteString.copyFrom(infoByte))))
-            val observation = ObservationRsp(Some(layer), Some(ImgData(windowWidth, windowHeight, 0, ByteString.copyFrom(infoByte))))
+            val observation = ObservationRsp(Some(layer), Some(ImgData(windowWidth, windowHeight, 0, ByteString.copyFrom(viewByte))))
             t.sender ! observation
             Behaviors.same
           case t: CreateRoomReq =>
@@ -1040,7 +1040,9 @@ class GameController(id: String,
 
       if (AppSettings.isLayer) {
         ClientBoot.addToPlatform {
+          val t = System.currentTimeMillis()
           botInfoActor ! GetByte(getMapByte(true), getbackgroundByte(true), getAppleByte(true), getAllSnakeByte(true), getMySnakeByte(true), getInfoByte(grid.currentRank, grid.myRank, true), getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, true))
+          println(s"time: ${System.currentTimeMillis() - t}")
         }
       }
 

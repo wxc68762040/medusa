@@ -278,7 +278,7 @@ object WSClient {
 
 					case ActionTest() =>
 
-						log.info("get leaveRoomTest")
+						log.info("get ActionTest")
 
 						val rsp1 = client.action()
 						rsp1.onComplete{
