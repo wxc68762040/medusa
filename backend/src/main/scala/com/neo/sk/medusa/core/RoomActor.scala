@@ -178,7 +178,8 @@ object RoomActor {
           case t:BotGetFrame =>
             grid.getGridSyncData.snakes.foreach { s =>
               if (s.id.equals(t.botId)) {
-                t.botActor ! BotActor.BotMove(s.head.x, s.head.y, s.direction, grid.frameCount)
+               // log.info(s"${s.name}+${grid.frameCount}")
+                t.botActor ! BotActor.BotMove(s.head.x, s.head.y, s.direction, s.speed,grid.frameCount,grid.grid)
               }
             }
             Behavior.same
