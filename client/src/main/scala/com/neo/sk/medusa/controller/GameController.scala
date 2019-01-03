@@ -1044,9 +1044,7 @@ class GameController(id: String,
 
       if (AppSettings.isLayer) {
         ClientBoot.addToPlatform {
-          val t = System.currentTimeMillis()
           botInfoActor ! GetByte(getMapByte(true), getBackgroundByte(true), getAppleByte(true), getAllSnakeByte(true), getMySnakeByte(true), getInfoByte(grid.currentRank, grid.myRank, true), getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, true))
-          println(s"time: ${System.currentTimeMillis() - t}")
         }
       }
 
