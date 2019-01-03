@@ -248,6 +248,7 @@ object RoomActor {
 //							dispatch(userMap, watcherMap, grid.getGridSyncData)
 							snakeState._1.foreach { s =>
                 if(userMap.get(s.id).nonEmpty) {
+                  log.info(s"send init sync data to ${s.id}")
                   dispatchTo(grid.getGridSyncData, userMap(s.id)._1, watcherMap, s.id)
 //                  val sendBuffer = new MiddleBufferInJvm(40960)
 //                  val msg = ByteString(grid.getGridSyncData.fillMiddleBuffer(sendBuffer).result())

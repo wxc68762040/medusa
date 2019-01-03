@@ -23,6 +23,7 @@ import scala.concurrent.duration._
 import com.neo.sk.medusa.snake.Protocol._
 import java.awt.event.KeyEvent
 import java.awt.image.BufferedImage
+import java.awt.image.BufferedImage.{TYPE_INT_ARGB, TYPE_BYTE_GRAY}
 import java.nio.ByteBuffer
 
 import akka.actor.typed.scaladsl.Behaviors
@@ -96,7 +97,8 @@ object GameController {
       val w = canvas.getWidth.toInt
       val h = canvas.getHeight.toInt
       val wi = new WritableImage(w, h)
-      val bi = new BufferedImage(w, h, 2)
+//      val bi = new BufferedImage(w, h, TYPE_INT_ARGB)
+      val bi = new BufferedImage(w, h, TYPE_BYTE_GRAY)
       params.setFill(Color.TRANSPARENT)
       canvas.snapshot(params, wi) //从画布中复制绘图并复制到writableImage
       SwingFXUtils.fromFXImage(wi, bi)
@@ -234,7 +236,7 @@ class GameController(id: String,
           getMySnakeByte(false)
           getAllSnakeByte(false)
           getAppleByte(false)
-          getbackgroundByte(false)
+          getBackgroundByte(false)
           getInfoByte(grid.currentRank,grid.myRank, flag = false)
           getViewByte(grid.currentRank, grid.historyRank,grid.myRank, grid.loginAgain, flag = false)
         } else {
@@ -425,7 +427,7 @@ class GameController(id: String,
 
 
 //视野中不可交互的元素(背景图以及Boundary)
-  def getbackgroundByte(flag: Boolean) ={
+  def getBackgroundByte(flag: Boolean) ={
 
     val layerBgCanvas = layerScene.layerBgCanvas
     layerBgCanvas.setWidth(windowWidth)
@@ -767,10 +769,10 @@ class GameController(id: String,
     viewCtx.setFill(bgColor)
     viewCtx.fillRect(0, 0, viewWidth, viewHeight)
     viewCtx.save()
-//    viewCtx.translate(viewWidth / 2, viewHeight / 2)
-//    viewCtx.translate(-viewWidth / 2, - viewHeight / 2)
-    viewCtx.drawImage(bgImage, 0 + deviationX / myProportion, 0 + deviationY / myProportion, Boundary.w * scaleView / myProportion, Boundary.h * scaleView / myProportion)
-
+    viewCtx.drawImage(bgImage,
+      (0 + deviationX) / myProportion + ((1 - 1 / myProportion) * viewWidth / 2),
+      (0 + deviationY) / myProportion + ((1 - 1 / myProportion) * viewHeight / 2),
+      Boundary.w * scaleView / myProportion, Boundary.h * scaleView / myProportion)
 
     // 信息
     val leftBegin = 10
@@ -936,8 +938,10 @@ class GameController(id: String,
         viewCtx.closePath()
       }
     }
-
+  
+    viewCtx.translate(viewWidth / 2, viewHeight / 2)
     viewCtx.scale(1 / myProportion, 1 / myProportion)
+    viewCtx.translate(-viewWidth / 2, - viewHeight / 2)
 
     apples.filterNot(a => a.x * scaleView < myHead.x * scaleView - viewWidth / 2 * myProportion || a.y * scaleView < myHead.y * scaleView  - viewHeight / 2  * myProportion|| a.x * scaleView > myHead.x * scaleView + viewWidth / 2 * myProportion || a.y * scaleView  > myHead.y * scaleView + viewHeight / 2 * myProportion ).foreach {
       case Ap(score, _, x, y, _, _) =>
@@ -1041,7 +1045,7 @@ class GameController(id: String,
       if (AppSettings.isLayer) {
         ClientBoot.addToPlatform {
           val t = System.currentTimeMillis()
-          botInfoActor ! GetByte(getMapByte(true), getbackgroundByte(true), getAppleByte(true), getAllSnakeByte(true), getMySnakeByte(true), getInfoByte(grid.currentRank, grid.myRank, true), getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, true))
+          botInfoActor ! GetByte(getMapByte(true), getBackgroundByte(true), getAppleByte(true), getAllSnakeByte(true), getMySnakeByte(true), getInfoByte(grid.currentRank, grid.myRank, true), getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, true))
           println(s"time: ${System.currentTimeMillis() - t}")
         }
       }
