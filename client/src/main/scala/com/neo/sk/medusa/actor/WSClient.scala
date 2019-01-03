@@ -10,12 +10,13 @@ import akka.http.scaladsl.model.ws.{WebSocketRequest, _}
 import akka.stream.scaladsl.{Flow, Keep, Sink}
 import akka.stream.typed.scaladsl.{ActorSink, _}
 import akka.stream.{Materializer, OverflowStrategy}
-import akka.util.ByteString
+import akka.util.{ByteString, ByteStringBuilder}
 import com.neo.sk.medusa.common.{AppSettings, StageContext}
 import com.neo.sk.medusa.controller.{GameController, LoginController}
 import com.neo.sk.medusa.scene.{GameScene, LayerScene, LoginScene}
 import com.neo.sk.medusa.snake.Protocol._
 import com.neo.sk.medusa.snake.Protocol4Agent.{Ws4AgentResponse, WsResponse}
+import com.neo.sk.medusa.ClientBoot.{executor, materializer}
 import org.seekloud.byteobject.ByteObject._
 import org.seekloud.byteobject.MiddleBufferInJvm
 import org.slf4j.LoggerFactory
@@ -108,7 +109,7 @@ object WSClient {
           log.info(s"bot req token and accessCode")
 					AppSettings.isLayer = true
           //fixme 此处若拿不到token或accessCode则存在问题
-         getBotToken(botId,botKey).map{
+          getBotToken(botId,botKey).map{
             case Right(t)=>
 							val playerId = "bot" + botId
 							linkGameAgent(loginController.gameId, playerId, t.token).map{
@@ -278,7 +279,7 @@ object WSClient {
 
 					case ActionTest() =>
 
-						log.info("get leaveRoomTest")
+						log.info("get ActionTest")
 
 						val rsp1 = client.action()
 						rsp1.onComplete{
@@ -331,14 +332,16 @@ object WSClient {
 					case Left(e) =>
 						println(s"decode error: ${e.message}")
 				}
+				
+			case _ =>
 		}
 	}
 	
 	def getSink(actor: ActorRef[WsMsgSource]) =
-		Flow[Message].collect {
+		Sink.foreach[Message] {
 			case TextMessage.Strict(msg) =>
 				log.debug(s"msg from webSocket: $msg")
-				TextMsg(msg)
+				actor ! TextMsg(msg)
 				
 			case BinaryMessage.Strict(bMsg) =>
 				//decode process.
@@ -351,8 +354,27 @@ object WSClient {
 							println(s"decode error: ${e.message}")
 							TextMsg("decode error")
 					}
-				msg
-		}.to(ActorSink.actorRef[WsMsgSource](actor, CompleteMsgServer, FailMsgServer))
+				actor ! msg
+			
+			case msg: BinaryMessage.Streamed =>
+				val futureMsg = msg.dataStream.runFold(new ByteStringBuilder().result()) {
+					case (s, str) => s.++(str)
+				}
+				futureMsg.map { bMsg =>
+					val buffer = new MiddleBufferInJvm(bMsg.asByteBuffer)
+					val msg = bytesDecode[GameMessage](buffer) match {
+						case Right(v) => v
+						case Left(e) =>
+							println(s"decode streamed message error: ${e.message}")
+							TextMsg("decode error")
+					}
+					actor ! msg
+				}
+				
+			case _ =>
+				
+		}
+//			.to(ActorSink.actorRef[WsMsgSource](actor, CompleteMsgServer, FailMsgServer))
 	
 	def getSource(wsClient: ActorRef[WsCommand]) = ActorSource.actorRef[WsSendMsg](
 		completionMatcher = {
