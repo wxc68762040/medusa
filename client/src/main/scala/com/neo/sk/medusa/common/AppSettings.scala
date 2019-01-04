@@ -40,6 +40,7 @@ object AppSettings {
 
 
   val isView = appConfig.getBoolean("isView")
+  val isViewObservation = appConfig.getBoolean("isViewObservation")
 
   val botInfo = if(!isView) {
       (appConfig.getString("botInfo.botId"), appConfig.getString("botInfo.botKey"))

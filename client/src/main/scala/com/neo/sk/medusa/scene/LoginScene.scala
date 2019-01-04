@@ -135,6 +135,8 @@ class LoginScene() {
 		ClientBoot.addToPlatform {
       clearCanvas()
       if (ifSuccess) {
+				group.getChildren.removeAll(createRoomChoice, warningText, someRoomChoice,
+					humanJoinButton, roomPwInput, roomIdInput)
         group.getChildren.addAll(createRoomChoice, warningText, someRoomChoice,
           humanJoinButton, roomPwInput, roomIdInput)
       }else{

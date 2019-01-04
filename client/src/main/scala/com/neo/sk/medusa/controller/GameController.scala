@@ -118,9 +118,12 @@ object GameController {
   def drawTextLine(ctx: GraphicsContext, str: String, x: Double, lineNum: Int, lineBegin: Int = 0, scale: Double):Unit = {
     ctx.fillText(str, x, (lineNum + lineBegin - 1) * 14 * scale )
   }
+
   sealed trait Command
 
-  case class GetByte(mapByte: Array[Byte], bgByte: Array[Byte], appleByte: Array[Byte], allSnakebyte: Array[Byte], mySnakeByte: Array[Byte], infoByte: Array[Byte], viewByte: Array[Byte]) extends Command
+  case class GetByte(mapByte: Array[Byte], bgByte: Array[Byte], appleByte: Array[Byte], kernelByte:Array[Byte], allSnakeByte: Array[Byte], mySnakeByte: Array[Byte], infoByte: Array[Byte]) extends Command
+
+  case class GetViewByte(viewByte: Array[Byte]) extends Command
 
   case class GetObservation(sender:ActorRef[ObservationRsp]) extends Command
 
@@ -157,6 +160,8 @@ class GameController(id: String,
   val scale = 0.25
   val scaleView = 0.5
 
+  //var actionList = List.empty[Map[Long, Int]]
+  var botActionMap = Map.empty[Long, Map[String, Int]]
 
   implicit val system: ActorSystem = ActorSystem("medusa", config)
 
@@ -165,17 +170,20 @@ class GameController(id: String,
   def create(): Behavior[Command] = {
     Behaviors.setup[Command] {
       _ =>
-        idle(Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte]())
+        idle(Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte]())
     }
   }
 
-  def idle(mapByte: Array[Byte], bgByte: Array[Byte], appleByte: Array[Byte], allSnakesByte: Array[Byte], mySnakeByte: Array[Byte], infoByte: Array[Byte],viewByte: Array[Byte]): Behavior[Command] = {
+  def idle(mapByte: Array[Byte], bgByte: Array[Byte], appleByte: Array[Byte], kernelByte:Array[Byte], allSnakesByte: Array[Byte], mySnakeByte: Array[Byte], infoByte: Array[Byte],viewByte: Array[Byte]): Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
 
           case t: GetByte =>
-          idle(t.mapByte, t.bgByte,t.appleByte, t.allSnakebyte, t.mySnakeByte, t.infoByte, t.viewByte)
+           idle(t.mapByte, t.bgByte,t.appleByte, t.kernelByte, t.allSnakeByte, t.mySnakeByte, t.infoByte, Array[Byte]())
+
+          case t: GetViewByte =>
+            idle(Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte](), t.viewByte)
 
           case t: GetObservation =>
             val layer = LayeredObservation(
@@ -232,13 +240,16 @@ class GameController(id: String,
 				val scaleW = gameScene.viewWidth / gameScene.initWindowWidth
 				val scaleH = gameScene.viewHeight / gameScene.initWindowHeight
         if(AppSettings.isLayer) {
+          getAction(grid.actionMap)
           getMapByte(false)
           getMySnakeByte(false)
           getAllSnakeByte(false)
+          getKernelByte(false)
           getAppleByte(false)
           getBackgroundByte(false)
           getInfoByte(grid.currentRank,grid.myRank, flag = false)
           getViewByte(grid.currentRank, grid.historyRank,grid.myRank, grid.loginAgain, flag = false)
+          //layerScene.getKeyCode(true)
         } else {
           gameScene.draw(grid.myId, grid.getGridSyncData4Client, grid.historyRank, grid.currentRank, grid.loginAgain, grid.myRank, scaleW, scaleH)
         }
@@ -255,7 +266,7 @@ class GameController(id: String,
 	}
 
 
-  //视野在整个地图中的位置
+  //视野在整个地图中的位置 (location_in_map
   def getMapByte(flag: Boolean) = {
 
     val layerMapCanvas = layerScene.layerMapCanvas
@@ -263,18 +274,13 @@ class GameController(id: String,
     val mapWidth = layerScene.layerWidth
     val mapHeight = layerScene.layerHeight
     val snakes = grid.getGridSyncData4Client.snakes
-    val maxLength = if (snakes.nonEmpty) snakes.sortBy(r => (r.length, r.id)).reverse.head.head else Point(0, 0)
-    val maxId = if (snakes.nonEmpty) snakes.sortBy(r => (r.length, r.id)).reverse.head.id else 0L
     val period = (System.currentTimeMillis() - basicTime).toInt
 
     layerMapCanvas.setWidth(mapWidth)
     layerMapCanvas.setHeight(mapHeight)
 
-
     mapCtx.setFill(Color.BLACK)
     mapCtx.fillRect(0, 0, 400, 200)
-
-    mapCtx.drawImage(championImage, maxLength.x * LittleMap.w / Boundary.w - 7,  maxLength.y * LittleMap.h / Boundary.h - 7, 15, 15)
 
     if (snakes.nonEmpty && snakes.exists(_.id == grid.myId)) {
       snakes.foreach { snake =>
@@ -282,20 +288,8 @@ class GameController(id: String,
         val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
 
         var joints = snake.joints.enqueue(Point(x.toInt, y.toInt))
-        var step = snake.speed.toInt * period / Protocol.frameRate - snake.extend
-        var tail = snake.tail
-        while (step > 0) {
-          val distance = tail.distance(joints.dequeue._1)
-          if (distance >= step) { //尾巴在移动到下一个节点前就需要停止。
-            val target = tail + tail.getDirection(joints.dequeue._1) * step
-            tail = target
-            step = -1
-          } else { //尾巴在移动到下一个节点后，还需要继续移动。
-            step -= distance
-            tail = joints.dequeue._1
-            joints = joints.dequeue._2
-          }
-        }
+
+        val tail = snake.tail
         joints = joints.reverse.enqueue(tail)
         if (snake.id == grid.myId) {
           mapCtx.beginPath()
@@ -304,8 +298,7 @@ class GameController(id: String,
           val recY = (joints.head.y * LittleMap.h) / Boundary.h - GameScene.initWindowHeight.toFloat / Boundary.h * LittleMap.h / 2
           val recW = GameScene.initWindowWidth.toFloat / Boundary.w * LittleMap.w
           val recH = GameScene.initWindowHeight.toFloat / Boundary.h * LittleMap.h
-          mapCtx.setGlobalAlpha(0.5)
-          mapCtx.setFill(Color.GRAY)
+          mapCtx.setFill(Color.WHITE)
           mapCtx.fillRect(recX, recY, recW, recH)
           mapCtx.moveTo(recX, recY)
           mapCtx.lineTo(recX, recY + recH)
@@ -314,20 +307,6 @@ class GameController(id: String,
           mapCtx.lineTo(recX, recY)
           mapCtx.stroke()
           mapCtx.closePath()
-          mapCtx.setGlobalAlpha(1)
-        }
-        if (snake.id != maxId && snake.id == grid.myId) {
-          mapCtx.beginPath()
-          mapCtx.setGlobalAlpha(0.5)
-          mapCtx.setStroke(Color.WHITE)
-          mapCtx.setLineWidth(2)
-          mapCtx.moveTo((joints.head.x * LittleMap.w) / Boundary.w, joints.head.y * LittleMap.h / Boundary.h)
-          for (i <- 1 until joints.length) {
-            mapCtx.lineTo((joints(i).x * LittleMap.w) / Boundary.w, joints(i).y * LittleMap.h / Boundary.h)
-          }
-          mapCtx.stroke()
-          mapCtx.closePath()
-
         }
       }
     }
@@ -350,72 +329,31 @@ class GameController(id: String,
 
     val infoCtx = layerInfoCanvas.getGraphicsContext2D
     val snakes = grid.getGridSyncData4Client.snakes
+    val snakeColor = if(snakes.exists(_.id == grid.myId))  snakes.filter(_.id == grid.myId).head.color else "rgb(250, 250, 250)"
 
     infoCtx.clearRect(0, 0, 400, 200)
     infoCtx.fillRect(0, 0, 400, 200)
     infoCtx.setFill(Color.BLACK)
     infoCtx.fillRect(0, 0, 400, 200)
+    val myLength = myRank._2.l
+    val myKill = myRank._2.k
+    val mySpeed = if(snakes.exists(_.id == grid.myId)) snakes.filter(_.id == grid.myId).head.speed else 0
 
-
-
-    var index = 0
-    infoCtx.setFill(Color.BLACK)
-    if (currentRank.exists(s => s.id == grid.myId)) {
-      currentRank.foreach { score =>
-        index += 3
-        val snakeColor = if(snakes.exists(_.id == score.id))  snakes.filter(_.id == score.id).head.color else "rgb(250, 250, 250)"
-        if (score.id == grid.myId) {
-          infoCtx.setFill(Color.web(snakeColor))
-          infoCtx.fillRect(index * 10, 200 - (score.l/10), 10, score.l/10)
-          infoCtx.setFill(Color.GRAY)
-          infoCtx.fillRect((index + 1) * 10, 200 - (score.k * 10) , 10, score.k * 10)
-          infoCtx.setFont(Font.font("px Helvetica", 12))
-          infoCtx.setFill(Color.WHITE)
-//          infoCtx.fillText("L", index * 10 + 3, 260 )
-//          infoCtx.fillText("K", (index + 1) * 10 + 3, 260 )
-//          infoCtx.fillText(s"${index / 3} ",(index + 1) * 10, 275)
-
-        } else {
-
-          infoCtx.setFill(Color.web(snakeColor))
-          infoCtx.fillRect(index * 10, 200 - (score.l/10), 10, score.l/10)
-          infoCtx.setFill(Color.GRAY)
-          infoCtx.fillRect((index + 1) * 10, 200 - (score.k * 10) , 10, score.k * 10)
-          infoCtx.setFont(Font.font("px Helvetica", 12))
-          infoCtx.setFill(Color.WHITE)
-//          infoCtx.fillText("L", index * 10 + 3, 260 )
-//          infoCtx.fillText("K", (index + 1) * 10 + 3, 260 )
-//          infoCtx.fillText(s"${index / 3} ",(index + 1) * 10, 275)
-
-        }
-      }
-    } else {
-      currentRank.foreach { score =>
-        index += 3
-        val snakeColor = if (snakes.exists(_.id == score.id)) snakes.filter(_.id == score.id).head.color else "rgb(250, 250, 250)"
-        infoCtx.setFill(Color.web(snakeColor))
-        infoCtx.fillRect(index * 10, 200 - (score.l / 10), 10, score.l / 10)
-        infoCtx.setFill(Color.GRAY)
-        infoCtx.fillRect((index + 1) * 10, 200 - (score.k * 10), 10, score.k * 10)
-        infoCtx.setFont(Font.font("px Helvetica", 12))
-        infoCtx.setFill(Color.WHITE)
-//        infoCtx.fillText("L", index * 10 + 3, 260 )
-//        infoCtx.fillText("K", (index + 1) * 10 + 3, 260 )
-//        infoCtx.fillText(s"${index / 3} ",(index + 1) * 10, 275)
-      }
-      val myScore = myRank._2
-      val myIndex = myRank._1
-
-      infoCtx.setFill(Color.BLACK)
-      infoCtx.fillRect(myIndex * 10, 200 - (myScore.l / 10), 10, myScore.l / 10)
-      infoCtx.setFill(Color.GRAY)
-      infoCtx.fillRect((myIndex + 1) * 10, 200 - (myScore.k / 10), 10, myScore.k * 10)
-      infoCtx.setFont(Font.font("px Helvetica", 12))
-      infoCtx.setFill(Color.WHITE)
-//      infoCtx.fillText("L", myIndex * 10 + 3, 260 )
-//      infoCtx.fillText("K", (myIndex + 1) * 10 + 3, 260 )
-//      infoCtx.fillText(s"${myIndex / 3} ",(myIndex + 1) * 10, 275)
+    infoCtx.setFill(Color.web(snakeColor))
+    if(myLength < 4000){
+      infoCtx.fillRect(0, 42.5, myLength / 10, 15)
+    } else{
+      infoCtx.fillRect(0, 42.5, 400, 15)
     }
+    infoCtx.setFill(Color.GREEN)
+    if(myKill < 50 ){
+      infoCtx.fillRect(0, 92.5, myKill * 8, 15)
+    }else{
+      infoCtx.fillRect(0, 92.5, 400, 15)
+    }
+    infoCtx.setFill(Color.YELLOW)
+    infoCtx.fillRect(0, 142.5, mySpeed * 8, 15)
+
 
 
     if (flag) {
@@ -426,7 +364,7 @@ class GameController(id: String,
   }
 
 
-//视野中不可交互的元素(背景图以及Boundary)
+//视野内的不可变元素(边框）
   def getBackgroundByte(flag: Boolean) ={
 
     val layerBgCanvas = layerScene.layerBgCanvas
@@ -460,20 +398,17 @@ class GameController(id: String,
     val deviationY = centerY - myHead.y * scale
 
     val bgCtx = layerBgCanvas.getGraphicsContext2D
-    bgCtx.setFill(bgColor)
+    bgCtx.setFill(Color.BLACK)
     bgCtx.fillRect(0, 0, 400, 200)
     bgCtx.save()
 
-    bgCtx.drawImage(bgImage, 0 + deviationX, 0 + deviationY , Boundary.w * scale , Boundary.h * scale)
-
     bgCtx.setFill(Color.web("#FFFFFF"))
-    bgCtx.setEffect(new DropShadow(5 * scale,Color.web("#FFFFFF")))
+   // bgCtx.setEffect(new DropShadow(5 * scale,Color.web("#FFFFFF")))
     bgCtx.fillRect(0 + deviationX, 0 + deviationY,  Boundary.w * scale, boundaryWidth * scale)
     bgCtx.fillRect(0 + deviationX, 0 + deviationY, boundaryWidth * scale, Boundary.h * scale)
     bgCtx.fillRect(0 + deviationX, Boundary.h * scale + deviationY, Boundary.w * scale, boundaryWidth * scale)
     bgCtx.fillRect(Boundary.w * scale + deviationX, 0 + deviationY, boundaryWidth * scale, Boundary.h * scale)
     bgCtx.restore()
-    bgCtx.setFill(Color.web("rgb(250, 250, 250)"))
 
    if(flag) {
      canvas2byteArray(layerBgCanvas)
@@ -482,7 +417,7 @@ class GameController(id: String,
    }
   }
 
-  //视野中可交互的元素(Apple)
+  //视野内的可变元素（Apple）
   def getAppleByte (flag: Boolean) = {
 
     val layerAppleCanvas = layerScene.layerAppleCanvas
@@ -528,8 +463,97 @@ class GameController(id: String,
     }
 
   }
+  //视野内的操控核心（kernel）
+  def getKernelByte (flag: Boolean) = {
 
-  //视野中包括自己的所有玩家(以及头部信息）
+    val layerKernelCanvas = layerScene.layerKernelCanvas
+    layerKernelCanvas.setWidth(windowWidth)
+    layerKernelCanvas.setHeight(windowHeight)
+    //val scale = if(scaleW >= scaleH) scaleH  else scaleW // 长款变化比例不同时，取小比例
+    val snakesCtx = layerKernelCanvas.getGraphicsContext2D
+    val snakes = grid.getGridSyncData4Client.snakes
+    val period = (System.currentTimeMillis() - basicTime).toInt
+
+    val proportion = if (snakes.exists(_.id == grid.myId)) {
+      val length = snakes.filter(_.id == grid.myId).head.length
+      val p = 0.0005 * length + 0.975
+      if (p < 1.5) p else 1.5
+    } else {
+      1.0
+    }
+    if (myProportion < proportion) {
+      myProportion += 0.01
+    }
+
+    snakesCtx.clearRect(0, 0, 400, 200)
+    snakesCtx.setFill(Color.BLACK)
+    snakesCtx.fillRect(0, 0, 400, 200)
+
+    val mySubFrameRevise =
+      try {
+        snakes.filter(_.id == grid.myId).head.direction * snakes.filter(_.id == grid.myId).head.speed.toInt * period / frameRate
+      } catch {
+        case e: Exception =>
+          Point(0, 0)
+      }
+
+    val myHead = if (snakes.exists(_.id == grid.myId)) snakes.filter(_.id == grid.myId).head.head + mySubFrameRevise else Point(Boundary.w / 2, Boundary.h / 2)
+
+    val deviationX = centerX - myHead.x * scale
+    val deviationY = centerY - myHead.y * scale
+
+    snakes.foreach { snake =>
+      //    snakes.filterNot(s => s.head.x * scale < myHead.x * scale - windowWidth / 2 * myProportion || s.head.y * scale < myHead.y * scale - windowHeight / 2  * myProportion || s.head.x * scale > myHead.x * scale + windowWidth / 2 * myProportion || s.head.y * scale  > myHead.y * scale+ windowHeight / 2 * myProportion ).foreach{ snake =>
+      val id = snake.id
+      val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
+      val y = snake.head.y + snake.direction.y * snake.speed * period / Protocol.frameRate
+      var step = (snake.speed * period / Protocol.frameRate - snake.extend).toInt
+      var tail = snake.tail
+      var joints = snake.joints.enqueue(Point(x.toInt, y.toInt))
+      while (step > 0) {
+        val distance = tail.distance(joints.dequeue._1)
+        if (distance >= step) {
+          val target = tail + tail.getDirection(joints.dequeue._1) * step
+          tail = target
+          step = -1
+        } else {
+          step -= distance
+          tail = joints.dequeue._1
+          joints = joints.dequeue._2
+        }
+      }
+      joints = joints.reverse.enqueue(tail)
+      snakesCtx.beginPath()
+      snakesCtx.setStroke(Color.web(snake.color))
+      snakesCtx.setEffect(new DropShadow(5 * scale, Color.web(snake.color)))
+      val snakeWidth = square * 2 * scale
+      snakesCtx.setLineWidth(snakeWidth)
+      snakesCtx.moveTo(joints.head.x * scale + deviationX, joints.head.y * scale + deviationY)
+      for (i <- 1 until joints.length) {
+        snakesCtx.lineTo(joints(i).x * scale + deviationX, joints(i).y * scale + deviationY)
+      }
+      snakesCtx.stroke()
+      snakesCtx.closePath()
+
+      //头部信息
+      if (snake.head.x >= 0 && snake.head.y >= 0 && snake.head.x <= Boundary.w && snake.head.y <= Boundary.h) {
+        if (snake.speed > fSpeed + 1) {
+          snakesCtx.setFill(Color.web("#FFFF37"))
+          snakesCtx.setEffect(new DropShadow(5 * scale, Color.web(snake.color)))
+          snakesCtx.fillRect(x * scale - 1.5 * square * scale  + deviationX, y * scale - 1.5 * square * scale + deviationY, square * 3 * scale, square * 3 * scale)
+        }
+        snakesCtx.setFill(Color.web("#FFFFFF"))
+        snakesCtx.fillRect(x* scale - square * scale + deviationX, y * scale- square * scale + deviationY, square * 2 * scale, square * 2 * scale)
+      }
+    }
+    if(flag) {
+      canvas2byteArray(layerKernelCanvas)
+    }else{
+      emptyArray
+    }
+  }
+
+  //视野内的所有权视图
   def getAllSnakeByte (flag: Boolean) = {
 
     val layerAllSnakesCanvas = layerScene.layerAllSnakesCanvas
@@ -610,14 +634,6 @@ class GameController(id: String,
         }
         snakesCtx.setFill(Color.web("#FFFFFF"))
         snakesCtx.fillRect(x* scale - square * scale + deviationX, y * scale- square * scale + deviationY, square * 2 * scale, square * 2 * scale)
-      }
-      val nameLength = if (snake.name.length > 15) 15 else snake.name.length
-      snakesCtx.setFill(Color.WHITE)
-      snakesCtx.setFont(new Font("Helvetica", 12 * myProportion * scale))
-      val snakeName = if(snake.name.length > 15) snake.name.substring(0, 14) else snake.name
-      snakesCtx.fillText(snakeName, x * scale + deviationX - nameLength * 4, y * scale + deviationY - 15)
-      if (snakes.nonEmpty && snake.id == snakes.sortBy(e => (e.length, e.id)).reverse.map(_.id).head) {
-        snakesCtx.drawImage(championImage, x * scale + deviationX - 8 * scale, y * scale + deviationY - 45 * scale, 15 * scale, 15 * scale)
       }
     }
     if(flag) {
@@ -707,17 +723,6 @@ class GameController(id: String,
         mySnakeCtx.setFill(Color.web("#FFFFFF"))
         mySnakeCtx.fillRect(x * scale - square * scale + deviationX, y * scale - square * scale + deviationY, square * 2 * scale, square * 2 * scale)
         }
-
-        val nameLength = if (mySnake.name.length > 15) 15 else mySnake.name.length
-          //      val snakeSpeed = snake.speed
-        mySnakeCtx.setFill(Color.WHITE)
-        mySnakeCtx.setFont(new Font("Helvetica", 12 * myProportion * scale))
-        val snakeName = if(mySnake.name.length > 15) mySnake.name.substring(0, 14) else mySnake.name
-        mySnakeCtx.fillText(snakeName, x * scale + deviationX - nameLength * 4, y * scale + deviationY - 15)
-        if (snakes.nonEmpty && mySnake.id == snakes.sortBy(e => (e.length, e.id)).reverse.map(_.id).head) {
-        mySnakeCtx.drawImage(championImage, x * scale + deviationX - 8 * scale, y * scale + deviationY - 45 * scale, 15 * scale, 15 * scale)
-        }
-
       case None =>
         mySnakeCtx.setFont(Font.font("px Helvetica", 20 ))
         mySnakeCtx.setFill(Color.web( "rgb(250, 250, 250)"))
@@ -998,7 +1003,7 @@ class GameController(id: String,
           viewCtx.fillRect(x * scaleView - 1.5 * square * scaleView + deviationX, y * scaleView - 1.5 * square * scaleView + deviationY, square * 3 * scaleView, square * 3 * scaleView)
         }
         viewCtx.setFill(Color.web("#FFFFFF"))
-        viewCtx.fillRect(x * scaleView -  square * scaleView + deviationX, y * scaleView - square * scaleView + deviationY, square * 2 * scaleView, square * 2 * scaleView)
+        viewCtx.fillRect(x * scaleView - square * scaleView + deviationX, y * scaleView - square * scaleView + deviationY, square * 2 * scaleView, square * 2 * scaleView)
       }
 
       val nameLength = if (snake.name.length > 15) 15 else snake.name.length
@@ -1028,6 +1033,58 @@ class GameController(id: String,
       emptyArray
     }
   }
+   def getAction(actionMap: Map[Long, Map[String, Int]]) = {
+     val actionCanvas = layerScene.actionCanvas
+     val actionCtx = actionCanvas.getGraphicsContext2D
+     actionCanvas.setWidth(windowWidth - 5)
+     actionCanvas.setHeight(windowHeight)
+     actionCtx.setFill(Color.BLACK)
+     actionCtx.fillRect(0, 0, 800, 195)
+     val frame = grid.frameCount
+     actionCtx.setFont(Font.font("Helvetica", 12))
+     actionCtx.setFill(Color.web( "rgb(250, 250, 250)"))
+
+     val baseLine = 2
+     var index = 0
+     //人类操纵模拟
+     if(actionMap.size >= 12) {
+        actionMap.toList.sortBy(_._1).reverse.takeRight(12).foreach { a =>
+        val keyCode = a._2.filter(_._1 == grid.myId).values.headOption.getOrElse(0)
+        if (keyCode != 0) {
+            actionCtx.fillText(s"Frame:${a._1} Action: ${keyCode}", 20, (index + baseLine) * 14)
+            index += 1
+          }
+        }
+     }else{
+          actionMap.toList.sortBy(_._1).reverse.foreach{ a=>
+            val keyCode = a._2.filter(_._1 == grid.myId).values.headOption.getOrElse(0)
+            if(keyCode != 0) {
+              actionCtx.fillText(s"Frame:${a._1} Action: ${keyCode}", 20, (index + baseLine) * 14)
+              index += 1
+            }
+        }
+     }
+
+    // bot操作
+     if(botActionMap.size >= 12) {
+       botActionMap.toList.sortBy(_._1).takeRight(12).foreach{ a=>
+         val keyCode = a._2.filter(_._1 == grid.myId).values.headOption.getOrElse(0)
+         if(keyCode != 0){
+           actionCtx.fillText(s"Frame:${a._1} Action: ${keyCode}", 20, (index + baseLine) * 14)
+           index += 1
+         }
+       }
+     } else {
+       botActionMap.toList.sortBy(_._1).foreach{ a =>
+         val keyCode = a._2.filter(_._1 == grid.myId).values.headOption.getOrElse(0)
+         actionCtx.fillText(s"Frame:${a._1} Action: ${keyCode}", 20, (index + baseLine) * 14)
+         index += 1
+       }
+
+     }
+   }
+
+
 
 	private def logicLoop(): Unit = {
 //		basicTime = System.currentTimeMillis()
@@ -1045,8 +1102,11 @@ class GameController(id: String,
       if (AppSettings.isLayer) {
         ClientBoot.addToPlatform {
           val t = System.currentTimeMillis()
-          botInfoActor ! GetByte(getMapByte(true), getBackgroundByte(true), getAppleByte(true), getAllSnakeByte(true), getMySnakeByte(true), getInfoByte(grid.currentRank, grid.myRank, true), getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, true))
-          println(s"time: ${System.currentTimeMillis() - t}")
+          botInfoActor ! GetByte(getMapByte(true), getBackgroundByte(true), getAppleByte(true),getKernelByte(true), getAllSnakeByte(true), getMySnakeByte(true), getInfoByte(grid.currentRank, grid.myRank, true))
+         // println(s"time: ${System.currentTimeMillis() - t}")
+          if(AppSettings.isViewObservation) {
+            botInfoActor ! GetViewByte(getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, true))
+          }
         }
       }
 
@@ -1092,6 +1152,9 @@ class GameController(id: String,
 			val msg: Protocol.UserAction = Key(grid.myId, key4Bot2Int(key), grid.frameCount + operateDelay + advanceFrame)
 			serverActor ! msg
 		}
+    val map = botActionMap.getOrElse(grid.frameCount + operateDelay, Map.empty)
+    val tmp = map + (grid.myId -> key4Bot2Int(key))
+    botActionMap += (grid.frameCount + operateDelay -> tmp)
 	}
 
 
