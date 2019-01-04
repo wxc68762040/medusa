@@ -1035,11 +1035,10 @@ class GameController(id: String,
    def getAction(actionMap: Map[Long, Map[String, Int]]) = {
      val actionCanvas = layerScene.actionCanvas
      val actionCtx = actionCanvas.getGraphicsContext2D
-     actionCanvas.setWidth(windowWidth - 5)
-     actionCanvas.setHeight(windowHeight)
+//     actionCanvas.setWidth(windowWidth - 5)
+//     actionCanvas.setHeight(windowHeight)
      actionCtx.setFill(Color.BLACK)
      actionCtx.fillRect(0, 0, 800, 195)
-     val frame = grid.frameCount
      actionCtx.setFont(Font.font("Helvetica", 12))
      actionCtx.setFill(Color.web( "rgb(250, 250, 250)"))
 
@@ -1048,19 +1047,19 @@ class GameController(id: String,
      //人类操纵模拟
      if(actionMap.size >= 12) {
         actionMap.toList.sortBy(_._1).reverse.takeRight(12).foreach { a =>
-        val keyCode = a._2.filter(_._1 == grid.myId).values.headOption.getOrElse(0)
-        if (keyCode != 0) {
-            actionCtx.fillText(s"Frame:${a._1} Action: ${keyCode}", 20, (index + baseLine) * 14)
-            index += 1
-          }
-        }
-     }else{
-          actionMap.toList.sortBy(_._1).reverse.foreach{ a=>
-            val keyCode = a._2.filter(_._1 == grid.myId).values.headOption.getOrElse(0)
-            if(keyCode != 0) {
+          val keyCode = a._2.filter(_._1 == grid.myId).values.headOption.getOrElse(0)
+          if (keyCode != 0) {
               actionCtx.fillText(s"Frame:${a._1} Action: ${keyCode}", 20, (index + baseLine) * 14)
               index += 1
             }
+        }
+     }else{
+        actionMap.toList.sortBy(_._1).reverse.foreach{ a=>
+          val keyCode = a._2.filter(_._1 == grid.myId).values.headOption.getOrElse(0)
+          if(keyCode != 0) {
+            actionCtx.fillText(s"Frame:${a._1} Action: ${keyCode}", 20, (index + baseLine) * 14)
+            index += 1
+          }
         }
      }
 
