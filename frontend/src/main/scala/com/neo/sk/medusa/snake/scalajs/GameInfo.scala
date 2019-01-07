@@ -52,7 +52,7 @@ object GameInfo {
 
   def drawReconnect() = {
    clearInfo(infoCacheCtx)
-   reconnect.setAttribute("style",s"position:absolute;z-index: 6;left: 650px; top: 300px;width: 150px; height: 50px; font-size: 18px; color: #fff; font-weight:bold;  background:	#102928; border-radius: 5px; box-shadow: 3px 2px 2px 2px #16384d")
+   reconnect.setAttribute("style",s"position:absolute;z-index: 6;left: ${canvasBoundary.x / 2 - 100}px; top: ${canvasBoundary.y / 2 - 50}px;width: 150px; height: 50px; font-size: 18px; color: #fff; font-weight:bold;  background:	#102928; border-radius: 5px; box-shadow: 3px 2px 2px 2px #16384d")
   }
 
   def drawInfo(uid: String, data: GridDataSync, scaleW: Double, scaleH: Double): Unit = {

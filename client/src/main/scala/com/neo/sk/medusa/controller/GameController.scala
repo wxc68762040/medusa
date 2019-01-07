@@ -402,7 +402,6 @@ class GameController(id: String,
     bgCtx.save()
 
     bgCtx.setFill(Color.web("#FFFFFF"))
-   // bgCtx.setEffect(new DropShadow(5 * scale,Color.web("#FFFFFF")))
     bgCtx.fillRect(0 + deviationX, 0 + deviationY,  Boundary.w * scale, boundaryWidth * scale)
     bgCtx.fillRect(0 + deviationX, 0 + deviationY, boundaryWidth * scale, Boundary.h * scale)
     bgCtx.fillRect(0 + deviationX, Boundary.h * scale + deviationY, Boundary.w * scale, boundaryWidth * scale)
@@ -452,7 +451,7 @@ class GameController(id: String,
           case _ => "#e91e63ed"
         }
         appleCtx.setFill(Color.web(ApColor))
-        appleCtx.setEffect(new DropShadow( 5 * scale, Color.web("#FFFFFF")))
+        //appleCtx.setEffect(new DropShadow( 5 * scale, Color.web("#FFFFFF")))
         appleCtx.fillRect(x * scale - square * scale + deviationX,  y * scale - square * scale+ deviationY, square * 2 * scale, square * 2 * scale)
     }
     if(flag){
@@ -524,7 +523,7 @@ class GameController(id: String,
       joints = joints.reverse.enqueue(tail)
       snakesCtx.beginPath()
       snakesCtx.setStroke(Color.web(snake.color))
-      snakesCtx.setEffect(new DropShadow(5 * scale, Color.web(snake.color)))
+      //snakesCtx.setEffect(new DropShadow(5 * scale, Color.web(snake.color)))
       val snakeWidth = square * 2 * scale
       snakesCtx.setLineWidth(snakeWidth)
       snakesCtx.moveTo(joints.head.x * scale + deviationX, joints.head.y * scale + deviationY)
@@ -538,7 +537,7 @@ class GameController(id: String,
       if (snake.head.x >= 0 && snake.head.y >= 0 && snake.head.x <= Boundary.w && snake.head.y <= Boundary.h) {
         if (snake.speed > fSpeed + 1) {
           snakesCtx.setFill(Color.web("#FFFF37"))
-          snakesCtx.setEffect(new DropShadow(5 * scale, Color.web(snake.color)))
+          //snakesCtx.setEffect(new DropShadow(5 * scale, Color.web(snake.color)))
           snakesCtx.fillRect(x * scale - 1.5 * square * scale  + deviationX, y * scale - 1.5 * square * scale + deviationY, square * 3 * scale, square * 3 * scale)
         }
         snakesCtx.setFill(Color.web("#FFFFFF"))
@@ -614,7 +613,7 @@ class GameController(id: String,
       joints = joints.reverse.enqueue(tail)
       snakesCtx.beginPath()
       snakesCtx.setStroke(Color.web(snake.color))
-      snakesCtx.setEffect(new DropShadow(5 * scale, Color.web(snake.color)))
+     // snakesCtx.setEffect(new DropShadow(5 * scale, Color.web(snake.color)))
       val snakeWidth = square * 2 * scale
       snakesCtx.setLineWidth(snakeWidth)
       snakesCtx.moveTo(joints.head.x * scale + deviationX, joints.head.y * scale + deviationY)
@@ -628,7 +627,7 @@ class GameController(id: String,
       if (snake.head.x >= 0 && snake.head.y >= 0 && snake.head.x <= Boundary.w && snake.head.y <= Boundary.h) {
         if (snake.speed > fSpeed + 1) {
           snakesCtx.setFill(Color.web("#FFFF37"))
-          snakesCtx.setEffect(new DropShadow(5 * scale, Color.web(snake.color)))
+         // snakesCtx.setEffect(new DropShadow(5 * scale, Color.web(snake.color)))
          snakesCtx.fillRect(x * scale - 1.5 * square * scale  + deviationX, y * scale - 1.5 * square * scale + deviationY, square * 3 * scale, square * 3 * scale)
         }
         snakesCtx.setFill(Color.web("#FFFFFF"))
@@ -703,7 +702,7 @@ class GameController(id: String,
         joints = joints.reverse.enqueue(tail)
         mySnakeCtx.beginPath()
         mySnakeCtx.setStroke(Color.web(mySnake.color))
-        mySnakeCtx.setEffect(new DropShadow(5 * scale, Color.web(mySnake.color)))
+        //mySnakeCtx.setEffect(new DropShadow(5 * scale, Color.web(mySnake.color)))
         val snakeWidth = square * 2 * scale
         mySnakeCtx.setLineWidth(snakeWidth)
         mySnakeCtx.moveTo(joints.head.x * scale + deviationX, joints.head.y * scale + deviationY)
@@ -716,7 +715,7 @@ class GameController(id: String,
         if (mySnake.head.x >= 0 && mySnake.head.y >= 0 && mySnake.head.x <= Boundary.w && mySnake.head.y <= Boundary.h) {
         if (mySnake.speed > fSpeed + 1) {
         mySnakeCtx.setFill(Color.web("#FFFF37"))
-        mySnakeCtx.setEffect(new DropShadow(5 * scale, Color.web(mySnake.color)))
+        //mySnakeCtx.setEffect(new DropShadow(5 * scale, Color.web(mySnake.color)))
         mySnakeCtx.fillRect(x * scale - 1.5 * square * scale + deviationX, y *scale - 1.5 * square * scale + deviationY, square * 3 * scale, square * 3 * scale)
         }
         mySnakeCtx.setFill(Color.web("#FFFFFF"))
@@ -785,7 +784,7 @@ class GameController(id: String,
     val centerX = viewWidth / 2
     val centerY = viewHeight / 2
     val snakeNum = snakes.length
-    viewCtx.setEffect(new DropShadow(0, Color.WHITE))
+    //viewCtx.setEffect(new DropShadow(0, Color.WHITE))
     if(!loginAgain) {
       snakes.find(_.id == grid.myId) match {
         case Some(mySnake) =>
@@ -890,7 +889,7 @@ class GameController(id: String,
     viewCtx.setGlobalAlpha(1.0)
 
 
-    viewCtx.drawImage(championImage, maxLength.x * LittleMap.w * scaleView /Boundary.w  - 7, maxLength.y * LittleMap.h * scaleView / Boundary.h  - 7  + 300 , 15 * scaleView, 15 * scaleView)
+    viewCtx.drawImage(championImage, maxLength.x * LittleMap.w * scaleView /Boundary.w  - 7 * scaleView, maxLength.y * LittleMap.h * scaleView / Boundary.h  - 7 * scaleView  + 300 , 15 * scaleView, 15 * scaleView)
 
     snakes.foreach { snake =>
       val id = snake.id
@@ -917,10 +916,10 @@ class GameController(id: String,
         viewCtx.setStroke(Color.WHITE)
         viewCtx.setLineWidth(1)
         viewCtx.setEffect(new DropShadow(0, Color.web("#FFFFFF")))
-        val recX = (joints.head.x * LittleMap.w * scaleView) / Boundary.w - 800.toFloat / Boundary.w * LittleMap.w * scaleView / 2
-        val recY = (joints.head.y * LittleMap.h * scaleView) / Boundary.h - 400.toFloat / Boundary.h * LittleMap.h * scaleView / 2
-        val recW = 800.toFloat / Boundary.w * LittleMap.w * scaleView
-        val recH = 400.toFloat / Boundary.h * LittleMap.h * scaleView
+        val recX = (joints.head.x * LittleMap.w * scaleView) / Boundary.w - viewWidth.toFloat / Boundary.w * LittleMap.w * scaleView / 2
+        val recY = (joints.head.y * LittleMap.h * scaleView) / Boundary.h - viewHeight.toFloat / Boundary.h * LittleMap.h * scaleView / 2
+        val recW = viewWidth.toFloat / Boundary.w * LittleMap.w * scaleView
+        val recH = viewHeight.toFloat / Boundary.h * LittleMap.h * scaleView
         viewCtx.moveTo(recX, recY + 300)
         viewCtx.lineTo(recX, recY + recH + 300)
         viewCtx.lineTo(recX + recW, recY + recH + 300)
