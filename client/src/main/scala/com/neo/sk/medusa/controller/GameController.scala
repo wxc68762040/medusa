@@ -77,6 +77,7 @@ object GameController {
 			case Move.down => KeyEvent.VK_DOWN
 			case Move.left => KeyEvent.VK_LEFT
 			case Move.right => KeyEvent.VK_RIGHT
+			case _ => KeyEvent.VK_0
 		}
 	}
 
@@ -97,15 +98,13 @@ object GameController {
       val w = canvas.getWidth.toInt
       val h = canvas.getHeight.toInt
       val wi = new WritableImage(w, h)
-//      val bi = new BufferedImage(w, h, TYPE_INT_ARGB)
-      val bi = new BufferedImage(w, h, TYPE_BYTE_GRAY)
       params.setFill(Color.TRANSPARENT)
       canvas.snapshot(params, wi) //从画布中复制绘图并复制到writableImage
-      SwingFXUtils.fromFXImage(wi, bi)
-      val argb = bi.getRGB(0, 0, w, h, null, 0, w)
-      val byteBuffer = ByteBuffer.allocate(4 * 800 * 400)
-      argb.foreach{ e =>
-        byteBuffer.putInt(e)
+      val reader = wi.getPixelReader
+      val byteBuffer = ByteBuffer.allocate(4 * w * h)
+      for (y <- 0 until h; x <- 0 until w) {
+        val color = reader.getArgb(x, y)
+        byteBuffer.putInt(color)
       }
       byteBuffer.flip()
       byteBuffer.array().take(byteBuffer.limit)
