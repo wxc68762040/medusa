@@ -351,11 +351,12 @@ object NetGameHolder extends js.JSApp {
 
 
   def joinGame(roomId:Long,password:String,JorC:Int,isWatchGame:Boolean): Unit = {
+    var pingController = -1
 //    val gameStream = createConnection(path: String, parameters: String)
 
     val gameStream = createConnection(state, dom.window.location.search)
     gameStream.onopen = { (event0: Event) =>
-      dom.window.setInterval(() => {
+      pingController = dom.window.setInterval(() => {
         val pingMsg = netInfoHandler.refreshNetInfo()
         gameStream.send(pingMsg)
       }, Protocol.netInfoRate)
@@ -638,6 +639,8 @@ object NetGameHolder extends js.JSApp {
 
     gameStream.onclose = { (event: Event) =>
       println("gameStream closed")
+      dom.window.clearTimeout(pingController)
+      pingController = -1
       GameView.drawGameOff()
       GameInfo.drawReconnect()
       wsSetup = false
