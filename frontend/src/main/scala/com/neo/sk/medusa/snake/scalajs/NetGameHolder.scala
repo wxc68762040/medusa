@@ -476,7 +476,6 @@ object NetGameHolder extends js.JSApp {
                   grid.snakes4client = Map.empty[String, Snake4Client]
 
                 case Protocol.CloseStream =>
-                  infoState = "timeoutClosed"
                   gameStream.close()
                   grid.snakes4client = Map.empty[String, Snake4Client]
 
