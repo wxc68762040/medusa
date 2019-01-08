@@ -111,18 +111,18 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
     topCurrentRank = snakes.values.map(s => Score(s.id, s.name, s.kill, s.length)).toList.sortBy(s => s.l).reverse.slice(0,10)
 
     var historyChange = false
-    currentRank.foreach { cScore =>
+    currentRank.foreach{ cScore =>
       historyRankMap.get(cScore.id) match {
-        case Some(oldScore) if cScore.l > oldScore.l =>
+        case Some(oldScore) if (cScore.l > oldScore.l || cScore.k != oldScore.k) =>
           historyRankMap += (cScore.id -> cScore)
           historyChange = true
         case None if cScore.l > historyRankThreshold =>
           historyRankMap += (cScore.id -> cScore)
           historyChange = true
-        case _ => //do nothing.
+        case _ =>
       }
-    }
 
+    }
     if (historyChange) {
       historyRankList = historyRankMap.values.toList.sorted.take(historyRankLength)
       historyRankThreshold =
