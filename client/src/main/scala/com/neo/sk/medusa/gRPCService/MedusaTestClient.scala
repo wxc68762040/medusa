@@ -40,4 +40,7 @@ class MedusaTestClient (
   def inform():Future[InformRsp]=esheepStub.inform(credit)
 
   def reincarnation():Future[SimpleRsp]=esheepStub.reincarnation(credit)
+
+	def systemInfo():Future[SystemInfoRsp]=esheepStub.systemInfo(credit)
+
 }

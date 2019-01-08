@@ -51,6 +51,7 @@ object WSClient {
 	case class ActionSpaceTest() extends WsCommand
 	case class ActionTest() extends WsCommand
 	case class LeaveRoomTest() extends WsCommand
+  case class SystemInfoTest() extends WsCommand
 	
 	case object TimerKeyForTest
 
@@ -130,7 +131,7 @@ object WSClient {
 											ctx.self ! GetGameController(playerId,isBot=true)
                       loginController.setUserInfo(playerId, t.botName, t.token)
                       //fixme test bot sdk
-											timer.startSingleTimer(TimerKeyForTest, ClientTest(1),10.seconds)
+										//	timer.startSingleTimer(TimerKeyForTest, ClientTest(1),10.seconds)
                       Future.successful(s"$logPrefix connect success.")
                     } else {
                       loginController.getLoginScence().warningText.setText(s"WSClient connection failed: ${upgrade.response.status}")
@@ -285,11 +286,20 @@ object WSClient {
 						rsp1.onComplete{
 							a=>println(a)
 								println("======")
-								//timer.startSingleTimer(TimerKeyForTest, LeaveRoomTest(), 5.seconds)
+								//timer.startSingleTimer(TimerKeyForTest, SystemInfoTest(), 5.seconds)
 						}
 						Behaviors.same
 
-					
+        case SystemInfoTest() =>
+          log.info("get frameRate")
+          val rsp1 = client.systemInfo()
+          rsp1.onComplete{
+            a => println(a)
+              println("=====")
+
+          }
+         Behaviors.same
+
 				case Stop =>
 					log.info("WSClient now stop.")
 					System.exit(0)
