@@ -637,6 +637,7 @@ object NetGameHolder extends js.JSApp {
 
 
     gameStream.onclose = { (event: Event) =>
+      println("gameStream closed")
       GameView.drawGameOff()
       GameInfo.drawReconnect()
       wsSetup = false
