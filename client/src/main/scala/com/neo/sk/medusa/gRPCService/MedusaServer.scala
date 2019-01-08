@@ -168,6 +168,8 @@ class MedusaServer(
       Future.successful(SimpleRsp(errCode = 100005, state = State.unknown, msg = "auth error"))
     }
   }
+  
+  override def systemInfo(request: Credit): Future[SystemInfoRsp] = ???
 
 }
 
