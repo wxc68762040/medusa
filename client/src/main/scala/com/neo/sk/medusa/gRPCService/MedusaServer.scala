@@ -1,15 +1,15 @@
 package com.neo.sk.medusa.gRPCService
 
 import java.awt.event.KeyEvent
-import javafx.scene.input.KeyCode
 
+import javafx.scene.input.KeyCode
 import akka.actor.typed.ActorRef
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.ws.{WebSocketRequest, WebSocketUpgradeResponse}
 import akka.stream.scaladsl.Keep
-import com.neo.sk.medusa.actor.WSClient
-import com.neo.sk.medusa.common.StageContext
+import com.neo.sk.medusa.actor.{GameMessageReceiver, WSClient}
+import com.neo.sk.medusa.common.{AppSettings, StageContext}
 import com.neo.sk.medusa.controller.GameController
 import akka.actor.typed.scaladsl.AskPattern._
 import com.neo.sk.medusa.scene.{GameScene, LayerScene}
@@ -24,6 +24,7 @@ import org.seekloud.esheepapi.pb.service.EsheepAgentGrpc
 import org.seekloud.esheepapi.pb.service.EsheepAgentGrpc.EsheepAgent
 import org.slf4j.LoggerFactory
 import com.neo.sk.medusa.actor.WSClient.Stop
+
 import scala.concurrent.{ExecutionContext, Future}
 import com.neo.sk.medusa.utils.AuthUtils.checkBotToken
 import com.neo.sk.medusa.controller.GameController
@@ -132,7 +133,7 @@ class MedusaServer(
   }
 
   override def observation(request: Credit): Future[ObservationRsp] = {
-    println(s"action Called by [$request")
+    println(s"observation Called by [$request")
     if (checkBotToken(request.apiToken)) {
       val observationRsp: Future[ObservationRsp] = gameController.botInfoActor ? GameController.GetObservation
       observationRsp.map {
@@ -149,8 +150,9 @@ class MedusaServer(
   }
 
   override def inform(request: Credit): Future[InformRsp] = {
-    println(s"action Called by [$request")
+    println(s"inform Called by [$request")
     if (checkBotToken(request.apiToken)) {
+     state  = if(gameController.getLiveState) State.in_game else State.killed
       val rsp = InformRsp(score = gameController.getScore._2.l, kills = gameController.getScore._2.k,
         if (state == State.in_game) 1 else 0, state = state, msg = "ok")
       Future.successful(rsp)
@@ -166,6 +168,16 @@ class MedusaServer(
       Future.successful(SimpleRsp(state = state, msg = "ok"))
     } else {
       Future.successful(SimpleRsp(errCode = 100005, state = State.unknown, msg = "auth error"))
+    }
+  }
+
+  override def systemInfo(request: Credit): Future[SystemInfoRsp] = {
+    println(s"systemInfo Called by [$request")
+    if(checkBotToken(request.apiToken)) {
+      val rsp = SystemInfoRsp(framePeriod = AppSettings.systemInfo, state = state, msg = "ok")
+      Future.successful(rsp)
+    } else {
+      Future.successful(SystemInfoRsp(errCode = 100006, state = State.unknown, msg = "auth error"))
     }
   }
 
