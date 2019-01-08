@@ -171,8 +171,6 @@ class MedusaServer(
     }
   }
   
-  override def systemInfo(request: Credit): Future[SystemInfoRsp] = ???
-
   override def systemInfo(request: Credit): Future[SystemInfoRsp] = {
     println(s"systemInfo Called by [$request")
     if(checkBotToken(request.apiToken)) {
