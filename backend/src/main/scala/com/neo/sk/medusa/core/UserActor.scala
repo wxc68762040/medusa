@@ -42,7 +42,7 @@ object UserActor {
 
   private final val InitTime = Some(5.minutes)
 
-  private final val UserLeftTime = 30.seconds
+  private final val UserLeftTime = 10.minutes
 
   private final case object BehaviorChangeKey
 

@@ -476,10 +476,11 @@ object NetGameHolder extends js.JSApp {
                   grid.snakes4client = Map.empty[String, Snake4Client]
 
                 case Protocol.CloseStream =>
-                  println(s"get closeStream message")
                   gameStream.close()
-									dom.window.clearTimeout(pingController)
-									pingController = -1
+                  if(pingController != -1) {
+                    dom.window.clearTimeout(pingController)
+                    pingController = -1
+                  }
 									GameView.drawGameOff()
 									GameInfo.drawReconnect()
 									wsSetup = false
@@ -643,9 +644,10 @@ object NetGameHolder extends js.JSApp {
 
 
     gameStream.onclose = { (event: Event) =>
-      println("gameStream closed")
-      dom.window.clearTimeout(pingController)
-      pingController = -1
+      if(pingController != -1) {
+        dom.window.clearTimeout(pingController)
+        pingController = -1
+      }
       GameView.drawGameOff()
       GameInfo.drawReconnect()
       wsSetup = false
