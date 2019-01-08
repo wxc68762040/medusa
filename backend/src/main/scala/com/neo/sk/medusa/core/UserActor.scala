@@ -42,7 +42,7 @@ object UserActor {
 
   private final val InitTime = Some(5.minutes)
 
-  private final val UserLeftTime = 1.minutes
+  private final val UserLeftTime = 30.seconds
 
   private final case object BehaviorChangeKey
 
@@ -133,6 +133,7 @@ object UserActor {
 
           case FrontLeft(frontActor) =>
             ctx.unwatch(frontActor)
+            frontActor ! Protocol.CloseStream
             Behaviors.stopped
             
           case x =>
@@ -317,6 +318,7 @@ object UserActor {
 
           case FrontLeft(front) =>
             ctx.unwatch(front)
+            front ! Protocol.CloseStream
             roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
             roomActor ! RoomActor.UserLeft(playerId)
             userManager ! UserManager.UserGone(playerId)
@@ -371,6 +373,7 @@ object UserActor {
           case FrontLeft(front) =>
             log.info(s"${ctx.self.path} left while wait")
             ctx.unwatch(front)
+            front ! Protocol.CloseStream
             roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
             roomActor ! RoomActor.UserLeft(playerId)
             userManager ! UserManager.UserGone(playerId)

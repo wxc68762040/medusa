@@ -15,7 +15,6 @@ object Protocol {
 
   case object CompleteMsgServer extends WsMsgSource
   case class FailMsgServer(ex: Throwable) extends WsMsgSource
-  case object HeartBeat extends WsMsgSource
   case object LagSet extends WsMsgSource
 
 	trait GameMessageBeginning extends WsMsgSource
@@ -35,7 +34,9 @@ object Protocol {
   ) extends GameMessage
 
   case object YouHaveLogined extends GameMessage
-
+  
+  case object CloseStream extends GameMessage
+  
   case object PlayerWaitingJoin extends GameMessage
 
   case object RecordNotExist extends GameMessage
