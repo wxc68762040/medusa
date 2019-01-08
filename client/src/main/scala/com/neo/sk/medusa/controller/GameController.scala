@@ -115,7 +115,7 @@ object GameController {
 	}
 
   def drawTextLine(ctx: GraphicsContext, str: String, x: Double, lineNum: Int, lineBegin: Int = 0, scale: Double):Unit = {
-    ctx.fillText(str, x, (lineNum + lineBegin - 1) * 14 * scale )
+    ctx.fillText(str, x, (lineNum + lineBegin - 1) * 14 * scale)
   }
 
   sealed trait Command

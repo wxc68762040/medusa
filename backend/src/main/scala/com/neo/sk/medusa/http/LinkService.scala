@@ -8,19 +8,22 @@ import akka.stream.scaladsl.Flow
 import akka.stream.{ActorAttributes, Materializer, Supervision}
 import org.slf4j.LoggerFactory
 import com.neo.sk.medusa.Boot.authActor
+
 import scala.concurrent.Future
 import com.neo.sk.medusa.Boot.{executor, scheduler, timeout, userManager, watchManager}
 import com.neo.sk.medusa.core.{UserManager, WatcherManager}
 import akka.actor.typed.scaladsl.AskPattern._
 import com.neo.sk.utils.ServiceUtils
 import java.net.URLDecoder
+
+import com.neo.sk.medusa.http.SessionBase.UserSessionKey
 import com.neo.sk.utils.AuthUtils._
 /**
   * User: Taoz
   * Date: 9/1/2016
   * Time: 4:13 PM
   */
-trait LinkService extends ServiceUtils {
+trait LinkService extends ServiceUtils with SessionBase {
 
   implicit val system: ActorSystem
 
@@ -32,11 +35,30 @@ trait LinkService extends ServiceUtils {
   private val playGameRoute = path("playGame") {
     parameter('playerId.as[String], 'playerName.as[String], 'roomId.as[Long].?, 'accessCode.as[String]) {
       (playerId, playerName, roomId, accessCode) =>
-        accessAuth(accessCode) { info =>
-          val flowFuture: Future[Flow[Message, Message, Any]] = userManager ? (UserManager.GetWebSocketFlow(playerId, playerName, roomId.getOrElse(-1), _,Some(""),0))
-          dealFutureResult(
-            flowFuture.map(r => handleWebSocketMessages(r))
-          )
+        optionalUserSession {
+          case Some(session) =>
+						log.info(s"get session ${session.playerId}")
+            val flowFuture: Future[Flow[Message, Message, Any]] =
+              userManager ? (UserManager.GetWebSocketFlow(session.playerId, session.playerName, roomId.getOrElse(-1), _, Some(""), 0))
+            dealFutureResult(
+              flowFuture.map(r => handleWebSocketMessages(r))
+            )
+
+          case None =>
+            accessAuth(accessCode) { info =>
+              val session = Map(
+                SessionBase.SessionTypeKey -> UserSessionKey.SESSION_TYPE,
+                UserSessionKey.playerId -> playerId,
+                UserSessionKey.playerName -> playerName,
+                UserSessionKey.roomId -> roomId.getOrElse(-1L).toString,
+                UserSessionKey.expires -> System.currentTimeMillis().toString
+              )
+              val flowFuture: Future[Flow[Message, Message, Any]] = userManager ? (UserManager.GetWebSocketFlow(playerId, playerName, roomId.getOrElse(-1), _, Some(""), 0))
+              dealFutureResult(
+                flowFuture.map(r =>
+                  setSession(session)(handleWebSocketMessages(r)))
+              )
+            }
         }
     }
   }

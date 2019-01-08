@@ -205,7 +205,7 @@ object GameMessageReceiver {
 					infoHandler.ping = receiveTime - createTime
 					Behavior.same
 				
-				case Protocol.DeadInfo(id,myName, myLength, myKill, killerId, killer) =>
+				case Protocol.DeadInfo(id, myName, myLength, myKill, killerId, killer) =>
 					ClientBoot.addToPlatform {
 						log.info(s"receive DeadInfo")
 						if (id == myId) {

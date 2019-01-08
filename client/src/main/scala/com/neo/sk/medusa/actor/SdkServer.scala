@@ -54,7 +54,7 @@ object SdkServer {
     Behaviors.receive { (ctx, msg) =>
       msg match {
         case BuildServer(port, executor, act,gController, gameMessageReceiver, stageCtx) =>
-          val server = MedusaServer.build(port, executor, act,gController, gameMessageReceiver, stageCtx)
+          val server = MedusaServer.build(port, executor, act, gController, gameMessageReceiver, stageCtx)
           server.start()
           log.info(s"Server started at $port")
           sys.addShutdownHook {

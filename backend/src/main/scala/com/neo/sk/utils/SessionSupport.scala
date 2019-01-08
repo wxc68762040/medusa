@@ -133,15 +133,15 @@ object SessionSupport {
 
 
   case class SessionConfig(
-                            serverSecret: String,
-                            cookieName: String,
-                            sessionEncryptData: Boolean,
-                            maxAge: Option[Long],
-                            domain: Option[String],
-                            path: Option[String],
-                            secure: Boolean,
-                            httpOnly: Boolean
-                          )
+    serverSecret: String,
+    cookieName: String,
+    sessionEncryptData: Boolean,
+    maxAge: Option[Long],
+    domain: Option[String],
+    path: Option[String],
+    secure: Boolean,
+    httpOnly: Boolean
+  )
 
 
   object MapSessionSerializer {
