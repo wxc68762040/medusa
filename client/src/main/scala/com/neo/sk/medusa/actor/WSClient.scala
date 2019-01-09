@@ -230,7 +230,7 @@ object WSClient {
           gController.connectToGameServer(gController)
           if(isBot){
 						val port = 5321
-						ClientBoot.sdkServer ! SdkServer.BuildServer(port, executor, ctx.self,gController, gameMessageReceiver, stageCtx)
+						ClientBoot.sdkServer ! SdkServer.BuildServer(port, executor, ctx.self, gController, gameMessageReceiver, stageCtx)
           }
           working(gameMessageReceiver,serverActor,loginController,stageCtx,gController)
 

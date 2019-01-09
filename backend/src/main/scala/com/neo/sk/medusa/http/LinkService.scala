@@ -39,7 +39,7 @@ trait LinkService extends ServiceUtils with SessionBase {
           case Some(session) =>
 						log.info(s"get session ${session.playerId}")
             val flowFuture: Future[Flow[Message, Message, Any]] =
-              userManager ? (UserManager.GetWebSocketFlow(session.playerId, session.playerName, roomId.getOrElse(-1), _, Some(""), 0))
+              userManager ? (UserManager.GetWebSocketFlow(playerId, playerName, roomId.getOrElse(-1), _, Some(""), 0))
             dealFutureResult(
               flowFuture.map(r => handleWebSocketMessages(r))
             )

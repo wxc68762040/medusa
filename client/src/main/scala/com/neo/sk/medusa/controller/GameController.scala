@@ -179,29 +179,32 @@ class GameController(id: String,
         msg match {
 
           case t: GetByte =>
-           idle(t.mapByte, t.bgByte,t.appleByte, t.kernelByte, t.allSnakeByte, t.mySnakeByte, t.infoByte, Array[Byte]())
+           idle(t.mapByte, t.bgByte, t.appleByte, t.kernelByte, t.allSnakeByte, t.mySnakeByte, t.infoByte, viewByte)
 
           case t: GetViewByte =>
-            idle(Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte](), t.viewByte)
+            idle(mapByte, bgByte, appleByte, kernelByte, allSnakesByte, mySnakeByte, infoByte, t.viewByte)
 
           case t: GetObservation =>
             val layer = LayeredObservation(
-              Some(ImgData(windowWidth, windowHeight, mapByte.length,ByteString.copyFrom(mapByte))),
-              Some(ImgData(windowWidth, windowHeight, bgByte.length, ByteString.copyFrom(bgByte))),
-              Some(ImgData(windowWidth, windowHeight, appleByte.length, ByteString.copyFrom(appleByte))),
-              Some(ImgData(windowWidth, windowHeight, allSnakesByte.length, ByteString.copyFrom(allSnakesByte))),
-              Some(ImgData(windowWidth, windowHeight, mySnakeByte.length, ByteString.copyFrom(mySnakeByte))),
-              Some(ImgData(windowWidth, windowHeight, infoByte.length, ByteString.copyFrom(infoByte))))
-            val observation = ObservationRsp(Some(layer), Some(ImgData(windowWidth, windowHeight, 0, ByteString.copyFrom(viewByte))))
+              Some(ImgData(windowWidth, windowHeight, 4, ByteString.copyFrom(mapByte))),
+              Some(ImgData(windowWidth, windowHeight, 4, ByteString.copyFrom(bgByte))),
+              Some(ImgData(windowWidth, windowHeight, 4, ByteString.copyFrom(appleByte))),
+              Some(ImgData(windowWidth, windowHeight, 4, ByteString.copyFrom(kernelByte))),
+              Some(ImgData(windowWidth, windowHeight, 4, ByteString.copyFrom(allSnakesByte))),
+              Some(ImgData(windowWidth, windowHeight, 4, ByteString.copyFrom(mySnakeByte))),
+              Some(ImgData(windowWidth, windowHeight, 4, ByteString.copyFrom(infoByte))),
+              None
+            )
+            val observation = ObservationRsp(Some(layer), Some(ImgData(windowWidth, windowHeight, 4, ByteString.copyFrom(viewByte))))
             t.sender ! observation
             Behaviors.same
           case t: CreateRoomReq =>
-            SDKReplyTo=t.sender
+            SDKReplyTo = t.sender
             serverActor ! Protocol.CreateRoom(-1,t.password)
             Behaviors.same
 
-          case t:JoinRoomReq=>
-            SDKReplyTo=t.sender
+          case t:JoinRoomReq =>
+            SDKReplyTo = t.sender
             serverActor ! Protocol.JoinRoom(t.roomId,t.password)
             Behaviors.same
         }
