@@ -7,6 +7,7 @@ import akka.http.scaladsl.model.headers.`Cache-Control`
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
+import com.neo.sk.medusa.common.AppSettings
 
 import scala.concurrent.ExecutionContextExecutor
 
@@ -33,11 +34,7 @@ trait ResourceService {
 
 
   private val resources = {
-    pathPrefix("html") {
-      extractUnmatchedPath { path =>
-        getFromResourceDirectory("html")
-      }
-    } ~ pathPrefix("css") {
+    pathPrefix("css") {
       extractUnmatchedPath { path =>
         getFromResourceDirectory("css")
       }
@@ -57,7 +54,15 @@ trait ResourceService {
     } ~
     pathPrefix("test") {
       getFromDirectory("D:\\workstation\\sbt\\vigour\\logs\\test")
-    }
+    } ~
+      path("jsFile" / Segment / AppSettings.projectVersion) { name =>
+        val jsFileName = name + ".js"
+        if (jsFileName == "frontend-fastopt.js") {
+          getFromResource(s"sjsout/$jsFileName")
+        } else {
+          getFromResource(s"js/$jsFileName")
+        }
+      }
   }
 
   //cache code copied from zhaorui.
@@ -66,6 +71,10 @@ trait ResourceService {
   def resourceRoutes: Route = (pathPrefix("static") & get) {
     mapResponseHeaders { headers => `Cache-Control`(`public`, `max-age`(cacheSeconds)) +: headers } {
       encodeResponse(resources)
+    }
+  } ~ pathPrefix("html") {
+    extractUnmatchedPath { path =>
+      getFromResourceDirectory("html")
     }
   }
 
