@@ -99,8 +99,8 @@ object GameInfo {
                 infoCacheCtx.fillText("玩家未加入游戏", centerX - 150, centerY - 30)
               }
           }
-        }else{
-          if(state.contains("playGame")||state.contains("watchGame")){
+        } else {
+          if(state.contains("playGame") || state.contains("watchGame")) {
             //玩游戏过程中死亡显示
             if (NetGameHolder.firstCome) {
               infoCacheCtx.font = s"${38 * scaleW}px Helvetica"
@@ -109,7 +109,7 @@ object GameInfo {
               infoCacheCtx.globalAlpha=0.2
               infoCacheCtx.fillStyle= Color.Black.toString()
               infoCacheCtx.fillRect(centerX - 350 * scaleW,centerX - 150 * scaleW,400,200)*/
-
+  
               infoCacheCtx.font = s"${26 * scaleW}px Helvetica"
               infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
               infoCacheCtx.shadowBlur = 1
@@ -121,13 +121,12 @@ object GameInfo {
               infoCacheCtx.fillText("Ops, Press Space Key To Restart!", centerX - 350 * scaleW, centerY - 150 * scaleH)
               myProportion = 1.0
             }
-          }else if(state.contains("watchRecord")){
+          } else if(state.contains("watchRecord")) {
             //观看记录时 观看玩家死亡
             infoCacheCtx.font = "36px Helvetica"
             infoCacheCtx.fillStyle = "rgb(250, 250, 250)"
             infoCacheCtx.shadowBlur = 0
-            infoCacheCtx.fillText("您观看的玩家已死亡",centerX - 150, centerY - 30)
-
+            infoCacheCtx.fillText("您观看的玩家已死亡", centerX - 150, centerY - 30)
           }
 
         }
