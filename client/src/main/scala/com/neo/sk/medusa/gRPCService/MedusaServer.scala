@@ -181,6 +181,10 @@ class MedusaServer(
     }
   }
 
+  override def currentFrame(request: Credit): Future[CurrentFrameRsp] = {
+    Future.successful(CurrentFrameRsp())
+  }
+
 }
 
 

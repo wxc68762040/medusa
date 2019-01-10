@@ -65,6 +65,8 @@ object GameRecorder {
 
   final case class EssfMapInfo(m: List[(EssfMapKey, ListBuffer[EssfMapJoinLeftInfo])])
 
+  final case class UserDead(playerId:String, name:String, frame:Long) extends Command
+
   private final case class SaveData(flag: Int) extends Command
 
   final case object SaveDataKey
@@ -129,6 +131,19 @@ object GameRecorder {
           Behaviors.same
 
         case t: UserLeftRoom =>
+          userMap.remove(t.playerId)
+          if(essfMap.get(EssfMapKey(t.playerId, t.name)).isDefined) {
+            val tmp = essfMap(EssfMapKey(t.playerId, t.name))
+            if(tmp.last.leftF == -1) {
+              val last = tmp.last
+              tmp.remove(tmp.length - 1)
+              tmp.append(EssfMapJoinLeftInfo(last.joinF, frameIndex))
+              essfMap.put(EssfMapKey(t.playerId, t.name), tmp)
+            }
+          }
+          Behaviors.same
+
+        case t: UserDead =>
           userMap.remove(t.playerId)
           val tmp = essfMap.getOrElse(EssfMapKey(t.playerId, t.name), ListBuffer[EssfMapJoinLeftInfo]())
           if(tmp.nonEmpty){

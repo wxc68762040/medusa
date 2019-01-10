@@ -165,7 +165,7 @@ object RoomActor {
               //            userMap.remove(t.userId)
               deadUserList += t.userId
               if (isRecord) {
-                getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserLeftRoom(t.userId, t.deadInfo.name, grid.frameCount)
+                getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserDead(t.userId, t.deadInfo.name, grid.frameCount)
               }
               if (userMap.keys.forall(u => deadUserList.contains(u))) {
                 //room empty
