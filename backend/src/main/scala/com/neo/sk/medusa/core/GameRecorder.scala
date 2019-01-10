@@ -130,11 +130,13 @@ object GameRecorder {
 
         case t: UserLeftRoom =>
           userMap.remove(t.playerId)
-          val tmp = essfMap(EssfMapKey(t.playerId, t.name))
-          val last = tmp.last
-          tmp.remove(tmp.length -1)
-          tmp.append(EssfMapJoinLeftInfo(last.joinF, frameIndex))
-          essfMap.put(EssfMapKey(t.playerId, t.name), tmp)
+          val tmp = essfMap.getOrElse(EssfMapKey(t.playerId, t.name), ListBuffer[EssfMapJoinLeftInfo]())
+          if(tmp.nonEmpty){
+            val last = tmp.last
+            tmp.remove(tmp.length -1)
+            tmp.append(EssfMapJoinLeftInfo(last.joinF, frameIndex))
+            essfMap.put(EssfMapKey(t.playerId, t.name), tmp)
+          }
           Behaviors.same
 
         case t: GameRecord =>
