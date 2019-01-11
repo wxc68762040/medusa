@@ -148,7 +148,6 @@ object GameRecorder {
           val tmp = essfMap.getOrElse(EssfMapKey(t.playerId, t.name), ListBuffer[EssfMapJoinLeftInfo]())
           if(tmp.nonEmpty){
             val last = tmp.last
-            tmp.foreach(i=>log.info(i.joinF+"####"+i.leftF))
             tmp.remove(tmp.length -1)
             tmp.append(EssfMapJoinLeftInfo(last.joinF, frameIndex))
             essfMap.put(EssfMapKey(t.playerId, t.name), tmp)
