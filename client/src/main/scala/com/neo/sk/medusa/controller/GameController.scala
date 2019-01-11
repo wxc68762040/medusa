@@ -156,7 +156,7 @@ class GameController(id: String,
   val bgColor = new Color(0.003, 0.176, 0.176, 1.0)
   val viewMapCanvas = new Canvas
 
-  val scale = 0.25
+  val scale = AppSettings.layerCanvasW.toFloat / 1600
   val scaleView = 0.5
 
   //var actionList = List.empty[Map[Long, Int]]
@@ -241,7 +241,7 @@ class GameController(id: String,
 				gameScene.viewHeight = stageCtx.getWindowSize.windowHeight
 				val scaleW = gameScene.viewWidth / gameScene.initWindowWidth
 				val scaleH = gameScene.viewHeight / gameScene.initWindowHeight
-        if(AppSettings.isLayer && !AppSettings.isViewObservation) {
+//        if(AppSettings.isLayer && !AppSettings.isViewObservation) {
 //          getAction(grid.actionMap)
 //          getMapByte(false)
 //          getMySnakeByte(false)
@@ -250,8 +250,8 @@ class GameController(id: String,
 //          getAppleByte(false)
 //          getBackgroundByte(false)
 //          getInfoByte(grid.currentRank,grid.myRank, flag = false)
-          getViewByte(grid.currentRank, grid.historyRank,grid.myRank, grid.loginAgain, flag = false)
-        }
+//          getViewByte(grid.currentRank, grid.historyRank,grid.myRank, grid.loginAgain, flag = false)
+//        }
         if(!AppSettings.isLayer){
           gameScene.draw(grid.myId, grid.getGridSyncData4Client, grid.historyRank, grid.currentRank, grid.loginAgain, grid.myRank, scaleW, scaleH)
         }
@@ -1101,12 +1101,14 @@ class GameController(id: String,
       if (AppSettings.isLayer) {
         ClientBoot.addToPlatform {
           getAction(grid.actionMap)
-//          val t = System.currentTimeMillis()
+          val t = System.currentTimeMillis()
           val tmp = GetByte(getMapByte(true), getBackgroundByte(true), getAppleByte(true),getKernelByte(true), getAllSnakeByte(true), getMySnakeByte(true), getInfoByte(grid.currentRank, grid.myRank, true))
-//          println("*************")
-//          println(System.currentTimeMillis() - t)
+          println("*************")
+          println(System.currentTimeMillis() - t)
           if(AppSettings.isViewObservation) {
             botInfoActor ! GetViewByte(getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, true))
+          }else{
+            getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, false)
           }
 //          println("===============")
 //          println(System.currentTimeMillis() - t)
