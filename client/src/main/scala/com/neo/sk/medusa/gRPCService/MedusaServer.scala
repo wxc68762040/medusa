@@ -174,15 +174,20 @@ class MedusaServer(
   override def systemInfo(request: Credit): Future[SystemInfoRsp] = {
     println(s"systemInfo Called by [$request")
     if(checkBotToken(request.apiToken)) {
-      val rsp = SystemInfoRsp(framePeriod = AppSettings.systemInfo, state = state, msg = "ok")
+      val rsp = SystemInfoRsp(framePeriod = AppSettings.framePeriod, state = state, msg = "ok")
       Future.successful(rsp)
     } else {
       Future.successful(SystemInfoRsp(errCode = 100006, state = State.unknown, msg = "auth error"))
     }
   }
-
+  
   override def currentFrame(request: Credit): Future[CurrentFrameRsp] = {
-    Future.successful(CurrentFrameRsp())
+    if(checkBotToken(request.apiToken)) {
+      val rsp = CurrentFrameRsp(GameController.grid.frameCount, state = state, msg = "ok")
+      Future.successful(rsp)
+    } else {
+      Future.successful(CurrentFrameRsp(errCode = 100007, state = State.unknown, msg = "auth error"))
+    }
   }
 
 }

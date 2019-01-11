@@ -131,7 +131,7 @@ object WSClient {
 											ctx.self ! GetGameController(playerId,isBot=true)
                       loginController.setUserInfo(playerId, t.botName, t.token)
                       //fixme test bot sdk
-										//	timer.startSingleTimer(TimerKeyForTest, ClientTest(1),10.seconds)
+											timer.startSingleTimer(TimerKeyForTest, ClientTest(1),10.seconds)
                       Future.successful(s"$logPrefix connect success.")
                     } else {
                       loginController.getLoginScence().warningText.setText(s"WSClient connection failed: ${upgrade.response.status}")
@@ -228,8 +228,8 @@ object WSClient {
           val layerScene = new LayerScene
           val gController = new GameController(playerId, stageCtx, gameScene, layerScene, serverActor)
           gController.connectToGameServer(gController)
-          if(isBot){
-						val port = 5321
+          if (isBot) {
+						val port = AppSettings.botServerPort
 						ClientBoot.sdkServer ! SdkServer.BuildServer(port, executor, ctx.self, gController, gameMessageReceiver, stageCtx)
           }
           working(gameMessageReceiver,serverActor,loginController,stageCtx,gController)

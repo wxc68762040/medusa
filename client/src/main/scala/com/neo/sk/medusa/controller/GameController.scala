@@ -106,7 +106,7 @@ object GameController {
         val color = reader.getArgb(x, y)
         byteBuffer.putInt(color)
       }
-      byteBuffer.flip()//将当前位置设为缓冲区开始
+      byteBuffer.flip()
       byteBuffer.array().take(byteBuffer.limit)
     } catch {
       case e: Exception=>
@@ -179,7 +179,7 @@ class GameController(id: String,
         msg match {
 
           case t: GetByte =>
-           idle(t.mapByte, t.bgByte, t.appleByte, t.kernelByte, t.allSnakeByte, t.mySnakeByte, t.infoByte, viewByte)
+           	idle(t.mapByte, t.bgByte, t.appleByte, t.kernelByte, t.allSnakeByte, t.mySnakeByte, t.infoByte, viewByte)
 
           case t: GetViewByte =>
             idle(mapByte, bgByte, appleByte, kernelByte, allSnakesByte, mySnakeByte, infoByte, t.viewByte)
@@ -241,22 +241,23 @@ class GameController(id: String,
 				gameScene.viewHeight = stageCtx.getWindowSize.windowHeight
 				val scaleW = gameScene.viewWidth / gameScene.initWindowWidth
 				val scaleH = gameScene.viewHeight / gameScene.initWindowHeight
-        if(AppSettings.isLayer) {
-          getAction(grid.actionMap)
-          getMapByte(false)
-          getMySnakeByte(false)
-          getAllSnakeByte(false)
-          getKernelByte(false)
-          getAppleByte(false)
-          getBackgroundByte(false)
-          getInfoByte(grid.currentRank,grid.myRank, flag = false)
+        if(AppSettings.isLayer && !AppSettings.isViewObservation) {
+//          getAction(grid.actionMap)
+//          getMapByte(false)
+//          getMySnakeByte(false)
+//          getAllSnakeByte(false)
+//          getKernelByte(false)
+//          getAppleByte(false)
+//          getBackgroundByte(false)
+//          getInfoByte(grid.currentRank,grid.myRank, flag = false)
           getViewByte(grid.currentRank, grid.historyRank,grid.myRank, grid.loginAgain, flag = false)
-        } else {
+        }
+        if(!AppSettings.isLayer){
           gameScene.draw(grid.myId, grid.getGridSyncData4Client, grid.historyRank, grid.currentRank, grid.loginAgain, grid.myRank, scaleW, scaleH)
         }
       }
     }
-    scheduler.schedule(10.millis, 100.millis) {
+    scheduler.schedule(10.millis, AppSettings.framePeriod.millis) {
       logicLoop()
     }
     animationTimer.start()
@@ -269,7 +270,6 @@ class GameController(id: String,
 
   //视野在整个地图中的位置 (location_in_map
   def getMapByte(flag: Boolean) = {
-
     val layerMapCanvas = layerScene.layerMapCanvas
     val mapCtx = layerMapCanvas.getGraphicsContext2D
     val mapWidth = layerScene.layerWidth
@@ -1100,13 +1100,19 @@ class GameController(id: String,
 
       if (AppSettings.isLayer) {
         ClientBoot.addToPlatform {
-          val t = System.currentTimeMillis()
-          botInfoActor ! GetByte(getMapByte(true), getBackgroundByte(true), getAppleByte(true),getKernelByte(true), getAllSnakeByte(true), getMySnakeByte(true), getInfoByte(grid.currentRank, grid.myRank, true))
-         // println(s"time: ${System.currentTimeMillis() - t}")
+          getAction(grid.actionMap)
+//          val t = System.currentTimeMillis()
+          val tmp = GetByte(getMapByte(true), getBackgroundByte(true), getAppleByte(true),getKernelByte(true), getAllSnakeByte(true), getMySnakeByte(true), getInfoByte(grid.currentRank, grid.myRank, true))
+//          println("*************")
+//          println(System.currentTimeMillis() - t)
           if(AppSettings.isViewObservation) {
             botInfoActor ! GetViewByte(getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, true))
           }
+//          println("===============")
+//          println(System.currentTimeMillis() - t)
+          botInfoActor ! tmp
         }
+
       }
 
 			grid.savedGrid += (grid.frameCount -> grid.getGridSyncData4Client)

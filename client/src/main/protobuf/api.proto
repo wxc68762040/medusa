@@ -117,11 +117,11 @@ message SystemInfoRsp {
 }
 
 message CurrentFrameRsp {
-    int64 frame = 1;
+  int64 frame = 1;
 
-    int32 err_code = 13;
-    State state = 14;
-    string msg = 15;
+  int32 err_code = 13;
+  State state = 14;
+  string msg = 15;
 }
 
 message SimpleRsp{
