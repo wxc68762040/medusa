@@ -22,8 +22,6 @@ object AppSettings {
   val boundW = appConfig.getInt("bounds.w")
   val bountH = appConfig.getInt("bounds.h")
 
-  val frameRate = appConfig.getInt("sync.frameRate")
-  val syncDelay = appConfig.getInt("sync.delay")
   val esheepProtocol = appConfig.getString("esheepServer.protocol")
   val esheepHost = appConfig.getString("esheepServer.host")
   
@@ -42,7 +40,8 @@ object AppSettings {
   val isView = appConfig.getBoolean("isView")
   val isViewObservation = appConfig.getBoolean("isViewObservation")
 
-  val systemInfo = appConfig.getInt("systemInfo")
+  val botServerPort = appConfig.getInt("botServerPort")
+  val framePeriod = appConfig.getInt("framePeriod")
 
   val botInfo = if(!isView) {
       (appConfig.getString("botInfo.botId"), appConfig.getString("botInfo.botKey"))

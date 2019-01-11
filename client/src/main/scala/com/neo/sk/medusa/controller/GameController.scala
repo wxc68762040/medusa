@@ -179,7 +179,7 @@ class GameController(id: String,
         msg match {
 
           case t: GetByte =>
-           idle(t.mapByte, t.bgByte, t.appleByte, t.kernelByte, t.allSnakeByte, t.mySnakeByte, t.infoByte, viewByte)
+           	idle(t.mapByte, t.bgByte, t.appleByte, t.kernelByte, t.allSnakeByte, t.mySnakeByte, t.infoByte, viewByte)
 
           case t: GetViewByte =>
             idle(mapByte, bgByte, appleByte, kernelByte, allSnakesByte, mySnakeByte, infoByte, t.viewByte)
@@ -256,7 +256,7 @@ class GameController(id: String,
         }
       }
     }
-    scheduler.schedule(10.millis, 100.millis) {
+    scheduler.schedule(10.millis, AppSettings.framePeriod.millis) {
       logicLoop()
     }
     animationTimer.start()

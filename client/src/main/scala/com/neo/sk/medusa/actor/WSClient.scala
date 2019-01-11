@@ -228,8 +228,8 @@ object WSClient {
           val layerScene = new LayerScene
           val gController = new GameController(playerId, stageCtx, gameScene, layerScene, serverActor)
           gController.connectToGameServer(gController)
-          if(isBot){
-						val port = 5321
+          if (isBot) {
+						val port = AppSettings.botServerPort
 						ClientBoot.sdkServer ! SdkServer.BuildServer(port, executor, ctx.self, gController, gameMessageReceiver, stageCtx)
           }
           working(gameMessageReceiver,serverActor,loginController,stageCtx,gController)
