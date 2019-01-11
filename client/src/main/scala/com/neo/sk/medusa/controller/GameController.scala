@@ -106,7 +106,7 @@ object GameController {
         val color = reader.getArgb(x, y)
         byteBuffer.putInt(color)
       }
-      byteBuffer.flip()
+      byteBuffer.flip()//将当前位置设为缓冲区开始
       byteBuffer.array().take(byteBuffer.limit)
     } catch {
       case e: Exception=>

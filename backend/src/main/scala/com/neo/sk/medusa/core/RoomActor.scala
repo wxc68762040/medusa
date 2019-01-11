@@ -165,7 +165,7 @@ object RoomActor {
               //            userMap.remove(t.userId)
               deadUserList += t.userId
               if (isRecord) {
-                getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserLeftRoom(t.userId, t.deadInfo.name, grid.frameCount,isDead = true)
+                getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserDead(t.userId, t.deadInfo.name, grid.frameCount)
               }
               if (userMap.keys.forall(u => deadUserList.contains(u))) {
                 //room empty
@@ -214,7 +214,7 @@ object RoomActor {
             dispatch(userMap, watcherMap, Protocol.SnakeDead(t.playerId))
             eventList.append(Protocol.SnakeDead(t.playerId))
             if (isRecord) {
-              getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserLeftRoom(t.playerId, userMap(t.playerId)._2, grid.frameCount,isDead = false)
+              getGameRecorder(ctx, grid, roomId) ! GameRecorder.UserLeftRoom(t.playerId, userMap(t.playerId)._2, grid.frameCount)
             }
             userMap.remove(t.playerId)
             deadUserList -= t.playerId
