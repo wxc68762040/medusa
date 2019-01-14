@@ -31,7 +31,8 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
   private[this] var deadBodies: List[Ap] = Nil
   private [this] var eatenApples = Map.empty[String, List[AppleWithFrame]]
   private [this] var speedUpInfo = List.empty[SpeedUpInfo]
-  var removePoint =  Map[Point, Spot]()
+  private var removePoint =  Map[Point, Spot]()
+//  private var addPoint = Map[Point, Spot]()
   var currentRank = List.empty[Score]
   var topCurrentRank = List.empty[Score]
   private[this] var historyRankMap = Map.empty[String, Score]
@@ -138,7 +139,8 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
   }
 
   override def updateSnakes() = {
-  
+
+//    addPoint = Map[Point, Spot]()
     var mapKillCounter = Map.empty[String, Int]
     var updatedSnakes = List.empty[SnakeInfo]
     deadSnakeList = Nil
@@ -199,6 +201,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
   }
   
   def updateASnake(snake: SnakeInfo, actMap: Map[String, Int]): Either[String, SnakeInfo] = {
+    removePoint = Map[Point, Spot]()
     val keyCode = actMap.get(snake.id)
     val newDirection = {
       val keyDirection = keyCode match {
@@ -264,11 +267,14 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
       val distance = newTail.distance(headAndJoints.dequeue._1)
       if(distance >= step) { //尾巴在移动到下一个节点前就需要停止。
         newTail = newTail + newTail.getDirection(headAndJoints.dequeue._1) * step
+        removePoint ++= snake.tail.to(newTail).map{e=>(e,snake.id, snake.color)}
         step = -1
       } else { //尾巴在移动到下一个节点后，还需要继续移动。
         step -= distance
         headAndJoints = headAndJoints.dequeue._2
+        val old = newTail
         newTail = newJoints.dequeue._1
+        removePoint ++= old.to(newTail).map{e=>(e,snake.id, snake.color)}
         newJoints = newJoints.dequeue._2
       }
     }
@@ -278,6 +284,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
     } else snake.freeFrame
   
     if(dead.nonEmpty) {
+      grid --= snake.getBodies.keys
       val appleCount = math.round(snake.length * Protocol.foodRate).toInt
       feedApple(appleCount, FoodType.deadBody, Some(snake.id))
       grid.get(dead.head) match {
@@ -292,6 +299,8 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
           Left("0") //撞墙的情况
       }
     } else {
+      grid ++= newHead.to(oldHead).map{e=>(e, Body(snake.id, snake.color))}
+      grid --= removePoint.keys
       Right(snake.copy(head = newHead, tail = newTail, lastHead = oldHead, direction = newDirection,
         joints = newJoints, speed = newSpeed, freeFrame = newFreeFrame, length = len, extend = newExtend))
     }

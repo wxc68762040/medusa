@@ -74,13 +74,16 @@ trait Grid {
 
   private[this] def updateSpots(front: Boolean) = {
     var appleCount = 0
-    grid = grid.filter { case (_, spot) =>
+    var removeApple = Map[Point, Spot]()
+    grid ++= grid.filter { case (k, spot) =>
       spot match {
         case Apple(_, _, frame, _) =>
-          if(frame >= frameCount)
+          if(frame >= frameCount) {
             true
-          else
+          }else {
+            removeApple += ((k, spot))
             false
+          }
         case _ => false
       }
     }.map {
@@ -109,7 +112,8 @@ trait Grid {
 
       case x => x
     }
-    countBody() // 将更新的蛇的point存进grid
+    grid --= removeApple.keys
+//    countBody() // 将更新的蛇的point存进grid
     feedApple(appleCount, FoodType.normal)
   }
 
