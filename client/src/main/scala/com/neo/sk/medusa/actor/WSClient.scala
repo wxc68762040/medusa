@@ -216,7 +216,7 @@ object WSClient {
               connected.onComplete(i => log.info(i.toString))
 
             case Left(l) =>
-              log.error("link error!")
+              log.error("link error!" + l)
           }
            Behaviors.same
 
