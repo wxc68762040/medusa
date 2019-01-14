@@ -33,7 +33,6 @@ object GameInfo {
   val infoCacheCanvas = dom.document.getElementById("GameInfo").asInstanceOf[Canvas]
   val infoCacheCtx = infoCacheCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
-
   def setStartBg()={
     startBg.setAttribute("style", s"position:absolute;z-index:4;left: 0px; top: 0px;background: rgba(0, 0, 0, 0.8);height:${canvasBoundary.y}px;width:${canvasBoundary.x}px")
   }
