@@ -1114,9 +1114,7 @@ class GameController(id: String,
 //          println(System.currentTimeMillis() - t)
           botInfoActor ! tmp
         }
-
       }
-
 			grid.savedGrid += (grid.frameCount -> grid.getGridSyncData4Client)
 			grid.savedGrid -= (grid.frameCount - Protocol.savingFrame - Protocol.advanceFrame)
 		}

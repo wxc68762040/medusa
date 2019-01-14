@@ -76,7 +76,11 @@ trait Grid {
     var appleCount = 0
     grid = grid.filter { case (_, spot) =>
       spot match {
-        case Apple(_, _, frame, _) if frame >= frameCount => true
+        case Apple(_, _, frame, _) =>
+          if(frame >= frameCount)
+            true
+          else
+            false
         case _ => false
       }
     }.map {
