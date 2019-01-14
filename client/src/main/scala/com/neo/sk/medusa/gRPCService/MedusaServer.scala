@@ -1,8 +1,8 @@
 package com.neo.sk.medusa.gRPCService
 
 import java.awt.event.KeyEvent
-
 import javafx.scene.input.KeyCode
+
 import akka.actor.typed.ActorRef
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes
@@ -29,6 +29,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import com.neo.sk.medusa.utils.AuthUtils.checkBotToken
 import com.neo.sk.medusa.controller.GameController
 import com.neo.sk.medusa.snake.Protocol4Agent.JoinRoomRsp
+import io.grpc.stub.StreamObserver
 
 /**
 	* Created by wangxicheng on 2018/11/29.
@@ -181,12 +182,20 @@ class MedusaServer(
     }
   }
   
-  override def currentFrame(request: Credit): Future[CurrentFrameRsp] = {
+  override def currentFrame(request: Credit, responseObserver: StreamObserver[CurrentFrameRsp]): Unit = {
     if(checkBotToken(request.apiToken)) {
-      val rsp = CurrentFrameRsp(GameController.grid.frameCount, state = state, msg = "ok")
-      Future.successful(rsp)
+      var lastFrameCount = -1L
+      while(true) {
+        if(GameController.grid.frameCount != lastFrameCount) {
+          val rsp = CurrentFrameRsp(GameController.grid.frameCount, state = state, msg = "ok")
+          responseObserver.onNext(rsp)
+          lastFrameCount = GameController.grid.frameCount
+//          log.info(s"end.")
+//          responseObserver.onCompleted()
+        }
+      }
     } else {
-      Future.successful(CurrentFrameRsp(errCode = 100007, state = State.unknown, msg = "auth error"))
+      responseObserver.onCompleted()
     }
   }
 
