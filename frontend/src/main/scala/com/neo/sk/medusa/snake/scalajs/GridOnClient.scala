@@ -143,24 +143,24 @@ class GridOnClient(override val boundary: Point) extends Grid {
   def speedUp(snake: Snake4Client, newDirection: Point):Option[(Boolean, Double)] = {
     //检测加速
     var speedOrNot: Boolean = false
-    var headerLeftRight = if(newDirection.y == 0){
-      Point(snake.head.x - square, snake.head.y - square - speedUpRange).zone(square * 2,(speedUpRange + square) * 2)
-    }else{
-      Point(snake.head.x - square - speedUpRange, snake.head.y - square).zone((speedUpRange + square) * 2,square *2)
-    }
-    headerLeftRight.foreach {
-      s =>
-        grid.get(s) match {
-          case Some(x: Body) =>
-            if(x.id != snake.id) {
-              speedOrNot = true
-            }else {
-              speedOrNot = speedOrNot
-            }
-          case _ =>
-            speedOrNot = speedOrNot
-        }
-    }
+//    var headerLeftRight = if(newDirection.y == 0){
+//      Point(snake.head.x - square, snake.head.y - square - speedUpRange).zone(square * 2,(speedUpRange + square) * 2)
+//    }else{
+//      Point(snake.head.x - square - speedUpRange, snake.head.y - square).zone((speedUpRange + square) * 2,square *2)
+//    }
+//    headerLeftRight.foreach {
+//      s =>
+//        grid.get(s) match {
+//          case Some(x: Body) =>
+//            if(x.id != snake.id) {
+//              speedOrNot = true
+//            }else {
+//              speedOrNot = speedOrNot
+//            }
+//          case _ =>
+//            speedOrNot = speedOrNot
+//        }
+//    }
 
     // 加速上限
     val s = snake.speed match {
