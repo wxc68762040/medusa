@@ -20,7 +20,7 @@ import java.nio.ByteBuffer
 
 import javafx.scene.SnapshotParameters
 import javafx.scene.canvas.{Canvas, GraphicsContext}
-import javafx.scene.image.{Image, WritableImage}
+import javafx.scene.image.WritableImage
 import javafx.scene.paint.Color
 import org.slf4j.{Logger, LoggerFactory}
 import com.neo.sk.medusa.actor.ByteReceiver
@@ -74,8 +74,7 @@ object GameController {
 			case _ => KeyEvent.VK_F2
 		}
 	}
-  
-  val isGray = true
+ 
 	def canvas2byteArray(canvas: Canvas):Array[Byte] = {
     try {
       val params = new SnapshotParameters
@@ -85,7 +84,7 @@ object GameController {
       params.setFill(Color.TRANSPARENT)
       canvas.snapshot(params, wi) //从画布中复制绘图并复制到writableImage
       val reader = wi.getPixelReader
-      if(!isGray) {
+      if(!AppSettings.isGray) {
         val byteBuffer = ByteBuffer.allocate(4 * w * h)
         for (y <- 0 until h; x <- 0 until w) {
           val color = reader.getArgb(x, y)
@@ -183,14 +182,7 @@ class GameController(id: String,
 		stageCtx.closeStage()
 	}
 
-  var tt=0l
-  var n = 0
-
 	private def logicLoop(): Unit = {
-    n += 1
-//		basicTime = System.currentTimeMillis()
-//    println(s"logicloop = ${basicTime}")
-    tt = System.currentTimeMillis()
 		if(!lagging) {
 			if (!grid.justSynced) {
 				grid.update(false)
