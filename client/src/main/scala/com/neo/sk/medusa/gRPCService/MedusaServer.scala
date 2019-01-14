@@ -69,7 +69,7 @@ class MedusaServer(
   override def createRoom(request: CreateRoomReq): Future[CreateRoomRsp] = {
     if (checkBotToken(request.credit.get.apiToken)) {
       log.info(s"createRoom Called by [$request")
-      state = State.init_game
+      state = State.in_game
       val getRoomIdRsp: Future[JoinRoomRsp] = gameController.botInfoActor ? (GameController.CreateRoomReq(request.password, _))
       getRoomIdRsp.map {
         rsp =>
@@ -150,15 +150,24 @@ class MedusaServer(
     }
   }
 
-  override def observationWithInfo(request: Credit):Future[ObservationWithInfoRsp] = {
+  override def observationWithInfo(request: Credit): Future[ObservationWithInfoRsp] = {
     println(s"observationWithInfo Called by [$request")
     if (checkBotToken(request.apiToken)) {
       val observationRsp: Future[ObservationRsp] = gameController.botInfoActor ? GameController.GetObservation
-      state  = if(gameController.getLiveState) State.in_game else State.killed
+      state = if(gameController.getLiveState) State.in_game else State.killed
       observationRsp.map {
         observation =>
-          ObservationWithInfoRsp(layeredObservation = observation.layeredObservation,humanObservation = observation.humanObservation,score = gameController.getScore._2.l, kills = gameController.getScore._2.k,
-            if (state == State.in_game) 1 else 0, state = state, msg = "ok")
+          ObservationWithInfoRsp(
+						observation.layeredObservation,
+						observation.humanObservation,
+						gameController.getScore._2.l,
+						gameController.getScore._2.k,
+            if (state == State.in_game) 1 else 0,
+						gameController.getFrameCount,
+						0,
+						state,
+						"ok"
+					)
       }
     } else {
       if(!gameController.getLiveState) {
@@ -173,7 +182,7 @@ class MedusaServer(
   override def inform(request: Credit): Future[InformRsp] = {
     println(s"inform Called by [$request")
     if (checkBotToken(request.apiToken)) {
-     state  = if(gameController.getLiveState) State.in_game else State.killed
+     state = if(gameController.getLiveState) State.in_game else State.killed
       val rsp = InformRsp(score = gameController.getScore._2.l, kills = gameController.getScore._2.k,
         if (state == State.in_game) 1 else 0, state = state, msg = "ok")
       Future.successful(rsp)
@@ -201,24 +210,33 @@ class MedusaServer(
       Future.successful(SystemInfoRsp(errCode = 100006, state = State.unknown, msg = "auth error"))
     }
   }
-  
-  override def currentFrame(request: Credit, responseObserver: StreamObserver[CurrentFrameRsp]): Unit = {
-    if(checkBotToken(request.apiToken)) {
-      var lastFrameCount = -1L
-      while(true) {
-        if(GameController.grid.frameCount != lastFrameCount) {
-          val rsp = CurrentFrameRsp(GameController.grid.frameCount, state = state, msg = "ok")
-          responseObserver.onNext(rsp)
-          lastFrameCount = GameController.grid.frameCount
-//          log.info(s"end.")
-//          responseObserver.onCompleted()
-        }
-        Thread.sleep(40L)
-      }
-    } else {
-      responseObserver.onCompleted()
-    }
-  }
+	
+	override def currentFrame(request: Credit): Future[CurrentFrameRsp] = {
+		if(checkBotToken(request.apiToken)) {
+			val rsp = CurrentFrameRsp(GameController.grid.frameCount, state = state, msg = "ok")
+			Future.successful(rsp)
+		} else {
+			Future.successful(CurrentFrameRsp(errCode = 100007, state = State.unknown, msg = "auth error"))
+		}
+	}
+	
+//  override def currentFrame(request: Credit, responseObserver: StreamObserver[CurrentFrameRsp]): Unit = {
+//    if(checkBotToken(request.apiToken)) {
+//      var lastFrameCount = -1L
+//      while(true) {
+//        if(GameController.grid.frameCount != lastFrameCount) {
+//          val rsp = CurrentFrameRsp(GameController.grid.frameCount, state = state, msg = "ok")
+//          responseObserver.onNext(rsp)
+//          lastFrameCount = GameController.grid.frameCount
+////          log.info(s"end.")
+////          responseObserver.onCompleted()
+//        }
+//        Thread.sleep(40L)
+//      }
+//    } else {
+//      responseObserver.onCompleted()
+//    }
+//  }
 
 }
 
