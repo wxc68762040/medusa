@@ -4,22 +4,16 @@ import java.awt.event.KeyEvent
 import javafx.scene.input.KeyCode
 
 import akka.actor.typed.ActorRef
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.ws.{WebSocketRequest, WebSocketUpgradeResponse}
-import akka.stream.scaladsl.Keep
-import com.neo.sk.medusa.actor.{GameMessageReceiver, WSClient}
+import akka.actor.typed.scaladsl.adapter._
+import com.neo.sk.medusa.actor.{GameMessageReceiver, GrpcStreamSender, WSClient}
 import com.neo.sk.medusa.common.{AppSettings, StageContext}
-import com.neo.sk.medusa.controller.GameController
 import akka.actor.typed.scaladsl.AskPattern._
-import com.neo.sk.medusa.scene.{GameScene, LayerScene}
 import com.neo.sk.medusa.snake.Protocol
 import com.neo.sk.medusa.snake.Protocol.{CreateRoom, WsMsgSource, WsSendMsg}
 import com.neo.sk.medusa.ClientBoot.{executor, materializer, scheduler, system, timeout}
 import io.grpc.{Server, ServerBuilder}
 import org.seekloud.esheepapi.pb.api._
 import org.seekloud.esheepapi.pb.actions._
-import org.seekloud.esheepapi.pb.service._
 import org.seekloud.esheepapi.pb.service.EsheepAgentGrpc
 import org.seekloud.esheepapi.pb.service.EsheepAgentGrpc.EsheepAgent
 import org.slf4j.LoggerFactory
@@ -38,6 +32,7 @@ import io.grpc.stub.StreamObserver
 object MedusaServer {
 
   private[this] val log = LoggerFactory.getLogger(this.getClass)
+	var streamSender: Option[ActorRef[GrpcStreamSender.Command]] = None
 
   def build(
              port: Int,
