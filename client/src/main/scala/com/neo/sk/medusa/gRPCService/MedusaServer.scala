@@ -149,6 +149,26 @@ class MedusaServer(
     }
   }
 
+  override def observationWithInfo(request: Credit):Future[ObservationWithInfoRsp] = {
+    println(s"observationWithInfo Called by [$request")
+    if (checkBotToken(request.apiToken)) {
+      val observationRsp: Future[ObservationRsp] = gameController.botInfoActor ? GameController.GetObservation
+      state  = if(gameController.getLiveState) State.in_game else State.killed
+      observationRsp.map {
+        observation =>
+          ObservationWithInfoRsp(layeredObservation = observation.layeredObservation,humanObservation = observation.humanObservation,score = gameController.getScore._2.l, kills = gameController.getScore._2.k,
+            if (state == State.in_game) 1 else 0, state = state, msg = "ok")
+      }
+    } else {
+      if(!gameController.getLiveState) {
+        Future.successful(ObservationWithInfoRsp(errCode = 100003, state = State.unknown, msg = "dead snake can't get observation"))
+      }else{
+        Future.successful(ObservationWithInfoRsp(errCode = 100003, state = State.unknown, msg = "auth error"))
+      }
+    }
+  }
+
+
   override def inform(request: Credit): Future[InformRsp] = {
     println(s"inform Called by [$request")
     if (checkBotToken(request.apiToken)) {
