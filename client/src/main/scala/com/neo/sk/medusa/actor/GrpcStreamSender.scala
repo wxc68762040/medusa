@@ -23,6 +23,7 @@ object GrpcStreamSender {
 		Behaviors.receive[Command] { (ctx, msg) =>
 			msg match {
 				case NewFrame(frame) =>
+					observer.onNext(frame)
 					Behavior.same
 			}
 		}

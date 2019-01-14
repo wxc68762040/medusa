@@ -198,7 +198,7 @@ class GameController(id: String,
             idle(mapByte, bgByte, appleByte, kernelByte, allSnakesByte, mySnakeByte, infoByte, t.viewByte)
 
           case t: GetObservation =>
-						val pixel = if(isGray) 1 else 4
+						val pixel = if(mapByte.isEmpty) 0 else if(isGray) 1 else 4
             val layer = LayeredObservation(
               Some(ImgData(windowWidth, windowHeight, pixel, ByteString.copyFrom(mapByte))),
               Some(ImgData(windowWidth, windowHeight, pixel, ByteString.copyFrom(bgByte))),
