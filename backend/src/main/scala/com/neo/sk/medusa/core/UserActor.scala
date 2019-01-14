@@ -239,8 +239,13 @@ object UserActor {
           case UnKnowAction(unknownMsg) =>
             log.info(s"${ctx.self.path} receive an UnKnowAction when play:$unknownMsg")
             Behaviors.same
+
+          case UserFrontActor(front) =>
+            switchBehavior(ctx, "idle", idle(playerId, playerName,password, front))
+
           case UserLeft =>
-            switchBehavior(ctx,"init",init(playerId,playerName,password),Some(10.seconds),TimeOut("UserLeft"))
+            Behaviors.same
+
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when idle:$x")
             Behaviors.unhandled
@@ -273,7 +278,7 @@ object UserActor {
           case DispatchMsg(m) =>
 
             m match {
-              case t: Protocol.SnakeDead =>
+              case t: Protocol.SnakeDead =>                            //  死亡时dead
                 //如果死亡十分钟后无操作 则杀死userActor
                 if(t.id == playerId) {
                   timer.startSingleTimer(UserDeadTimerKey, FrontLeft(frontActor), UserLeftTime)
@@ -328,6 +333,9 @@ object UserActor {
             log.debug(s"${ctx.self.path} receive an UnKnowAction when play:$unknownMsg")
             Behaviors.same
 
+          case UserLeft =>
+            Behavior.same
+
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when play:$x")
             Behaviors.unhandled
@@ -373,14 +381,21 @@ object UserActor {
           case FrontLeft(front) =>
             log.info(s"${ctx.self.path} left while wait")
             ctx.unwatch(front)
-            front ! Protocol.CloseStream
             roomManager ! RoomManager.UserLeftRoom(playerId, roomId)
             roomActor ! RoomActor.UserLeft(playerId)
+            front ! Protocol.CloseStream
             userManager ! UserManager.UserGone(playerId)
-            Behaviors.stopped
+            Behavior.stopped
+
+          case UserFrontActor(front) =>
+            switchBehavior(ctx, "idle", idle(playerId, playerName,password, front))
+
+          case UserLeft =>
+            Behavior.same
 
           case x =>
             log.error(s"${ctx.self.path} receive an unknown msg when wait:$x")
+//            stashBuffer.stash(x)
             Behaviors.unhandled
         }
 
