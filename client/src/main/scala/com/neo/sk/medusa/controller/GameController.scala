@@ -156,6 +156,8 @@ class GameController(id: String,
   val bgColor = new Color(0.003, 0.176, 0.176, 1.0)
   val viewMapCanvas = new Canvas
 
+//  var total = 0l
+
   val scale = AppSettings.layerCanvasW.toFloat / 1600
   val scaleView = 0.5
 
@@ -179,6 +181,8 @@ class GameController(id: String,
         msg match {
 
           case t: GetByte =>
+//            total += System.currentTimeMillis()-tt
+//            println("?????? "+(System.currentTimeMillis()-tt)+" ?????" + total/n*1.0)
            	idle(t.mapByte, t.bgByte, t.appleByte, t.kernelByte, t.allSnakeByte, t.mySnakeByte, t.infoByte, viewByte)
 
           case t: GetViewByte =>
@@ -1085,10 +1089,14 @@ class GameController(id: String,
    }
 
 
+  var tt=0l
+  var n = 0
 
 	private def logicLoop(): Unit = {
+    n += 1
 //		basicTime = System.currentTimeMillis()
 //    println(s"logicloop = ${basicTime}")
+    tt = System.currentTimeMillis()
 		if(!lagging) {
 			if (!grid.justSynced) {
 				grid.update(false)
@@ -1098,14 +1106,14 @@ class GameController(id: String,
 				grid.update(true)
 				grid.justSynced = false
 			}
-
+      println("===== " + (System.currentTimeMillis()-tt) + "=====")
       if (AppSettings.isLayer) {
         ClientBoot.addToPlatform {
           getAction(grid.actionMap)
           val t = System.currentTimeMillis()
           val tmp = GetByte(getMapByte(true), getBackgroundByte(true), getAppleByte(true),getKernelByte(true), getAllSnakeByte(true), getMySnakeByte(true), getInfoByte(grid.currentRank, grid.myRank, true))
-          println("*************")
-          println(System.currentTimeMillis() - t)
+//          println("*************")
+//          println(System.currentTimeMillis() - t)
           if(AppSettings.isViewObservation) {
             botInfoActor ! GetViewByte(getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, true))
           }else{

@@ -134,37 +134,41 @@ class MedusaServer(
 
   override def observation(request: Credit): Future[ObservationRsp] = {
     println(s"observation Called by [$request")
+    val t = System.currentTimeMillis()
     if (checkBotToken(request.apiToken)) {
-      val observationRsp: Future[ObservationRsp] = gameController.botInfoActor ? GameController.GetObservation
-      observationRsp.map {
-        observation =>
-          ObservationRsp(observation.layeredObservation, observation.humanObservation, gameController.getFrameCount, 0, state, "ok")
+      if (!gameController.getLiveState) {
+        Future.successful(ObservationRsp(errCode = 100003, state = State.unknown, msg = "dead snake can't get observation"))
+      } else {
+        val observationRsp: Future[ObservationRsp] = gameController.botInfoActor ? GameController.GetObservation
+        observationRsp.map {
+          observation =>
+//            println("9999999999999999999999999999999999")
+//            println(System.currentTimeMillis() - t)
+//            println("0000000000000")
+            ObservationRsp(observation.layeredObservation, observation.humanObservation, gameController.getFrameCount, 0, state, "ok")
+        }
       }
     } else {
-      if(!gameController.getLiveState) {
-        Future.successful(ObservationRsp(errCode = 100003, state = State.unknown, msg = "dead snake can't get observation"))
-      }else{
-        Future.successful(ObservationRsp(errCode = 100003, state = State.unknown, msg = "auth error"))
-      }
+      Future.successful(ObservationRsp(errCode = 100003, state = State.unknown, msg = "auth error"))
     }
   }
 
   override def observationWithInfo(request: Credit):Future[ObservationWithInfoRsp] = {
     println(s"observationWithInfo Called by [$request")
     if (checkBotToken(request.apiToken)) {
-      val observationRsp: Future[ObservationRsp] = gameController.botInfoActor ? GameController.GetObservation
-      state  = if(gameController.getLiveState) State.in_game else State.killed
-      observationRsp.map {
-        observation =>
-          ObservationWithInfoRsp(layeredObservation = observation.layeredObservation,humanObservation = observation.humanObservation,score = gameController.getScore._2.l, kills = gameController.getScore._2.k,
-            if (state == State.in_game) 1 else 0, state = state, msg = "ok")
+      if(gameController.getLiveState) {
+        val observationRsp: Future[ObservationRsp] = gameController.botInfoActor ? GameController.GetObservation
+        state = if (gameController.getLiveState) State.in_game else State.killed
+        observationRsp.map {
+          observation =>
+            ObservationWithInfoRsp(layeredObservation = observation.layeredObservation, humanObservation = observation.humanObservation, score = gameController.getScore._2.l, kills = gameController.getScore._2.k,
+              if (state == State.in_game) 1 else 0, state = state, msg = "ok")
+        }
+      }else{
+        Future.successful(ObservationWithInfoRsp(errCode = 100003, state = State.unknown, msg = "dead snake can't get observation"))
       }
     } else {
-      if(!gameController.getLiveState) {
-        Future.successful(ObservationWithInfoRsp(errCode = 100003, state = State.unknown, msg = "dead snake can't get observation"))
-      }else{
         Future.successful(ObservationWithInfoRsp(errCode = 100003, state = State.unknown, msg = "auth error"))
-      }
     }
   }
 

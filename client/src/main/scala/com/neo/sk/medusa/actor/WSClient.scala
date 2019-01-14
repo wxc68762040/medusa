@@ -248,12 +248,12 @@ object WSClient {
 
 					case GetObservationTest() =>
 						log.info("get observationTest")
-
+            val t = System.currentTimeMillis()
 						val rsp1 = client.observation()
 						rsp1.onComplete{
 							a=>println(a)
 								println("======")
-								timer.startSingleTimer(TimerKeyForTest, ActionSpaceTest(), 5.seconds)
+								timer.startSingleTimer(TimerKeyForTest, GetObservationTest(), 2.seconds)
 						}
 					Behaviors.same
 
