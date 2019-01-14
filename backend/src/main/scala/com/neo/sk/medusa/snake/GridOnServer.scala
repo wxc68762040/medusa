@@ -31,6 +31,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
   private[this] var deadBodies: List[Ap] = Nil
   private [this] var eatenApples = Map.empty[String, List[AppleWithFrame]]
   private [this] var speedUpInfo = List.empty[SpeedUpInfo]
+  var removePoint =  Map[Point, Spot]()
   var currentRank = List.empty[Score]
   var topCurrentRank = List.empty[Score]
   private[this] var historyRankMap = Map.empty[String, Score]
