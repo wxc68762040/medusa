@@ -286,8 +286,6 @@ class GameController(id: String,
     val scaleW = (windowWidth / 400.0).toDouble
     val scaleH = (windowHeight / 200.0).toDouble
 
-    println(scaleW)
-
     if (snakes.nonEmpty && snakes.exists(_.id == grid.myId)) {
       snakes.foreach { snake =>
         val x = snake.head.x + snake.direction.x * snake.speed * period / Protocol.frameRate
