@@ -193,6 +193,7 @@ class MedusaServer(
 //          log.info(s"end.")
 //          responseObserver.onCompleted()
         }
+        Thread.sleep(40L)
       }
     } else {
       responseObserver.onCompleted()

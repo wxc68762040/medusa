@@ -92,6 +92,8 @@ object GameController {
 			case _ => KeyEvent.VK_F2
 		}
 	}
+  
+  val isGray = true
 	def canvas2byteArray(canvas: Canvas):Array[Byte] = {
     try {
       val params = new SnapshotParameters
@@ -101,13 +103,24 @@ object GameController {
       params.setFill(Color.TRANSPARENT)
       canvas.snapshot(params, wi) //从画布中复制绘图并复制到writableImage
       val reader = wi.getPixelReader
-      val byteBuffer = ByteBuffer.allocate(4 * w * h)
-      for (y <- 0 until h; x <- 0 until w) {
-        val color = reader.getArgb(x, y)
-        byteBuffer.putInt(color)
+      if(!isGray) {
+        val byteBuffer = ByteBuffer.allocate(4 * w * h)
+        for (y <- 0 until h; x <- 0 until w) {
+          val color = reader.getArgb(x, y)
+          byteBuffer.putInt(color)
+        }
+        byteBuffer.flip()
+        byteBuffer.array().take(byteBuffer.limit)
+      } else {
+        //获取灰度图，每个像素点1Byte
+        val byteArray = new Array[Byte](1 * w * h)
+        for (y <- 0 until h; x <- 0 until w) {
+          val color = reader.getColor(x, y).grayscale()
+          val gray = (color.getRed * 255).toByte
+          byteArray(y * h + x) = gray
+        }
+        byteArray
       }
-      byteBuffer.flip()
-      byteBuffer.array().take(byteBuffer.limit)
     } catch {
       case e: Exception=>
         emptyArray
