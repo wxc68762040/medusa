@@ -8,7 +8,7 @@ import akka.stream.ActorMaterializer
 import com.neo.sk.medusa.common.AppSettings._
 import akka.actor.typed.scaladsl.adapter._
 import akka.util.Timeout
-import com.neo.sk.medusa.actor.{GameMessageReceiver, SdkServer, WSClient}
+import com.neo.sk.medusa.actor.{GameMessageReceiver, SdkServer, WSClient,ByteReceiver}
 import com.neo.sk.medusa.common.StageContext
 import com.neo.sk.medusa.snake.Protocol
 
@@ -26,6 +26,7 @@ object ClientBoot {
 
   lazy val gameMessageReceiver: ActorRef[Protocol.WsMsgSource] = system.spawn(GameMessageReceiver.create(), "gameController")
 	val sdkServer: ActorRef[SdkServer.Command] = system.spawn(SdkServer.create(),"sdkServer")
+	val botInfoActor: ActorRef[ByteReceiver.Command] = system.spawn(ByteReceiver.create(), "botInfoActor")
 
 	def addToPlatform(fun: => Unit) = {
 		Platform.runLater(() => fun)

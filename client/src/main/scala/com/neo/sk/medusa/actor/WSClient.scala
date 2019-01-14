@@ -13,7 +13,7 @@ import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.{ByteString, ByteStringBuilder}
 import com.neo.sk.medusa.common.{AppSettings, StageContext}
 import com.neo.sk.medusa.controller.{GameController, LoginController}
-import com.neo.sk.medusa.scene.{GameScene, LayerScene, LoginScene}
+import com.neo.sk.medusa.scene.{GameScene, LayerCanvas, LayerScene, LoginScene}
 import com.neo.sk.medusa.snake.Protocol._
 import com.neo.sk.medusa.snake.Protocol4Agent.{Ws4AgentResponse, WsResponse}
 import com.neo.sk.medusa.ClientBoot.{executor, materializer}
@@ -22,8 +22,10 @@ import org.seekloud.byteobject.MiddleBufferInJvm
 import org.slf4j.LoggerFactory
 import io.circe.parser.decode
 import java.net.URLEncoder
+
 import com.neo.sk.medusa.utils.Api4GameAgent._
 import com.neo.sk.medusa.ClientBoot
+
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import com.neo.sk.medusa.gRPCService.MedusaTestClient
@@ -226,7 +228,8 @@ object WSClient {
         case GetGameController(playerId, isBot)=>
           val gameScene = new GameScene(isBot)
           val layerScene = new LayerScene
-          val gController = new GameController(playerId, stageCtx, gameScene, layerScene, serverActor)
+					val layerController = new LayerCanvas(gameScene, layerScene)
+          val gController = new GameController(playerId, stageCtx, gameScene, layerScene,layerController, serverActor)
           gController.connectToGameServer(gController)
           if (isBot) {
 						val port = AppSettings.botServerPort
