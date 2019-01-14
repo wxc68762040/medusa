@@ -139,7 +139,7 @@ class MedusaServer(
       if (!gameController.getLiveState) {
         Future.successful(ObservationRsp(errCode = 100003, state = State.unknown, msg = "dead snake can't get observation"))
       } else {
-        val observationRsp: Future[ObservationRsp] = gameController.botInfoActor ? GameController.GetObservation
+        val observationRsp: Future[ObservationRsp] = botInfoActor ? ByteReceiver.GetObservation
         observationRsp.map {
           observation =>
 //            println("9999999999999999999999999999999999")
@@ -157,7 +157,7 @@ class MedusaServer(
     println(s"observationWithInfo Called by [$request")
     if (checkBotToken(request.apiToken)) {
       if(gameController.getLiveState) {
-        val observationRsp: Future[ObservationRsp] = gameController.botInfoActor ? GameController.GetObservation
+        val observationRsp: Future[ObservationRsp] = botInfoActor ? ByteReceiver.GetObservation
         state = if (gameController.getLiveState) State.in_game else State.killed
         observationRsp.map {
           observation =>

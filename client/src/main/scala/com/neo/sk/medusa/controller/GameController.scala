@@ -193,8 +193,8 @@ class GameController(id: String,
           layerCanvas.getAction(grid.actionMap)
           val t = System.currentTimeMillis()
           val tmp = ByteReceiver.GetByte(layerCanvas.getMapByte(true), layerCanvas.getBackgroundByte(true),layerCanvas.getAppleByte(true), layerCanvas.getKernelByte(true), layerCanvas.getAllSnakeByte(true), layerCanvas.getMySnakeByte(true), layerCanvas.getInfoByte(grid.currentRank, grid.myRank, true))
-          println("*************")
-          println(System.currentTimeMillis() - t)
+          //println("*************")
+          //println(System.currentTimeMillis() - t)
           if(AppSettings.isViewObservation) {
             botInfoActor ! ByteReceiver.GetViewByte(layerCanvas.getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, true))
           }else{
