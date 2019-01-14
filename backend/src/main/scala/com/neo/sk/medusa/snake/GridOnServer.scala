@@ -267,14 +267,14 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
       val distance = newTail.distance(headAndJoints.dequeue._1)
       if(distance >= step) { //尾巴在移动到下一个节点前就需要停止。
         newTail = newTail + newTail.getDirection(headAndJoints.dequeue._1) * step
-        removePoint ++= snake.tail.to(newTail).map{e=>(e,snake.id, snake.color)}
+        removePoint ++= snake.tail.to(newTail).map{e=>(e,(snake.id, snake.color))}
         step = -1
       } else { //尾巴在移动到下一个节点后，还需要继续移动。
         step -= distance
         headAndJoints = headAndJoints.dequeue._2
         val old = newTail
         newTail = newJoints.dequeue._1
-        removePoint ++= old.to(newTail).map{e=>(e,snake.id, snake.color)}
+        removePoint ++= old.to(newTail).map{e=>(e,(snake.id, snake.color))}
         newJoints = newJoints.dequeue._2
       }
     }
