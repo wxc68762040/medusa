@@ -100,6 +100,7 @@ trait Grid {
             val nextLoc = p pathTo targetApple._1
             if (nextLoc.nonEmpty) {
               val apple = Apple(targetApple._2, FoodType.intermediate, frame, targetAppleOpt)
+              grid -= p
               (nextLoc.get, apple)
             } else {
               val apple = Apple(targetApple._2, FoodType.deadBody, frame)
