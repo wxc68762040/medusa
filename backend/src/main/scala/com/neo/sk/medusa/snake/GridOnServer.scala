@@ -284,9 +284,9 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
     } else snake.freeFrame
   
     if(dead.nonEmpty) {
-      grid --= snake.getBodies.keys
       val appleCount = math.round(snake.length * Protocol.foodRate).toInt
       feedApple(appleCount, FoodType.deadBody, Some(snake.id))
+      grid --= snake.getBodies.keys
       grid.get(dead.head) match {
         case Some(x: Body) =>
           // snake dead
