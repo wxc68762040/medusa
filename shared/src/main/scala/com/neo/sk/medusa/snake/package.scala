@@ -213,8 +213,8 @@ package object snake {
                         joints: Queue[Point] = Queue(),
                         speed: Double = Protocol.fSpeed,
                         freeFrame: Int = 0,
-                        length: Int = 100,
-                        extend: Int = 100, //需要伸长的量
+                        length: Int = 2000,
+                        extend: Int = 2000, //需要伸长的量
                         kill: Int = 0
                       ) {
     def getBodies: Map[Point, Spot] = {

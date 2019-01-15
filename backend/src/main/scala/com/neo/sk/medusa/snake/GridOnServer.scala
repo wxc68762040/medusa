@@ -361,7 +361,7 @@ class GridOnServer(override val boundary: Point, roomActor:ActorRef[RoomActor.Co
         }
       }.foreach {
         dead =>
-          if (appleNeeded != 0) {
+          if (appleNeeded > 0) {
             val targetPoint = pointAroundSnack(dead._1)
             val score = random.nextDouble() match {
               case x if x > 0.95 => 50
