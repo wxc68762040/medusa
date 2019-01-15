@@ -1,6 +1,7 @@
 package com.neo.sk.medusa.controller
 
 import javafx.animation.{AnimationTimer, KeyFrame}
+
 import akka.actor.typed.{ActorRef, Behavior}
 import com.neo.sk.medusa.{ClientBoot, snake}
 import com.neo.sk.medusa.ClientBoot.{botInfoActor, gameMessageReceiver}
@@ -12,18 +13,21 @@ import com.neo.sk.medusa.snake.Protocol.{Key, NetTest}
 import com.neo.sk.medusa.snake._
 import com.neo.sk.medusa.ClientBoot.{executor, scheduler}
 import javafx.scene.input.KeyCode
+
 import org.seekloud.esheepapi.pb.actions._
+
 import scala.concurrent.duration._
 import com.neo.sk.medusa.snake.Protocol._
 import java.awt.event.KeyEvent
 import java.nio.ByteBuffer
-
 import javafx.scene.SnapshotParameters
 import javafx.scene.canvas.{Canvas, GraphicsContext}
 import javafx.scene.image.WritableImage
 import javafx.scene.paint.Color
+
 import org.slf4j.{Logger, LoggerFactory}
-import com.neo.sk.medusa.actor.ByteReceiver
+import com.neo.sk.medusa.actor.{ByteReceiver, GrpcStreamSender}
+import com.neo.sk.medusa.gRPCService.MedusaServer
 import com.neo.sk.medusa.snake.Protocol4Agent.JoinRoomRsp
 
 /**
@@ -38,7 +42,7 @@ object GameController {
 	var firstCome = true
 	var lagging = true
   var SDKReplyTo:ActorRef[JoinRoomRsp] = _
-  var serverActors:Option[ActorRef[Protocol.WsSendMsg]] = null
+  var serverActors: Option[ActorRef[Protocol.WsSendMsg]] = None
 	val log:Logger = LoggerFactory.getLogger("GameController")
   val emptyArray = new Array[Byte](0)
 
@@ -192,6 +196,7 @@ class GameController(id: String,
 				grid.update(true)
 				grid.justSynced = false
 			}
+//			MedusaServer.streamSender.foreach(_ ! GrpcStreamSender.NewFrame(grid.frameCount))
 
       if (AppSettings.isLayer) {
         ClientBoot.addToPlatform {

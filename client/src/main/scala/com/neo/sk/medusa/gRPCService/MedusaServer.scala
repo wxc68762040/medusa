@@ -201,32 +201,34 @@ class MedusaServer(
     }
   }
 	
-	override def currentFrame(request: Credit): Future[CurrentFrameRsp] = {
-		if(checkBotToken(request.apiToken)) {
-			val rsp = CurrentFrameRsp(GameController.grid.frameCount, state = state, msg = "ok")
-			Future.successful(rsp)
-		} else {
-			Future.successful(CurrentFrameRsp(errCode = 100007, state = State.unknown, msg = "auth error"))
-		}
-	}
+//	override def currentFrame(request: Credit): Future[CurrentFrameRsp] = {
+//		if(checkBotToken(request.apiToken)) {
+//			val rsp = CurrentFrameRsp(GameController.grid.frameCount, state = state, msg = "ok")
+//			Future.successful(rsp)
+//		} else {
+//			Future.successful(CurrentFrameRsp(errCode = 100007, state = State.unknown, msg = "auth error"))
+//		}
+//	}
 	
-//  override def currentFrame(request: Credit, responseObserver: StreamObserver[CurrentFrameRsp]): Unit = {
-//    if(checkBotToken(request.apiToken)) {
-//      var lastFrameCount = -1L
-//      while(true) {
-//        if(GameController.grid.frameCount != lastFrameCount) {
-//          val rsp = CurrentFrameRsp(GameController.grid.frameCount, state = state, msg = "ok")
-//          responseObserver.onNext(rsp)
-//          lastFrameCount = GameController.grid.frameCount
-////          log.info(s"end.")
-////          responseObserver.onCompleted()
-//        }
-//        Thread.sleep(40L)
-//      }
-//    } else {
-//      responseObserver.onCompleted()
-//    }
-//  }
+  override def currentFrame(request: Credit, responseObserver: StreamObserver[CurrentFrameRsp]): Unit = {
+    if (checkBotToken(request.apiToken)) {
+//      MedusaServer.streamSender = Some(system.spawn(GrpcStreamSender.create(responseObserver), "GrpcStreamSender"))
+      var lastFrameCount = -1L
+      while(true) {
+        if(GameController.grid.frameCount != lastFrameCount) {
+          val rsp = CurrentFrameRsp(GameController.grid.frameCount)
+          responseObserver.onNext(rsp)
+          lastFrameCount = GameController.grid.frameCount
+//                  log.info(s"end.")
+//                  responseObserver.onCompleted()
+        }
+        Thread.sleep(40L)
+      }
+    }
+    else {
+      responseObserver.onCompleted()
+    }
+  }
 
 }
 
