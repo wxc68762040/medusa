@@ -206,9 +206,7 @@ object RoomActor {
             } else {
               log.info(s"key loss: server: ${grid.frameCount} client: ${t.frame}")
             }
-            //            val sendBuffer = new MiddleBufferInJvm(40960)
-            //            val msg = ByteString(Protocol.SnakeAction(t.id, t.keyCode, t.frame).fillMiddleBuffer(sendBuffer).result())
-            //            keyLength += msg.length * userMap.size
+
             Behaviors.same
 
           case BeginSync =>
@@ -257,18 +255,10 @@ object RoomActor {
                 if (userMap.get(s.id).nonEmpty) {
                   log.info(s"send init sync data to ${s.id}")
                   dispatchTo(grid.getGridSyncData, userMap(s.id)._1, watcherMap, s.id)
-                  //                  val sendBuffer = new MiddleBufferInJvm(40960)
-                  //                  val msg = ByteString(grid.getGridSyncData.fillMiddleBuffer(sendBuffer).result())
-                  //                  syncLength += msg.length
                 }
               }
               snakeState._2.foreach { s =>
-                if (userMap.get(s._1).nonEmpty) {
-                  dispatchTo(Protocol.AddSnakes(snakeState._1), userMap(s._1)._1, watcherMap, s._1)
-                  //                  val sendBuffer = new MiddleBufferInJvm(40960)
-                  //                  val msg = ByteString(Protocol.AddSnakes(snakeState._1).fillMiddleBuffer(sendBuffer).result())
-                  //                  syncLength += msg.length
-                }
+                if (userMap.get(s._1).nonEmpty) dispatchTo(Protocol.AddSnakes(snakeState._1), userMap(s._1)._1, watcherMap, s._1)
               }
             }
 
@@ -289,9 +279,6 @@ object RoomActor {
             if (speedUpInfo.nonEmpty) {
               eventList.append(Protocol.SpeedUp(speedUpInfo))
               dispatch(userMap, watcherMap, Protocol.SpeedUp(speedUpInfo))
-              //              val sendBuffer = new MiddleBufferInJvm(40960)
-              //              val msg = ByteString(Protocol.SpeedUp(speedUpInfo).fillMiddleBuffer(sendBuffer).result())
-              //              speedLength += msg.length * userMap.size
             }
 
             for ((k, u) <- userMap) {
@@ -299,16 +286,10 @@ object RoomActor {
                 val noAppData = grid.getGridSyncDataNoApp
                 dispatchTo(noAppData, u._1, watcherMap, k)
                 eventList.append(noAppData)
-                //                val sendBuffer = new MiddleBufferInJvm(40960)
-                //                val msg = ByteString(noAppData.fillMiddleBuffer(sendBuffer).result())
-                //                syncLength += msg.length
               }
 
               if ((tickCount - u._3) % 30 == 1) {
                 eventList.append(Protocol.Ranks(grid.topCurrentRank, grid.historyRankList))
-                //                val sendBuffer = new MiddleBufferInJvm(40960)
-                //                val msg = ByteString(Protocol.Ranks(grid.topCurrentRank, grid.historyRankList).fillMiddleBuffer(sendBuffer).result())
-                //                rankLength += msg.length
                 dispatchTo(Protocol.Ranks(grid.topCurrentRank, grid.historyRankList), u._1, watcherMap, k)
                 val myScore =
                   grid.currentRank.filter(s => s.id == k).map(r => Score(r.id, r.n, r.k, r.l)).headOption.getOrElse(Score("", "", 0, 0))
@@ -326,17 +307,12 @@ object RoomActor {
             if (feedApples.nonEmpty) {
               eventList.append(Protocol.FeedApples(feedApples))
               dispatch(userMap, watcherMap, Protocol.FeedApples(feedApples))
-              //              val sendBuffer = new MiddleBufferInJvm(40960)
-              //              val msg = ByteString(Protocol.FeedApples(feedApples).fillMiddleBuffer(sendBuffer).result())
-              //              feedAppLength += msg.length * userMap.size
             }
             if (eatenApples.nonEmpty) {
               val tmp = Protocol.EatApples(eatenApples.map(r => EatFoodInfo(r._1, r._2)).toList)
               dispatch(userMap, watcherMap, tmp)
               eventList.append(tmp)
-              //              val sendBuffer = new MiddleBufferInJvm(40960)
-              //              val msg = ByteString(tmp.fillMiddleBuffer(sendBuffer).result())
-              //              eatAppLength += msg.length * userMap.size
+
             }
 
             var rEmptyCount = roomEmptyCount
