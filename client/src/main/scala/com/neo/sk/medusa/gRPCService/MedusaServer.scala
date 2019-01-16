@@ -142,9 +142,6 @@ class MedusaServer(
         val observationRsp: Future[ObservationRsp] = botInfoActor ? ByteReceiver.GetObservation
         observationRsp.map {
           observation =>
-//            println("9999999999999999999999999999999999")
-//            println(System.currentTimeMillis() - t)
-//            println("0000000000000")
             ObservationRsp(observation.layeredObservation, observation.humanObservation, gameController.getFrameCount, 0, state, "ok")
         }
       }
