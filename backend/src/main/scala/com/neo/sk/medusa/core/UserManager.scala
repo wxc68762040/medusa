@@ -60,7 +60,7 @@ object UserManager {
             val userRecMap = mutable.HashMap.empty[String, UserActor.ReplayGame]
             val allUser = mutable.HashMap.empty[String, ActorRef[UserActor.Command]]
             val userCreateRoom = mutable.HashMap.empty[String, Int]
-            timer.startSingleTimer(Timer4MsgAdd, ClearMsgLength, 10000.milli)
+            //    timer.startSingleTimer(Timer4MsgAdd, ClearMsgLength, 10000.milli)
             idle(userRecMap, userCreateRoom, allUser)
         }
     }
@@ -68,7 +68,8 @@ object UserManager {
 
   def idle(userRecMap: mutable.HashMap[String, UserActor.ReplayGame],
            userCreateRoom: mutable.HashMap[String, Int],
-           allUser: mutable.HashMap[String, ActorRef[UserActor.Command]])(implicit timer: TimerScheduler[Command]): Behavior[Command] =
+           allUser: mutable.HashMap[String, ActorRef[UserActor.Command]])
+          (implicit timer: TimerScheduler[Command]): Behavior[Command] =
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
@@ -114,7 +115,7 @@ object UserManager {
             //            RoomActor.syncLength = 0l
             //            RoomActor.speedLength = 0l
             //            RoomActor.rankLength = 0l
-            timer.startSingleTimer(TimerForMsgClear, ClearMsgLength, 100.milli)
+            //timer.startSingleTimer(TimerForMsgClear, ClearMsgLength, 100.milli)
             Behaviors.same
 
           case ClearMsgLength =>
@@ -133,7 +134,7 @@ object UserManager {
             //            RoomActor.speedLength = 0l
             //            RoomActor.rankLength = 0l
 
-            timer.startSingleTimer(Timer4MsgAdd, ClearMsgLength, 10000.milli)
+            //timer.startSingleTimer(Timer4MsgAdd, ClearMsgLength, 10000.milli)
             Behaviors.same
 
           case t: YourUserUnwatched =>
@@ -199,7 +200,7 @@ object UserManager {
           //encoded process
           message.fillMiddleBuffer(sendBuffer).result()
         )
-        msgLength += msg.length
+        //msgLength += msg.length
         val a = BinaryMessage.Strict(msg)
         a
 
@@ -238,7 +239,7 @@ object UserManager {
         val msg = ByteString(
           //encoded process
           message.fillMiddleBuffer(sendBuffer).result())
-        msgLength += msg.length
+        //msgLength += msg.length
         BinaryMessage.Strict(msg)
 
       case _ =>
