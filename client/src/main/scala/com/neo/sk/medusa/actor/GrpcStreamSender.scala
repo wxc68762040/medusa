@@ -27,9 +27,14 @@ object GrpcStreamSender {
 			msg match {
 				case NewFrame(frame) =>
 					val rsp = CurrentFrameRsp(frame)
-					log.info(s"NewFrame $frame")
-					observer.onNext(rsp)
-					Behavior.same
+					try {
+						observer.onNext(rsp)
+						Behavior.same
+					} catch {
+						case e: Exception =>
+							log.warn(s"Observer error: ${e.getMessage}")
+							Behavior.stopped
+					}
 			}
 		}
 	}

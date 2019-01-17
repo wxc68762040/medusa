@@ -7,6 +7,7 @@ import com.neo.sk.medusa.common.StageContext
 import com.neo.sk.medusa.controller.GameController
 import com.neo.sk.medusa.gRPCService.MedusaServer
 import com.neo.sk.medusa.snake.Protocol.WsMsgSource
+import io.grpc.Server
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext
@@ -25,6 +26,7 @@ object SdkServer {
     gameController: GameController,
     gameMessageReceiver: ActorRef[WsMsgSource],
     stageCtx: StageContext) extends Command
+  case object Shutdown extends Command
 
   private val log = LoggerFactory.getLogger("sdkserver")
 
@@ -62,9 +64,20 @@ object SdkServer {
             server.shutdown()
             log.info("SHUT DOWN.")
           }
-          server.awaitTermination()
-          println("DONE.")
-          Behaviors.same
+          working(server)
+      }
+    }
+  }
+  
+  private def working(server: Server)
+                     (implicit stashBuffer: StashBuffer[Command],
+                      timer: TimerScheduler[Command]
+                     ): Behavior[Command] = {
+    Behaviors.receive { (ctx, msg) =>
+      msg match {
+        case Shutdown =>
+          server.shutdown()
+          Behaviors.stopped
       }
     }
   }

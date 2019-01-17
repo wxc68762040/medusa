@@ -196,23 +196,27 @@ class GameController(id: String,
 				grid.update(true)
 				grid.justSynced = false
 			}
-//			MedusaServer.streamSender.foreach(_ ! GrpcStreamSender.NewFrame(grid.frameCount))
-
-      if (AppSettings.isLayer) {
+			MedusaServer.streamSender.foreach(_ ! GrpcStreamSender.NewFrame(getFrameCount))
+			
+			if (AppSettings.isLayer) {
         ClientBoot.addToPlatform {
-          layerCanvas.getAction(grid.actionMap)
-          val t = System.currentTimeMillis()
-          val tmp = ByteReceiver.GetByte(layerCanvas.getMapByte(true), layerCanvas.getBackgroundByte(true), layerCanvas.getAppleByte(true),layerCanvas.getKernelByte(true), layerCanvas.getAllSnakeByte(true), layerCanvas.getMySnakeByte(true), layerCanvas.getInfoByte(grid.currentRank, grid.myRank, true))
-          //println("*************")
-          //println(System.currentTimeMillis() - t)
-          if(AppSettings.isViewObservation) {
-            botInfoActor ! ByteReceiver.GetViewByte(layerCanvas.getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, true))
-          }else{
-            layerCanvas.getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, false)
-          }
-//          println("===============")
-//          println(System.currentTimeMillis() - t)
-          botInfoActor ! tmp
+					layerCanvas.getAction(grid.actionMap)
+					if(getLiveState) {
+						botInfoActor ! ByteReceiver.GetByte(
+							layerCanvas.getMapByte(true),
+							layerCanvas.getBackgroundByte(true),
+							layerCanvas.getAppleByte(true),
+							layerCanvas.getKernelByte(true),
+							layerCanvas.getAllSnakeByte(true),
+							layerCanvas.getMySnakeByte(true),
+							layerCanvas.getInfoByte(grid.currentRank, grid.myRank, true)
+						)
+						if (AppSettings.isViewObservation) {
+							botInfoActor ! ByteReceiver.GetViewByte(layerCanvas.getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, true))
+						} else {
+							layerCanvas.getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, false)
+						}
+					}
         }
       }
 			grid.savedGrid += (grid.frameCount -> grid.getGridSyncData4Client)
