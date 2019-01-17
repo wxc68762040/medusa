@@ -41,9 +41,9 @@ object SdkServer {
 
   def create(): Behavior[Command] = {
     Behaviors.setup[Command] { ctx =>
-      Behaviors.withTimers[Command] { t =>
+      Behaviors.withTimers[Command] { implicit timer =>
         implicit val stashBuffer: StashBuffer[Command] = StashBuffer[Command](Int.MaxValue)
-        implicit val timer: TimerScheduler[Command] = t
+
         switchBehavior(ctx, "idle", idle())
       }
     }

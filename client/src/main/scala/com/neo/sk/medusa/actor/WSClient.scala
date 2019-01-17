@@ -111,7 +111,6 @@ object WSClient {
 				case BotLogin(botId,botKey)	=>
           log.info(s"bot req token and accessCode")
 					AppSettings.isLayer = true
-          //fixme 此处若拿不到token或accessCode则存在问题
           getBotToken(botId,botKey).map{
             case Right(t)=>
 							val playerId = "bot" + botId
@@ -196,7 +195,6 @@ object WSClient {
 
               val connected = response.flatMap { upgrade =>
 								if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
-									//fixme  存疑
 									if(scanSender != null) {
 										scanSender ! LinkResult(true)
 									}

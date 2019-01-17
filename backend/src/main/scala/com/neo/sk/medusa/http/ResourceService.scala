@@ -68,7 +68,7 @@ trait ResourceService {
   //cache code copied from zhaorui.
   private val cacheSeconds = 24 * 60 * 60
 
-  def resourceRoutes: Route = (pathPrefix("static") & get) {
+  val resourceRoutes: Route = (pathPrefix("static") & get) {
     mapResponseHeaders { headers => `Cache-Control`(`public`, `max-age`(cacheSeconds)) +: headers } {
       encodeResponse(resources)
     }

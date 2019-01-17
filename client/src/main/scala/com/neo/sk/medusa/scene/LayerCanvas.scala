@@ -838,7 +838,7 @@ class LayerCanvas(gameScene: GameScene,
 
     // bot操作
     if (botActionMap.size >= 12) {
-      botActionMap.toList.sortBy(_._1).takeRight(12).foreach { a =>
+      botActionMap.toList.sortBy(_._1).reverse.takeRight(12).foreach { a =>
         val keyCode = a._2.filter(_._1 == grid.myId).values.headOption.getOrElse(0)
         if (keyCode != 0) {
           actionCtx.fillText(s"Frame:${a._1} Action: ${keyCode}", 20, (index + baseLine) * 14)
@@ -846,7 +846,7 @@ class LayerCanvas(gameScene: GameScene,
         }
       }
     } else {
-      botActionMap.toList.sortBy(_._1).foreach { a =>
+      botActionMap.toList.sortBy(_._1).reverse.foreach { a =>
         val keyCode = a._2.filter(_._1 == grid.myId).values.headOption.getOrElse(0)
         actionCtx.fillText(s"Frame:${a._1} Action: ${keyCode}", 20, (index + baseLine) * 14)
         index += 1

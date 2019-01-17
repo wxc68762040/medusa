@@ -222,7 +222,7 @@ package object snake {
       joints.enqueue(head).foldLeft(tail) { (start: Point, end: Point) =>
         val points = start.to(end)
         points.foreach { e =>
-          bodyMap += ((e, Body(id, color)))
+          bodyMap += (e-> Body(id, color))
         }
         end
       }

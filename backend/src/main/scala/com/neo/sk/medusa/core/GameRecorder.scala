@@ -65,7 +65,7 @@ object GameRecorder {
 
   final case class EssfMapInfo(m: List[(EssfMapKey, ListBuffer[EssfMapJoinLeftInfo])])
 
-  final case class UserDead(playerId:String, name:String, frame:Long) extends Command
+  final case class UserDead(playerId: String, name: String, frame: Long) extends Command
 
   private final case class SaveData(flag: Int) extends Command
 
@@ -116,9 +116,9 @@ object GameRecorder {
   }
 
   def work(data: GameRecorder.GameRecorderData, essfMap: mutable.HashMap[EssfMapKey, ListBuffer[EssfMapJoinLeftInfo]],
-    userMap: mutable.HashMap[String, String], userAllMap: mutable.HashMap[String, String],
-    frameIndex: Long)(implicit middleBuffer: MiddleBufferInJvm,
-    timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
+           userMap: mutable.HashMap[String, String], userAllMap: mutable.HashMap[String, String],
+           frameIndex: Long)(implicit middleBuffer: MiddleBufferInJvm,
+                             timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
     Behaviors.receive { (ctx, msg) =>
       msg match {
 
@@ -132,9 +132,9 @@ object GameRecorder {
 
         case t: UserLeftRoom =>
           userMap.remove(t.playerId)
-          if(essfMap.get(EssfMapKey(t.playerId, t.name)).isDefined) {
+          if (essfMap.get(EssfMapKey(t.playerId, t.name)).isDefined) {
             val tmp = essfMap(EssfMapKey(t.playerId, t.name))
-            if(tmp.last.leftF == -1) {
+            if (tmp.last.leftF == -1) {
               val last = tmp.last
               tmp.remove(tmp.length - 1)
               tmp.append(EssfMapJoinLeftInfo(last.joinF, frameIndex))
@@ -146,9 +146,9 @@ object GameRecorder {
         case t: UserDead =>
           userMap.remove(t.playerId)
           val tmp = essfMap.getOrElse(EssfMapKey(t.playerId, t.name), ListBuffer[EssfMapJoinLeftInfo]())
-          if(tmp.nonEmpty){
+          if (tmp.nonEmpty) {
             val last = tmp.last
-            tmp.remove(tmp.length -1)
+            tmp.remove(tmp.length - 1)
             tmp.append(EssfMapJoinLeftInfo(last.joinF, frameIndex))
             essfMap.put(EssfMapKey(t.playerId, t.name), tmp)
           }
@@ -195,9 +195,9 @@ object GameRecorder {
   }
 
   def save(data: GameRecorder.GameRecorderData, essfMap: mutable.HashMap[EssfMapKey, ListBuffer[EssfMapJoinLeftInfo]],
-    userMap: mutable.HashMap[String, String], userAllMap: mutable.HashMap[String, String],
-    frameIndex:Long)(implicit middleBuffer: MiddleBufferInJvm,
-    timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
+           userMap: mutable.HashMap[String, String], userAllMap: mutable.HashMap[String, String],
+           frameIndex: Long)(implicit middleBuffer: MiddleBufferInJvm,
+                             timer: TimerScheduler[Command], stashBuffer: StashBuffer[Command]): Behavior[Command] = {
     Behaviors.receive { (ctx, msg) =>
       msg match {
 
@@ -209,7 +209,7 @@ object GameRecorder {
               if (essf._2.last.leftF == -1L) {
                 val tmp = essf._2
                 val last = tmp.last
-                tmp.remove(tmp.length -1)
+                tmp.remove(tmp.length - 1)
                 tmp.append(EssfMapJoinLeftInfo(last.joinF, frameIndex))
                 (essf._1, tmp)
               } else {
@@ -218,7 +218,7 @@ object GameRecorder {
           }
           data.recorder.putMutableInfo(Constants.essfMapKeyName, ESSFSupport.userMapEncode(mapInfo))
 
-          if(data.gameRecordBuffer.nonEmpty){
+          if (data.gameRecordBuffer.nonEmpty) {
             val rs = data.gameRecordBuffer.reverse
             rs.headOption.foreach { e =>
               data.recorder.writeFrame(e.event._1.fillMiddleBuffer(middleBuffer).result(), e.event._2.map(_.fillMiddleBuffer(middleBuffer).result()))
@@ -242,12 +242,12 @@ object GameRecorder {
               val list = ListBuffer[rRecordsUserMap]()
               userAllMap.foreach {
                 userRecord =>
-                  list.append(rRecordsUserMap(-1l, recordId, userRecord._1, userRecord._2,mapInfo(EssfMapKey(userRecord._1, userRecord._2)).foldLeft("")((s,e) => s + e.joinF + "," + e.leftF + ";")
+                  list.append(rRecordsUserMap(-1l, recordId, userRecord._1, userRecord._2, mapInfo(EssfMapKey(userRecord._1, userRecord._2)).foldLeft("")((s, e) => s + e.joinF + "," + e.leftF + ";")
                   ))
               }
               UserRecordDao.insertPlayerList(list.toList).onComplete {
                 case Success(_) =>
-//                  log.info(s"insert user record success, total:${list.length}")
+                  //                  log.info(s"insert user record success, total:${list.length}")
                   if (f == 0) {
                     ctx.self ! SwitchBehavior("initRecorder", initRecorder(data.roomId, data.fileName, data.fileIndex, userMap))
                   } else {
@@ -334,7 +334,7 @@ object GameRecorder {
           log.debug(s"${ctx.self.path} is time out when busy,msg=$m")
           Behaviors.stopped
 
-        case Stopped=>
+        case Stopped =>
           Behaviors.stopped
 
         case unknownMsg =>
