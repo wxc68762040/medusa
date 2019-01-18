@@ -65,7 +65,7 @@ object GrpcStreamSender {
 					}
 
 				case NewObservation(observation) =>
-
+					MedusaServer.state = if (gameController.getLiveState) State.in_game else State.killed
 					val rsp = ObservationWithInfoRsp(observation.layeredObservation, observation.humanObservation,
 						gameController.getScore._2.l, gameController.getScore._2.k,
 						if (MedusaServer.state == State.in_game) 1 else 0, gameController.getFrameCount,

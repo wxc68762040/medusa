@@ -134,6 +134,7 @@ class MedusaServer(
 
   override def observation(request: Credit): Future[ObservationRsp] = {
     if (checkBotToken(request.apiToken)) {
+      MedusaServer.state = if (gameController.getLiveState) State.in_game else State.killed
       val observationRsp: Future[ObservationRsp] = botInfoActor ? ByteReceiver.GetObservation
       observationRsp.map {
         observation =>
