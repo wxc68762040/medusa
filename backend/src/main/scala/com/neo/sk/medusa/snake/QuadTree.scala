@@ -7,7 +7,7 @@ import scala.collection.mutable.ArrayBuffer
 
 object QuadTree {
 
-  private final val MAX_OBJECTS = 500
+  private final val MAX_OBJECTS = 300
   private final val MAX_LEVEL = 10
   private final val safetyDistance = 100
 
@@ -81,10 +81,13 @@ class QuadTree(boundary: Boundary, pLevel: Int, quadrant: Int = -1) {
 
   def insert(o: (Point, Spot)): Unit = {
     //log.info(s"当前节点数 $pointSum  是否符合 ${objects.size} 子节点和数${getAllObjects.size}")
-    val index = getIndex(o._1)
     if (hasChildren) {
       //有子节点，插到子节点上
-      if (index.nonEmpty) pointSum += 1
+      val index = getIndex(o._1)
+      if (index.nonEmpty) {
+        //fixme 需要检查子节点是否存在该节点
+        pointSum += 1
+      }
       index.foreach {
         i =>
           if (children(i) != null) {
@@ -93,8 +96,11 @@ class QuadTree(boundary: Boundary, pLevel: Int, quadrant: Int = -1) {
       }
     } else {
       //没有插到本节点,大于最大值进行分裂
+      if (!objects.contains(o._1)) {
+        pointSum += 1
+      }
       objects += (o._1 -> o._2)
-      pointSum += 1
+      //log.info(s"第 ${level-1} 层 第 $quadrant 象限 节点数： $pointSum 实际数${objects.size}")
       if (objects.size > MAX_OBJECTS && level < MAX_LEVEL) {
         log.info(s"节点需要分裂,当前层数---$level 原第 $quadrant 象限")
         this.split()
@@ -102,7 +108,7 @@ class QuadTree(boundary: Boundary, pLevel: Int, quadrant: Int = -1) {
           obj =>
             getIndex(obj._1).foreach(i => children(i).insert(obj))
         }
-        objects=Map[Point, Spot]().empty
+        objects = Map[Point, Spot]().empty
       }
     }
   }
@@ -125,7 +131,8 @@ class QuadTree(boundary: Boundary, pLevel: Int, quadrant: Int = -1) {
     }
     results
   }
-  def retrieve(o: (Point, Spot)): Map[Point, Spot]= this.retrieve(o._1)
+
+  def retrieve(o: (Point, Spot)): Map[Point, Spot] = this.retrieve(o._1)
 
   def getAllObjects: Map[Point, Spot] = {
     var childrenObject: Map[Point, Spot] = Map[Point, Spot]()
@@ -140,32 +147,32 @@ class QuadTree(boundary: Boundary, pLevel: Int, quadrant: Int = -1) {
   def remove(p: Point): Unit = {
     //fixme 移除结点会造成大量空节点
     var flag = false //判断是否包含该节点
-    if (objects.contains(p)) {
-      objects -= p
-      pointSum -= 1
-      flag = true
-    }
     if (hasChildren) {
       val index = getIndex(p)
       index.foreach { i =>
         if (!flag) {
           //根节点不存在,子节点存在,进行删除
-          if(children(i).contains(p)){
+          if (children(i).contains(p)) {
             pointSum -= 1
             flag = true
           }
         }
         children(i).remove(p)
       }
+    } else if (objects.contains(p)) {
+      objects -= p
+      pointSum -= 1
+      flag = true
+      // log.info(s"第 ${level-1} 层 第 $quadrant 象限 删除节点! 节点数： $pointSum 实际数${objects.size}")
     }
     if (flag) {
       //说明该节点得到删除，判断是否符合四叉树条件
       if (hasChildren) {
-        if (children.map(_.pointSum).sum < MAX_OBJECTS / 2) {
+        if (pointSum < MAX_OBJECTS / 2) {
           //子树的点数小于最大值,则需要调整该树
           objects = getAllObjects
           pointSum = objects.size
-          log.info(s"删除后调整子树 $pointSum")
+          log.info(s"第 $level 层  删除后调整子树 $pointSum")
           hasChildren = false
         }
       }
@@ -193,12 +200,22 @@ class QuadTree(boundary: Boundary, pLevel: Int, quadrant: Int = -1) {
     } else None
   }
 
-   def foreach(f: (Point, Spot) => Unit): Unit = {
+  def foreach(f: (Point, Spot) => Unit): Unit = {
     if (hasChildren) {
       children.foreach(qt => qt.foreach(f))
-    }else{
+    } else {
       objects.foreach(o => f(o._1, o._2))
     }
+  }
+
+  def filter(f: (Point, Spot) => Boolean): Map[Point, Spot] = {
+    var result=Map[Point,Spot]()
+    if( hasChildren ){
+       children.foreach(c=> result++= c.filter(f) )
+    }else{
+     result ++= objects.filter(o=>f(o._1,o._2))
+    }
+    result
   }
 
 }
