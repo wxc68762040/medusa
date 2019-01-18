@@ -202,29 +202,27 @@ class GameController(id: String,
 			if (AppSettings.isLayer) {
         ClientBoot.addToPlatform {
 					layerCanvas.getAction(grid.actionMap)
-					if(getLiveState) {
-						botInfoActor ! ByteReceiver.GetByte(
-							layerCanvas.getMapByte(true),
-							layerCanvas.getBackgroundByte(true),
-							layerCanvas.getAppleByte(true),
-							layerCanvas.getKernelByte(true),
-							layerCanvas.getAllSnakeByte(true),
-							layerCanvas.getMySnakeByte(true),
-							layerCanvas.getInfoByte(grid.currentRank, grid.myRank, true),
-							if(AppSettings.isViewObservation){
-								Some(layerCanvas.getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, true))
-							}else{
-								layerCanvas.getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, false)
-								None
-							}
-						)
-//						if (AppSettings.isViewObservation) {
-//							botInfoActor ! ByteReceiver.GetViewByte(layerCanvas.getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, true))
-//						} else {
-//							layerCanvas.getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, false)
-//						}
-					}
-        }
+					botInfoActor ! ByteReceiver.GetByte(
+						layerCanvas.getMapByte(true),
+						layerCanvas.getBackgroundByte(true),
+						layerCanvas.getAppleByte(true),
+						layerCanvas.getKernelByte(true),
+						layerCanvas.getAllSnakeByte(true),
+						layerCanvas.getMySnakeByte(true),
+						layerCanvas.getInfoByte(grid.currentRank, grid.myRank, true),
+						if (AppSettings.isViewObservation) {
+							Some(layerCanvas.getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, true))
+						} else {
+							layerCanvas.getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, false)
+							None
+						}
+					)
+//					if (AppSettings.isViewObservation) {
+//						botInfoActor ! ByteReceiver.GetViewByte(layerCanvas.getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, true))
+//					} else {
+//						layerCanvas.getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, false)
+//					}
+				}
       }
 			grid.savedGrid += (grid.frameCount -> grid.getGridSyncData4Client)
 			grid.savedGrid -= (grid.frameCount - Protocol.savingFrame - Protocol.advanceFrame)
