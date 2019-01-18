@@ -1,12 +1,13 @@
 package com.neo.sk.medusa.gRPCService
 
+
 import io.grpc.{ManagedChannel, ManagedChannelBuilder}
 import org.seekloud.esheepapi.pb.actions.Move
 import org.seekloud.esheepapi.pb.api._
 import org.seekloud.esheepapi.pb.service.EsheepAgentGrpc
 import org.seekloud.esheepapi.pb.service.EsheepAgentGrpc.EsheepAgentStub
 import sun.security.util.Password
-
+import io.grpc.stub.StreamObserver
 import scala.concurrent.Future
 
 
@@ -34,8 +35,23 @@ class MedusaTestClient (
   def actionSpace():Future[ActionSpaceRsp] =esheepStub.actionSpace(credit)
 
   def action() :Future[ActionRsp] =esheepStub.action(actionReq)
+	val stream = new StreamObserver[ObservationWithInfoRsp] {
+		override def onNext(value: ObservationWithInfoRsp): Unit = {
+			println(value)
+		}
 
-  def observation(): Future[ObservationRsp] = esheepStub.observation(credit)
+		override def onCompleted(): Unit = {
+
+		}
+
+		override def onError(t: Throwable): Unit = {
+
+		}
+	}
+
+
+
+	def observation() = esheepStub.observationWithInfo(credit, stream)
 
   def inform():Future[InformRsp]=esheepStub.inform(credit)
 

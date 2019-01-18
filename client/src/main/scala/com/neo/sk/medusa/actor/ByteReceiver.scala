@@ -1,5 +1,6 @@
 package com.neo.sk.medusa.actor
 
+import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorRef, Behavior}
@@ -8,10 +9,13 @@ import com.neo.sk.medusa.common.AppSettings
 import com.neo.sk.medusa.common.AppSettings.config
 import com.neo.sk.medusa.controller.GameController
 import com.neo.sk.medusa.controller.GameController.SDKReplyTo
+import com.neo.sk.medusa.gRPCService.MedusaServer
 import com.neo.sk.medusa.snake.Protocol
 import com.neo.sk.medusa.snake.Protocol4Agent.JoinRoomRsp
 import org.seekloud.esheepapi.pb.api.ObservationRsp
 import org.seekloud.esheepapi.pb.observations.{ImgData, LayeredObservation}
+import akka.actor.typed.scaladsl.AskPattern._
+
 
 /**
   * User: gaohan
@@ -22,7 +26,7 @@ object ByteReceiver {
 
   sealed trait Command
 
-  case class GetByte(mapByte: Array[Byte], bgByte: Array[Byte], appleByte: Array[Byte], kernelByte:Array[Byte], allSnakeByte: Array[Byte], mySnakeByte: Array[Byte], infoByte: Array[Byte]) extends Command
+  case class GetByte(mapByte: Array[Byte], bgByte: Array[Byte], appleByte: Array[Byte], kernelByte:Array[Byte], allSnakeByte: Array[Byte], mySnakeByte: Array[Byte], infoByte: Array[Byte], viewByte: Option[Array[Byte]]) extends Command
 
   case class GetViewByte(viewByte: Array[Byte]) extends Command
 
@@ -31,7 +35,6 @@ object ByteReceiver {
   case class CreateRoomReq(password:String,sender:ActorRef[JoinRoomRsp]) extends Command
 
   case class JoinRoomReq(roomId:Long,password:String,sender:ActorRef[JoinRoomRsp]) extends Command
-
 
   implicit val system: ActorSystem = ActorSystem("medusa", config)
 
@@ -42,20 +45,35 @@ object ByteReceiver {
   def create(): Behavior[Command] = {
     Behaviors.setup[Command] {
       _ =>
-        idle(Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte]())
+        idle(Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte](), Array[Byte](), Some(Array[Byte]()))
     }
   }
 
-  def idle(mapByte: Array[Byte], bgByte: Array[Byte], appleByte: Array[Byte], kernelByte:Array[Byte], allSnakesByte: Array[Byte], mySnakeByte: Array[Byte], infoByte: Array[Byte],viewByte: Array[Byte]): Behavior[Command] = {
+  def idle(mapByte: Array[Byte], bgByte: Array[Byte], appleByte: Array[Byte], kernelByte:Array[Byte], allSnakesByte: Array[Byte], mySnakeByte: Array[Byte], infoByte: Array[Byte],viewByte: Option[Array[Byte]]): Behavior[Command] = {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
   
           case t: GetByte =>
-            idle(t.mapByte, t.bgByte, t.appleByte, t.kernelByte, t.allSnakeByte, t.mySnakeByte, t.infoByte, viewByte)
+            val pixel = if (mapByte.isEmpty) 0 else if (AppSettings.isGray) 1 else 4
+            val layer = LayeredObservation(
+              Some(ImgData(windowWidth, windowHeight, pixel, ByteString.copyFrom(mapByte))),
+              Some(ImgData(windowWidth, windowHeight, pixel, ByteString.copyFrom(bgByte))),
+              Some(ImgData(windowWidth, windowHeight, pixel, ByteString.copyFrom(appleByte))),
+              Some(ImgData(windowWidth, windowHeight, pixel, ByteString.copyFrom(kernelByte))),
+              Some(ImgData(windowWidth, windowHeight, pixel, ByteString.copyFrom(allSnakesByte))),
+              Some(ImgData(windowWidth, windowHeight, pixel, ByteString.copyFrom(mySnakeByte))),
+              Some(ImgData(windowWidth, windowHeight, pixel, ByteString.copyFrom(infoByte))),
+              None
+            )
+            val observation = ObservationRsp(Some(layer), if(AppSettings.isViewObservation && viewByte.isDefined) Some(ImgData(windowWidth, windowHeight, pixel, ByteString.copyFrom(viewByte.get))) else None)
+            if(MedusaServer.isObservationConnect) {
+              MedusaServer.streamSender.get ! GrpcStreamSender.NewObservation(observation)
+            }
+            idle(t.mapByte, t.bgByte, t.appleByte, t.kernelByte, t.allSnakeByte, t.mySnakeByte, t.infoByte, t.viewByte)
   
-          case t: GetViewByte =>
-            idle(mapByte, bgByte, appleByte, kernelByte, allSnakesByte, mySnakeByte, infoByte, t.viewByte)
+//          case t: GetViewByte =>
+//            idle(mapByte, bgByte, appleByte, kernelByte, allSnakesByte, mySnakeByte, infoByte, t.viewByte)
   
           case t: GetObservation =>
             val pixel = if (mapByte.isEmpty) 0 else if (AppSettings.isGray) 1 else 4
@@ -69,7 +87,7 @@ object ByteReceiver {
               Some(ImgData(windowWidth, windowHeight, pixel, ByteString.copyFrom(infoByte))),
               None
             )
-            val observation = ObservationRsp(Some(layer), Some(ImgData(windowWidth, windowHeight, pixel, ByteString.copyFrom(viewByte))))
+            val observation = ObservationRsp(Some(layer), Some(ImgData(windowWidth, windowHeight, pixel, ByteString.copyFrom(viewByte.get))))
             t.sender ! observation
             Behaviors.same
   
