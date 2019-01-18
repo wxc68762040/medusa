@@ -5,6 +5,9 @@ import javafx.event.EventHandler
 import javafx.scene.Scene
 import javafx.stage.{Stage, WindowEvent}
 
+import com.neo.sk.medusa.ClientBoot
+import com.neo.sk.medusa.actor.SdkServer
+
 /**
 	* Created by wangxicheng on 2018/10/24.
 	*/
@@ -49,6 +52,7 @@ class StageContext(stage: Stage) {
 	}
 
 	def closeStage(): Unit = {
+		ClientBoot.sdkServer ! SdkServer.Shutdown
 		stage.close()
 		System.exit(0)
 	}

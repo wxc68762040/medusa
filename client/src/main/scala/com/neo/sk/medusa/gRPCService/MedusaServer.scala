@@ -1,25 +1,19 @@
 package com.neo.sk.medusa.gRPCService
 
 import java.awt.event.KeyEvent
-
 import javafx.scene.input.KeyCode
+
 import akka.actor.typed.ActorRef
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.ws.{WebSocketRequest, WebSocketUpgradeResponse}
-import akka.stream.scaladsl.Keep
-import com.neo.sk.medusa.actor.{ByteReceiver, GameMessageReceiver, WSClient}
+import akka.actor.typed.scaladsl.adapter._
+import com.neo.sk.medusa.actor.{ByteReceiver, GameMessageReceiver, GrpcStreamSender, WSClient}
 import com.neo.sk.medusa.common.{AppSettings, StageContext}
-import com.neo.sk.medusa.controller.GameController
 import akka.actor.typed.scaladsl.AskPattern._
-import com.neo.sk.medusa.scene.{GameScene, LayerScene}
 import com.neo.sk.medusa.snake.Protocol
 import com.neo.sk.medusa.snake.Protocol.{CreateRoom, WsMsgSource, WsSendMsg}
 import com.neo.sk.medusa.ClientBoot.{botInfoActor, executor, materializer, scheduler, system, timeout}
 import io.grpc.{Server, ServerBuilder}
 import org.seekloud.esheepapi.pb.api._
 import org.seekloud.esheepapi.pb.actions._
-import org.seekloud.esheepapi.pb.service._
 import org.seekloud.esheepapi.pb.service.EsheepAgentGrpc
 import org.seekloud.esheepapi.pb.service.EsheepAgentGrpc.EsheepAgent
 import org.slf4j.LoggerFactory
@@ -29,6 +23,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import com.neo.sk.medusa.utils.AuthUtils.checkBotToken
 import com.neo.sk.medusa.controller.GameController
 import com.neo.sk.medusa.snake.Protocol4Agent.JoinRoomRsp
+import io.grpc.stub.StreamObserver
 
 /**
 	* Created by wangxicheng on 2018/11/29.
@@ -37,6 +32,7 @@ import com.neo.sk.medusa.snake.Protocol4Agent.JoinRoomRsp
 object MedusaServer {
 
   private[this] val log = LoggerFactory.getLogger(this.getClass)
+	var streamSender: Option[ActorRef[GrpcStreamSender.Command]] = None
 
   def build(
              port: Int,
@@ -67,8 +63,8 @@ class MedusaServer(
 
   override def createRoom(request: CreateRoomReq): Future[CreateRoomRsp] = {
     if (checkBotToken(request.credit.get.apiToken)) {
-      log.info(s"createRoom Called by [$request")
-      state = State.init_game
+      log.info(s"createRoom Called by [$request]")
+      state = State.in_game
       val getRoomIdRsp: Future[JoinRoomRsp] = botInfoActor ? (ByteReceiver.CreateRoomReq(request.password, _))
       getRoomIdRsp.map {
         rsp =>
@@ -82,7 +78,6 @@ class MedusaServer(
   }
 
   override def joinRoom(request: JoinRoomReq): Future[SimpleRsp] = {
-    println(s"joinRoom Called by [$request")
     if (checkBotToken(request.credit.get.apiToken)) {
       state = State.in_game
       val joinRoomRsp: Future[JoinRoomRsp] = botInfoActor ? (ByteReceiver.JoinRoomReq(request.roomId.toLong,request.password, _))
@@ -98,7 +93,6 @@ class MedusaServer(
   }
 
   override def leaveRoom(request: Credit): Future[SimpleRsp] = {
-    println(s"leaveRoom Called by [$request")
     if (checkBotToken(request.apiToken)) {
       state = State.ended
       Future.successful {
@@ -111,7 +105,6 @@ class MedusaServer(
   }
 
   override def actionSpace(request: Credit): Future[ActionSpaceRsp] = {
-    println(s"actionSpace Called by [$request")
     if (checkBotToken(request.apiToken)) {
       val rsp = ActionSpaceRsp(move = List(Move.up, Move.down, Move.left, Move.right),
         fire = List(), apply = List(), state = state, msg = "ok")
@@ -122,7 +115,6 @@ class MedusaServer(
   }
 
   override def action(request: ActionReq): Future[ActionRsp] = {
-    println(s"action Called by [$request")
     if (request.credit.nonEmpty && checkBotToken(request.credit.get.apiToken)) {
       gameController.gameActionReceiver(request.move)
       val rsp = ActionRsp(frameIndex = gameController.getFrameCount, state = state, msg = "ok")
@@ -133,49 +125,39 @@ class MedusaServer(
   }
 
   override def observation(request: Credit): Future[ObservationRsp] = {
-    println(s"observation Called by [$request")
-    val t = System.currentTimeMillis()
     if (checkBotToken(request.apiToken)) {
-      if (!gameController.getLiveState) {
-        Future.successful(ObservationRsp(errCode = 100003, state = State.unknown, msg = "dead snake can't get observation"))
-      } else {
-        val observationRsp: Future[ObservationRsp] = botInfoActor ? ByteReceiver.GetObservation
-        observationRsp.map {
-          observation =>
-            ObservationRsp(observation.layeredObservation, observation.humanObservation, gameController.getFrameCount, 0, state, "ok")
-        }
+      val observationRsp: Future[ObservationRsp] = botInfoActor ? ByteReceiver.GetObservation
+      observationRsp.map {
+        observation =>
+          ObservationRsp(observation.layeredObservation, observation.humanObservation, gameController.getFrameCount, 0, state, "ok")
       }
     } else {
       Future.successful(ObservationRsp(errCode = 100003, state = State.unknown, msg = "auth error"))
     }
   }
 
-  override def observationWithInfo(request: Credit):Future[ObservationWithInfoRsp] = {
-    println(s"observationWithInfo Called by [$request")
+  override def observationWithInfo(request: Credit): Future[ObservationWithInfoRsp] = {
     if (checkBotToken(request.apiToken)) {
-      if(gameController.getLiveState) {
-        val observationRsp: Future[ObservationRsp] = botInfoActor ? ByteReceiver.GetObservation
-        state = if (gameController.getLiveState) State.in_game else State.killed
-        observationRsp.map {
-          observation =>
-            ObservationWithInfoRsp(layeredObservation = observation.layeredObservation, humanObservation = observation.humanObservation, score = gameController.getScore._2.l, kills = gameController.getScore._2.k,
-              if (state == State.in_game) 1 else 0, state = state, msg = "ok")
-        }
-      }else{
-        Future.successful(ObservationWithInfoRsp(errCode = 100003, state = State.unknown, msg = "dead snake can't get observation"))
+      val observationRsp: Future[ObservationRsp] = botInfoActor ? ByteReceiver.GetObservation
+      state = if (gameController.getLiveState) State.in_game else State.killed
+      observationRsp.map {
+        observation =>
+          ObservationWithInfoRsp(observation.layeredObservation, observation.humanObservation,
+            gameController.getScore._2.l, gameController.getScore._2.k,
+            if (state == State.in_game) 1 else 0, gameController.getFrameCount,
+            0, state, "ok")
       }
     } else {
-        Future.successful(ObservationWithInfoRsp(errCode = 100003, state = State.unknown, msg = "auth error"))
+      Future.successful(ObservationWithInfoRsp(errCode = 100003, state = State.unknown, msg = "auth error"))
     }
   }
 
 
   override def inform(request: Credit): Future[InformRsp] = {
-    println(s"inform Called by [$request")
     if (checkBotToken(request.apiToken)) {
-     state  = if(gameController.getLiveState) State.in_game else State.killed
-      val rsp = InformRsp(score = gameController.getScore._2.l, kills = gameController.getScore._2.k,
-        if (state == State.in_game) 1 else 0, state = state, msg = "ok")
+      state = if (gameController.getLiveState) State.in_game else State.killed
+      val rsp = InformRsp(gameController.getScore._2.l, gameController.getScore._2.k,
+        if (state == State.in_game) 1 else 0, gameController.getFrameCount, 0, state, "ok")
       Future.successful(rsp)
     } else {
       Future.successful(InformRsp(errCode = 100004, state = State.unknown, msg = "auth error"))
@@ -193,7 +175,6 @@ class MedusaServer(
   }
   
   override def systemInfo(request: Credit): Future[SystemInfoRsp] = {
-    println(s"systemInfo Called by [$request")
     if(checkBotToken(request.apiToken)) {
       val rsp = SystemInfoRsp(framePeriod = AppSettings.framePeriod, state = state, msg = "ok")
       Future.successful(rsp)
@@ -201,13 +182,21 @@ class MedusaServer(
       Future.successful(SystemInfoRsp(errCode = 100006, state = State.unknown, msg = "auth error"))
     }
   }
-  
-  override def currentFrame(request: Credit): Future[CurrentFrameRsp] = {
-    if(checkBotToken(request.apiToken)) {
-      val rsp = CurrentFrameRsp(GameController.grid.frameCount, state = state, msg = "ok")
-      Future.successful(rsp)
+	
+//	override def currentFrame(request: Credit): Future[CurrentFrameRsp] = {
+//		if(checkBotToken(request.apiToken)) {
+//			val rsp = CurrentFrameRsp(GameController.grid.frameCount, state = state, msg = "ok")
+//			Future.successful(rsp)
+//		} else {
+//			Future.successful(CurrentFrameRsp(errCode = 100007, state = State.unknown, msg = "auth error"))
+//		}
+//	}
+	
+  override def currentFrame(request: Credit, responseObserver: StreamObserver[CurrentFrameRsp]): Unit = {
+    if (checkBotToken(request.apiToken)) {
+      MedusaServer.streamSender = Some(system.spawn(GrpcStreamSender.create(responseObserver), "GrpcStreamSender"))
     } else {
-      Future.successful(CurrentFrameRsp(errCode = 100007, state = State.unknown, msg = "auth error"))
+      responseObserver.onCompleted()
     }
   }
 

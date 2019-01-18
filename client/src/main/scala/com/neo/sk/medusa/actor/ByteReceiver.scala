@@ -10,7 +10,7 @@ import com.neo.sk.medusa.controller.GameController
 import com.neo.sk.medusa.controller.GameController.SDKReplyTo
 import com.neo.sk.medusa.snake.Protocol
 import com.neo.sk.medusa.snake.Protocol4Agent.JoinRoomRsp
-import org.seekloud.esheepapi.pb.api.{CreateRoomReq, JoinRoomReq, ObservationRsp}
+import org.seekloud.esheepapi.pb.api.ObservationRsp
 import org.seekloud.esheepapi.pb.observations.{ImgData, LayeredObservation}
 
 /**
@@ -35,8 +35,8 @@ object ByteReceiver {
 
   implicit val system: ActorSystem = ActorSystem("medusa", config)
 
-  val windowWidth = AppSettings.layerCanvasW
-  val windowHeight = AppSettings.layerCanvasH
+  private val windowWidth = AppSettings.layerCanvasW
+  private val windowHeight = AppSettings.layerCanvasH
 
 
   def create(): Behavior[Command] = {
@@ -50,40 +50,42 @@ object ByteReceiver {
     Behaviors.receive[Command] {
       (ctx, msg) =>
         msg match {
-
+  
           case t: GetByte =>
             idle(t.mapByte, t.bgByte, t.appleByte, t.kernelByte, t.allSnakeByte, t.mySnakeByte, t.infoByte, viewByte)
-
+  
           case t: GetViewByte =>
             idle(mapByte, bgByte, appleByte, kernelByte, allSnakesByte, mySnakeByte, infoByte, t.viewByte)
-
+  
           case t: GetObservation =>
+            val pixel = if (mapByte.isEmpty) 0 else if (AppSettings.isGray) 1 else 4
             val layer = LayeredObservation(
-              Some(ImgData(windowWidth, windowHeight, 4, ByteString.copyFrom(mapByte))),
-              Some(ImgData(windowWidth, windowHeight, 4, ByteString.copyFrom(bgByte))),
-              Some(ImgData(windowWidth, windowHeight, 4, ByteString.copyFrom(appleByte))),
-              Some(ImgData(windowWidth, windowHeight, 4, ByteString.copyFrom(kernelByte))),
-              Some(ImgData(windowWidth, windowHeight, 4, ByteString.copyFrom(allSnakesByte))),
-              Some(ImgData(windowWidth, windowHeight, 4, ByteString.copyFrom(mySnakeByte))),
-              Some(ImgData(windowWidth, windowHeight, 4, ByteString.copyFrom(infoByte))),
+              Some(ImgData(windowWidth, windowHeight, pixel, ByteString.copyFrom(mapByte))),
+              Some(ImgData(windowWidth, windowHeight, pixel, ByteString.copyFrom(bgByte))),
+              Some(ImgData(windowWidth, windowHeight, pixel, ByteString.copyFrom(appleByte))),
+              Some(ImgData(windowWidth, windowHeight, pixel, ByteString.copyFrom(kernelByte))),
+              Some(ImgData(windowWidth, windowHeight, pixel, ByteString.copyFrom(allSnakesByte))),
+              Some(ImgData(windowWidth, windowHeight, pixel, ByteString.copyFrom(mySnakeByte))),
+              Some(ImgData(windowWidth, windowHeight, pixel, ByteString.copyFrom(infoByte))),
               None
             )
-            val observation = ObservationRsp(Some(layer), Some(ImgData(windowWidth, windowHeight, 4, ByteString.copyFrom(viewByte))))
+            val observation = ObservationRsp(Some(layer), Some(ImgData(windowWidth, windowHeight, pixel, ByteString.copyFrom(viewByte))))
             t.sender ! observation
             Behaviors.same
+  
           case t: CreateRoomReq =>
             SDKReplyTo = t.sender
             GameController.serverActors.foreach(
               a =>
-                a ! Protocol.CreateRoom(-1,t.password)
+                a ! Protocol.CreateRoom(-1, t.password)
             )
             Behaviors.same
-
-          case t:JoinRoomReq =>
+  
+          case t: JoinRoomReq =>
             SDKReplyTo = t.sender
             GameController.serverActors.foreach(
               a =>
-                a ! Protocol.JoinRoom(t.roomId,t.password)
+                a ! Protocol.JoinRoom(t.roomId, t.password)
             )
             Behaviors.same
         }

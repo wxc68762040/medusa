@@ -1,6 +1,7 @@
 package com.neo.sk.medusa.controller
 
 import javafx.animation.{AnimationTimer, KeyFrame}
+
 import akka.actor.typed.{ActorRef, Behavior}
 import com.neo.sk.medusa.{ClientBoot, snake}
 import com.neo.sk.medusa.ClientBoot.{botInfoActor, gameMessageReceiver}
@@ -12,18 +13,21 @@ import com.neo.sk.medusa.snake.Protocol.{Key, NetTest}
 import com.neo.sk.medusa.snake._
 import com.neo.sk.medusa.ClientBoot.{executor, scheduler}
 import javafx.scene.input.KeyCode
+
 import org.seekloud.esheepapi.pb.actions._
+
 import scala.concurrent.duration._
 import com.neo.sk.medusa.snake.Protocol._
 import java.awt.event.KeyEvent
 import java.nio.ByteBuffer
-
 import javafx.scene.SnapshotParameters
 import javafx.scene.canvas.{Canvas, GraphicsContext}
-import javafx.scene.image.{Image, WritableImage}
+import javafx.scene.image.WritableImage
 import javafx.scene.paint.Color
+
 import org.slf4j.{Logger, LoggerFactory}
-import com.neo.sk.medusa.actor.ByteReceiver
+import com.neo.sk.medusa.actor.{ByteReceiver, GrpcStreamSender}
+import com.neo.sk.medusa.gRPCService.MedusaServer
 import com.neo.sk.medusa.snake.Protocol4Agent.JoinRoomRsp
 
 /**
@@ -38,7 +42,7 @@ object GameController {
 	var firstCome = true
 	var lagging = true
   var SDKReplyTo:ActorRef[JoinRoomRsp] = _
-  var serverActors:Option[ActorRef[Protocol.WsSendMsg]] = null
+  var serverActors: Option[ActorRef[Protocol.WsSendMsg]] = None
 	val log:Logger = LoggerFactory.getLogger("GameController")
   val emptyArray = new Array[Byte](0)
 
@@ -74,6 +78,7 @@ object GameController {
 			case _ => KeyEvent.VK_F2
 		}
 	}
+ 
 	def canvas2byteArray(canvas: Canvas):Array[Byte] = {
     try {
       val params = new SnapshotParameters
@@ -83,13 +88,24 @@ object GameController {
       params.setFill(Color.TRANSPARENT)
       canvas.snapshot(params, wi) //从画布中复制绘图并复制到writableImage
       val reader = wi.getPixelReader
-      val byteBuffer = ByteBuffer.allocate(4 * w * h)
-      for (y <- 0 until h; x <- 0 until w) {
-        val color = reader.getArgb(x, y)
-        byteBuffer.putInt(color)
+      if(!AppSettings.isGray) {
+        val byteBuffer = ByteBuffer.allocate(4 * w * h)
+        for (y <- 0 until h; x <- 0 until w) {
+          val color = reader.getArgb(x, y)
+          byteBuffer.putInt(color)
+        }
+        byteBuffer.flip()
+        byteBuffer.array().take(byteBuffer.limit)
+      } else {
+        //获取灰度图，每个像素点1Byte
+        val byteArray = new Array[Byte](1 * w * h)
+        for (y <- 0 until h; x <- 0 until w) {
+          val color = reader.getColor(x, y).grayscale()
+          val gray = (color.getRed * 255).toByte
+          byteArray(y * h + x) = gray
+        }
+        byteArray
       }
-      byteBuffer.flip()
-      byteBuffer.array().take(byteBuffer.limit)
     } catch {
       case e: Exception=>
         emptyArray
@@ -170,14 +186,7 @@ class GameController(id: String,
 		stageCtx.closeStage()
 	}
 
-  var tt=0l
-  var n = 0
-
 	private def logicLoop(): Unit = {
-    n += 1
-//		basicTime = System.currentTimeMillis()
-//    println(s"logicloop = ${basicTime}")
-    tt = System.currentTimeMillis()
 		if(!lagging) {
 			if (!grid.justSynced) {
 				grid.update(false)
@@ -187,22 +196,27 @@ class GameController(id: String,
 				grid.update(true)
 				grid.justSynced = false
 			}
-      println("===== " + (System.currentTimeMillis()-tt) + "=====")
-      if (AppSettings.isLayer) {
+			MedusaServer.streamSender.foreach(_ ! GrpcStreamSender.NewFrame(getFrameCount))
+			
+			if (AppSettings.isLayer) {
         ClientBoot.addToPlatform {
-          layerCanvas.getAction(grid.actionMap)
-          val t = System.currentTimeMillis()
-          val tmp = ByteReceiver.GetByte(layerCanvas.getMapByte(true), layerCanvas.getBackgroundByte(true),layerCanvas.getAppleByte(true), layerCanvas.getKernelByte(true), layerCanvas.getAllSnakeByte(true), layerCanvas.getMySnakeByte(true), layerCanvas.getInfoByte(grid.currentRank, grid.myRank, true))
-          //println("*************")
-          //println(System.currentTimeMillis() - t)
-          if(AppSettings.isViewObservation) {
-            botInfoActor ! ByteReceiver.GetViewByte(layerCanvas.getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, true))
-          }else{
-            layerCanvas.getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, false)
-          }
-//          println("===============")
-//          println(System.currentTimeMillis() - t)
-          botInfoActor ! tmp
+					layerCanvas.getAction(grid.actionMap)
+					if(getLiveState) {
+						botInfoActor ! ByteReceiver.GetByte(
+							layerCanvas.getMapByte(true),
+							layerCanvas.getBackgroundByte(true),
+							layerCanvas.getAppleByte(true),
+							layerCanvas.getKernelByte(true),
+							layerCanvas.getAllSnakeByte(true),
+							layerCanvas.getMySnakeByte(true),
+							layerCanvas.getInfoByte(grid.currentRank, grid.myRank, true)
+						)
+						if (AppSettings.isViewObservation) {
+							botInfoActor ! ByteReceiver.GetViewByte(layerCanvas.getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, true))
+						} else {
+							layerCanvas.getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, false)
+						}
+					}
         }
       }
 			grid.savedGrid += (grid.frameCount -> grid.getGridSyncData4Client)

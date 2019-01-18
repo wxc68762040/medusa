@@ -39,6 +39,7 @@ object AppSettings {
 
   val isView = appConfig.getBoolean("isView")
   val isViewObservation = appConfig.getBoolean("isViewObservation")
+  val isGray = appConfig.getBoolean("isGray")
 
   val botServerPort = appConfig.getInt("botServerPort")
   val framePeriod = appConfig.getInt("framePeriod")
