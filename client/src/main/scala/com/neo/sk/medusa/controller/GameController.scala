@@ -196,8 +196,9 @@ class GameController(id: String,
 				grid.update(true)
 				grid.justSynced = false
 			}
-			MedusaServer.streamSender.foreach(_ ! GrpcStreamSender.NewFrame(getFrameCount))
-			
+			if(MedusaServer.isFrameConnect) {
+				MedusaServer.streamSender.foreach(_ ! GrpcStreamSender.NewFrame(getFrameCount))
+			}
 			if (AppSettings.isLayer) {
         ClientBoot.addToPlatform {
 					layerCanvas.getAction(grid.actionMap)
@@ -209,13 +210,19 @@ class GameController(id: String,
 							layerCanvas.getKernelByte(true),
 							layerCanvas.getAllSnakeByte(true),
 							layerCanvas.getMySnakeByte(true),
-							layerCanvas.getInfoByte(grid.currentRank, grid.myRank, true)
+							layerCanvas.getInfoByte(grid.currentRank, grid.myRank, true),
+							if(AppSettings.isViewObservation){
+								Some(layerCanvas.getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, true))
+							}else{
+								layerCanvas.getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, false)
+								None
+							}
 						)
-						if (AppSettings.isViewObservation) {
-							botInfoActor ! ByteReceiver.GetViewByte(layerCanvas.getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, true))
-						} else {
-							layerCanvas.getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, false)
-						}
+//						if (AppSettings.isViewObservation) {
+//							botInfoActor ! ByteReceiver.GetViewByte(layerCanvas.getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, true))
+//						} else {
+//							layerCanvas.getViewByte(grid.currentRank, grid.historyRank, grid.myRank, grid.loginAgain, false)
+//						}
 					}
         }
       }
