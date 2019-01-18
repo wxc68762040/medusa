@@ -132,7 +132,7 @@ object WSClient {
 											ctx.self ! GetGameController(playerId,isBot=true)
                       loginController.setUserInfo(playerId, t.botName, t.token)
                       //fixme test bot sdk
-											timer.startSingleTimer(TimerKeyForTest, ClientTest(1),5.seconds)
+//											timer.startSingleTimer(TimerKeyForTest, ClientTest(1),5.seconds)
                       Future.successful(s"$logPrefix connect success.")
                     } else {
                       loginController.getLoginScence().warningText.setText(s"WSClient connection failed: ${upgrade.response.status}")
