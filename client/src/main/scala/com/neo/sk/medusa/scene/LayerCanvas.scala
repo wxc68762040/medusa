@@ -111,7 +111,7 @@ class LayerCanvas(gameScene: GameScene,
     val myKill = myRank._2.k
     val mySpeed = if (snakes.exists(_.id == grid.myId)) snakes.filter(_.id == grid.myId).head.speed else 0
 
-    infoCtx.setFill(Color.web(snakeColor))
+    infoCtx.setFill(Color.RED)
     if (myLength < 4000) {
       infoCtx.fillRect(0, windowHeight / 6, myLength / (windowWidth / 40), 15)
     } else {
@@ -295,7 +295,12 @@ class LayerCanvas(gameScene: GameScene,
       }
       joints = joints.reverse.enqueue(tail)
       snakesCtx.beginPath()
-      snakesCtx.setStroke(Color.web(snake.color))
+      if(snake.id != grid.myId){
+        snakesCtx.setStroke(Color.GREEN)
+      } else{
+        snakesCtx.setStroke(Color.RED)
+      }
+
       //snakesCtx.setEffect(new DropShadow(5 * scale, Color.web(snake.color)))
       val snakeWidth = square * 2 * scale
       snakesCtx.setLineWidth(snakeWidth)
@@ -385,7 +390,11 @@ class LayerCanvas(gameScene: GameScene,
       }
       joints = joints.reverse.enqueue(tail)
       snakesCtx.beginPath()
-      snakesCtx.setStroke(Color.web(snake.color))
+      if(snake.id != grid.myId){
+        snakesCtx.setStroke(Color.GREEN)
+      } else {
+        snakesCtx.setStroke(Color.RED)
+      }
       // snakesCtx.setEffect(new DropShadow(5 * scale, Color.web(snake.color)))
       val snakeWidth = square * 2 * scale
       snakesCtx.setLineWidth(snakeWidth)
@@ -474,8 +483,11 @@ class LayerCanvas(gameScene: GameScene,
         }
         joints = joints.reverse.enqueue(tail)
         mySnakeCtx.beginPath()
-        mySnakeCtx.setStroke(Color.web(mySnake.color))
-        //mySnakeCtx.setEffect(new DropShadow(5 * scale, Color.web(mySnake.color)))
+        if(mySnake.id != grid.myId){
+          mySnakeCtx.setStroke(Color.GREEN)
+        } else {
+          mySnakeCtx.setStroke(Color.RED)
+        }
         val snakeWidth = square * 2 * scale
         mySnakeCtx.setLineWidth(snakeWidth)
         mySnakeCtx.moveTo(joints.head.x * scale + deviationX, joints.head.y * scale + deviationY)
@@ -754,8 +766,14 @@ class LayerCanvas(gameScene: GameScene,
       joints = joints.reverse.enqueue(tail)
       viewCtx.beginPath()
       viewCtx.setGlobalAlpha(1)
-      viewCtx.setStroke(Color.web(snake.color))
-      viewCtx.setEffect(new DropShadow(5 * scaleView, Color.web(snake.color)))
+      if(snake.id != grid.myId){
+        viewCtx.setStroke(Color.GREEN)
+        viewCtx.setEffect(new DropShadow(5 * scaleView, Color.GREEN))
+      } else {
+        viewCtx.setStroke(Color.RED)
+        viewCtx.setEffect(new DropShadow(5 * scaleView, Color.RED))
+      }
+
       val snakeWidth = square * 2 * scaleView
       viewCtx.setLineWidth(snakeWidth)
       viewCtx.moveTo(joints.head.x * scaleView + deviationX, joints.head.y * scaleView + deviationY)
@@ -770,7 +788,11 @@ class LayerCanvas(gameScene: GameScene,
       if (snake.head.x >= 0 && snake.head.y >= 0 && snake.head.x <= Boundary.w && snake.head.y <= Boundary.h) {
         if (snake.speed > fSpeed + 1) {
           viewCtx.setFill(Color.web("#FFFF37"))
-          viewCtx.setEffect(new DropShadow(5 * scaleView, Color.web(snake.color)))
+          if(snake.id != grid.myId){
+            viewCtx.setEffect(new DropShadow(5 * scaleView, Color.GREEN))
+          } else {
+            viewCtx.setEffect(new DropShadow(5 * scaleView, Color.RED))
+          }
           viewCtx.fillRect(x * scaleView - 1.5 * square * scaleView + deviationX, y * scaleView - 1.5 * square * scaleView + deviationY, square * 3 * scaleView, square * 3 * scaleView)
         }
         viewCtx.setFill(Color.web("#FFFFFF"))
