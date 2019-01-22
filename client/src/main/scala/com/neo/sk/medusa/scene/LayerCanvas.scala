@@ -841,7 +841,7 @@ class LayerCanvas(gameScene: GameScene,
     var index = 0
     //人类操纵模拟
     if (actionMap.size >= 12) {
-      actionMap.toList.sortBy(_._1).reverse.takeRight(12).foreach { a =>
+      actionMap.toList.sortBy(_._1).takeRight(12).reverse.foreach { a =>
         val keyCode = a._2.filter(_._1 == grid.myId).values.headOption.getOrElse(0)
         if (keyCode != 0) {
           actionCtx.fillText(s"Frame:${a._1} Action: ${keyCode}", 20, (index + baseLine) * 14)
@@ -860,7 +860,10 @@ class LayerCanvas(gameScene: GameScene,
 
     // bot操作
     if (botActionMap.size >= 12) {
-      botActionMap.toList.sortBy(_._1).reverse.takeRight(12).foreach { a =>
+      val info = botActionMap.toList.sortBy(_._1).takeRight(12).reverse
+      botActionMap = Map.empty[Long, Map[String, Int]]
+      info.foreach { a =>
+        botActionMap += a
         val keyCode = a._2.filter(_._1 == grid.myId).values.headOption.getOrElse(0)
         if (keyCode != 0) {
           actionCtx.fillText(s"Frame:${a._1} Action: ${keyCode}", 20, (index + baseLine) * 14)
