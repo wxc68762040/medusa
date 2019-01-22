@@ -87,7 +87,11 @@ object ByteReceiver {
               Some(ImgData(windowWidth, windowHeight, pixel, ByteString.copyFrom(infoByte))),
               None
             )
-            val observation = ObservationRsp(Some(layer), Some(ImgData(windowWidth, windowHeight, pixel, ByteString.copyFrom(viewByte.get))))
+            val observation = if(AppSettings.isViewObservation) {
+              ObservationRsp(Some(layer), Some(ImgData(windowWidth, windowHeight, pixel, ByteString.copyFrom(viewByte.get))))
+            } else {
+              ObservationRsp(Some(layer), None)
+            }
             t.sender ! observation
             Behaviors.same
   
