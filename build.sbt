@@ -10,8 +10,8 @@ val scalaV = "2.12.6"
 val projectName = "medusa"
 val projectVersion = "1.2.1"
 
-val projectMainClass = "com.neo.sk.medusa.Boot"
-val clientMainClass = "com.neo.sk.medusa.ClientBoot"
+val projectMainClass = "org.seekloud.medusa.Boot"
+val clientMainClass = "org.seekloud.medusa.ClientBoot"
 
 def commonSettings = Seq(
   version := projectVersion,
