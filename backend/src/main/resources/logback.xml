@@ -27,7 +27,7 @@
     </encoder>
   </appender>
 
-  <logger name="com.neo" level="INFO" additivity="true" />
+  <logger name="org.seekloud" level="INFO" additivity="true" />
 
   <logger name="akka" level="INFO" additivity="true"/>
 
